@@ -696,7 +696,7 @@ async function handleAPI(req, res) {
           (SELECT icon FROM gifts WHERE session_id = ? AND nickname = g.nickname AND gift_name = g.gift_name AND icon IS NOT NULL LIMIT 1) as gift_icon
         FROM gifts g
         WHERE g.session_id = ?
-        GROUP BY g.nickname, g.gift_name, g.to_nickname ORDER BY g.nickname, total_diamonds DESC
+        GROUP BY g.nickname, g.gift_name, g.to_nickname ORDER BY total_diamonds DESC
       `).all(sid, sid, sid);
 
       // 主播排名（按 to_user_sec_uid 聚合，同主播不同昵称合并）
@@ -786,7 +786,9 @@ async function handleAPI(req, res) {
       });
 
       const summary = {
-        total_diamonds: gifts.reduce((s, g) => s + g.total_diamonds, 0) + anchorRanking.reduce((s, a) => s + a.total_diamonds, 0),
+        total_diamonds: dbInstance.prepare('SELECT COALESCE(SUM(diamond_count * repeat_count), 0) as d FROM gifts WHERE session_id = ?').get(sid).d,
+        total_gifts: dbInstance.prepare('SELECT COUNT(*) as c FROM gifts WHERE session_id = ?').get(sid).c,
+        total_danmaku: danmaku.length,
         danmaku_count: danmaku.length,
         user_count: new Set(gifts.map(g => g.nickname).concat(danmaku.map(d => d.nickname))).size,
         timeline: Object.values(timeMap).sort((a, b) => a.time.localeCompare(b.time))

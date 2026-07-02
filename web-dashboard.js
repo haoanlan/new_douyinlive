@@ -173,17 +173,17 @@ async function handleAPI(req, res) {
         // 按场次去重排行
         sql = `SELECT nickname, avatar, user_sec_uid,
           SUM(diamond_count * repeat_count) as total_diamonds,
-          COUNT(*) as gift_count,
+          SUM(repeat_count) as gift_count,
           GROUP_CONCAT(DISTINCT gift_name) as gift_types
           FROM gifts WHERE session_id = ?
-          GROUP BY COALESCE(trace_id, id, rowid) = trace_id, nickname
+          GROUP BY nickname
           ORDER BY total_diamonds DESC LIMIT ?`;
         // 简化：直接按 nickname 聚合
         sql = `SELECT nickname, avatar, user_sec_uid,
           SUM(diamond_count * repeat_count) as total_diamonds,
           COUNT(DISTINCT gift_name) as gift_types_count,
           GROUP_CONCAT(DISTINCT gift_name) as gift_types,
-          COUNT(*) as gift_count
+          SUM(repeat_count) as gift_count
           FROM gifts WHERE session_id = ?
           GROUP BY nickname ORDER BY total_diamonds DESC LIMIT ?`;
         params = [sessionId, parseInt(query.limit) || 100];
@@ -198,7 +198,7 @@ async function handleAPI(req, res) {
           SUM(diamond_count * repeat_count) as total_diamonds,
           COUNT(DISTINCT gift_name) as gift_types_count,
           GROUP_CONCAT(DISTINCT gift_name) as gift_types,
-          COUNT(*) as gift_count
+          SUM(repeat_count) as gift_count
           FROM gifts ${where}
           GROUP BY nickname ORDER BY total_diamonds DESC LIMIT ?`;
         params = [parseInt(query.limit) || 100];
@@ -377,7 +377,7 @@ async function handleAPI(req, res) {
       const userGifts = dbInstance.prepare(`
         SELECT nickname, avatar,
           SUM(diamond_count * repeat_count) as total_diamonds,
-          COUNT(*) as gift_count,
+          SUM(repeat_count) as gift_count,
           COUNT(DISTINCT gift_name) as gift_types_count,
           GROUP_CONCAT(DISTINCT gift_name) as gift_types
         FROM gifts WHERE user_sec_uid = ? GROUP BY user_sec_uid
@@ -682,7 +682,7 @@ async function handleAPI(req, res) {
       const gifts = dbInstance.prepare(`
         SELECT nickname, avatar as avatar_url, user_sec_uid,
           SUM(diamond_count * repeat_count) as total_diamonds,
-          COUNT(*) as gift_count
+          SUM(repeat_count) as gift_count
         FROM gifts WHERE session_id = ?
         GROUP BY nickname ORDER BY total_diamonds DESC LIMIT 20
       `).all(sid);
@@ -691,7 +691,7 @@ async function handleAPI(req, res) {
       const giftDetails = dbInstance.prepare(`
         SELECT g.nickname, g.gift_name, g.to_nickname,
           SUM(g.diamond_count * g.repeat_count) as total_diamonds,
-          COUNT(*) as count,
+          SUM(g.repeat_count) as count,
           (SELECT avatar FROM gifts WHERE session_id = ? AND nickname = g.nickname AND avatar IS NOT NULL LIMIT 1) as avatar_url,
           (SELECT icon FROM gifts WHERE session_id = ? AND nickname = g.nickname AND gift_name = g.gift_name AND icon IS NOT NULL LIMIT 1) as gift_icon
         FROM gifts g
@@ -709,7 +709,7 @@ async function handleAPI(req, res) {
             (SELECT to_nickname FROM gifts WHERE session_id = ? AND to_user_sec_uid = g2.to_user_sec_uid AND to_nickname IS NOT NULL ORDER BY create_time DESC LIMIT 1) as anchor_name,
             MAX(to_avatar) as to_avatar,
             SUM(diamond_count * repeat_count) as total_diamonds,
-            COUNT(*) as gift_count,
+            SUM(repeat_count) as gift_count,
             COUNT(DISTINCT nickname) as user_count
           FROM gifts g2 WHERE session_id = ? AND to_user_sec_uid IS NOT NULL
           GROUP BY to_user_sec_uid ORDER BY total_diamonds DESC

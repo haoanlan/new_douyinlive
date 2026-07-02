@@ -458,18 +458,23 @@ thead .session-cb:hover{opacity:1}
 .anchor-modal-body .gift-rank-num{font-size:13px;font-weight:700;color:var(--text-muted);width:22px;text-align:center;flex-shrink:0;font-variant-numeric:tabular-nums;font-family:'Inter',system-ui,monospace}
 
 /* Lookup & Profile views */
-.lookup-card{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:all .2s}
+.lookup-card{display:flex;gap:10px;padding:12px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:all .2s}
 .lookup-card:hover{border-color:var(--accent);background:var(--bg-card-hover);transform:translateY(-1px);box-shadow:var(--shadow)}
-.lookup-card .user-cell{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.lookup-card .avatar{flex-shrink:0}
+.lookup-card .user-cell{flex:1;min-width:0}
 .lookup-card .user-cell .user-info{flex:1;min-width:0}
 .lookup-card .user-cell .user-name{font-weight:500;font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lookup-card .user-cell .user-db-name{font-size:11px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.lookup-meta{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;max-width:45%}
-.lookup-sessions{font-size:11px;color:var(--text-muted);max-width:100%;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.lookup-action{font-size:11px;color:var(--accent);max-width:100%;text-align:right;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-all}
+.lookup-card .user-cell .user-detail{display:flex;align-items:center;gap:8px;margin-top:4px;font-size:11px;min-width:0}
+.lookup-card .user-cell .user-detail .sess{color:var(--text-muted);flex-shrink:0;white-space:nowrap}
+.lookup-card .user-cell .user-detail .act{color:var(--accent);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lookup-action .action-icon{width:12px;height:12px;vertical-align:-2px;margin-right:3px}
 
-/* Custom dropdown select */
+@media(max-width:480px){
+  .lookup-card .user-cell .user-detail{flex-wrap:wrap;gap:4px}
+  .lookup-card .user-cell .user-detail .act{-webkit-line-clamp:1}
+}
+.profile-card{padding:20px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);position:relative;overflow:hidden}
 .anon-filter{display:flex;gap:8px;margin-bottom:8px}
 .anon-filter .cs-wrap{position:relative;flex:1;min-width:0}
 .anon-filter .cs-btn{width:100%;padding:8px 28px 8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:13px;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;appearance:none;-webkit-appearance:none}
@@ -480,13 +485,6 @@ thead .session-cb:hover{opacity:1}
 .anon-filter .cs-opt:last-child{border-bottom:none}
 .anon-filter .cs-opt:active{background:var(--accent);color:#fff}
 .anon-filter .cs-opt.selected{color:var(--accent);font-weight:500}
-
-@media(max-width:480px){
-  .lookup-card{flex-wrap:wrap;gap:8px}
-  .lookup-meta{max-width:100%;width:100%;flex-direction:row;align-items:center;gap:8px}
-  .lookup-sessions{max-width:none;text-align:left}
-  .lookup-action{max-width:none;text-align:left;-webkit-line-clamp:1}
-}
 .profile-card{padding:20px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);position:relative;overflow:hidden}
 .profile-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--orange))}
 .profile-header{display:flex;align-items:center;gap:14px;margin-bottom:16px}
@@ -1023,10 +1021,10 @@ async function doAnonymousLookup() {
             <div class="user-name">${esc(dbName)}</div>
             ${hasDiff ? `<div class="user-db-name">实际: ${esc(apiName)}${u.db_nicknames.length > 1 ? ` 等${u.db_nicknames.length}个昵称` : ''}</div>` : (u.db_nicknames.length > 1 ? `<div class="user-db-name">${u.db_nicknames.length}个昵称</div>` : '')}
           </div>
-        </div>
-        <div class="lookup-meta">
-          ${sessText ? `<div class="lookup-sessions">${esc(sessText)}</div>` : ''}
-          ${actionHtml ? `<div class="lookup-action">${actionHtml}</div>` : ''}
+          ${(sessText || actionHtml) ? `<div class="user-detail">
+            ${sessText ? `<span class="sess">${esc(sessText)}</span>` : ''}
+            ${actionHtml ? `<span class="act">${actionHtml}</span>` : ''}
+          </div>` : ''}
         </div>
       </div>`;
     });

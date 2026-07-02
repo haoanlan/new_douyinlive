@@ -460,14 +460,33 @@ thead .session-cb:hover{opacity:1}
 /* Lookup & Profile views */
 .lookup-card{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:all .2s}
 .lookup-card:hover{border-color:var(--accent);background:var(--bg-card-hover);transform:translateY(-1px);box-shadow:var(--shadow)}
-.lookup-card .user-cell{flex:1;min-width:0;display:flex;align-items:center;gap:10px}
+.lookup-card .user-cell{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .lookup-card .user-cell .user-info{flex:1;min-width:0}
 .lookup-card .user-cell .user-name{font-weight:500;font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.lookup-card .user-cell .user-db-name{font-size:11px;color:var(--text-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.lookup-meta{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
-.lookup-sessions{font-size:11px;color:var(--text-muted);max-width:160px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.lookup-action{font-size:11px;color:var(--accent);max-width:180px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lookup-card .user-cell .user-db-name{font-size:11px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lookup-meta{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;max-width:45%}
+.lookup-sessions{font-size:11px;color:var(--text-muted);max-width:100%;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lookup-action{font-size:11px;color:var(--accent);max-width:100%;text-align:right;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-all}
 .lookup-action .action-icon{width:12px;height:12px;vertical-align:-2px;margin-right:3px}
+
+/* Custom dropdown select */
+.anon-filter{display:flex;gap:8px;margin-bottom:8px}
+.anon-filter .cs-wrap{position:relative;flex:1;min-width:0}
+.anon-filter .cs-btn{width:100%;padding:8px 28px 8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:13px;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;appearance:none;-webkit-appearance:none}
+.anon-filter .cs-btn::after{content:'';position:absolute;right:10px;top:50%;transform:translateY(-50%);width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid var(--text-muted);pointer-events:none}
+.anon-filter .cs-list{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);z-index:100;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.anon-filter .cs-list.open{display:block}
+.anon-filter .cs-opt{padding:10px 12px;font-size:13px;color:var(--text);cursor:pointer;border-bottom:1px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.anon-filter .cs-opt:last-child{border-bottom:none}
+.anon-filter .cs-opt:active{background:var(--accent);color:#fff}
+.anon-filter .cs-opt.selected{color:var(--accent);font-weight:500}
+
+@media(max-width:480px){
+  .lookup-card{flex-wrap:wrap;gap:8px}
+  .lookup-meta{max-width:100%;width:100%;flex-direction:row;align-items:center;gap:8px}
+  .lookup-sessions{max-width:none;text-align:left}
+  .lookup-action{max-width:none;text-align:left;-webkit-line-clamp:1}
+}
 .profile-card{padding:20px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);position:relative;overflow:hidden}
 .profile-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--orange))}
 .profile-header{display:flex;align-items:center;gap:14px;margin-bottom:16px}
@@ -892,13 +911,15 @@ async function loadSearchView() {
         匿名查询
       </div></div>
       <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">输入用户昵称，可选直播间/场次缩小范围，匹配 sec_uid 后查询真实信息</div>
-      <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
-        <select id="anonStreamer" style="padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:13px;outline:none;min-width:120px" onchange="onAnonStreamerChange()">
-          <option value="">全部直播间</option>
-        </select>
-        <select id="anonSession" style="padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:13px;outline:none;min-width:120px">
-          <option value="">全部场次</option>
-        </select>
+      <div class="anon-filter">
+        <div class="cs-wrap" id="anonStreamerWrap">
+          <button class="cs-btn" id="anonStreamerBtn" onclick="toggleCs('anonStreamer')">全部直播间</button>
+          <div class="cs-list" id="anonStreamerList"></div>
+        </div>
+        <div class="cs-wrap" id="anonSessionWrap">
+          <button class="cs-btn" id="anonSessionBtn" onclick="toggleCs('anonSession')">全部场次</button>
+          <div class="cs-list" id="anonSessionList"></div>
+        </div>
       </div>
       <div style="display:flex;gap:8px;margin-bottom:16px">
         <input id="searchInput" placeholder="输入昵称关键词..." style="flex:1;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:13px;outline:none" onkeydown="if(event.key==='Enter')doAnonymousLookup()">
@@ -906,31 +927,53 @@ async function loadSearchView() {
       </div>
       <div id="searchResults"></div>
     </div>`;
-  // 加载直播间列表
+  // 加载直播间列表到自定义下拉框
   const streamers = await api('/api/streamers');
-  const sel = document.getElementById('anonStreamer');
+  const sList = document.getElementById('anonStreamerList');
+  sList.innerHTML = '<div class="cs-opt selected" data-val="" onclick="selectCs(\'anonStreamer\',\'\',this)">全部直播间</div>';
   streamers.forEach(s => {
-    const opt = document.createElement('option');
-    opt.value = s.id;
-    opt.textContent = s.name || s.room_id;
-    sel.appendChild(opt);
+    sList.innerHTML += `<div class="cs-opt" data-val="${s.id}" onclick="selectCs('anonStreamer','${s.id}',this)">${esc(s.name || s.room_id)}</div>`;
   });
+  window._anonStreamers = streamers;
   document.getElementById('searchInput').focus();
 }
 
-async function onAnonStreamerChange() {
-  const streamerId = document.getElementById('anonStreamer').value;
-  const sessSel = document.getElementById('anonSession');
-  sessSel.innerHTML = '<option value="">全部场次</option>';
+// 自定义下拉框状态
+const _csState = {};
+function toggleCs(name) {
+  const list = document.getElementById(name + 'List');
+  const isOpen = list.classList.contains('open');
+  // 关闭所有
+  document.querySelectorAll('.cs-list.open').forEach(el => el.classList.remove('open'));
+  if (!isOpen) list.classList.add('open');
+}
+function selectCs(name, val, el) {
+  _csState[name] = val;
+  const btn = document.getElementById(name + 'Btn');
+  btn.textContent = el.textContent;
+  el.parentElement.querySelectorAll('.cs-opt').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  el.parentElement.classList.remove('open');
+  if (name === 'anonStreamer') onAnonStreamerChange(val);
+}
+async function onAnonStreamerChange(streamerId) {
+  const sList = document.getElementById('anonSessionList');
+  sList.innerHTML = '<div class="cs-opt selected" data-val="" onclick="selectCs(\'anonSession\',\'\',this)">全部场次</div>';
+  _csState['anonSession'] = '';
+  document.getElementById('anonSessionBtn').textContent = '全部场次';
   if (!streamerId) return;
   const sessions = await api(`/api/hosts/${streamerId}/sessions`);
   sessions.forEach(s => {
-    const opt = document.createElement('option');
-    opt.value = s.id;
-    opt.textContent = (s.started_at ? fmtTime(s.started_at) : '') + ' ' + (s.title || '');
-    sessSel.appendChild(opt);
+    const label = (s.started_at ? fmtTime(s.started_at) : '') + ' ' + (s.title || '');
+    sList.innerHTML += `<div class="cs-opt" data-val="${s.id}" onclick="selectCs('anonSession','${s.id}',this)">${esc(label)}</div>`;
   });
 }
+// 点击外部关闭下拉框
+document.addEventListener('click', e => {
+  if (!e.target.closest('.cs-wrap')) {
+    document.querySelectorAll('.cs-list.open').forEach(el => el.classList.remove('open'));
+  }
+});
 
 async function doAnonymousLookup() {
   const q = document.getElementById('searchInput')?.value.trim();
@@ -938,8 +981,8 @@ async function doAnonymousLookup() {
   const el = document.getElementById('searchResults');
   el.innerHTML = '<div class="loading">查询中...</div>';
   try {
-    const streamerId = document.getElementById('anonStreamer')?.value || '';
-    const sessionId = document.getElementById('anonSession')?.value || '';
+    const streamerId = _csState['anonStreamer'] || '';
+    const sessionId = _csState['anonSession'] || '';
     let url = `/api/anonymous-lookup?q=${encodeURIComponent(q)}`;
     if (streamerId) url += `&streamer_id=${streamerId}`;
     if (sessionId) url += `&session_id=${sessionId}`;

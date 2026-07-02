@@ -245,11 +245,11 @@ async function handleAPI(req, res) {
         const dedupedGifts = comboDedupGifts(rawGifts);
         const userMap = {};
         for (const g of dedupedGifts) {
-          const nick = g.nickname;
-          if (!userMap[nick]) userMap[nick] = { nickname: nick, avatar: g.avatar, user_sec_uid: g.user_sec_uid, total_diamonds: 0, gift_count: 0, gift_types: new Set() };
-          userMap[nick].total_diamonds += g.total_diamonds || 0;
-          userMap[nick].gift_count += g.repeat_count || 1;
-          if (g.gift_name) userMap[nick].gift_types.add(g.gift_name);
+          const uid = g.user_sec_uid || g.nickname;
+          if (!userMap[uid]) userMap[uid] = { nickname: g.nickname, avatar: g.avatar, user_sec_uid: g.user_sec_uid, total_diamonds: 0, gift_count: 0, gift_types: new Set() };
+          userMap[uid].total_diamonds += g.total_diamonds || 0;
+          userMap[uid].gift_count += g.repeat_count || 1;
+          if (g.gift_name) userMap[uid].gift_types.add(g.gift_name);
         }
         const rows = Object.values(userMap).map(u => ({
           ...u, gift_types_count: u.gift_types.size, gift_types: [...u.gift_types].join(',')
@@ -797,20 +797,20 @@ async function handleAPI(req, res) {
       // 按用户聚合排行
       const giftUserMap = {};
       for (const g of dedupedGifts) {
-        const nick = g.nickname;
-        if (!giftUserMap[nick]) giftUserMap[nick] = { nickname: nick, avatar_url: g.avatar_url, user_sec_uid: g.user_sec_uid, total_diamonds: 0, gift_count: 0 };
-        giftUserMap[nick].total_diamonds += g.total_diamonds || 0;
-        giftUserMap[nick].gift_count += g.repeat_count || 1;
+        const uid = g.user_sec_uid || g.nickname;
+        if (!giftUserMap[uid]) giftUserMap[uid] = { nickname: g.nickname, avatar_url: g.avatar_url, user_sec_uid: g.user_sec_uid, total_diamonds: 0, gift_count: 0 };
+        giftUserMap[uid].total_diamonds += g.total_diamonds || 0;
+        giftUserMap[uid].gift_count += g.repeat_count || 1;
       }
       const gifts = Object.values(giftUserMap).sort((a, b) => b.total_diamonds - a.total_diamonds).slice(0, 20);
 
       // 每个用户的礼物种类明细
       const giftDetailMap = {};
       for (const g of dedupedGifts) {
-        const key = g.nickname + '\x00' + (g.gift_name || '') + '\x00' + (g.to_nickname || '');
+        const key = (g.user_sec_uid || g.nickname) + '\x00' + (g.gift_name || '') + '\x00' + (g.to_nickname || '');
         if (!giftDetailMap[key]) {
           giftDetailMap[key] = {
-            nickname: g.nickname, gift_name: g.gift_name, to_nickname: g.to_nickname,
+            nickname: g.nickname, user_sec_uid: g.user_sec_uid, gift_name: g.gift_name, to_nickname: g.to_nickname,
             total_diamonds: 0, count: 0, avatar_url: g.avatar_url, gift_icon: null
           };
         }
@@ -892,7 +892,7 @@ async function handleAPI(req, res) {
       const danmakuRanking = dbInstance.prepare(`
         SELECT nickname, avatar, user_sec_uid, COUNT(*) as msg_count
         FROM danmaku WHERE session_id = ? AND nickname IS NOT NULL
-        GROUP BY nickname ORDER BY msg_count DESC LIMIT 30
+        GROUP BY user_sec_uid ORDER BY msg_count DESC LIMIT 30
       `).all(sid);
 
       // 时间线（用已去重的dedupedGifts按分钟聚合）
@@ -972,10 +972,10 @@ async function handleAPI(req, res) {
       const dedupedAnchorGifts = comboDedupGifts(rawGifts);
       const userMap = {};
       for (const g of dedupedAnchorGifts) {
-        const nick = g.nickname;
-        if (!userMap[nick]) userMap[nick] = { nickname: nick, avatar_url: g.avatar_url, user_sec_uid: g.user_sec_uid, total_diamonds: 0, gift_count: 0 };
-        userMap[nick].total_diamonds += g.total_diamonds || 0;
-        userMap[nick].gift_count += g.repeat_count || 1;
+        const uid = g.user_sec_uid || g.nickname;
+        if (!userMap[uid]) userMap[uid] = { nickname: g.nickname, avatar_url: g.avatar_url, user_sec_uid: g.user_sec_uid, total_diamonds: 0, gift_count: 0 };
+        userMap[uid].total_diamonds += g.total_diamonds || 0;
+        userMap[uid].gift_count += g.repeat_count || 1;
       }
       const gifts = Object.values(userMap).sort((a, b) => b.total_diamonds - a.total_diamonds).slice(0, 100);
       return sendJSON(res, { anchor, gifts });

@@ -1568,7 +1568,7 @@ function renderTabPanel(tab, data) {
       html += '<div class="gift-rank-grid">';
       data.gifts.forEach((g, i) => {
         const rankBadge = `<span class="gift-rank-num">${String(i + 1).padStart(2, '0')}</span>`;
-        html += `<div class="gift-rank-card" onclick="showGiftDetail('${esc(g.nickname).replace(/'/g,"\\'")}')">
+        html += `<div class="gift-rank-card" onclick="showGiftDetail('${esc(g.nickname).replace(/'/g,"\\'")}', '${esc(g.user_sec_uid || '')}')">
           <div class="gift-rank-card-top">
             ${rankBadge}
             <div class="user-cell">${avatarHtml(g.avatar_url, g.nickname)}<span>${esc(g.nickname)}</span></div>
@@ -1753,12 +1753,13 @@ function openAnchorModal(anchorName, sessionId) {
     modal.classList.add('show');
     return;
   }
-  // Aggregate by nickname (giver)
+  // Aggregate by user_sec_uid (giver)
   const aggMap = {};
   filtered.forEach(g => {
-    if (!aggMap[g.nickname]) aggMap[g.nickname] = { nickname: g.nickname, avatar_url: g.avatar_url, total_diamonds: 0, gift_count: 0 };
-    aggMap[g.nickname].total_diamonds += g.total_diamonds;
-    aggMap[g.nickname].gift_count += g.count;
+    const uid = g.user_sec_uid || g.nickname;
+    if (!aggMap[uid]) aggMap[uid] = { nickname: g.nickname, avatar_url: g.avatar_url, total_diamonds: 0, gift_count: 0 };
+    aggMap[uid].total_diamonds += g.total_diamonds;
+    aggMap[uid].gift_count += g.count;
   });
   const gifts = Object.values(aggMap).sort((a, b) => b.total_diamonds - a.total_diamonds);
   const totalD = gifts.reduce((s, g) => s + g.total_diamonds, 0);
@@ -1784,8 +1785,8 @@ function closeAnchorModal() {
   document.getElementById('anchorModal')?.classList.remove('show');
 }
 
-function showGiftDetail(nickname) {
-  const details = (window._giftDetails || []).filter(d => d.nickname === nickname);
+function showGiftDetail(nickname, secUid) {
+  const details = (window._giftDetails || []).filter(d => secUid ? d.user_sec_uid === secUid : d.nickname === nickname);
   if (!details.length) return;
   const totalD = details.reduce((s, d) => s + d.total_diamonds, 0);
   const modal = document.getElementById('giftDetailModal');

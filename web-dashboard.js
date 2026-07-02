@@ -218,7 +218,7 @@ async function handleAPI(req, res) {
       if (sessionId) {
         // 按场次去重排行
         sql = `SELECT nickname, avatar, user_sec_uid,
-          SUM(diamond_count * repeat_count) as total_diamonds,
+          SUM(total_diamonds) as total_diamonds,
           COUNT(*) as gift_count,
           GROUP_CONCAT(DISTINCT gift_name) as gift_types
           FROM gifts WHERE session_id = ?
@@ -257,7 +257,7 @@ async function handleAPI(req, res) {
     if (pathname === '/api/gifts/by-type') {
       const sessionId = query.session_id;
       let sql = `SELECT gift_name,
-        SUM(diamond_count * repeat_count) as total_diamonds,
+        SUM(total_diamonds) as total_diamonds,
         COUNT(*) as send_count,
         COUNT(DISTINCT nickname) as sender_count
         FROM gifts`;
@@ -357,7 +357,7 @@ async function handleAPI(req, res) {
         const sids = [...u.session_ids];
         const placeholders = sids.map(() => '?').join(',');
         const giftRows = dbInstance.prepare(`
-          SELECT session_id, SUM(diamond_count * repeat_count) as diamonds
+          SELECT session_id, SUM(total_diamonds) as diamonds
           FROM gifts WHERE user_sec_uid = ? AND session_id IN (${placeholders})
           GROUP BY session_id
         `).all(u.sec_uid, ...sids);
@@ -456,7 +456,7 @@ async function handleAPI(req, res) {
       // 礼物种类明细
       const giftBreakdown = dbInstance.prepare(`
         SELECT gift_name,
-          SUM(diamond_count * repeat_count) as total_diamonds,
+          SUM(total_diamonds) as total_diamonds,
           COUNT(*) as count
         FROM gifts WHERE user_sec_uid = ?
         GROUP BY gift_name ORDER BY total_diamonds DESC
@@ -500,7 +500,7 @@ async function handleAPI(req, res) {
       // 礼物趋势
       const giftTrend = dbInstance.prepare(`
         SELECT ${groupExpr} as date,
-          SUM(diamond_count * repeat_count) as total_diamonds,
+          SUM(total_diamonds) as total_diamonds,
           COUNT(*) as gift_count,
           COUNT(DISTINCT nickname) as sender_count
         FROM gifts ${where} GROUP BY ${groupExpr} ORDER BY date
@@ -696,7 +696,7 @@ async function handleAPI(req, res) {
         SELECT s.*,
           (SELECT COUNT(DISTINCT user_sec_uid) FROM gifts WHERE session_id = s.id) as user_count,
           (SELECT COUNT(*) FROM gifts WHERE session_id = s.id) as gift_count,
-          (SELECT COALESCE(SUM(diamond_count * repeat_count), 0) FROM gifts WHERE session_id = s.id) as total_diamonds,
+          (SELECT COALESCE(SUM(total_diamonds), 0) FROM gifts WHERE session_id = s.id) as total_diamonds,
           (SELECT COUNT(*) FROM danmaku WHERE session_id = s.id) as danmaku_count
         FROM sessions s WHERE s.streamer_id = ? ORDER BY s.start_time DESC
       `).all(streamer.id);
@@ -837,7 +837,7 @@ async function handleAPI(req, res) {
         SELECT
           strftime('%Y-%m-%d %H:%M:00', create_time, 'unixepoch', 'localtime') as time,
           COUNT(*) as gifts,
-          SUM(diamond_count * repeat_count) as diamonds
+          SUM(total_diamonds) as diamonds
         FROM gifts WHERE session_id = ?
         GROUP BY time ORDER BY time
       `).all(sid);
@@ -896,7 +896,7 @@ async function handleAPI(req, res) {
       if (!anchor) return sendError(res, '缺少 anchor 参数', 400);
       const gifts = dbInstance.prepare(`
         SELECT nickname, avatar as avatar_url, user_sec_uid,
-          SUM(diamond_count * repeat_count) as total_diamonds,
+          SUM(total_diamonds) as total_diamonds,
           COUNT(*) as gift_count
         FROM gifts WHERE session_id = ? AND to_nickname = ?
         GROUP BY nickname ORDER BY total_diamonds DESC LIMIT 100

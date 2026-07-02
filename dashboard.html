@@ -1579,7 +1579,7 @@ function renderTabPanel(tab, data) {
     }
   } else if (tab === 'danmaku') {
     html = '<div class="detail-section">';
-    html += '<div id="danmakuGrid" style="display:grid;grid-template-columns:340px 1fr;gap:14px;align-items:start">';
+    html += '<div id="danmakuGrid" style="display:grid;grid-template-columns:340px 1fr;gap:14px;align-items:stretch">';
     // Left: rank
     html += '<div id="danmakuLeft">';
     html += '<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> 弹幕排行</div>';
@@ -1628,9 +1628,6 @@ function renderTabPanel(tab, data) {
   if (tab === 'danmaku') {
     setTimeout(() => {
       renderWordCloud(data.danmakuWords || []);
-      const left = document.getElementById('danmakuLeft');
-      const right = document.getElementById('danmakuRight');
-      if (left && right) right.style.height = left.offsetHeight + 'px';
     }, 30);
     // Lazy load danmaku
     loadDanmaku();
@@ -1833,14 +1830,11 @@ function switchTab(tab) {
   if (tab === 'anon') loadDanmaku();
   if (tab === 'danmaku') setTimeout(() => {
     renderWordCloud(state._detailData?.danmakuWords || []);
-    const left = document.getElementById('danmakuLeft');
-    const right = document.getElementById('danmakuRight');
-    if (left && right) right.style.height = left.offsetHeight + 'px';
   }, 50);
 }
 
 // ========== ANONYMOUS QUERY ==========
-function queryAnonymous() {
+async function queryAnonymous() {
   const input = document.getElementById('anonInput');
   const result = document.getElementById('anonResult');
   if (!input || !result) return;
@@ -1849,6 +1843,12 @@ function queryAnonymous() {
 
   const data = state._detailData;
   if (!data) { result.innerHTML = '<div class="empty" style="padding:20px">数据未加载，请稍后重试</div>'; return; }
+
+  // 确保弹幕数据已加载
+  if (!state._danmaku) {
+    result.innerHTML = '<div class="loading">加载弹幕数据...</div>';
+    await loadDanmaku();
+  }
 
   const matches = [];
   const qLower = q.toLowerCase();

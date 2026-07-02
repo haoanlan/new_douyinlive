@@ -1,0 +1,2171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>直播监控仪表板</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+/* ========== BASE ========== */
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#16181d;--bg-card:#1e2028;--bg-card-hover:#252830;--bg-input:#252830;
+  --border:#2d3039;--border-light:#3a3d47;
+  --text:#f0f1f4;--text-secondary:#9ca0ad;--text-muted:#6b7084;
+  --accent:#6c8cff;--accent-hover:#5a7aee;--accent-bg:rgba(108,140,255,0.12);
+  --green:#4ade80;--green-bg:rgba(74,222,128,0.12);
+  --red:#f87171;--red-bg:rgba(248,113,113,0.12);
+  --orange:#fb923c;--orange-bg:rgba(251,146,60,0.12);
+  --purple:#a78bfa;--purple-bg:rgba(167,139,250,0.12);
+  --radius:10px;--radius-sm:6px;--radius-lg:14px;
+  --shadow:0 1px 3px rgba(0,0,0,0.3),0 4px 12px rgba(0,0,0,0.2);
+  --shadow-lg:0 4px 16px rgba(0,0,0,0.4);
+}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;min-height:100vh;overflow-y:scroll;scrollbar-gutter:stable}
+a{color:var(--accent);text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none;outline:none}
+input,select{font-family:inherit;outline:none}
+
+/* ========== LAYOUT ========== */
+.app{max-width:1200px;margin:0 auto;padding:24px 20px}
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid var(--border)}
+.header h1{font-size:20px;font-weight:700;letter-spacing:-0.02em}
+.header-meta{display:flex;gap:12px;align-items:center}
+.back-btn{display:none;align-items:center;gap:6px;padding:7px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-secondary);font-size:13px;font-weight:500;transition:all .15s}
+.back-btn:hover{background:var(--bg-card-hover);color:var(--text);border-color:var(--border-light)}
+.back-btn.show{display:flex}
+.back-btn svg{width:14px;height:14px}
+
+/* ========== BREADCRUMB ========== */
+.breadcrumb{display:none;align-items:center;gap:8px;margin-bottom:20px;font-size:13px;color:var(--text-muted)}
+.breadcrumb.show{display:flex}
+.breadcrumb-item{cursor:pointer;color:var(--text-secondary);transition:color .15s}
+.breadcrumb-item:hover{color:var(--accent)}
+.breadcrumb-sep{color:var(--text-muted)}
+.breadcrumb-current{color:var(--text);font-weight:500}
+
+/* ========== STATUS BAR ========== */
+.status-bar{display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap}
+.status-chip{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;font-size:12px;font-weight:500}
+.status-chip .dot{width:6px;height:6px;border-radius:50%}
+.status-live{background:var(--green-bg);color:var(--green)}.status-live .dot{background:var(--green)}
+.status-off{background:rgba(156,160,173,0.1);color:var(--text-muted)}.status-off .dot{background:var(--text-muted)}
+
+/* ========== STATS ROW ========== */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px}
+.stat-card{padding:16px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);transition:border-color .15s;min-width:0}
+.stat-card:hover{border-color:var(--border-light)}
+.stat-label{font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px}
+.stat-value{font-size:24px;font-weight:700;letter-spacing:-0.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stat-sub{font-size:12px;color:var(--text-muted);margin-top:4px}
+
+/* ========== HOST CARDS ========== */
+.host-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:24px}
+.host-card{display:flex;align-items:center;gap:14px;padding:18px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);cursor:pointer;transition:all .2s}
+.host-card:hover{border-color:var(--accent);background:var(--bg-card-hover);transform:translateY(-1px);box-shadow:var(--shadow)}
+.host-avatar{width:52px;height:52px;border-radius:50%;background:var(--bg-input);flex-shrink:0;position:relative}
+.host-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.live-dot{position:absolute;top:-2px;right:-2px;width:14px;height:14px;background:var(--red);border-radius:50%;border:2px solid var(--bg-card);animation:pulse 2s infinite;z-index:1}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.host-info{flex:1;min-width:0}
+.host-name{font-size:15px;font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.host-meta{font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:8px}
+.host-badge{font-size:11px;padding:2px 8px;border-radius:10px;font-weight:500}
+.badge-live{background:var(--green-bg);color:var(--green)}
+.badge-idle{background:rgba(156,160,173,0.1);color:var(--text-muted)}
+.badge-paused{background:var(--orange-bg);color:var(--orange)}
+
+/* ========== ROOM CARD ========== */
+.room-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);cursor:pointer;transition:all .2s;overflow:hidden}
+.room-card:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:var(--shadow)}
+.room-card-top{display:flex;align-items:center;gap:12px;padding:16px}
+.room-card-footer{padding:8px 16px;border-top:1px solid var(--border);font-size:11px;color:var(--text-muted);font-family:monospace;letter-spacing:0.03em}
+.room-card-actions{display:flex;gap:4px;flex-shrink:0;margin-left:auto}
+.action-btn{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-sm);background:transparent;border:1px solid var(--border);color:var(--text-secondary);font-family:inherit;font-size:14px;line-height:1;cursor:pointer;transition:all .15s}
+.action-btn:hover{background:var(--bg-card-hover);color:var(--text);border-color:var(--border-light)}
+.action-btn-resume{color:var(--green)}
+.action-btn-resume:hover{background:var(--green-bg);border-color:var(--green)}
+.action-btn-del{color:var(--text-muted)}
+.action-btn-del:hover{background:var(--red-bg);color:var(--red);border-color:var(--red)}
+
+/* ========== MODAL ========== */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:1000;animation:fadeIn .15s}
+.modal{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);width:420px;max-width:90vw;box-shadow:0 16px 48px rgba(0,0,0,0.4);animation:slideUp .2s}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 0}
+.modal-title{font-size:16px;font-weight:600}
+.modal-close{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-sm);background:transparent;border:none;color:var(--text-muted);font-size:16px;cursor:pointer;transition:all .15s}
+.modal-close:hover{background:var(--bg-card-hover);color:var(--text)}
+.modal-body{padding:16px 20px}
+.modal-field{margin-bottom:14px}
+.modal-field label{display:block;font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:6px}
+.modal-field input{flex:1;min-width:0;padding:9px 12px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:13px;transition:border-color .15s}
+.modal-field input:focus{border-color:var(--accent)}
+.modal-hint{font-size:11px;color:var(--text-muted);margin-top:5px}
+.modal-preview{display:flex;align-items:center;gap:10px;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);margin-top:4px}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;padding:0 20px 18px}
+.confirm-modal .modal{width:360px}
+.confirm-modal .modal-body{padding:20px;text-align:center}
+.confirm-icon{font-size:36px;margin-bottom:12px}
+.confirm-text{font-size:14px;color:var(--text-secondary);line-height:1.6}
+.confirm-text strong{color:var(--text);font-weight:600}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* ========== SESSION LIST ========== */
+.session-table{width:100%;border-collapse:separate;border-spacing:0;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:24px}
+.session-table th{padding:12px 16px;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;text-align:left;background:var(--bg);border-bottom:1px solid var(--border)}
+.session-table td{padding:12px 16px;font-size:13px;border-bottom:1px solid var(--border);transition:background .1s}
+.session-table tr:last-child td{border-bottom:none}
+.session-table tbody tr{cursor:pointer;transition:background .1s}
+.session-table tbody tr:hover{background:var(--bg-card-hover)}
+.session-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:500}
+.session-badge.live{background:var(--green-bg);color:var(--green)}
+.session-badge.offline{background:rgba(156,160,173,0.1);color:var(--text-muted)}
+
+/* ========== SELECTION ========== */
+.session-cb{appearance:none;-webkit-appearance:none;width:16px;height:16px;border:1.5px solid var(--border-light);border-radius:4px;background:transparent;cursor:pointer;transition:all .15s;position:relative;vertical-align:middle}
+.session-cb:checked{background:var(--accent);border-color:var(--accent)}
+.session-cb:checked::after{content:'';position:absolute;left:4px;top:1px;width:5px;height:9px;border:solid #fff;border-width:0 1.5px 1.5px 0;transform:rotate(45deg)}
+.session-cb:hover{border-color:var(--accent)}
+thead .session-cb{opacity:.6}
+thead .session-cb:hover{opacity:1}
+.session-table tbody tr.selected{background:var(--accent-bg) !important}
+
+/* ========== BATCH FLOAT BAR ========== */
+.batch-float{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);display:none;align-items:center;gap:12px;padding:12px 20px;background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);z-index:100;backdrop-filter:blur(12px);min-width:320px}
+.batch-float.show{display:flex}
+.batch-float .batch-count{font-size:13px;color:var(--text-secondary);white-space:nowrap}
+.batch-float .batch-count strong{color:var(--text);font-weight:600}
+.batch-float .batch-actions{display:flex;gap:8px;margin-left:auto}
+.batch-float .batch-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:var(--radius-sm);font-size:12px;font-weight:500;border:1px solid var(--border);background:transparent;color:var(--text-secondary);transition:all .15s;cursor:pointer}
+.batch-float .batch-btn:hover{background:var(--bg-card-hover);color:var(--text);border-color:var(--border-light)}
+.batch-float .batch-btn svg{width:14px;height:14px}
+.batch-float .batch-btn-accent{color:var(--accent);border-color:rgba(108,140,255,0.3)}
+.batch-float .batch-btn-accent:hover{background:var(--accent-bg);border-color:var(--accent)}
+.batch-float .batch-btn-del{color:var(--red);border-color:rgba(248,113,113,0.3)}
+.batch-float .batch-btn-del:hover{background:var(--red-bg);border-color:var(--red)}
+.batch-float .batch-divider{width:1px;height:20px;background:var(--border);margin:0 4px}
+
+/* ========== FILTER BAR ========== */
+.filter-bar{display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:8px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);font-size:12px}
+.filter-bar label{color:var(--text-muted);font-weight:500}
+.filter-bar .filter-sep{color:var(--text-muted)}
+.filter-bar .filter-btn{padding:4px 10px;font-size:11px;font-weight:500;border-radius:var(--radius-sm);background:transparent;border:1px solid var(--border);color:var(--text-secondary);cursor:pointer;transition:all .15s}
+.filter-bar .filter-btn:hover{background:var(--bg-card-hover);color:var(--text)}
+.filter-bar .filter-btn.active{background:var(--accent-bg);color:var(--accent);border-color:var(--accent)}
+
+/* 自定义日期选择器 */
+.dp-input{display:flex;align-items:center;gap:4px;padding:4px 10px;font-size:12px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);cursor:pointer;transition:border-color .15s;user-select:none;white-space:nowrap}
+.dp-input:hover{border-color:var(--border-light)}
+.dp-input.open{border-color:var(--accent)}
+.dp-input .dp-val{color:var(--text)}
+.dp-input .dp-ph{color:var(--text-muted)}
+.dp-input svg{width:14px;height:14px;color:var(--text-muted);flex-shrink:0}
+.dp-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;display:none;align-items:center;justify-content:center}
+.dp-overlay.show{display:flex}
+.dp-calendar{background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:16px;width:300px;box-shadow:var(--shadow-lg)}
+.dp-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.dp-head .dp-title{font-size:14px;font-weight:600;color:var(--text)}
+.dp-head button{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-sm);background:transparent;border:1px solid var(--border);color:var(--text-secondary);cursor:pointer;transition:all .15s}
+.dp-head button:hover{background:var(--bg-card-hover);color:var(--text)}
+.dp-weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px}
+.dp-weekdays span{text-align:center;font-size:10px;color:var(--text-muted);font-weight:500;padding:4px 0}
+.dp-days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.dp-day{width:100%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:12px;border-radius:var(--radius-sm);background:transparent;border:none;color:var(--text-secondary);cursor:pointer;transition:all .1s}
+.dp-day:hover{background:var(--bg-card-hover);color:var(--text)}
+.dp-day.today{color:var(--accent);font-weight:600}
+.dp-day.selected{background:var(--accent);color:#fff;font-weight:600}
+.dp-day.other{color:var(--text-muted);opacity:0.4}
+.dp-day:disabled{opacity:0.3;cursor:default}
+.dp-foot{display:flex;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--border)}
+.dp-foot button{flex:1;padding:6px;font-size:12px;font-weight:500;border-radius:var(--radius-sm);border:1px solid var(--border);background:transparent;color:var(--text-secondary);cursor:pointer;transition:all .15s}
+.dp-foot button:hover{background:var(--bg-card-hover);color:var(--text)}
+.dp-foot .dp-confirm{background:var(--accent-bg);color:var(--accent);border-color:rgba(108,140,255,0.3)}
+.dp-foot .dp-confirm:hover{border-color:var(--accent)}
+
+/* ========== DETAIL SECTIONS ========== */
+.section{margin-bottom:24px}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.section-title{font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px}
+.section-title .icon{width:18px;height:18px;color:var(--accent)}
+
+/* ========== TABS ========== */
+.tab-bar{display:flex;gap:2px;padding:3px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:20px;overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none}
+.tab-bar::-webkit-scrollbar{display:none}
+.tab-btn{flex:1;padding:8px 12px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;color:var(--text-secondary);background:transparent;transition:all .15s;white-space:nowrap;text-align:center;min-width:0;display:inline-flex;align-items:center;justify-content:center;gap:5px}
+.tab-btn:hover{color:var(--text);background:var(--bg-card)}
+.tab-btn.active{color:var(--text);background:var(--bg-card);box-shadow:0 1px 2px rgba(0,0,0,0.2)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+#content{min-height:50vh}
+
+/* ========== TABLE ========== */
+.data-table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}
+.data-table th{padding:10px 14px;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;text-align:left;border-bottom:1px solid var(--border)}
+.data-table td{padding:10px 12px;border-bottom:1px solid var(--border)}
+.data-table tbody tr:last-child td{border-bottom:none}
+.data-table tbody tr:hover{background:var(--bg-card-hover)}
+.data-table .rank{color:var(--text-muted);font-weight:600;width:40px;text-align:center;vertical-align:middle}
+.user-cell{display:flex;align-items:center;gap:8px}
+.gift-rank-num{font-size:13px;font-weight:700;color:var(--text-muted);width:22px;text-align:center;flex-shrink:0;font-variant-numeric:tabular-nums;font-family:'Inter',system-ui,monospace}
+/* Gift ranking - grid card style */
+.gift-rank-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.gift-rank-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:border-color .15s}
+.gift-rank-card:hover{border-color:var(--border-light)}
+.gift-rank-card:nth-child(1){border-color:rgba(255,215,0,0.3);background:linear-gradient(135deg,var(--bg-card) 0%,rgba(255,215,0,0.05) 100%)}
+.gift-rank-card:nth-child(2){border-color:rgba(192,192,192,0.3);background:linear-gradient(135deg,var(--bg-card) 0%,rgba(192,192,192,0.05) 100%)}
+.gift-rank-card:nth-child(3){border-color:rgba(205,127,50,0.3);background:linear-gradient(135deg,var(--bg-card) 0%,rgba(205,127,50,0.05) 100%)}
+.gift-rank-card-top{display:flex;align-items:center;gap:8px;padding:10px 14px}
+.gift-rank-card-top .user-cell{flex:1;min-width:0}
+.gift-rank-card-top .user-cell span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+.gift-rank-card-top .diamonds{flex-shrink:0;margin-left:auto;color:var(--orange);font-weight:600;font-size:12px}
+.gift-detail-row{display:flex;align-items:center;gap:6px;padding:5px 0;font-size:12px;color:var(--text-secondary);border-bottom:1px solid var(--border)}
+.gift-detail-row:last-child{border-bottom:none}
+.gift-detail-row span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gift-detail-item{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius)}
+.gift-detail-item .gdi-icon{width:20px;height:20px;border-radius:4px;flex-shrink:0}
+.gift-detail-item .gdi-name{font-size:13px;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gift-detail-item .gdi-to{color:var(--text-muted);font-size:11px;flex-shrink:0}
+.gift-detail-item .gdi-diamonds{color:var(--orange);font-weight:600;font-size:12px;font-variant-numeric:tabular-nums;flex-shrink:0}
+#panel-gifts .user-cell{flex:1;min-width:0}
+#panel-gifts .diamonds{flex-shrink:0}
+#panel-gifts .user-cell{flex:1;min-width:0}
+#panel-gifts .diamonds{flex-shrink:0;margin-left:auto;color:var(--orange);font-weight:600}
+
+/* Danmaku user ranking - card style */
+.danmaku-user-rank-list{display:flex;flex-direction:column;gap:8px}
+.danmaku-user-rank{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);transition:border-color .15s}
+.danmaku-user-rank:hover{border-color:var(--border-light)}
+.danmaku-user-rank:nth-child(1){border-color:rgba(255,215,0,0.3);background:linear-gradient(135deg,var(--bg-card) 0%,rgba(255,215,0,0.05) 100%)}
+.danmaku-user-rank:nth-child(2){border-color:rgba(192,192,192,0.3);background:linear-gradient(135deg,var(--bg-card) 0%,rgba(192,192,192,0.05) 100%)}
+.danmaku-user-rank:nth-child(3){border-color:rgba(205,127,50,0.3);background:linear-gradient(135deg,var(--bg-card) 0%,rgba(205,127,50,0.05) 100%)}
+.danmaku-user-rank .rank-num{font-size:13px;font-weight:700;color:var(--text-muted);width:22px;text-align:center;flex-shrink:0;font-variant-numeric:tabular-nums;font-family:'Inter',system-ui,monospace}
+.danmaku-user-rank .user-cell{flex:1;min-width:0}
+.danmaku-user-rank .user-cell span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.danmaku-user-rank .msg-count{flex-shrink:0;margin-left:auto;font-size:13px;font-weight:600;color:var(--orange)}
+
+/* Anonymous query */
+.anon-input-row{display:flex;gap:8px;margin-bottom:16px}
+.anon-input-row input{flex:1;padding:10px 14px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:13px}
+.anon-input-row input:focus{outline:none;border-color:var(--accent)}
+.anon-result{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+.anon-result-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.anon-result-item:last-child{border-bottom:none}
+/* Realtime danmaku */
+.rt-danmaku-wrap{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.rt-danmaku-list{padding:8px}
+.rt-danmaku-item{display:flex;align-items:flex-start;gap:8px;padding:6px 8px;border-radius:var(--radius-sm);transition:background .15s}
+.rt-danmaku-item:hover{background:var(--bg-card-hover)}
+.rt-danmaku-item .rt-time{font-size:11px;color:var(--text-muted);flex-shrink:0;min-width:44px}
+.rt-danmaku-item .rt-user{font-size:12px;font-weight:600;color:var(--accent);flex-shrink:0}
+.rt-danmaku-item .rt-text{font-size:13px;color:var(--text);word-break:break-all}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--bg-input);flex-shrink:0;overflow:hidden}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.data-table .diamonds{color:var(--orange);font-weight:600}
+.data-table .gift-icon{font-size:16px;margin-right:4px}
+
+/* ========== DANMAKU ========== */
+.danmaku-wrap{max-height:400px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.danmaku-item{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+.danmaku-item:last-child{border-bottom:none}
+.danmaku-avatar{width:28px;height:28px;border-radius:50%;background:var(--bg-input);flex-shrink:0;overflow:hidden}
+.danmaku-avatar img{width:100%;height:100%;object-fit:cover}
+.danmaku-body{flex:1;min-width:0}
+.danmaku-user{font-weight:500;font-size:12px;margin-bottom:2px}
+.danmaku-text{color:var(--text-secondary);word-break:break-all}
+.danmaku-time{font-size:11px;color:var(--text-muted);flex-shrink:0}
+
+/* ========== CHART ========== */
+.chart-box{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:14px}
+.chart-box canvas{max-height:240px}
+
+/* ========== BUTTONS ========== */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;transition:all .15s}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:var(--accent-hover)}
+.btn-ghost{background:var(--bg-card);color:var(--text-secondary);border:1px solid var(--border)}.btn-ghost:hover{background:var(--bg-card-hover);color:var(--text);border-color:var(--border-light)}
+.btn-sm{padding:5px 12px;font-size:12px}
+.btn:disabled{opacity:0.5;cursor:not-allowed}
+
+/* ========== PAGINATION ========== */
+.pagination{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:16px}
+.pagination button{padding:6px 12px;border-radius:var(--radius-sm);font-size:12px;background:var(--bg-card);color:var(--text-secondary);border:1px solid var(--border);transition:all .15s}
+.pagination button:hover:not(:disabled){background:var(--bg-card-hover);color:var(--text)}
+.pagination button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.pagination button:disabled{opacity:0.3;cursor:not-allowed}
+
+/* ========== SEARCH ========== */
+.search-wrap{position:relative;margin-bottom:16px}
+.search-wrap input{width:100%;padding:10px 14px 10px 38px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:13px;transition:border-color .15s}
+.search-wrap input:focus{border-color:var(--accent)}
+.search-wrap input::placeholder{color:var(--text-muted)}
+.search-wrap svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--text-muted)}
+
+/* ========== LOADING ========== */
+.loading{text-align:center;padding:60px 0;color:var(--text-muted);font-size:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:50vh}
+.loading::before{content:'';display:block;width:28px;height:28px;margin:0 auto 12px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeSlideIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.content-fade-in{animation:fadeSlideIn .3s ease-out}
+.modal-body-fade{animation:fadeSlideIn .25s ease-out}
+
+/* ========== EMPTY ========== */
+.empty{text-align:center;padding:60px 20px;color:var(--text-muted);font-size:13px}
+.empty-icon{font-size:32px;margin-bottom:8px;opacity:0.5}
+
+/* ========== TOAST ========== */
+.toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);font-size:13px;color:var(--text);box-shadow:var(--shadow-lg);opacity:0;transform:translateY(10px);transition:all .25s;z-index:999;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.success{border-color:var(--green)}
+.toast.error{border-color:var(--red)}
+
+/* ========== FILTERS ========== */
+.filters{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+.filter-select{padding:7px 12px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:12px;cursor:pointer}
+.filter-select:focus{border-color:var(--accent)}
+
+/* ========== RESPONSIVE ========== */
+@media(max-width:768px){
+  .app{padding:16px 12px}
+  .stats-row{grid-template-columns:repeat(6,1fr);gap:6px}
+  .stat-card{padding:10px 4px;text-align:center}
+  .stat-value{font-size:15px}
+  .stat-label{font-size:9px;margin-bottom:2px}
+  .host-grid{grid-template-columns:1fr}
+  .tab-bar{gap:0}
+  .tab-btn{padding:7px 8px;font-size:12px}
+  .filter-bar{flex-wrap:wrap;gap:6px;padding:8px 10px}
+  .filter-bar label{font-size:11px}
+  .dp-input{font-size:11px;padding:4px 8px}
+  .batch-float{min-width:unset;width:calc(100% - 32px);padding:10px 14px}
+
+  /* 表格转卡片 — 纯 block 堆叠，最可靠 */
+  .session-table{display:block !important;border:none !important;background:transparent !important;border-radius:0 !important;overflow:visible !important}
+  .session-table thead{display:none !important}
+  .session-table tbody{display:block !important}
+  .session-table tbody tr{
+    display:block !important;margin-bottom:8px;overflow:hidden;
+    padding:12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);
+    cursor:pointer}
+  .session-table tbody tr:hover{border-color:var(--border-light)}
+  .session-table tbody tr.selected{background:var(--bg-card-hover) !important}
+  /* 所有 td 默认 block */
+  .session-table td{display:block !important;padding:2px 0 !important;border:none !important;background:none !important}
+  /* 隐藏次要列 */
+  .session-table td:nth-child(5),
+  .session-table td:nth-child(6),
+  .session-table td:nth-child(9),
+  .session-table td:nth-child(10){display:none !important}
+  /* tr 定位 */
+  .session-table tbody tr{position:relative;padding-right:0 !important}
+  /* checkbox */
+  .session-table td:first-child{display:inline-block !important;width:20px;vertical-align:top}
+  /* 标题 */
+  .session-table td:nth-child(2){display:inline !important;font-size:14px;font-weight:600}
+  /* 状态 badge → 绝对定位右上角 */
+  .session-table td:nth-child(3){
+    display:block !important;position:absolute;right:10px;top:10px}
+  /* 第二行：时间 */
+  .session-table td:nth-child(4){display:block !important;font-size:11px;color:var(--text-muted);margin-top:4px}
+  /* 第三行：礼物 + 钻石 */
+  .session-table td:nth-child(7){display:inline !important;font-size:11px;color:var(--text-muted)}
+  
+  .session-table td:nth-child(8){display:inline !important;font-size:11px;color:var(--text-muted);margin-left:6px}
+  
+  /* 操作按钮 → 绝对定位右下角 */
+  .session-table td:nth-child(11){
+    display:flex !important;position:absolute;right:10px;bottom:10px;gap:4px;
+    flex-direction:row}
+}
+@media(max-width:480px){
+  .stats-row{grid-template-columns:repeat(3,1fr)}
+  .stat-value{font-size:14px}
+}
+
+/* ========== SCROLLBAR ========== */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--border-light)}
+
+/* ========== DETAIL SECTIONS ========== */
+.detail-section{margin-bottom:24px}
+.detail-section-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.detail-section-title svg{width:18px;height:18px;color:var(--accent)}
+
+/* Anchor ranking cards */
+.anchor-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.anchor-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.anchor-card:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:var(--shadow)}
+.anchor-card:nth-child(1){border-color:rgba(255,215,0,0.25);background:linear-gradient(135deg,var(--bg-card) 60%,rgba(255,215,0,0.04))}
+.anchor-card:nth-child(2){border-color:rgba(192,192,192,0.25);background:linear-gradient(135deg,var(--bg-card) 60%,rgba(192,192,192,0.04))}
+.anchor-card:nth-child(3){border-color:rgba(205,127,50,0.25);background:linear-gradient(135deg,var(--bg-card) 60%,rgba(205,127,50,0.04))}
+.anchor-card-header{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.anchor-card-avatar{width:36px;height:36px;border-radius:50%;background:var(--bg);flex-shrink:0;overflow:hidden;border:2px solid var(--border)}
+.anchor-card:nth-child(1) .anchor-card-avatar{border-color:rgba(255,215,0,0.4)}
+.anchor-card:nth-child(2) .anchor-card-avatar{border-color:rgba(192,192,192,0.4)}
+.anchor-card:nth-child(3) .anchor-card-avatar{border-color:rgba(205,127,50,0.4)}
+.anchor-card-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+.anchor-card-name{font-size:13px;font-weight:600;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.anchor-card-rank{position:absolute;right:14px;top:14px;font-size:38px;font-weight:900;font-variant-numeric:tabular-nums;font-family:'Inter',system-ui,monospace;color:var(--text);line-height:1;pointer-events:none;opacity:.12}
+.anchor-card:nth-child(1) .anchor-card-rank{color:rgba(255,215,0,0.7)}
+.anchor-card:nth-child(2) .anchor-card-rank{color:rgba(192,192,192,0.7)}
+.anchor-card:nth-child(3) .anchor-card-rank{color:rgba(205,127,50,0.7)}
+.anchor-card-header{padding-right:50px}
+.anchor-card-stats{display:flex;gap:12px;font-size:11px;color:var(--text-muted)}
+.anchor-card-stats .stat{display:flex;align-items:center;gap:3px}
+.anchor-card-stats .stat-val{color:var(--text);font-weight:600}
+
+/* Word cloud */
+.wordcloud-canvas{width:100%;height:260px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);display:block}
+
+/* Danmaku ranking */
+.danmaku-rank-list{max-height:300px;overflow-y:auto}
+.danmaku-rank-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--border);font-size:13px}
+.danmaku-rank-item:last-child{border-bottom:none}
+.danmaku-rank-num{width:24px;text-align:center;font-weight:700;font-size:12px;color:var(--text-muted);flex-shrink:0}
+.danmaku-rank-num.top3{color:var(--accent)}
+.danmaku-rank-content{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
+.danmaku-rank-cnt{font-size:12px;color:var(--text-muted);flex-shrink:0;min-width:40px;text-align:right}
+
+/* Anchor gifts modal */
+.anchor-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.anchor-modal-overlay.show{opacity:1;pointer-events:auto}
+.anchor-modal{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);width:min(90vw,520px);max-height:80vh;display:flex;flex-direction:column;box-shadow:var(--shadow-lg);transform:scale(.96);transition:transform .2s;overflow:hidden}
+.anchor-modal-overlay.show .anchor-modal{transform:scale(1)}
+.anchor-modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)}
+.anchor-modal-header h3{font-size:15px;font-weight:600;color:var(--text);margin:0;display:flex;align-items:center;gap:8px}
+.anchor-modal-close{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-sm);background:transparent;border:none;color:var(--text-muted);cursor:pointer;transition:all .15s}
+.anchor-modal-close:hover{background:var(--bg-card-hover);color:var(--text)}
+.anchor-modal-body{flex:1;padding:0 20px 16px;overflow-y:auto;min-height:0;scrollbar-gutter:stable both-edges}
+.anchor-modal-summary{display:flex;gap:16px;padding:10px 0 12px;border-bottom:1px solid var(--border);margin-bottom:12px;font-size:12px;color:var(--text-muted)}
+.anchor-modal-summary span{display:flex;align-items:center;gap:4px}
+.anchor-modal-summary .sv{color:var(--text);font-weight:600}
+.anchor-modal-body .gift-list-card{display:flex;flex-direction:column;gap:6px}
+.anchor-modal-body .gift-list-item{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);transition:all .2s}
+.anchor-modal-body .gift-list-item:hover{border-color:var(--border-light);background:var(--bg-card-hover)}
+.anchor-modal-body .gift-list-item:nth-child(1){border-color:rgba(255,215,0,0.3);background:linear-gradient(135deg,var(--bg-card) 0%,rgba(255,215,0,0.06) 100%)}
+.anchor-modal-body .gift-list-item:nth-child(1):hover{border-color:rgba(255,215,0,0.5)}
+.anchor-modal-body .gift-list-item:nth-child(2){border-color:rgba(192,192,192,0.3);background:linear-gradient(135deg,var(--bg-card) 0%,rgba(192,192,192,0.06) 100%)}
+.anchor-modal-body .gift-list-item:nth-child(2):hover{border-color:rgba(192,192,192,0.5)}
+.anchor-modal-body .gift-list-item:nth-child(3){border-color:rgba(205,127,50,0.3);background:linear-gradient(135deg,var(--bg-card) 0%,rgba(205,127,50,0.06) 100%)}
+.anchor-modal-body .gift-list-item:nth-child(3):hover{border-color:rgba(205,127,50,0.5)}
+.anchor-modal-body .gift-list-item .user-cell{flex:1;min-width:0}
+.anchor-modal-body .gift-list-item .user-cell span{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.anchor-modal-body .gift-list-item .diamonds{flex-shrink:0;margin-left:auto;color:var(--orange);font-weight:600;font-size:12px}
+
+.anchor-modal-body .gift-rank-num{font-size:13px;font-weight:700;color:var(--text-muted);width:22px;text-align:center;flex-shrink:0;font-variant-numeric:tabular-nums;font-family:'Inter',system-ui,monospace}
+
+/* Lookup & Profile views */
+.lookup-card{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:all .2s}
+.lookup-card:hover{border-color:var(--accent);background:var(--bg-card-hover);transform:translateY(-1px);box-shadow:var(--shadow)}
+.lookup-card .user-cell{flex:1;min-width:0;display:flex;align-items:center;gap:10px}
+.lookup-card .user-cell .user-info{flex:1;min-width:0}
+.lookup-card .user-cell .user-name{font-weight:500;font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lookup-card .user-cell .user-db-name{font-size:11px;color:var(--text-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lookup-meta{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.lookup-sessions{font-size:11px;color:var(--text-muted);max-width:160px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lookup-action{font-size:11px;color:var(--accent);max-width:180px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lookup-action .action-icon{width:12px;height:12px;vertical-align:-2px;margin-right:3px}
+.profile-card{padding:20px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);position:relative;overflow:hidden}
+.profile-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--orange))}
+.profile-header{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.profile-header .avatar{width:52px;height:52px;border:2px solid var(--accent)}
+.profile-name{font-size:16px;font-weight:600;color:var(--text)}
+.profile-sub{font-size:12px;color:var(--text-muted);margin-top:2px}
+.profile-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+.profile-stat{text-align:center;padding:12px 8px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius)}
+.profile-stat-val{font-size:20px;font-weight:700;line-height:1.2}
+.profile-stat-val.orange{color:var(--orange)}
+.profile-stat-label{font-size:11px;color:var(--text-muted);margin-top:2px}
+.profile-section-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.profile-section-title svg{color:var(--accent)}
+.session-row{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;transition:border-color .15s}
+.session-row:hover{border-color:var(--border-light)}
+.session-row .s-name{flex:1;color:var(--text);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.session-row .s-date{color:var(--text-muted);flex-shrink:0}
+.session-row .s-diamonds{color:var(--orange);font-weight:600;flex-shrink:0}
+.hour-chart{display:flex;gap:2px;align-items:flex-end;height:48px;padding:4px 0}
+.hour-bar{flex:1;border-radius:2px 2px 0 0;background:var(--accent);opacity:.6;transition:all .2s;min-height:2px}
+.hour-bar:hover{opacity:1}
+.hour-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);margin-top:4px}
+
+/* Mobile adapt */
+@media(max-width:768px){
+  .gift-rank-grid{grid-template-columns:1fr}
+  .anchor-grid{grid-template-columns:1fr}
+  .anchor-card{padding:10px}
+  .anchor-card-header{gap:8px;margin-bottom:6px}
+  .anchor-card-avatar{width:32px;height:32px}
+  .anchor-card-name{font-size:12px}
+  .anchor-card-rank{font-size:28px;right:10px;top:10px}
+  .anchor-card-stats{gap:8px;font-size:10px}
+  .anchor-card-stats .stat{gap:2px}
+  .anchor-card-stats .stat-val{font-size:11px}
+  .wordcloud-canvas{height:200px}
+  #panel-danmaku > .detail-section > div[style*="grid-template-columns:340px 1fr"]{grid-template-columns:1fr !important}
+  .rt-danmaku-list{max-height:300px}
+  .top-nav{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .top-nav-btn{font-size:13px;padding:10px 12px;flex-shrink:1}
+  .top-nav-btn svg{width:13px;height:13px}
+  .profile-stats{grid-template-columns:repeat(2,1fr)}
+  .profile-card{padding:14px}
+  .rt-danmaku-item .rt-time{display:none}
+  .rt-danmaku-item .rt-user{max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .danmaku-user-rank .msg-count{font-size:12px}
+  .danmaku-user-rank .rank-num{font-size:12px;width:20px}
+  .gift-rank-num{font-size:12px;width:20px}
+  /* Anchor modal mobile */
+  .anchor-modal{width:calc(100% - 24px)!important;max-height:85vh!important}
+  .anchor-modal-body{padding:0 14px 14px!important}
+  .anchor-modal-body .gift-list-item{padding:8px 10px;gap:6px}
+  .anchor-modal-body .gift-list-item .user-cell span{font-size:13px}
+  .anchor-modal-body .gift-list-item .diamonds{font-size:11px}
+  .anchor-modal-body .gift-rank-num{font-size:12px;width:20px}
+  /* Gift detail modal mobile */
+  .gift-detail-item{padding:8px 10px;gap:6px}
+  .gift-detail-item .gdi-icon{width:16px;height:16px}
+  .gift-detail-item .gdi-name{font-size:12px}
+  .gift-detail-item .gdi-to{font-size:10px}
+  .gift-detail-item .gdi-diamonds{font-size:11px}
+}
+
+/* Top navigation */
+.top-nav{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:0;max-height:0;overflow:hidden;opacity:0;transition:max-height .25s,opacity .2s,margin-bottom .25s;pointer-events:none}
+.top-nav.visible{max-height:60px;opacity:1;margin-bottom:20px;pointer-events:auto}
+.top-nav-btn{display:flex;align-items:center;gap:6px;padding:12px 20px;font-size:14px;font-weight:500;color:var(--text-muted);background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all .15s;white-space:nowrap}
+.top-nav-btn:hover{color:var(--text)}
+.top-nav-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.top-nav-btn svg{flex-shrink:0}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- HEADER -->
+  <div class="header">
+    <div style="display:flex;align-items:center;gap:14px">
+      <button class="back-btn" id="backBtn" onclick="goBack()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 3L5 8l5 5"/></svg>
+        返回
+      </button>
+      <h1 id="pageTitle">直播监控</h1>
+    </div>
+    <div class="header-meta" id="headerMeta"></div>
+  </div>
+
+  <!-- BREADCRUMB -->
+  <div class="breadcrumb" id="breadcrumb"></div>
+
+  <!-- TOP NAV (hosts level only) -->
+  <div class="top-nav" id="topNav">
+    <button class="top-nav-btn active" onclick="switchTopNav('rooms')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      房间管理
+    </button>
+    <button class="top-nav-btn" onclick="switchTopNav('search')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      匿名查询
+    </button>
+    <button class="top-nav-btn" onclick="switchTopNav('profile')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      用户画像
+    </button>
+  </div>
+
+  <!-- CONTENT -->
+  <div id="content">
+    <div class="loading">加载中...</div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- CONFIRM MODAL (static, always in DOM) -->
+<div id="confirmModal" class="modal-overlay confirm-modal" style="display:none">
+  <div class="modal">
+    <div class="modal-body">
+      <div class="confirm-icon" id="confirmIcon"></div>
+      <div class="confirm-text" id="confirmText"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="confirmResolve(false)">取消</button>
+      <button class="btn btn-ghost btn-sm" id="confirmOkBtn" onclick="confirmResolve(true)" style="border-color:var(--border-light)">确认</button>
+    </div>
+  </div>
+</div>
+
+<!-- BATCH FLOAT BAR (static, always in DOM) -->
+<div id="batchFloat" class="batch-float">
+  <span class="batch-count">已选 <strong id="batchCount">0</strong> 场</span>
+  <div class="batch-divider"></div>
+  <div class="batch-actions">
+    <button class="batch-btn batch-btn-accent" onclick="downloadSelectedReports()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      下载报告
+    </button>
+    <button class="batch-btn batch-btn-del" onclick="deleteSelectedSessions()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      删除
+    </button>
+  </div>
+</div>
+
+<!-- ANCHOR GIFTS MODAL (static, always in DOM) -->
+<div id="anchorModal" class="anchor-modal-overlay" onclick="if(event.target===this)closeAnchorModal()">
+  <div class="anchor-modal">
+    <div class="anchor-modal-header">
+      <h3 id="anchorModalTitle">主播榜</h3>
+      <button class="anchor-modal-close" onclick="closeAnchorModal()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+      </button>
+    </div>
+    <div class="anchor-modal-body" id="anchorModalBody"></div>
+  </div>
+</div>
+
+<!-- GIFT DETAIL MODAL -->
+<div id="giftDetailModal" class="anchor-modal-overlay" onclick="if(event.target===this)closeGiftDetailModal()">
+  <div class="anchor-modal">
+    <div class="anchor-modal-header">
+      <h3 id="giftDetailTitle">礼物明细</h3>
+      <button class="anchor-modal-close" onclick="closeGiftDetailModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="anchor-modal-body" id="giftDetailBody"></div>
+  </div>
+</div>
+
+<!-- ANONYMOUS DETAIL MODAL -->
+<div id="anonDetailModal" class="anchor-modal-overlay" onclick="if(event.target===this)closeAnonDetailModal()">
+  <div class="anchor-modal">
+    <div class="anchor-modal-header">
+      <h3 id="anonDetailTitle">用户详情</h3>
+      <button class="anchor-modal-close" onclick="closeAnonDetailModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="anchor-modal-body" id="anonDetailBody"></div>
+  </div>
+</div>
+
+<!-- DATE PICKER OVERLAY (static) -->
+<div id="dpOverlay" class="dp-overlay" onclick="if(event.target===this)dpClose()">
+  <div class="dp-calendar">
+    <div class="dp-head">
+      <button onclick="dpNav(-1)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span class="dp-title" id="dpTitle"></span>
+      <button onclick="dpNav(1)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+    <div class="dp-weekdays"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+    <div class="dp-days" id="dpDays"></div>
+    <div class="dp-foot">
+      <button onclick="dpClear()">清除</button>
+      <button class="dp-confirm" onclick="dpConfirm()">确定</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '';
+let state = { view: 'hosts', hostId: null, sessionId: null, hosts: [], sessions: [], tab: 'gifts' };
+let charts = {};
+
+// ========== API ==========
+async function api(path) {
+  const r = await fetch(API + path);
+  if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+  return r.json();
+}
+
+// ========== TOAST ==========
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + type;
+  setTimeout(() => el.className = 'toast', 3000);
+}
+
+// ========== NAVIGATION ==========
+function goBack() {
+  history.back();
+}
+
+// ========== BROWSER HISTORY ==========
+function pushNav(view, params = {}) {
+  const url = new URL(location.href);
+  if (view === 'sessions') url.searchParams.set('room', params.hostId || '');
+  else if (view === 'detail') url.searchParams.set('session', params.sessionId || '');
+  else url.searchParams.delete('room'), url.searchParams.delete('session');
+  history.pushState({ view, ...params }, '', url.toString());
+}
+
+window.addEventListener('popstate', e => {
+  const d = e.state;
+  if (!d || d.view === 'hosts') viewHosts(true);
+  else if (d.view === 'sessions' && d.hostId) viewSessions(d.hostId, true);
+  else if (d.view === 'detail' && d.sessionId) viewDetail(d.sessionId, true);
+});
+
+function updateBreadcrumb() {
+  const bc = document.getElementById('breadcrumb');
+  const backBtn = document.getElementById('backBtn');
+  const title = document.getElementById('pageTitle');
+  const topNav = document.getElementById('topNav');
+
+  if (state.view === 'hosts') {
+    bc.className = 'breadcrumb';
+    backBtn.className = 'back-btn';
+    title.textContent = '直播监控';
+    topNav.classList.add('visible');
+  } else if (state.view === 'sessions') {
+    const host = state.rooms.find(h => h.room_id === state.hostId);
+    bc.className = 'breadcrumb show';
+    bc.innerHTML = `<span class="breadcrumb-item" onclick="viewHosts()">${state.topNavTab === 'search' ? '匿名查询' : state.topNavTab === 'profile' ? '用户画像' : '房间管理'}</span><span class="breadcrumb-sep">›</span><span class="breadcrumb-current">${host?.name || ''}</span>`;
+    backBtn.className = 'back-btn show';
+    title.textContent = host?.name || '';
+    topNav.classList.remove('visible');
+  } else if (state.view === 'detail') {
+    const host = state.rooms.find(h => h.room_id === state.hostId);
+    const sess = state.sessions.find(s => s.id === state.sessionId);
+    bc.className = 'breadcrumb show';
+    bc.innerHTML = `<span class="breadcrumb-item" onclick="viewHosts()">房间管理</span><span class="breadcrumb-sep">›</span><span class="breadcrumb-item" onclick="viewSessions('${state.hostId}')">${host?.name || ''}</span><span class="breadcrumb-sep">›</span><span class="breadcrumb-current">${sess?.title || '场次详情'}</span>`;
+    backBtn.className = 'back-btn show';
+    title.textContent = sess?.title || '场次详情';
+    topNav.classList.remove('visible');
+  }
+}
+
+
+const ICO = {
+  pause: '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>',
+  play: '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
+  del: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+  download: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'
+};
+
+// ========== VIEW: HOSTS ==========
+async function viewHosts(fromPopState) {
+  state.view = 'hosts';
+  state.hostId = null;
+  state.sessionId = null;
+  if (!fromPopState) pushNav('hosts');
+  document.getElementById('batchFloat')?.classList.remove('show');
+  document.getElementById('topNav').style.display = 'flex';
+  updateBreadcrumb();
+  // 如果当前是 search/profile tab，保持切换
+  if (!state.topNavTab || state.topNavTab === 'rooms') {
+    state.topNavTab = 'rooms';
+    loadRoomsView();
+  } else if (state.topNavTab === 'search') {
+    switchTopNav('search');
+  } else if (state.topNavTab === 'profile') {
+    switchTopNav('profile');
+  }
+}
+
+async function loadRoomsView() {
+  const el = document.getElementById('content');
+  el.classList.remove('content-fade-in');
+  el.innerHTML = '<div class="loading">加载中...</div>';
+
+  try {
+    const [summary, rooms] = await Promise.all([api('/api/summary'), api('/api/rooms')]);
+    state.rooms = rooms;
+
+    let html = '';
+
+    // Status bar - 用 rooms 数据统计真实监控状态
+    const monitoring = rooms.filter(r => r.enabled).length;
+    const paused = rooms.filter(r => !r.enabled).length;
+    const connected = rooms.filter(r => r.connected).length;
+    html += '<div class="status-bar">';
+    html += `<div class="status-chip status-live" id="statusLive"><span class="dot"></span><span id="statusLiveCount">${connected}</span> 监控中</div>`;
+    html += `<div class="status-chip status-off" id="statusPaused"><span class="dot"></span><span id="statusPausedCount">${paused}</span> 已暂停</div>`;
+    html += '</div>';
+
+    // Stats
+    html += '<div class="stats-row">';
+    html += statCard('直播间', rooms.length, 'rooms');
+    html += statCard('总场次', summary.total_sessions, 'sessions');
+    html += statCard('总礼物', summary.total_gifts.toLocaleString(), 'gifts');
+    html += statCard('总钻石', summary.total_diamonds.toLocaleString(), 'diamonds');
+    html += statCard('总弹幕', summary.total_danmaku.toLocaleString(), 'danmaku');
+    html += statCard('独立用户', summary.unique_users.toLocaleString(), 'users');
+    html += '</div>';
+
+    // 房间管理
+    html += '<div class="section"><div class="section-header"><div class="section-title">房间管理</div>';
+    html += '<button class="btn btn-ghost btn-sm" onclick="showAddRoom()" style="border-color:var(--border-light)">+ 添加房间</button></div>';
+    html += '<div class="host-grid" id="roomGrid">';
+    for (const r of rooms) {
+      const avatarHtml = r.avatar
+        ? `<img src="${r.avatar}" alt="" onerror="this.style.display='none'">`
+        : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>';
+      const statusLabel = r.connected ? '监控中' : r.enabled ? '已启用' : '已暂停';
+      const statusClass = r.connected ? 'badge-live' : r.enabled ? 'badge-idle' : 'badge-paused';
+      html += `<div class="room-card" onclick="viewSessions('${r.room_id}')">
+        <div class="room-card-top">
+          <div class="host-avatar">${avatarHtml}${r.recording ? '<div class="live-dot"></div>' : ''}</div>
+          <div class="host-info">
+            <div class="host-name">${esc(r.name) || '<span style="color:var(--text-muted);font-style:italic">解析中...</span>'}</div>
+            <div class="host-meta">
+              <span class="host-badge ${statusClass}">${statusLabel}</span>
+              <span>${r.session_count} 场</span>
+            </div>
+          </div>
+          <div class="room-card-actions">
+            ${r.enabled
+              ? `<button class="action-btn" onclick="event.stopPropagation();pauseRoom('${r.room_id}')" title="暂停">${ICO.pause}</button>`
+              : `<button class="action-btn action-btn-resume" onclick="event.stopPropagation();resumeRoom('${r.room_id}')" title="恢复">${ICO.play}</button>`
+            }
+            <button class="action-btn action-btn-del" onclick="event.stopPropagation();confirmDeleteRoom('${r.room_id}','${esc(r.name)}')" title="删除">${ICO.del}</button>
+          </div>
+        </div>
+        <div class="room-card-footer">${r.room_id}</div>
+      </div>`;
+    }
+    html += '</div></div>';
+
+    // 添加房间弹窗（默认隐藏）
+    html += `<div id="addRoomModal" class="modal-overlay" style="display:none">
+      <div class="modal">
+        <div class="modal-header">
+          <div class="modal-title">添加房间</div>
+          <button class="modal-close" onclick="closeAddRoom()">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="modal-field">
+            <label>房间号 / 抖音号</label>
+            <div style="display:flex;gap:8px">
+              <input id="addRoomInput" placeholder="输入房间号或抖音号" onkeydown="if(event.key==='Enter')lookupRoom()">
+              <button class="btn btn-ghost btn-sm" onclick="lookupRoom()" id="lookupBtn" style="border-color:var(--border-light)">查询</button>
+            </div>
+            <div class="modal-hint">纯数字为房间号，含字母为抖音号</div>
+          </div>
+          <div id="addRoomResult" style="display:none">
+            <div class="modal-field">
+              <label>主播名称</label>
+              <input id="addRoomName" placeholder="主播名称" style="width:100%">
+            </div>
+            <div class="modal-preview" id="addRoomPreview"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost btn-sm" onclick="closeAddRoom()">取消</button>
+          <button class="btn btn-ghost btn-sm" id="addRoomConfirmBtn" onclick="confirmAddRoom()" disabled style="border-color:var(--border-light)">确认添加</button>
+        </div>
+      </div>
+    </div>`;
+
+
+
+    el.innerHTML = html;
+  } catch (e) { el.innerHTML = `<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>加载失败: ${esc(e.message)}</div>`; }
+}
+
+// ========== TOP NAV SWITCH ==========
+function switchTopNav(tab) {
+  state.topNavTab = tab;
+  document.querySelectorAll('.top-nav-btn').forEach(b => {
+    const match = b.getAttribute('onclick')?.match(/switchTopNav\('(\w+)'\)/);
+    b.classList.toggle('active', match && match[1] === tab);
+  });
+  if (tab === 'rooms') loadRoomsView();
+  else if (tab === 'search') loadSearchView();
+  else if (tab === 'profile') loadProfileView();
+}
+
+// ========== VIEW: ANONYMOUS LOOKUP ==========
+async function loadSearchView() {
+  const el = document.getElementById('content');
+  el.innerHTML = `
+    <div class="section">
+      <div class="section-header"><div class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        匿名查询
+      </div></div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">输入用户昵称，匹配数据库 sec_uid 并通过 API 查询真实信息</div>
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <input id="searchInput" placeholder="输入昵称关键词..." style="flex:1;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:13px;outline:none" onkeydown="if(event.key==='Enter')doAnonymousLookup()">
+        <button class="btn btn-ghost btn-sm" onclick="doAnonymousLookup()" style="border-color:var(--border-light)">查询</button>
+      </div>
+      <div id="searchResults"></div>
+    </div>`;
+  document.getElementById('searchInput').focus();
+}
+
+async function doAnonymousLookup() {
+  const q = document.getElementById('searchInput')?.value.trim();
+  if (!q) return;
+  const el = document.getElementById('searchResults');
+  el.innerHTML = '<div class="loading">查询中...</div>';
+  try {
+    const data = await api(`/api/anonymous-lookup?q=${encodeURIComponent(q)}`);
+    window._anonResults = data.users || []; // 存储结果供弹窗使用
+    if (!data.users?.length) {
+      el.innerHTML = '<div class="empty" style="padding:30px"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>未找到匹配用户</div>';
+      return;
+    }
+    let html = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><span style="font-size:12px;color:var(--text-muted)">找到 <strong style="color:var(--text)">${data.users.length}</strong> 个匹配用户</span><span style="font-size:11px;color:var(--text-muted)">点击查看详情</span></div>`;
+    html += '<div style="display:flex;flex-direction:column;gap:6px">';
+    data.users.forEach((u, idx) => {
+      // 库名（主显）
+      const dbName = u.db_nicknames?.[0] || '未知';
+      // 实际名字（副显）
+      const apiName = u.api_nickname || '';
+      const hasDiff = apiName && apiName !== dbName;
+      // 场次文本
+      const sessText = u.sessions?.length ? u.sessions.slice(0, 2).map(s => s.streamer_name).join('、') + (u.sessions.length > 2 ? ` 等${u.sessions.length}场` : '') : '';
+      // 最近动作
+      let actionHtml = '';
+      if (u.latest_action) {
+        const a = u.latest_action;
+        const giftSvg = '<svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><rect x="3" y="8" width="18" height="13" rx="1"/><path d="M12 8V6c0-2-1.5-4-4-4S4 4 4 6h2"/><path d="M20 6c0-2-1.5-4-4-4s-4 2-4 4h2"/><line x1="12" y1="8" x2="12" y2="21"/><line x1="3" y1="13" x2="21" y2="13"/></svg>';
+        const danmakuSvg = '<svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+        const memberSvg = '<svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/></svg>';
+        const icons = { gift: giftSvg, danmaku: danmakuSvg, member: memberSvg };
+        actionHtml = `${icons[a.type] || ''}${esc(a.detail)}`;
+      }
+
+      html += `<div class="lookup-card" onclick="showAnonymousDetail(${idx})">
+        ${avatarHtml(u.db_avatar || u.api_avatar || u.avatar, dbName)}
+        <div class="user-cell">
+          <div class="user-info">
+            <div class="user-name">${esc(dbName)}</div>
+            ${hasDiff ? `<div class="user-db-name">实际: ${esc(apiName)}${u.db_nicknames.length > 1 ? ` 等${u.db_nicknames.length}个昵称` : ''}</div>` : (u.db_nicknames.length > 1 ? `<div class="user-db-name">${u.db_nicknames.length}个昵称</div>` : '')}
+          </div>
+        </div>
+        <div class="lookup-meta">
+          ${sessText ? `<div class="lookup-sessions">${esc(sessText)}</div>` : ''}
+          ${actionHtml ? `<div class="lookup-action">${actionHtml}</div>` : ''}
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+    el.innerHTML = html;
+  } catch (e) { el.innerHTML = `<div class="empty" style="padding:20px">查询失败: ${esc(e.message)}</div>`; }
+}
+
+// ========== ANONYMOUS DETAIL MODAL ==========
+function closeAnonDetailModal() {
+  const m = document.getElementById('anonDetailModal');
+  if (m) m.classList.remove('show');
+}
+
+async function showAnonymousDetail(idx) {
+  const modal = document.getElementById('anonDetailModal');
+  const body = document.getElementById('anonDetailBody');
+  const title = document.getElementById('anonDetailTitle');
+  if (!modal || !body) return;
+  const u = window._anonResults?.[idx];
+  if (!u) return;
+  modal.classList.add('show');
+  body.classList.remove('modal-body-fade');
+  body.innerHTML = '<div class="loading">加载中...</div>';
+
+  try {
+    // 并行请求用户画像（DB统计）和用已有的 API 信息
+    const profile = await api(`/api/users/${u.sec_uid}`).catch(() => null);
+    const p = profile || {};
+
+    // 标题
+    title.textContent = u.db_nicknames?.[0] || u.nickname || '用户详情';
+
+    let html = '';
+
+    // 头像 + 基本信息
+    html += `<div style="display:flex;align-items:center;gap:14px;padding:16px 0;border-bottom:1px solid var(--border);margin-bottom:14px">
+      ${avatarHtml(u.api_avatar || u.avatar, u.nickname, 52)}
+      <div style="flex:1;min-width:0">
+        <div style="font-size:16px;font-weight:600;color:var(--text)">${esc(u.nickname || '未知')}</div>
+        ${u.db_nicknames?.length > 1 ? `<div style="font-size:12px;color:var(--text-muted);margin-top:3px">库中昵称: ${u.db_nicknames.map(n => esc(n)).join('、')}</div>` : ''}
+        ${u.signature ? `<div style="font-size:12px;color:var(--text-muted);margin-top:4px;font-style:italic">${esc(u.signature)}</div>` : ''}
+        ${u.unique_id ? `<div style="font-size:11px;color:var(--text-muted);margin-top:2px">抖音号: ${esc(u.unique_id)}</div>` : ''}
+        ${u.is_private ? '<div style="display:inline-block;font-size:10px;color:var(--orange);background:rgba(255,152,0,0.1);padding:2px 6px;border-radius:3px;margin-top:4px">私密账号</div>' : ''}
+      </div>
+    </div>`;
+
+    // API 统计（粉丝/关注/获赞/作品）
+    if (u.follower_count || u.following_count || u.total_favorited || u.aweme_count) {
+      html += `<div style="display:flex;gap:12px;margin-bottom:14px">
+        <div style="text-align:center;flex:1"><div style="font-size:16px;font-weight:700;color:var(--text)">${fmtNum(u.follower_count)}</div><div style="font-size:11px;color:var(--text-muted)">粉丝</div></div>
+        <div style="text-align:center;flex:1"><div style="font-size:16px;font-weight:700;color:var(--text)">${fmtNum(u.following_count)}</div><div style="font-size:11px;color:var(--text-muted)">关注</div></div>
+        <div style="text-align:center;flex:1"><div style="font-size:16px;font-weight:700;color:var(--orange)">${fmtNum(u.total_favorited)}</div><div style="font-size:11px;color:var(--text-muted)">获赞</div></div>
+        <div style="text-align:center;flex:1"><div style="font-size:16px;font-weight:700;color:var(--text)">${fmtNum(u.aweme_count)}</div><div style="font-size:11px;color:var(--text-muted)">作品</div></div>
+      </div>`;
+    }
+
+    // 最近动作
+    if (u.latest_action) {
+      const a = u.latest_action;
+      const giftSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="vertical-align:-2px"><rect x="3" y="8" width="18" height="13" rx="1"/><path d="M12 8V6c0-2-1.5-4-4-4S4 4 4 6h2"/><path d="M20 6c0-2-1.5-4-4-4s-4 2-4 4h2"/><line x1="12" y1="8" x2="12" y2="21"/><line x1="3" y1="13" x2="21" y2="13"/></svg>';
+      const danmakuSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="vertical-align:-2px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+      const memberSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="vertical-align:-2px"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/></svg>';
+      const icons = { gift: giftSvg, danmaku: danmakuSvg, member: memberSvg };
+      const typeLabel = { gift: '送礼', danmaku: '弹幕', member: '进场' };
+      const timeStr = fmtTime(a.time);
+      html += `<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:14px">
+        <div style="font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:8px">最近动作</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          ${icons[a.type] || ''}
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;color:var(--text)">${esc(a.detail)}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${a.streamer_name ? esc(a.streamer_name) + ' · ' : ''}${timeStr}</div>
+          </div>
+          <div style="font-size:11px;color:var(--accent);flex-shrink:0">${typeLabel[a.type] || ''}</div>
+        </div>
+      </div>`;
+    }
+
+    // 活跃场次
+    const sessions = u.sessions?.length ? u.sessions : p.activeSessions?.map(s => ({ streamer_name: s.streamer_name, start_time: s.start_time, id: s.session_id, diamonds: s.session_diamonds || 0 })) || [];
+    if (sessions.length) {
+      html += `<div style="font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:8px">活跃场次 (${sessions.length})</div>`;
+      html += '<div style="display:flex;flex-direction:column;gap:4px">';
+      sessions.slice(0, 10).forEach(s => {
+        const d = s.diamonds || 0;
+        html += `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm)">
+          <span style="font-size:11px;color:var(--text-muted);width:32px;flex-shrink:0;text-align:center;font-variant-numeric:tabular-nums">${fmtSessionTime(s.start_time)}</span>
+          <span style="font-size:13px;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.streamer_name || '未知')}</span>
+          <span style="font-size:11px;color:${d > 0 ? 'var(--orange)' : 'var(--text-muted)'};flex-shrink:0;font-variant-numeric:tabular-nums">${d.toLocaleString()}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:-2px"><path d="M12 2L3 9l9 13 9-13z"/><path d="M3 9l5 2.5L12 2l4 9.5 5-2.5"/><path d="M8 11.5L12 22l4-10.5"/></svg></span>
+        </div>`;
+      });
+      if (sessions.length > 10) html += `<div style="text-align:center;font-size:11px;color:var(--text-muted);padding:4px">还有 ${sessions.length - 10} 场</div>`;
+      html += '</div>';
+    }
+
+    body.innerHTML = html;
+    body.classList.add('modal-body-fade');
+  } catch (e) {
+    body.innerHTML = `<div class="empty" style="padding:20px">加载失败: ${esc(e.message)}</div>`;
+  }
+}
+
+// 格式化大数字（粉丝/关注等）
+function fmtNum(n) {
+  if (!n) return '0';
+  if (n >= 10000) return (n / 10000).toFixed(1) + '万';
+  return n.toLocaleString();
+}
+
+// 格式化场次时间（统一为 M/D 格式）
+function fmtSessionTime(t) {
+  if (!t) return '';
+  let date;
+  // 纯数字时间戳
+  if (/^\d+(\.\d+)?$/.test(t)) {
+    const ts = parseFloat(t);
+    const ms = ts > 1e12 ? ts : ts * 1000;
+    date = new Date(ms);
+  } else {
+    // 日期字符串
+    date = new Date(t);
+  }
+  if (isNaN(date.getTime())) return t.slice(0, 10);
+  return `${date.getMonth() + 1}/${date.getDate()}`;
+}
+
+// ========== VIEW: USER PROFILE ==========
+async function loadProfileView() {
+  const el = document.getElementById('content');
+  el.innerHTML = `
+    <div class="section">
+      <div class="section-header"><div class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        用户画像
+      </div></div>
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <input id="profileInput" placeholder="输入用户昵称搜索..." style="flex:1;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:13px;outline:none" onkeydown="if(event.key==='Enter')searchProfileUser()">
+        <button class="btn btn-ghost btn-sm" onclick="searchProfileUser()" style="border-color:var(--border-light)">查询</button>
+      </div>
+      <div id="profileUserList"></div>
+      <div id="profileDetail"></div>
+    </div>`;
+  document.getElementById('profileInput').focus();
+}
+
+async function searchProfileUser() {
+  const q = document.getElementById('profileInput')?.value.trim();
+  if (!q) return;
+  const el = document.getElementById('profileUserList');
+  const detail = document.getElementById('profileDetail');
+  detail.innerHTML = '';
+  el.innerHTML = '<div class="loading">搜索中...</div>';
+  try {
+    const users = await api(`/api/users/search?q=${encodeURIComponent(q)}`);
+    if (!users.length) {
+      el.innerHTML = '<div class="empty" style="padding:20px">未找到用户</div>';
+      return;
+    }
+    let html = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font-size:12px;color:var(--text-muted)">找到 <strong style="color:var(--text)">${users.length}</strong> 个用户</span></div>`;
+    html += '<div style="display:flex;flex-direction:column;gap:6px">';
+    users.forEach(u => {
+      html += `<div class="lookup-card" onclick="showUserProfile('${esc(u.user_sec_uid)}')">
+        <div class="user-cell">${avatarHtml(u.avatar, u.nickname)}<span>${esc(u.nickname)}</span></div>
+        <div style="font-size:11px;color:var(--accent);flex-shrink:0">查看画像 →</div>
+      </div>`;
+    });
+    html += '</div>';
+    el.innerHTML = html;
+  } catch (e) { el.innerHTML = `<div class="empty" style="padding:20px">搜索失败: ${esc(e.message)}</div>`; }
+}
+
+async function showUserProfile(secUid) {
+  const el = document.getElementById('profileDetail');
+  if (!el) { document.getElementById('content').innerHTML = '<div class="loading">加载中...</div>'; el = document.getElementById('content'); }
+  el.innerHTML = '<div class="loading">加载用户画像...</div>';
+  try {
+    const p = await api(`/api/users/${secUid}`);
+    let html = `<div class="profile-card" style="margin-top:16px">
+      <div class="profile-header">
+        ${avatarHtml(p.avatar, p.nickname, 52)}
+        <div>
+          <div class="profile-name">${esc(p.nickname)}</div>
+          <div class="profile-sub">活跃 ${p.activeSessionCount} 场 · 最爱 ${esc(p.favoriteStreamer)}</div>
+        </div>
+      </div>
+      <div class="profile-stats">
+        <div class="profile-stat"><div class="profile-stat-val orange">${p.totalDiamonds?.toLocaleString() || 0}</div><div class="profile-stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:-2px"><path d="M12 2L3 9l9 13 9-13z"/><path d="M3 9l5 2.5L12 2l4 9.5 5-2.5"/><path d="M8 11.5L12 22l4-10.5"/></svg> 总钻石</div></div>
+        <div class="profile-stat"><div class="profile-stat-val">${p.totalGifts || 0}</div><div class="profile-stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:-2px"><path d="M4 12v9a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-9"/><path d="M12 8v14"/><path d="M4 12h16"/><path d="M12 8c-4 0-6-3-6-5s2-1 6 1c4-2 6 0 6 1s-2 5-6 5"/></svg> 礼物数</div></div>
+        <div class="profile-stat"><div class="profile-stat-val">${p.danmakuCount || 0}</div><div class="profile-stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:-2px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> 弹幕</div></div>
+        <div class="profile-stat"><div class="profile-stat-val">${p.gift_types_count || 0}</div><div class="profile-stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:-2px"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg> 种类</div></div>
+      </div>`;
+    // 活跃场次
+    if (p.activeSessions?.length) {
+      html += `<div class="profile-section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> 活跃场次</div>`;
+      html += '<div style="display:flex;flex-direction:column;gap:4px">';
+      p.activeSessions.forEach(s => {
+        html += `<div class="session-row">
+          <span class="s-name">${esc(s.streamer_name || '未知')}</span>
+          <span class="s-date">${s.start_time?.slice(0,10) || ''}</span>
+          <span class="s-diamonds"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:-2px"><path d="M12 2L3 9l9 13 9-13z"/><path d="M3 9l5 2.5L12 2l4 9.5 5-2.5"/><path d="M8 11.5L12 22l4-10.5"/></svg> ${s.session_diamonds?.toLocaleString() || 0}</span>
+        </div>`;
+      });
+      html += '</div>';
+    }
+    // 常看时段
+    if (p.hourStats?.length) {
+      html += `<div class="profile-section-title" style="margin-top:14px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> 活跃时段</div>`;
+      html += '<div class="hour-chart">';
+      const maxH = Math.max(...p.hourStats.map(h => h.count));
+      // 转为24小时完整数组
+      const hourArr = Array(24).fill(0);
+      p.hourStats.forEach(h => { hourArr[parseInt(h.hour)] = h.count; });
+      const fullMax = Math.max(...hourArr, 1);
+      hourArr.forEach((cnt, hr) => {
+        const pct = (cnt / fullMax * 100);
+        html += `<div class="hour-bar" style="height:${Math.max(pct,3)}%;opacity:${cnt ? 0.7 : 0.15}" title="${hr}时: ${cnt}次"></div>`;
+      });
+      html += '</div>';
+      html += '<div class="hour-labels"><span>0</span><span>6</span><span>12</span><span>18</span><span>23</span></div>';
+    }
+    // 礼物种类明细
+    if (p.giftBreakdown?.length) {
+      html += `<div class="profile-section-title" style="margin-top:14px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 2L3 9l9 13 9-13z"/><path d="M3 9l5 2.5L12 2l4 9.5 5-2.5"/><path d="M8 11.5L12 22l4-10.5"/></svg> 礼物明细</div>`;
+      html += '<div style="display:flex;flex-direction:column;gap:4px">';
+      p.giftBreakdown.forEach(g => {
+        html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:var(--bg-card);border-radius:6px;font-size:12px">
+          <span style="color:var(--text)">${esc(g.gift_name)}</span>
+          <div style="display:flex;gap:12px;align-items:center;color:var(--text-muted)">
+            <span>×${g.count}</span>
+            <span style="color:var(--orange);font-weight:600;font-variant-numeric:tabular-nums"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10" style="vertical-align:-1px"><path d="M12 2L3 9l9 13 9-13z"/><path d="M3 9l5 2.5L12 2l4 9.5 5-2.5"/><path d="M8 11.5L12 22l4-10.5"/></svg> ${g.total_diamonds.toLocaleString()}</span>
+          </div>
+        </div>`;
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+    el.innerHTML = html;
+  } catch (e) { el.innerHTML = `<div class="empty" style="padding:20px">加载失败: ${esc(e.message)}</div>`; }
+}
+
+// ========== CONFIRM MODAL ==========
+let _confirmCb = null;
+function showConfirm(icon, html) {
+  return new Promise(resolve => {
+    _confirmCb = resolve;
+    document.getElementById('confirmIcon').innerHTML = icon;
+    document.getElementById('confirmText').innerHTML = html;
+    document.getElementById('confirmModal').style.display = 'flex';
+  });
+}
+function confirmResolve(val) {
+  document.getElementById('confirmModal').style.display = 'none';
+  if (_confirmCb) { _confirmCb(val); _confirmCb = null; }
+}
+
+let _lookupData = null;
+function showAddRoom() {
+  _lookupData = null;
+  document.getElementById('addRoomModal').style.display = 'flex';
+  document.getElementById('addRoomInput').value = '';
+  document.getElementById('addRoomResult').style.display = 'none';
+  document.getElementById('addRoomConfirmBtn').disabled = true;
+  document.getElementById('lookupBtn').disabled = false;
+  document.getElementById('addRoomInput').focus();
+}
+function closeAddRoom() {
+  document.getElementById('addRoomModal').style.display = 'none';
+  _lookupData = null;
+}
+async function lookupRoom() {
+  const input = document.getElementById('addRoomInput').value.trim();
+  if (!input) return;
+  const btn = document.getElementById('lookupBtn');
+  btn.disabled = true;
+  btn.textContent = '查询中...';
+  try {
+    const r = await fetch(`${API}/api/rooms/lookup?q=${encodeURIComponent(input)}`).then(r => r.json());
+    if (r.error) { toast(r.error, 'error'); btn.disabled = false; btn.textContent = '查询'; return; }
+    _lookupData = r;
+    document.getElementById('addRoomResult').style.display = 'block';
+    document.getElementById('addRoomName').value = r.nickname || '';
+    document.getElementById('addRoomName').placeholder = r.nickname ? '可修改名称' : '请输入主播名称';
+    // 预览
+    const preview = document.getElementById('addRoomPreview');
+    preview.innerHTML = r.avatar ? `<img src="${r.avatar}" style="width:40px;height:40px;border-radius:50%;object-fit:cover">` : '';
+    preview.innerHTML += `<div><div style="font-weight:500;font-size:13px">${esc(r.nickname) || '<span style="color:var(--text-muted);font-style:italic">待解析</span>'}</div>`;
+    preview.innerHTML += `<div style="font-size:11px;color:var(--text-muted)">房间号: ${r.room_id || '未开播'}${r.is_live ? ' · <span style="color:var(--green)">直播中</span>' : ''}</div></div>`;
+    document.getElementById('addRoomConfirmBtn').disabled = false;
+  } catch (e) { toast('查询失败: ' + e.message, 'error'); }
+  btn.disabled = false;
+  btn.textContent = '查询';
+}
+async function confirmAddRoom() {
+  if (!_lookupData || !_lookupData.room_id) { toast('请先查询房间信息', 'error'); return; }
+  const name = document.getElementById('addRoomName').value.trim() || _lookupData.nickname;
+  const btn = document.getElementById('addRoomConfirmBtn');
+  btn.disabled = true;
+  btn.textContent = '添加中...';
+  const r = await fetch(`${API}/api/rooms/add`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ room_id: _lookupData.room_id, name }) }).then(r => r.json());
+  toast(r.ok ? `已添加 ${name || _lookupData.room_id}` : (r.error || '添加失败'), r.ok ? 'success' : 'error');
+  closeAddRoom();
+  if (r.ok) {
+    viewHosts();
+    // 等 2 秒再刷新，让 monitor 解析完主播名
+    setTimeout(() => viewHosts(), 2000);
+  }
+}
+
+async function updateStats() {
+  // Update status chips from existing DOM cards
+  const cards = document.querySelectorAll('.room-card');
+  let connected = 0, paused = 0;
+  cards.forEach(card => {
+    const badge = card.querySelector('.host-badge');
+    if (!badge) return;
+    const text = badge.textContent;
+    if (text.includes('监控中') || text.includes('直播中')) connected++;
+    else paused++;
+  });
+  const el1 = document.getElementById('statusLiveCount');
+  const el2 = document.getElementById('statusPausedCount');
+  if (el1) el1.textContent = connected;
+  if (el2) el2.textContent = paused;
+  // Re-fetch summary and update all stat cards
+  try {
+    const summary = await api('/api/summary');
+    const update = (key, val) => {
+      const el = document.querySelector(`.stat-card[data-stat="${key}"] .stat-value`);
+      if (el) el.textContent = val;
+    };
+    update('rooms', cards.length);
+    update('sessions', summary.total_sessions);
+    update('gifts', summary.total_gifts.toLocaleString());
+    update('diamonds', summary.total_diamonds.toLocaleString());
+    update('danmaku', summary.total_danmaku.toLocaleString());
+    update('users', summary.unique_users.toLocaleString());
+  } catch(e) {}
+}
+function updateCard(roomId, patch) {
+  const cards = document.querySelectorAll('.room-card');
+  for (const card of cards) {
+    const onclick = card.getAttribute('onclick') || '';
+    if (onclick.includes(`'${roomId}'`) || onclick.includes(`"${roomId}"`)) {
+      if (patch.enabled !== undefined) {
+        const actions = card.querySelector('.room-card-actions');
+        if (actions) {
+          const btn = actions.querySelector('.action-btn');
+          if (patch.enabled) {
+            btn.className = 'action-btn';
+            btn.title = '暂停';
+            btn.innerHTML = ICO.pause;
+            btn.setAttribute('onclick', `event.stopPropagation();pauseRoom('${roomId}')`);
+          } else {
+            btn.className = 'action-btn action-btn-resume';
+            btn.title = '恢复';
+            btn.innerHTML = ICO.play;
+            btn.setAttribute('onclick', `event.stopPropagation();resumeRoom('${roomId}')`);
+          }
+        }
+      }
+      if (patch.badge !== undefined) {
+        const meta = card.querySelector('.host-meta');
+        if (meta) {
+          const badge = meta.querySelector('.host-badge');
+          if (badge) {
+            badge.className = `host-badge ${patch.badge.cls}`;
+            badge.textContent = patch.badge.text;
+          }
+        }
+      }
+      break;
+    }
+  }
+}
+async function pauseRoom(roomId) {
+  if (!await showConfirm(ICO.pause, '确定暂停这个房间的监控？')) return;
+  const r = await fetch(`${API}/api/rooms/pause`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ room_id: roomId }) }).then(r => r.json());
+  toast(r.ok ? '已暂停' : (r.error || '操作失败'), r.ok ? 'success' : 'error');
+  if (r.ok) { updateCard(roomId, { enabled: false, badge: { cls: 'badge-paused', text: '已暂停' } }); updateStats(); }
+}
+
+async function resumeRoom(roomId) {
+  const r = await fetch(`${API}/api/rooms/resume`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ room_id: roomId }) }).then(r => r.json());
+  toast(r.ok ? '已恢复' : (r.error || '操作失败'), r.ok ? 'success' : 'error');
+  if (r.ok) { updateCard(roomId, { enabled: true, badge: { cls: 'badge-idle', text: '已启用' } }); updateStats(); }
+}
+
+
+async function confirmDeleteRoom(roomId, name) {
+  const confirmed = await showConfirm('🗑️', `确定删除 <strong>${esc(name || roomId)}</strong>？<br><br>将停止监控并清除所有历史数据<br>（弹幕、礼物、场次记录）<br><br>此操作不可恢复！`);
+  if (!confirmed) return;
+  const r = await fetch(`${API}/api/rooms/remove`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ room_id: roomId, delete_data: true }) }).then(r => r.json());
+  toast(r.ok ? '已删除' : (r.error || '删除失败'), r.ok ? 'success' : 'error');
+  if (r.ok) {
+    const cards = document.querySelectorAll('.room-card');
+    for (const card of cards) {
+      if (card.getAttribute('onclick')?.includes(roomId)) {
+        card.style.transition = 'opacity .2s, transform .2s';
+        card.style.opacity = '0';
+        card.style.transform = 'scale(0.95)';
+        setTimeout(() => { card.remove(); updateStats(); }, 200);
+        break;
+      }
+    }
+  }
+}
+
+async function deleteSession(sessionId) {
+  const confirmed = await showConfirm('🗑️', `确定删除这场直播数据？<br><br>弹幕、礼物、在线记录将一并清除<br>此操作不可恢复！`);
+  if (!confirmed) return;
+  const r = await fetch(`${API}/api/sessions/${sessionId}/delete`, { method: 'POST' }).then(r => r.json());
+  toast(r.ok ? '场次已删除' : (r.error || '删除失败'), r.ok ? 'success' : 'error');
+  if (r.ok) {
+    // 返回场次列表
+    viewSessions(state.hostId);
+  }
+}
+
+function statCard(label, value, key, sub) {
+  return `<div class="stat-card"${key ? ` data-stat="${key}"` : ''}><div class="stat-label">${label}</div><div class="stat-value">${value}</div>${sub ? `<div class="stat-sub">${sub}</div>` : ''}</div>`;
+}
+
+// ========== VIEW: SESSIONS ==========
+async function viewSessions(hostId, fromPopState) {
+  state.view = 'sessions';
+  state.hostId = hostId;
+  state.sessionId = null;
+  if (!fromPopState) pushNav('sessions', { hostId });
+  updateBreadcrumb();
+  const el = document.getElementById('content');
+  el.classList.remove('content-fade-in');
+  el.innerHTML = '<div class="loading">加载中...</div>';
+
+  try {
+    const sessions = await fetch(`${API}/api/hosts/${hostId}/sessions`).then(r => r.json());
+    state.sessions = sessions;
+
+    // Stats
+    const totalGifts = sessions.reduce((s, x) => s + x.gift_count, 0);
+    const totalDiamonds = sessions.reduce((s, x) => s + x.total_diamonds, 0);
+    const totalDanmaku = sessions.reduce((s, x) => s + x.danmaku_count, 0);
+    const totalUsers = sessions.reduce((s, x) => s + x.user_count, 0);
+    const totalLikes = sessions.reduce((s, x) => s + (x.stats_like || 0), 0);
+    let html = '<div class="stats-row">';
+    html += statCard('场次', sessions.length);
+    html += statCard('礼物', totalGifts.toLocaleString());
+    html += statCard('钻石', totalDiamonds.toLocaleString());
+    html += statCard('弹幕', totalDanmaku.toLocaleString());
+    html += statCard('用户', totalUsers.toLocaleString());
+    html += statCard('点赞', totalLikes.toLocaleString());
+    html += '</div>';
+
+    // Session table header
+    html += '<div class="section"><div class="section-header"><div class="section-title">场次列表</div></div>';
+    html += '<div class="filter-bar">';
+    html += '<label><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:-2px"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> 日期</label>';
+    html += '<div class="dp-input" id="dpFrom" onclick="dpOpen(\'from\')"><span class="dp-ph">开始日期</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>';
+    html += '<span class="filter-sep">~</span>';
+    html += '<div class="dp-input" id="dpTo" onclick="dpOpen(\'to\')"><span class="dp-ph">结束日期</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>';
+    html += '<button class="filter-btn" onclick="clearDateFilter()">清除</button>';
+    html += '</div>';
+
+    html += '<div style="overflow-x:auto"><table class="session-table"><thead><tr>';
+    html += '<th style="width:36px;padding-left:8px"><input type="checkbox" class="session-cb" id="selectAll" onchange="toggleSelectAll()"></th>';
+    html += '<th>场次</th><th>状态</th><th>开始时间</th><th>结束时间</th><th>时长</th><th>礼物</th><th>钻石</th><th>弹幕</th><th>用户</th><th style="width:80px">操作</th>';
+    html += '</tr></thead><tbody id="sessionTbody"></tbody></table></div></div>';
+    el.innerHTML = html;
+
+    // Render rows in chunks for responsiveness
+    const tbody = document.getElementById('sessionTbody');
+    const CHUNK = 15;
+    let idx = 0;
+    function renderChunk() {
+      const end = Math.min(idx + CHUNK, sessions.length);
+      let rows = '';
+      for (let i = idx; i < end; i++) {
+        const s = sessions[i];
+        const dur = s.duration_min != null ? formatDuration(s.duration_min) : '-';
+        rows += `<tr data-id="${s.id}" data-start="${s.started_at || ''}">
+          <td data-label="" onclick="event.stopPropagation()" style="padding-left:8px"><input type="checkbox" class="session-cb" value="${s.id}" onchange="updateBatchBar()"></td>
+          <td data-label="场次" onclick="viewDetail('${s.id}')" style="font-weight:500">${esc(s.title || '未命名')}</td>
+          <td data-label="状态" onclick="viewDetail('${s.id}')"><span class="session-badge ${s.is_live ? 'live' : 'offline'}">${s.is_live ? '直播中' : '已结束'}</span></td>
+          <td data-label="开始" onclick="viewDetail('${s.id}')" style="color:var(--text-secondary)">${fmtTime(s.started_at)}</td>
+          <td data-label="结束" onclick="viewDetail('${s.id}')" style="color:var(--text-secondary)">${s.ended_at ? fmtTime(s.ended_at) : '<span style="color:var(--green)">进行中</span>'}</td>
+          <td data-label="时长" onclick="viewDetail('${s.id}')" style="color:var(--text-secondary)">${dur}</td>
+          <td data-label="礼物" onclick="viewDetail('${s.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11" style="vertical-align:-1px;margin-right:2px"><path d="M4 12v9a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-9"/><path d="M12 8v14"/><path d="M4 12h16"/><path d="M12 8c-4 0-6-3-6-5s2-1 6 1c4-2 6 0 6 1s-2 5-6 5"/></svg> ${s.gift_count.toLocaleString()}</td>
+          <td data-label="钻石" onclick="viewDetail('${s.id}')" class="diamonds"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11" style="vertical-align:-1px;margin-right:2px"><path d="M12 2L3 9l9 13 9-13z"/><path d="M3 9l5 2.5L12 2l4 9.5 5-2.5"/><path d="M8 11.5L12 22l4-10.5"/></svg> ${s.total_diamonds.toLocaleString()}</td>
+          <td data-label="弹幕" onclick="viewDetail('${s.id}')">${s.danmaku_count.toLocaleString()}</td>
+          <td data-label="用户" onclick="viewDetail('${s.id}')">${s.user_count.toLocaleString()}</td>
+          <td data-label="" onclick="event.stopPropagation()">
+            <div style="display:flex;gap:4px">
+              <button class="action-btn" title="下载报告" onclick="downloadReport(${s.id})">${ICO.download}</button>
+              <button class="action-btn action-btn-del" title="删除" onclick="deleteSessionFromList(${s.id})">${ICO.del}</button>
+            </div>
+          </td>
+        </tr>`;
+      }
+      tbody.insertAdjacentHTML('beforeend', rows);
+      idx = end;
+      if (idx < sessions.length) requestAnimationFrame(renderChunk);
+    }
+    requestAnimationFrame(renderChunk);
+  } catch (e) { el.innerHTML = `<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>加载失败: ${esc(e.message)}</div>`; }
+}
+
+// ========== VIEW: DETAIL ==========
+async function viewDetail(sessionId, fromPopState) {
+  state.view = 'detail';
+  state.sessionId = sessionId;
+  state.tab = 'gifts';
+  if (!fromPopState) pushNav('detail', { sessionId });
+  document.getElementById('batchFloat')?.classList.remove('show');
+  updateBreadcrumb();
+  const el = document.getElementById('content');
+  el.classList.remove('content-fade-in');
+  el.innerHTML = '<div class="loading">加载中...</div>';
+
+  try {
+    const data = await fetch(`${API}/api/sessions/${sessionId}/detail`).then(r => r.json());
+    state._detailData = data;
+  renderDetail(data);
+  } catch (e) { el.innerHTML = `<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>加载失败: ${esc(e.message)}</div>`; }
+}
+
+function renderDetail(data) {
+  const el = document.getElementById('content');
+  const s = data.session;
+  let html = '';
+
+  // Stats
+  html += '<div class="stats-row">';
+  html += statCard('峰值在线', (data.session.online_peak || 0).toLocaleString());
+  html += statCard('总钻石', data.summary.total_diamonds.toLocaleString());
+  html += statCard('点赞', (s.stats_like || 0).toLocaleString());
+  html += statCard('弹幕', data.summary.danmaku_count.toLocaleString());
+  html += statCard('用户', data.summary.user_count.toLocaleString());
+  html += statCard('时长', s.duration_min != null ? formatDuration(s.duration_min) : '进行中');
+  html += '</div>';
+
+  // Tabs
+  const hasMultiAnchor = data.anchorRanking && data.anchorRanking.length > 1;
+  html += '<div class="tab-bar" id="tabBar">';
+  if (hasMultiAnchor) {
+    html += `<button class="tab-btn active" onclick="switchTab('anchors')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> 主播排名</button>`;
+  }
+  html += `<button class="tab-btn${hasMultiAnchor ? '' : ' active'}" onclick="switchTab('gifts')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> 礼物榜单</button>`;
+  html += `<button class="tab-btn" onclick="switchTab('danmaku')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> 弹幕</button>`;
+  html += `<button class="tab-btn" onclick="switchTab('anon')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> 信息查询</button>`;
+  if (data.has_report) html += `<button class="tab-btn" onclick="switchTab('report')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> 报告</button>`;
+  html += '</div>';
+
+  // Empty panel placeholders — lazy rendered on tab switch
+  const activeTab = hasMultiAnchor ? 'anchors' : 'gifts';
+  if (hasMultiAnchor) html += '<div class="tab-panel active" id="panel-anchors"></div>';
+  html += `<div class="tab-panel${hasMultiAnchor ? '' : ' active'}" id="panel-gifts"></div>`;
+  html += '<div class="tab-panel" id="panel-danmaku"></div>';
+  html += '<div class="tab-panel" id="panel-anon"></div>';
+  if (data.has_report) html += '<div class="tab-panel" id="panel-report"></div>';
+
+  el.innerHTML = html;
+  el.classList.add('content-fade-in');
+
+  // Render active tab + anon tab (lightweight) immediately
+  renderTabPanel(activeTab, data);
+  renderTabPanel('anon', data);
+
+  // Pre-render other tabs in idle time
+  const tabs = ['anchors', 'gifts', 'danmaku', 'report'].filter(t => t !== activeTab);
+  let i = 0;
+  function renderNext() {
+    if (i < tabs.length) {
+      renderTabPanel(tabs[i], data);
+      i++;
+      if (typeof requestIdleCallback !== 'undefined') requestIdleCallback(renderNext, { timeout: 200 });
+      else setTimeout(renderNext, 0);
+    }
+  }
+  if (typeof requestIdleCallback !== 'undefined') requestIdleCallback(renderNext, { timeout: 200 });
+  else setTimeout(renderNext, 50);
+}
+
+// Lazy tab panel renderer
+function renderTabPanel(tab, data) {
+  const panel = document.getElementById('panel-' + tab);
+  if (!panel || panel.dataset.rendered) return;
+  panel.dataset.rendered = '1';
+  const s = data.session;
+  let html = '';
+
+  if (tab === 'anchors') {
+    if (!data.anchorRanking || data.anchorRanking.length === 0) {
+      html = '<div class="empty" style="padding:40px"><div class="empty-icon">—</div>暂无主播数据</div>';
+    } else {
+      html = '<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> 主播排名</div>';
+      html += '<div class="anchor-grid">';
+      data.anchorRanking.forEach((a, i) => {
+        const rankNum = String(i + 1).padStart(2, '0');
+        html += `<div class="anchor-card" onclick="openAnchorModal('${esc(a.anchor_name)}', ${s.id})">
+          <div class="anchor-card-rank">${rankNum}</div>
+          <div class="anchor-card-header">
+            <div class="anchor-card-avatar">${a.anchor_avatar ? `<img src="${a.anchor_avatar}" alt="" onerror="this.parentElement.innerHTML='<svg viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot; width=&quot;18&quot; height=&quot;18&quot;><path d=&quot;M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2&quot;/><circle cx=&quot;9&quot; cy=&quot;7&quot; r=&quot;4&quot;/></svg>'">` : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>'}</div>
+            <div class="anchor-card-name">${esc(a.anchor_name)}</div>
+          </div>
+          <div class="anchor-card-stats">
+            <div class="stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:-2px"><path d="M12 2L3 9l9 13 9-13z"/><path d="M3 9l5 2.5L12 2l4 9.5 5-2.5"/><path d="M8 11.5L12 22l4-10.5"/></svg> <span class="stat-val">${a.total_diamonds.toLocaleString()}</span></div>
+            <div class="stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:-2px"><path d="M4 12v9a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-9"/><path d="M12 8v14"/><path d="M4 12h16"/><path d="M12 8c-4 0-6-3-6-5s2-1 6 1c4-2 6 0 6 1s-2 5-6 5"/></svg> <span class="stat-val">${a.gift_count.toLocaleString()}</span></div>
+            <div class="stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:-2px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> <span class="stat-val">${a.user_count}</span></div>
+          </div>
+        </div>`;
+      });
+      html += '</div>';
+    }
+  } else if (tab === 'gifts') {
+    if (data.gifts.length === 0) {
+      html = '<div class="empty" style="padding:40px"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:-2px"><path d="M4 12v9a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-9"/><path d="M12 8v14"/><path d="M4 12h16"/><path d="M12 8c-4 0-6-3-6-5s2-1 6 1c4-2 6 0 6 1s-2 5-6 5"/></svg></div>暂无礼物数据</div>';
+    } else {
+      html = '<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> 礼物榜单</div>';
+      html += '<div class="gift-rank-grid">';
+      data.gifts.forEach((g, i) => {
+        const rankBadge = `<span class="gift-rank-num">${String(i + 1).padStart(2, '0')}</span>`;
+        html += `<div class="gift-rank-card" onclick="showGiftDetail('${esc(g.nickname).replace(/'/g,"\\'")}')">
+          <div class="gift-rank-card-top">
+            ${rankBadge}
+            <div class="user-cell">${avatarHtml(g.avatar_url, g.nickname)}<span>${esc(g.nickname)}</span></div>
+            <div class="diamonds"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11" style="vertical-align:-1px;margin-right:2px"><path d="M12 2L3 9l9 13 9-13z"/><path d="M3 9l5 2.5L12 2l4 9.5 5-2.5"/><path d="M8 11.5L12 22l4-10.5"/></svg> ${g.total_diamonds.toLocaleString()}</div>
+          </div>
+        </div>`;
+      });
+      html += '</div>';
+    }
+  } else if (tab === 'danmaku') {
+    html = '<div class="detail-section">';
+    html += '<div id="danmakuGrid" style="display:grid;grid-template-columns:340px 1fr;gap:14px;align-items:start">';
+    // Left: rank
+    html += '<div id="danmakuLeft">';
+    html += '<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> 弹幕排行</div>';
+    html += '<div class="danmaku-user-rank-list">';
+    if (!data.danmakuRanking || data.danmakuRanking.length === 0) {
+      html += '<div class="empty" style="padding:20px">暂无弹幕数据</div>';
+    } else {
+      data.danmakuRanking.slice(0, 10).forEach((d, i) => {
+        const rankBadge = `<span class="rank-num">${String(i + 1).padStart(2, '0')}</span>`;
+        html += `<div class="danmaku-user-rank">
+          ${rankBadge}
+          <div class="user-cell">${avatarHtml(d.avatar, d.nickname)}<span style="font-size:13px">${esc(d.nickname)}</span></div>
+          <div class="msg-count"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11" style="vertical-align:-1px;margin-right:2px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> ${d.msg_count.toLocaleString()}条</div>
+        </div>`;
+      });
+    }
+    html += '</div></div>';
+    // Right: wordcloud + danmaku list
+    html += '<div id="danmakuRight" style="display:flex;flex-direction:column">';
+    html += '<div style="margin-bottom:14px"><div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> 弹幕词云</div>';
+    html += '<canvas id="wordcloudCanvas" class="wordcloud-canvas"></canvas></div>';
+    const dmTotal = data.danmaku.length;
+    const dmShow = Math.min(dmTotal, 80);
+    html += '<div style="flex:1;min-height:0;display:flex;flex-direction:column"><div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> 最新弹幕' + (dmTotal > 80 ? `<span style="font-weight:400;color:var(--text-muted);font-size:12px;margin-left:auto">显示前 ${dmShow} / 共 ${dmTotal} 条</span>` : '') + '</div>';
+    html += '<div class="search-wrap" style="margin-bottom:8px;flex-shrink:0"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><path d="M11 11l3 3"/></svg><input id="danmakuSearch" placeholder="搜索弹幕内容或用户..." oninput="filterDanmaku()"></div>';
+    html += '<div id="rtDanmakuWrap" class="rt-danmaku-wrap" style="flex:1;min-height:0;display:flex;flex-direction:column"><div id="rtDanmakuList" class="rt-danmaku-list" style="flex:1;min-height:0;overflow-y:auto">';
+    const recentDanmaku = (data.danmaku || []).slice(0, 80);
+    if (recentDanmaku.length === 0) {
+      html += '<div class="empty" style="padding:20px">暂无弹幕</div>';
+    } else {
+      recentDanmaku.forEach(d => {
+        html += `<div class="rt-danmaku-item">
+          <div class="rt-time">${fmtTime(d.timestamp)}</div>
+          <div class="rt-user">${esc(d.nickname || '匿名')}</div>
+          <div class="rt-text">${esc(d.content)}</div>
+        </div>`;
+      });
+    }
+    html += '</div></div></div>';
+    html += '</div></div>';
+  } else if (tab === 'anon') {
+    html = '<div class="detail-section">';
+    html += '<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> 信息查询</div>';
+    html += '<div style="font-size:12px;color:var(--text-muted);margin-bottom:14px">输入关键词，查询本场次相关的送礼或弹幕记录</div>';
+    html += '<div class="anon-input-row">';
+    html += '<input id="anonInput" placeholder="输入关键词（昵称/礼物名/弹幕内容）..." onkeydown="if(event.key===\'Enter\')queryAnonymous()">';
+    html += `<button class="btn btn-ghost btn-sm" onclick="queryAnonymous()" style="border-color:var(--border)">查询</button>`;
+    html += '</div>';
+    html += '<div id="anonResult"></div>';
+    html += '</div>';
+  } else if (tab === 'report') {
+    html = `<div style="text-align:center;padding:20px"><img src="/api/sessions/${s.id}/report" style="max-width:100%;border-radius:var(--radius);box-shadow:var(--shadow-lg)"></div>`;
+  }
+
+  panel.innerHTML = html;
+  // giftDetails loaded on demand when clicking a card
+
+  // Post-render for specific tabs
+  if (tab === 'danmaku') {
+    setTimeout(() => {
+      renderWordCloud(data.danmakuWords || []);
+      const left = document.getElementById('danmakuLeft');
+      const right = document.getElementById('danmakuRight');
+      if (left && right) right.style.height = left.offsetHeight + 'px';
+    }, 30);
+  }
+}
+
+// ========== WORD CLOUD ==========
+function renderWordCloud(words) {
+  const canvas = document.getElementById('wordcloudCanvas');
+  if (!canvas || !words.length) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+  const W = rect.width, H = rect.height;
+  ctx.clearRect(0, 0, W, H);
+
+  // 直接用原始内容，不过度切割
+  const wordFreq = {};
+  words.forEach(w => {
+    const text = w.content?.trim();
+    if (!text || text.length < 2 || text.length > 12) return;
+    // 跳过纯标点/emoji
+    if (!/[\u4e00-\u9fa5a-zA-Z0-9]/.test(text)) return;
+    // 提取纯文本片段（去掉emoji和特殊符号）
+    const clean = text.replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '');
+    if (clean.length >= 2 && clean.length <= 10) {
+      wordFreq[clean] = (wordFreq[clean] || 0) + w.cnt;
+    }
+    // 也保留原文（如果够短）
+    if (text.length <= 8 && text !== clean) {
+      wordFreq[text] = (wordFreq[text] || 0) + w.cnt;
+    }
+  });
+
+  // Sort by frequency, take top words
+  const sorted = Object.entries(wordFreq).sort((a, b) => b[1] - a[1]);
+  // Deduplicate: remove substrings that are parts of higher-ranked words
+  const finalWords = [];
+  const used = new Set();
+  for (const [word, freq] of sorted) {
+    if (finalWords.length >= 40) break;
+    if (used.has(word)) continue;
+    // Skip if it's a substring of an already added longer word
+    let isSubstring = false;
+    for (const usedWord of used) {
+      if (usedWord.includes(word) && usedWord.length > word.length) { isSubstring = true; break; }
+    }
+    if (isSubstring) continue;
+    finalWords.push([word, freq]);
+    used.add(word);
+  }
+
+  if (!finalWords.length) {
+    ctx.fillStyle = 'var(--text-muted)';
+    ctx.font = '14px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('暂无词频数据', W / 2, H / 2);
+    return;
+  }
+
+  const maxFreq = finalWords[0][1];
+  const minFreq = finalWords[finalWords.length - 1][1];
+  const colors = ['#6c8cff', '#a78bfa', '#fb923c', '#4ade80', '#f87171', '#facc15', '#f472b6', '#38bdf8', '#c084fc', '#34d399'];
+
+  // Place words using spiral placement
+  const placed = [];
+  const padding = 4;
+  const cx = W / 2, cy = H / 2;
+
+  finalWords.forEach(([word, freq], idx) => {
+    const ratio = maxFreq > minFreq ? (freq - minFreq) / (maxFreq - minFreq) : 0.5;
+    const fontSize = 13 + ratio * 24;
+    ctx.font = `bold ${fontSize}px "PingFang SC", "Microsoft YaHei", sans-serif`;
+    const metrics = ctx.measureText(word);
+    const tw = metrics.width + padding * 2;
+    const th = fontSize + padding * 2;
+
+    // 螺旋放置：从中心向外
+    let placed_ok = false;
+    for (let t = 0; t < 800; t++) {
+      const angle = t * 0.3;
+      const radius = t * 0.8;
+      const x = cx + radius * Math.cos(angle) - tw / 2;
+      const y = cy + radius * Math.sin(angle) - th / 2;
+      if (x < -10 || x + tw > W + 10 || y < -10 || y + th > H + 10) continue;
+      let collision = false;
+      for (const p of placed) {
+        if (x < p.x + p.w + padding && x + tw + padding > p.x && y < p.y + p.h + padding && y + th + padding > p.y) {
+          collision = true; break;
+        }
+      }
+      if (!collision) {
+        const color = colors[idx % colors.length];
+        ctx.fillStyle = color;
+        ctx.globalAlpha = 0.55 + ratio * 0.45;
+        ctx.fillText(word, x + padding, y + th - fontSize * 0.3);
+        ctx.globalAlpha = 1;
+        placed.push({ x, y, w: tw, h: th });
+        placed_ok = true;
+        break;
+      }
+    }
+  });
+}
+
+// ========== ANCHOR MODAL ==========
+async function openAnchorModal(anchorName, sessionId) {
+  const modal = document.getElementById('anchorModal');
+  const title = document.getElementById('anchorModalTitle');
+  const body = document.getElementById('anchorModalBody');
+  title.textContent = anchorName;
+  body.classList.remove('modal-body-fade');
+  body.innerHTML = '<div class="loading">加载中...</div>';
+  modal.classList.add('show');
+
+  try {
+    const data = await fetch(`${API}/api/sessions/${sessionId}/anchor-gifts?anchor=${encodeURIComponent(anchorName)}`).then(r => r.json());
+    if (!data.gifts || data.gifts.length === 0) {
+      body.innerHTML = '<div class="empty" style="padding:20px">暂无礼物数据</div>';
+      return;
+    }
+    const totalD = data.gifts.reduce((s,g) => s + g.total_diamonds, 0);
+    const totalU = data.gifts.length;
+    let html = `<div class="anchor-modal-summary"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:-2px"><path d="M12 2L3 9l9 13 9-13z"/><path d="M3 9l5 2.5L12 2l4 9.5 5-2.5"/><path d="M8 11.5L12 22l4-10.5"/></svg> <span class="sv">${totalD.toLocaleString()}</span> 钻石</span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:-2px"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> <span class="sv">${totalU}</span> 人</span></div>`;
+    html += '<div class="gift-list-card">';
+    data.gifts.forEach((g, i) => {
+      const rankBadge = `<span class="gift-rank-num">${String(i + 1).padStart(2, '0')}</span>`;
+      html += `<div class="gift-list-item">
+        ${rankBadge}
+        <div class="user-cell">${avatarHtml(g.avatar_url, g.nickname)}<span>${esc(g.nickname)}</span></div>
+        <div class="diamonds"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11" style="vertical-align:-1px;margin-right:2px"><path d="M12 2L3 9l9 13 9-13z"/><path d="M3 9l5 2.5L12 2l4 9.5 5-2.5"/><path d="M8 11.5L12 22l4-10.5"/></svg> ${g.total_diamonds.toLocaleString()}</div>
+      </div>`;
+    });
+    html += '</div>';
+    body.innerHTML = html;
+    body.classList.add('modal-body-fade');
+  } catch (e) {
+    body.innerHTML = `<div class="empty" style="padding:20px">加载失败: ${esc(e.message)}</div>`;
+  }
+}
+
+function closeAnchorModal() {
+  document.getElementById('anchorModal')?.classList.remove('show');
+}
+
+async function showGiftDetail(nickname) {
+  const modal = document.getElementById('giftDetailModal');
+  document.getElementById('giftDetailTitle').textContent = nickname + ' 的礼物';
+  const giftBodyLoad = document.getElementById('giftDetailBody');
+  giftBodyLoad.classList.remove('modal-body-fade');
+  giftBodyLoad.innerHTML = '<div class="loading" style="padding:20px">加载中...</div>';
+  modal.classList.add('show');
+  try {
+    const sid = state.sessionId;
+    const resp = await fetch(`${API}/api/sessions/${sid}/gift-details`);
+    const data = await resp.json();
+    const details = (data.giftDetails || []).filter(d => d.nickname === nickname);
+    if (!details.length) {
+      document.getElementById('giftDetailBody').innerHTML = '<div class="empty" style="padding:20px">暂无礼物明细</div>';
+      return;
+    }
+    const totalD = details.reduce((s, d) => s + d.total_diamonds, 0);
+    let html = `<div class="anchor-modal-summary"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:-2px"><path d="M12 2L3 9l9 13 9-13z"/><path d="M3 9l5 2.5L12 2l4 9.5 5-2.5"/><path d="M8 11.5L12 22l4-10.5"/></svg> <span class="sv">${totalD.toLocaleString()}</span> 钻石</span><span>${details.length} 种礼物</span></div>`;
+    html += '<div style="display:flex;flex-direction:column;gap:6px">';
+    details.forEach(d => {
+      const icon = d.gift_icon ? `<img src="${esc(d.gift_icon)}" class="gdi-icon">` : '';
+      const to = d.to_nickname ? `<span class="gdi-to">→ ${esc(d.to_nickname)}</span>` : '';
+      html += `<div class="gift-detail-item">
+        ${icon}
+        <span class="gdi-name">${esc(d.gift_name)} ×${d.count}</span>
+        ${to}
+        <span class="gdi-diamonds">${d.total_diamonds.toLocaleString()}</span>
+      </div>`;
+    });
+    html += '</div>';
+    const gb = document.getElementById('giftDetailBody');
+    gb.innerHTML = html;
+    gb.classList.add('modal-body-fade');
+  } catch (e) {
+    document.getElementById('giftDetailBody').innerHTML = '<div class="empty" style="padding:20px">加载失败</div>';
+  }
+}
+
+function closeGiftDetailModal() {
+  document.getElementById('giftDetailModal')?.classList.remove('show');
+}
+
+// ========== TAB SWITCH ==========
+function switchTab(tab) {
+  state.tab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    const match = b.getAttribute('onclick')?.match(/switchTab\('(\w+)'\)/);
+    b.classList.toggle('active', match && match[1] === tab);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  const panel = document.getElementById('panel-' + tab);
+  if (panel) {
+    panel.classList.add('active');
+    if (!panel.dataset.rendered) {
+      if (state._detailData) renderTabPanel(tab, state._detailData);
+    }
+  }
+  if (tab === 'danmaku') setTimeout(() => {
+    renderWordCloud(state._detailData?.danmakuWords || []);
+    const left = document.getElementById('danmakuLeft');
+    const right = document.getElementById('danmakuRight');
+    if (left && right) right.style.height = left.offsetHeight + 'px';
+  }, 50);
+}
+
+// ========== ANONYMOUS QUERY ==========
+function queryAnonymous() {
+  const input = document.getElementById('anonInput');
+  const result = document.getElementById('anonResult');
+  if (!input || !result) return;
+  const q = (input.value || '').trim();
+  if (!q) { result.innerHTML = '<div class="empty" style="padding:20px">请输入查询内容</div>'; return; }
+
+  const data = state._detailData;
+  if (!data) { result.innerHTML = '<div class="empty" style="padding:20px">数据未加载，请稍后重试</div>'; return; }
+
+  const matches = [];
+  const qLower = q.toLowerCase();
+
+  // Search danmaku
+  (data.danmaku || []).forEach(d => {
+    const name = (d.nickname || '').toLowerCase();
+    const content = (d.content || '').toLowerCase();
+    if (name.includes(qLower) || content.includes(qLower)) {
+      matches.push({ type: '弹幕', nickname: d.nickname, content: d.content, time: d.timestamp, avatar: d.avatar_url });
+    }
+  });
+
+  // Search gifts (use aggregated ranking, search by nickname)
+  (data.gifts || []).forEach(g => {
+    const nameLower = (g.nickname || '').toLowerCase();
+    if (nameLower.includes(qLower)) {
+      matches.push({ type: '礼物', nickname: g.nickname, content: `共 ${g.gift_count} 种礼物`, time: null, avatar: g.avatar_url, diamonds: g.total_diamonds });
+    }
+  });
+
+  if (matches.length === 0) {
+    result.innerHTML = `<div class="anon-result"><div class="empty" style="padding:20px">未找到匹配 "${esc(q)}" 的记录</div></div>`;
+    return;
+  }
+
+  // Show all matches individually (limit to 50)
+  const display = matches.slice(0, 50);
+  let html = `<div class="anon-result"><div style="font-size:13px;color:var(--text-muted);margin-bottom:12px">找到 ${matches.length} 条匹配记录${matches.length > 50 ? '（显示前50条）' : ''}</div>`;
+  display.forEach(m => {
+    html += `<div class="anon-result-item">
+      <div style="flex-shrink:0">${avatarHtml(m.avatar, m.nickname)}</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
+          <span style="font-size:13px;font-weight:600;color:var(--text)">${esc(m.nickname || '匿名')}</span>
+          <span style="font-size:11px;padding:1px 6px;border-radius:4px;background:${m.type === '礼物' ? 'rgba(251,146,60,0.15)' : 'rgba(108,140,255,0.15)'};color:${m.type === '礼物' ? 'var(--orange)' : 'var(--accent)'}">${m.type}</span>
+          ${m.diamonds ? `<span style="font-size:11px;color:var(--orange)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:-2px"><path d="M12 2L3 9l9 13 9-13z"/><path d="M3 9l5 2.5L12 2l4 9.5 5-2.5"/><path d="M8 11.5L12 22l4-10.5"/></svg>${m.diamonds.toLocaleString()}</span>` : ''}
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(m.content)}">${m.giftIcon ? `<img src="${esc(m.giftIcon)}" style="width:16px;height:16px;vertical-align:-3px;margin-right:2px;border-radius:3px">` : ''}${esc((m.content || '').substring(0, 80))}</div>
+      </div>
+    </div>`;
+  });
+  html += '</div>';
+  result.innerHTML = html;
+}
+
+// ========== DANMAKU ==========
+function renderDanmakuList(items) {
+  const list = document.getElementById('rtDanmakuList');
+  if (!list) return;
+  let html = '';
+  for (const d of items) {
+    html += `<div class="rt-danmaku-item">
+      <div class="rt-time">${fmtTime(d.timestamp)}</div>
+      <div class="rt-user">${esc(d.nickname || '匿名')}</div>
+      <div class="rt-text">${esc(d.content)}</div>
+    </div>`;
+  }
+  list.innerHTML = html || '<div class="empty" style="padding:20px">无匹配弹幕</div>';
+}
+
+function filterDanmaku() {
+  const q = (document.getElementById('danmakuSearch')?.value || '').toLowerCase();
+  const all = state._detailData?.danmaku || [];
+  const filtered = q ? all.filter(d => d.content?.toLowerCase().includes(q) || d.nickname?.toLowerCase().includes(q)) : all;
+  renderDanmakuList(filtered);
+}
+
+// ========== CHARTS ==========
+function renderCharts(data) {
+  if (!data) return;
+  state._detailData = data;
+
+  // Destroy old
+  Object.values(charts).forEach(c => c.destroy?.());
+  charts = {};
+
+  const timeline = data.summary.timeline || [];
+  if (timeline.length === 0) return;
+
+  const labels = timeline.map(t => fmtTime(t.time));
+  const chartOpts = { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#6b7084', maxTicksLimit: 8, font: { size: 10 } }, grid: { color: 'rgba(45,48,57,0.5)' } }, y: { ticks: { color: '#6b7084', font: { size: 10 } }, grid: { color: 'rgba(45,48,57,0.5)' } } } };
+
+  charts.timeline = new Chart(document.getElementById('chartTimeline'), {
+    type: 'line',
+    data: { labels, datasets: [{ data: timeline.map(t => t.gifts), borderColor: '#6c8cff', backgroundColor: 'rgba(108,140,255,0.1)', fill: true, tension: 0.3, pointRadius: 2 }] },
+    options: { ...chartOpts, plugins: { ...chartOpts.plugins, title: { display: true, text: '礼物趋势', color: '#9ca0ad', font: { size: 12 } } } }
+  });
+
+  // Gift distribution
+  const giftMap = {};
+  data.gifts.forEach(g => { giftMap[g.gift_name] = (giftMap[g.gift_name] || 0) + g.total_diamonds; });
+  const sorted = Object.entries(giftMap).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  const colors = ['#6c8cff', '#a78bfa', '#fb923c', '#4ade80', '#f87171', '#facc15'];
+  charts.giftDist = new Chart(document.getElementById('chartGiftDist'), {
+    type: 'doughnut',
+    data: { labels: sorted.map(s => s[0]), datasets: [{ data: sorted.map(s => s[1]), backgroundColor: colors, borderWidth: 0 }] },
+    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'right', labels: { color: '#9ca0ad', font: { size: 11 }, padding: 8 } }, title: { display: true, text: '礼物分布', color: '#9ca0ad', font: { size: 12 } } } }
+  });
+
+  charts.diamonds = new Chart(document.getElementById('chartDiamonds'), {
+    type: 'bar',
+    data: { labels, datasets: [{ data: timeline.map(t => t.diamonds), backgroundColor: 'rgba(251,146,60,0.6)', borderRadius: 3 }] },
+    options: { ...chartOpts, plugins: { ...chartOpts.plugins, title: { display: true, text: '钻石趋势', color: '#9ca0ad', font: { size: 12 } } } }
+  });
+
+  charts.danmaku = new Chart(document.getElementById('chartDanmaku'), {
+    type: 'bar',
+    data: { labels, datasets: [{ data: timeline.map(t => t.danmaku), backgroundColor: 'rgba(167,139,250,0.6)', borderRadius: 3 }] },
+    options: { ...chartOpts, plugins: { ...chartOpts.plugins, title: { display: true, text: '弹幕趋势', color: '#9ca0ad', font: { size: 12 } } } }
+  });
+}
+
+// ========== BATCH OPERATIONS ==========
+function toggleSelectAll() {
+  const checked = document.getElementById('selectAll').checked;
+  document.querySelectorAll('.session-cb').forEach(cb => {
+    cb.checked = checked;
+    cb.closest('tr')?.classList.toggle('selected', checked);
+  });
+  updateBatchBar();
+}
+
+function updateBatchBar() {
+  const cbs = document.querySelectorAll('.session-cb');
+  const checked = [...cbs].filter(cb => cb.checked);
+  const float = document.getElementById('batchFloat');
+  const count = document.getElementById('batchCount');
+  // 更新行选中样式
+  cbs.forEach(cb => cb.closest('tr')?.classList.toggle('selected', cb.checked));
+  // 显示/隐藏浮动栏
+  if (float) float.classList.toggle('show', checked.length > 0);
+  if (count) count.textContent = checked.length;
+}
+
+function getSelectedIds() {
+  return [...document.querySelectorAll('.session-cb:checked')].map(cb => parseInt(cb.value));
+}
+
+// ========== DATE PICKER ==========
+let dpState = { type: null, year: 0, month: 0, day: 0, temp: null };
+const dpData = { from: null, to: null }; // 'YYYY-MM-DD' or null
+const DP_CALENDAR_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+
+function dpOpen(type) {
+  dpState.type = type;
+  const val = dpData[type];
+  const now = val ? new Date(val + 'T00:00:00') : new Date();
+  dpState.year = now.getFullYear();
+  dpState.month = now.getMonth();
+  dpState.day = val ? now.getDate() : 0;
+  dpState.temp = val;
+  dpRender();
+  document.getElementById('dpOverlay').classList.add('show');
+}
+
+function dpClose() {
+  document.getElementById('dpOverlay').classList.remove('show');
+}
+
+function dpNav(dir) {
+  dpState.month += dir;
+  if (dpState.month > 11) { dpState.month = 0; dpState.year++; }
+  if (dpState.month < 0) { dpState.month = 11; dpState.year--; }
+  dpRender();
+}
+
+function dpRender() {
+  const { year, month, day } = dpState;
+  const months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  document.getElementById('dpTitle').textContent = `${year}年 ${months[month]}`;
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+  const selectedStr = dpState.temp;
+
+  let html = '';
+  // 上月补位
+  const prevDays = new Date(year, month, 0).getDate();
+  for (let i = firstDay - 1; i >= 0; i--) {
+    html += `<button class="dp-day other" disabled>${prevDays - i}</button>`;
+  }
+  // 本月
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const cls = [
+      ds === todayStr ? 'today' : '',
+      ds === selectedStr ? 'selected' : ''
+    ].filter(Boolean).join(' ');
+    html += `<button class="dp-day ${cls}" onclick="dpPick('${ds}')">${d}</button>`;
+  }
+  // 下月补位
+  const total = firstDay + daysInMonth;
+  const remaining = total % 7 === 0 ? 0 : 7 - (total % 7);
+  for (let i = 1; i <= remaining; i++) {
+    html += `<button class="dp-day other" disabled>${i}</button>`;
+  }
+  document.getElementById('dpDays').innerHTML = html;
+}
+
+function dpPick(dateStr) {
+  dpState.temp = dateStr;
+  dpRender();
+}
+
+function dpConfirm() {
+  const type = dpState.type;
+  const val = dpState.temp;
+  dpData[type] = val;
+  // 更新显示
+  const el = document.getElementById(type === 'from' ? 'dpFrom' : 'dpTo');
+  if (el) {
+    if (val) {
+      el.innerHTML = `<span class="dp-val">${val}</span>${DP_CALENDAR_ICON}`;
+    } else {
+      el.innerHTML = `<span class="dp-ph">${type === 'from' ? '开始日期' : '结束日期'}</span>${DP_CALENDAR_ICON}`;
+    }
+  }
+  dpClose();
+  filterByDate();
+}
+
+function dpClear() {
+  dpState.temp = null;
+  dpRender();
+}
+
+function clearDateFilter() {
+  dpData.from = null;
+  dpData.to = null;
+  const fromEl = document.getElementById('dpFrom');
+  const toEl = document.getElementById('dpTo');
+  if (fromEl) fromEl.innerHTML = `<span class="dp-ph">开始日期</span>${DP_CALENDAR_ICON}`;
+  if (toEl) toEl.innerHTML = `<span class="dp-ph">结束日期</span>${DP_CALENDAR_ICON}`;
+  document.querySelectorAll('.session-table tbody tr').forEach(tr => tr.style.display = '');
+}
+
+function filterByDate() {
+  const from = dpData.from;
+  const to = dpData.to;
+  if (!from && !to) { clearDateFilter(); return; }
+  document.querySelectorAll('.session-table tbody tr').forEach(tr => {
+    const start = tr.dataset.start;
+    if (!start) return;
+    const d = start.substring(0, 10);
+    let show = true;
+    if (from && d < from) show = false;
+    if (to && d > to) show = false;
+    tr.style.display = show ? '' : 'none';
+  });
+}
+
+function downloadReport(sessionId) {
+  window.open(`${API}/api/sessions/${sessionId}/report`, '_blank');
+}
+
+function downloadSelectedReports() {
+  const ids = getSelectedIds();
+  if (ids.length === 0) { toast('请先选择场次', 'error'); return; }
+  ids.forEach((id, i) => {
+    setTimeout(() => window.open(`${API}/api/sessions/${id}/report`, '_blank'), i * 500);
+  });
+  toast(`正在生成 ${ids.length} 份报告...`, 'success');
+}
+
+async function deleteSessionFromList(sessionId) {
+  const confirmed = await showConfirm('🗑️', '确定删除这场直播数据？<br><br>弹幕、礼物、在线记录将一并清除<br>此操作不可恢复！');
+  if (!confirmed) return;
+  const r = await fetch(`${API}/api/sessions/${sessionId}/delete`, { method: 'POST' }).then(r => r.json());
+  toast(r.ok ? '场次已删除' : (r.error || '删除失败'), r.ok ? 'success' : 'error');
+  if (r.ok) viewSessions(state.hostId);
+}
+
+async function deleteSelectedSessions() {
+  const ids = getSelectedIds();
+  if (ids.length === 0) { toast('请先选择场次', 'error'); return; }
+  const confirmed = await showConfirm('🗑️', `确定删除选中的 <strong>${ids.length}</strong> 场数据？<br><br>弹幕、礼物、在线记录将一并清除<br>此操作不可恢复！`);
+  if (!confirmed) return;
+  let ok = 0, fail = 0;
+  for (const id of ids) {
+    const r = await fetch(`${API}/api/sessions/${id}/delete`, { method: 'POST' }).then(r => r.json());
+    r.ok ? ok++ : fail++;
+  }
+  toast(`已删除 ${ok} 场${fail ? `，${fail} 场失败` : ''}`, ok > 0 ? 'success' : 'error');
+  viewSessions(state.hostId);
+}
+
+// ========== HELPERS ==========
+function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function fmtTime(ts) { if (!ts) return '-'; let d; if (typeof ts === 'number' || (typeof ts === 'string' && /^\d+$/.test(ts.trim()))) { const n = Number(ts); d = new Date(n > 1e12 ? n : n * 1000); } else { d = new Date(ts); } return d.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }); }
+function formatDuration(min) { if (min < 60) return min + '分钟'; const h = Math.floor(min / 60), m = min % 60; return m > 0 ? `${h}h ${m}m` : `${h}h`; }
+function avatarHtml(url, name, size) { const s = size ? `width:${size}px;height:${size}px` : ''; return url ? `<div class="avatar" style="${s}"><img src="${url}" alt="" onerror="this.parentElement.innerHTML='${name?.[0] || '?'}'"></div>` : `<div class="avatar" style="${s};display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--text-muted)">${name?.[0] || '?'}</div>`; }
+function giftEmoji(name) { if (!name) return '🎁'; if (name.includes('火箭') || name.includes('🚀')) return '🚀'; if (name.includes('跑车') || name.includes('🚗')) return '🚗'; if (name.includes('嘉年华')) return '🎪'; if (name.includes('玫瑰')) return '🌹'; if (name.includes('棒棒糖')) return '🍭'; if (name.includes('啤酒')) return '🍺'; if (name.includes('比心')) return '❤️'; return '🎁'; }
+
+// ========== INIT ==========
+// Set initial history state so back gesture doesn't exit page
+history.replaceState({ view: 'hosts' }, '', location.href);
+// Push an empty entry so first back goes to hosts (not exit)
+history.pushState({ view: 'hosts', _initial: true }, '', location.href);
+viewHosts(true);
+</script>
+</body>
+</html>

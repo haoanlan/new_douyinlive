@@ -1457,6 +1457,7 @@ async function viewDetail(sessionId, fromPopState) {
   state.view = 'detail';
   state.sessionId = sessionId;
   state.tab = 'gifts';
+  state._danmaku = null; // 清除上一场次的弹幕缓存
   if (!fromPopState) pushNav('detail', { sessionId });
   document.getElementById('batchFloat')?.classList.remove('show');
   updateBreadcrumb();

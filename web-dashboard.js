@@ -12,6 +12,52 @@ const zlib = require('zlib');
 const db = require('./db-sqlite.js');
 const reportImg = require('./report-image.js');
 
+// ====== 连击去重（复用 report-image.js 逻辑）======
+function comboDedupGifts(gifts) {
+  const rawGroups = {};
+  for (const g of gifts) {
+    const uid = g.user_display_id || g.nickname;
+    const toKey = g.to_user_sec_uid || g.to_user_display_id || g.to_nickname || '';
+    const key = uid + '\x00' + (g.gift_name || '') + '\x00' + toKey;
+    if (!rawGroups[key]) rawGroups[key] = [];
+    rawGroups[key].push(g);
+  }
+  const deduped = [];
+  for (const [, items] of Object.entries(rawGroups)) {
+    if (items.length === 1) { deduped.push(items[0]); continue; }
+    items.sort((a, b) => (a.id || 0) - (b.id || 0));
+    let seq = [items[0]];
+    const sequences = [];
+    for (let i = 1; i < items.length; i++) {
+      const prev = seq[seq.length - 1];
+      const curr = items[i];
+      const pc = parseInt(String(prev.combo_count || 1), 10);
+      const cc = parseInt(String(curr.combo_count || 1), 10);
+      if (cc > pc || (cc === pc && curr.repeat_end === 1) || (cc < pc && cc > 1)) {
+        seq.push(curr);
+      } else {
+        sequences.push(seq);
+        seq = [curr];
+      }
+    }
+    sequences.push(seq);
+    for (const s of sequences) {
+      if (s.length === 1) {
+        deduped.push(s[0]);
+      } else {
+        s.sort((a, b) => {
+          const ac = parseInt(String(a.combo_count || 1), 10);
+          const bc = parseInt(String(b.combo_count || 1), 10);
+          if (bc !== ac) return bc - ac;
+          return (b.repeat_end === 1 ? 1 : 0) - (a.repeat_end === 1 ? 1 : 0);
+        });
+        deduped.push(s[0]);
+      }
+    }
+  }
+  return deduped;
+}
+
 const PORT = process.env.DASHBOARD_PORT || 9871;
 const DATA_DIR = __dirname;
 
@@ -678,26 +724,51 @@ async function handleAPI(req, res) {
       `).get(sid);
       if (!session) return sendError(res, '场次不存在', 404);
 
-      // 礼物排行（按用户聚合，top 20）
-      const gifts = dbInstance.prepare(`
-        SELECT nickname, avatar as avatar_url, user_sec_uid,
-          SUM(total_diamonds) as total_diamonds,
-          COUNT(*) as gift_count
-        FROM gifts WHERE session_id = ?
-        GROUP BY nickname ORDER BY total_diamonds DESC LIMIT 20
+      // 礼物排行（先去重再聚合）
+      const rawGifts = dbInstance.prepare(`
+        SELECT id, nickname, avatar as avatar_url, user_sec_uid, user_display_id,
+          gift_name, to_nickname, to_user_sec_uid, to_user_display_id,
+          diamond_count, repeat_count, total_diamonds,
+          combo_count, repeat_end, create_time
+        FROM gifts WHERE session_id = ? ORDER BY id
       `).all(sid);
+      const dedupedGifts = comboDedupGifts(rawGifts);
 
-      // 每个用户的礼物种类明细
-      const giftDetails = dbInstance.prepare(`
-        SELECT g.nickname, g.gift_name, g.to_nickname,
-          SUM(g.total_diamonds) as total_diamonds,
-          CAST(SUM(g.total_diamonds) AS REAL) / MAX(g.diamond_count, 1) as count,
-          (SELECT avatar FROM gifts WHERE session_id = ? AND nickname = g.nickname AND avatar IS NOT NULL LIMIT 1) as avatar_url,
-          (SELECT icon FROM gifts WHERE session_id = ? AND nickname = g.nickname AND gift_name = g.gift_name AND icon IS NOT NULL LIMIT 1) as gift_icon
-        FROM gifts g
-        WHERE g.session_id = ?
-        GROUP BY g.nickname, g.gift_name, g.to_nickname ORDER BY total_diamonds DESC
-      `).all(sid, sid, sid);
+      // 按用户聚合排行
+      const giftUserMap = {};
+      for (const g of dedupedGifts) {
+        const nick = g.nickname;
+        if (!giftUserMap[nick]) giftUserMap[nick] = { nickname: nick, avatar_url: g.avatar_url, user_sec_uid: g.user_sec_uid, total_diamonds: 0, gift_count: 0 };
+        giftUserMap[nick].total_diamonds += g.total_diamonds || 0;
+        giftUserMap[nick].gift_count += g.repeat_count || 1;
+      }
+      const gifts = Object.values(giftUserMap).sort((a, b) => b.total_diamonds - a.total_diamonds).slice(0, 20);
+
+      // 每个用户的礼物种类明细（去重后）
+      const giftDetailMap = {};
+      for (const g of dedupedGifts) {
+        const key = g.nickname + '\x00' + (g.gift_name || '') + '\x00' + (g.to_nickname || '');
+        if (!giftDetailMap[key]) {
+          giftDetailMap[key] = {
+            nickname: g.nickname, gift_name: g.gift_name, to_nickname: g.to_nickname,
+            total_diamonds: 0, count: 0, avatar_url: g.avatar_url, gift_icon: null
+          };
+        }
+        giftDetailMap[key].total_diamonds += g.total_diamonds || 0;
+        giftDetailMap[key].count += g.repeat_count || 1;
+      }
+      // 补充 avatar 和 icon
+      for (const d of Object.values(giftDetailMap)) {
+        if (!d.avatar_url) {
+          const av = dbInstance.prepare('SELECT avatar FROM gifts WHERE session_id = ? AND nickname = ? AND avatar IS NOT NULL LIMIT 1').get(sid, d.nickname);
+          d.avatar_url = av?.avatar || null;
+        }
+        if (!d.gift_icon) {
+          const ic = dbInstance.prepare('SELECT icon FROM gifts WHERE session_id = ? AND nickname = ? AND gift_name = ? AND icon IS NOT NULL LIMIT 1').get(sid, d.nickname, d.gift_name);
+          d.gift_icon = ic?.icon || null;
+        }
+      }
+      const giftDetails = Object.values(giftDetailMap).sort((a, b) => b.total_diamonds - a.total_diamonds);
 
       // 主播排名（按 to_user_sec_uid 聚合，同主播不同昵称合并）
       const anchorRanking = dbInstance.prepare(`
@@ -786,11 +857,11 @@ async function handleAPI(req, res) {
       });
 
       const summary = {
-        total_diamonds: dbInstance.prepare('SELECT COALESCE(SUM(diamond_count * repeat_count), 0) as d FROM gifts WHERE session_id = ?').get(sid).d,
-        total_gifts: dbInstance.prepare('SELECT COUNT(*) as c FROM gifts WHERE session_id = ?').get(sid).c,
+        total_diamonds: dedupedGifts.reduce((s, g) => s + (g.total_diamonds || 0), 0),
+        total_gifts: dedupedGifts.reduce((s, g) => s + (g.repeat_count || 1), 0),
         total_danmaku: danmaku.length,
         danmaku_count: danmaku.length,
-        user_count: new Set(gifts.map(g => g.nickname).concat(danmaku.map(d => d.nickname))).size,
+        user_count: new Set(dedupedGifts.map(g => g.nickname).concat(danmaku.map(d => d.nickname))).size,
         timeline: Object.values(timeMap).sort((a, b) => a.time.localeCompare(b.time))
       };
 

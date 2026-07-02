@@ -213,59 +213,70 @@ async function handleAPI(req, res) {
     if (pathname === '/api/gifts/ranking') {
       const sessionId = query.session_id;
       const period = query.period || 'all'; // all, today, week, month
-      let sql, params = [];
 
       if (sessionId) {
-        // 按场次去重排行
-        sql = `SELECT nickname, avatar, user_sec_uid,
-          SUM(total_diamonds) as total_diamonds,
-          COUNT(*) as gift_count,
-          GROUP_CONCAT(DISTINCT gift_name) as gift_types
-          FROM gifts WHERE session_id = ?
-          GROUP BY nickname
-          ORDER BY total_diamonds DESC LIMIT ?`;
-        // 简化：直接按 nickname 聚合
-        sql = `SELECT nickname, avatar, user_sec_uid,
-          SUM(total_diamonds) as total_diamonds,
-          COUNT(DISTINCT gift_name) as gift_types_count,
-          GROUP_CONCAT(DISTINCT gift_name) as gift_types,
-          COUNT(*) as gift_count
-          FROM gifts WHERE session_id = ?
-          GROUP BY nickname ORDER BY total_diamonds DESC LIMIT ?`;
-        params = [sessionId, parseInt(query.limit) || 100];
+        // 按场次：先去重再聚合
+        const rawGifts = dbInstance.prepare(
+          'SELECT id, nickname, avatar, user_sec_uid, user_display_id, gift_name, to_user_sec_uid, to_user_display_id, to_nickname, repeat_count, total_diamonds, combo_count, repeat_end FROM gifts WHERE session_id = ? ORDER BY id'
+        ).all(sessionId);
+        const dedupedGifts = comboDedupGifts(rawGifts);
+        const userMap = {};
+        for (const g of dedupedGifts) {
+          const nick = g.nickname;
+          if (!userMap[nick]) userMap[nick] = { nickname: nick, avatar: g.avatar, user_sec_uid: g.user_sec_uid, total_diamonds: 0, gift_count: 0, gift_types: new Set() };
+          userMap[nick].total_diamonds += g.total_diamonds || 0;
+          userMap[nick].gift_count += g.repeat_count || 1;
+          if (g.gift_name) userMap[nick].gift_types.add(g.gift_name);
+        }
+        const rows = Object.values(userMap).map(u => ({
+          ...u, gift_types_count: u.gift_types.size, gift_types: [...u.gift_types].join(',')
+        })).sort((a, b) => b.total_diamonds - a.total_diamonds).slice(0, parseInt(query.limit) || 100);
+        return sendJSON(res, rows);
       } else {
-        // 全量排行（按时间段）
+        // 全量排行：按时间段过滤后去重
         let where = '';
         if (period === 'today') where = "WHERE create_time >= datetime('now','start of day','localtime')";
         else if (period === 'week') where = "WHERE create_time >= datetime('now','weekday 0','-7 days','localtime')";
         else if (period === 'month') where = "WHERE create_time >= datetime('now','start of month','localtime')";
 
-        sql = `SELECT nickname, avatar, user_sec_uid,
-          SUM(total_diamonds) as total_diamonds,
-          COUNT(DISTINCT gift_name) as gift_types_count,
-          GROUP_CONCAT(DISTINCT gift_name) as gift_types,
-          COUNT(*) as gift_count
-          FROM gifts ${where}
-          GROUP BY nickname ORDER BY total_diamonds DESC LIMIT ?`;
-        params = [parseInt(query.limit) || 100];
+        const rawGifts = dbInstance.prepare(
+          `SELECT id, nickname, avatar, user_sec_uid, user_display_id, gift_name, to_user_sec_uid, to_user_display_id, to_nickname, repeat_count, total_diamonds, combo_count, repeat_end FROM gifts ${where} ORDER BY id`
+        ).all();
+        const dedupedGifts = comboDedupGifts(rawGifts);
+        const userMap = {};
+        for (const g of dedupedGifts) {
+          const nick = g.nickname;
+          if (!userMap[nick]) userMap[nick] = { nickname: nick, avatar: g.avatar, user_sec_uid: g.user_sec_uid, total_diamonds: 0, gift_count: 0, gift_types: new Set() };
+          userMap[nick].total_diamonds += g.total_diamonds || 0;
+          userMap[nick].gift_count += g.repeat_count || 1;
+          if (g.gift_name) userMap[nick].gift_types.add(g.gift_name);
+        }
+        const rows = Object.values(userMap).map(u => ({
+          ...u, gift_types_count: u.gift_types.size, gift_types: [...u.gift_types].join(',')
+        })).sort((a, b) => b.total_diamonds - a.total_diamonds).slice(0, parseInt(query.limit) || 100);
+        return sendJSON(res, rows);
       }
-      const rows = dbInstance.prepare(sql).all(...params);
-      return sendJSON(res, rows);
     }
 
     // --- 礼物类型排行 ---
     if (pathname === '/api/gifts/by-type') {
       const sessionId = query.session_id;
-      let sql = `SELECT gift_name,
-        SUM(total_diamonds) as total_diamonds,
-        COUNT(*) as send_count,
-        COUNT(DISTINCT nickname) as sender_count
-        FROM gifts`;
-      const params = [];
-      if (sessionId) { sql += ' WHERE session_id = ?'; params.push(sessionId); }
-      sql += ' GROUP BY gift_name ORDER BY total_diamonds DESC LIMIT ?';
-      params.push(parseInt(query.limit) || 50);
-      const rows = dbInstance.prepare(sql).all(...params);
+      let where = sessionId ? `WHERE session_id = ${parseInt(sessionId)}` : '';
+      const rawGifts = dbInstance.prepare(
+        `SELECT id, nickname, user_sec_uid, user_display_id, gift_name, to_user_sec_uid, to_user_display_id, to_nickname, repeat_count, total_diamonds, combo_count, repeat_end FROM gifts ${where} ORDER BY id`
+      ).all();
+      const dedupedGifts = comboDedupGifts(rawGifts);
+      const giftMap = {};
+      for (const g of dedupedGifts) {
+        const name = g.gift_name || '未知';
+        if (!giftMap[name]) giftMap[name] = { gift_name: name, total_diamonds: 0, send_count: 0, senders: new Set() };
+        giftMap[name].total_diamonds += g.total_diamonds || 0;
+        giftMap[name].send_count += g.repeat_count || 1;
+        if (g.nickname) giftMap[name].senders.add(g.nickname);
+      }
+      const rows = Object.values(giftMap).map(g => ({
+        ...g, sender_count: g.senders.size
+      })).sort((a, b) => b.total_diamonds - a.total_diamonds).slice(0, parseInt(query.limit) || 50);
       return sendJSON(res, rows);
     }
 
@@ -350,20 +361,19 @@ async function handleAPI(req, res) {
       // 对每个 sec_uid 调 API 查真实信息（限制并发防限流）
       const { fetchUserBySecUid } = require('./douyin-user');
       const users = Object.values(userMap);
-      // 批量查每个用户每个场次的送礼钻石数
+      // 批量查每个用户每个场次的送礼钻石数（需要去重）
       const sessionDiamondMap = {};
       for (const u of users) {
         if (!u.sec_uid || !u.session_ids.size) continue;
         const sids = [...u.session_ids];
         const placeholders = sids.map(() => '?').join(',');
-        const giftRows = dbInstance.prepare(`
-          SELECT session_id, SUM(total_diamonds) as diamonds
-          FROM gifts WHERE user_sec_uid = ? AND session_id IN (${placeholders})
-          GROUP BY session_id
-        `).all(u.sec_uid, ...sids);
-        for (const g of giftRows) {
+        const rawGifts = dbInstance.prepare(
+          `SELECT id, session_id, user_display_id, gift_name, to_user_sec_uid, to_user_display_id, to_nickname, repeat_count, total_diamonds, combo_count, repeat_end FROM gifts WHERE user_sec_uid = ? AND session_id IN (${placeholders}) ORDER BY id`
+        ).all(u.sec_uid, ...sids);
+        const dedupedGifts = comboDedupGifts(rawGifts);
+        for (const g of dedupedGifts) {
           const key = `${u.sec_uid}_${g.session_id}`;
-          sessionDiamondMap[key] = g.diamonds;
+          sessionDiamondMap[key] = (sessionDiamondMap[key] || 0) + (g.total_diamonds || 0);
         }
       }
 
@@ -419,57 +429,62 @@ async function handleAPI(req, res) {
       const secUid = pathname.split('/')[3];
       if (!secUid) return sendError(res, '缺少用户 sec_uid', 400);
 
-      // 基本信息
-      const userGifts = dbInstance.prepare(`
-        SELECT nickname, avatar,
-          SUM(total_diamonds) as total_diamonds,
-          COUNT(*) as gift_count,
-          COUNT(DISTINCT gift_name) as gift_types_count,
-          GROUP_CONCAT(DISTINCT gift_name) as gift_types
-        FROM gifts WHERE user_sec_uid = ? GROUP BY user_sec_uid
-      `).get(secUid);
+      // 读取该用户所有礼物，去重后聚合
+      const rawGifts = dbInstance.prepare(
+        'SELECT id, session_id, nickname, avatar, user_sec_uid, user_display_id, gift_name, to_user_sec_uid, to_user_display_id, to_nickname, repeat_count, total_diamonds, combo_count, repeat_end, create_time FROM gifts WHERE user_sec_uid = ? ORDER BY id'
+      ).all(secUid);
+      if (!rawGifts.length) return sendError(res, '用户不存在', 404);
+      const dedupedGifts = comboDedupGifts(rawGifts);
 
-      if (!userGifts) return sendError(res, '用户不存在', 404);
+      // 基本信息
+      const nickname = dedupedGifts[0]?.nickname || '';
+      const avatar = dedupedGifts[0]?.avatar || '';
+      const totalDiamonds = dedupedGifts.reduce((s, g) => s + (g.total_diamonds || 0), 0);
+      const giftCount = dedupedGifts.reduce((s, g) => s + (g.repeat_count || 1), 0);
+      const giftTypes = new Set(dedupedGifts.map(g => g.gift_name).filter(Boolean));
 
       // 活跃场次
-      const activeSessions = dbInstance.prepare(`
-        SELECT DISTINCT g.session_id, s.start_time, s.end_time, st.name as streamer_name,
-          SUM(g.total_diamonds) as session_diamonds
-        FROM gifts g
-        LEFT JOIN sessions s ON g.session_id = s.id
-        LEFT JOIN streamers st ON s.streamer_id = st.id
-        WHERE g.user_sec_uid = ?
-        GROUP BY g.session_id ORDER BY s.start_time DESC
-      `).all(secUid);
+      const sessionMap = {};
+      for (const g of dedupedGifts) {
+        const sid = g.session_id;
+        if (!sessionMap[sid]) sessionMap[sid] = { session_id: sid, diamonds: 0 };
+        sessionMap[sid].diamonds += g.total_diamonds || 0;
+      }
+      const sessionIds = Object.keys(sessionMap);
+      let activeSessions = [];
+      if (sessionIds.length) {
+        const placeholders = sessionIds.map(() => '?').join(',');
+        const sessRows = dbInstance.prepare(
+          `SELECT s.id, s.start_time, s.end_time, st.name as streamer_name FROM sessions s LEFT JOIN streamers st ON s.streamer_id = st.id WHERE s.id IN (${placeholders})`
+        ).all(...sessionIds);
+        activeSessions = sessRows.map(s => ({
+          ...s, session_diamonds: sessionMap[s.id]?.diamonds || 0
+        })).sort((a, b) => (b.start_time || '').localeCompare(a.start_time || ''));
+      }
 
       // 常看时段（按小时统计）
-      const hourStats = dbInstance.prepare(`
-        SELECT strftime('%H', create_time/1000, 'unixepoch', 'localtime') as hour, COUNT(*) as count
-        FROM gifts WHERE user_sec_uid = ? GROUP BY hour ORDER BY hour
-      `).all(secUid);
+      const hourStats = dbInstance.prepare(
+        "SELECT strftime('%H', create_time/1000, 'unixepoch', 'localtime') as hour, COUNT(*) as count FROM gifts WHERE user_sec_uid = ? GROUP BY hour ORDER BY hour"
+      ).all(secUid);
 
       // 弹幕记录
-      const danmakuCount = dbInstance.prepare(`
-        SELECT COUNT(*) as c FROM danmaku WHERE user_sec_uid = ?
-      `).get(secUid).c;
+      const danmakuCount = dbInstance.prepare('SELECT COUNT(*) as c FROM danmaku WHERE user_sec_uid = ?').get(secUid).c;
 
       // 礼物种类明细
-      const giftBreakdown = dbInstance.prepare(`
-        SELECT gift_name,
-          SUM(total_diamonds) as total_diamonds,
-          COUNT(*) as count
-        FROM gifts WHERE user_sec_uid = ?
-        GROUP BY gift_name ORDER BY total_diamonds DESC
-      `).all(secUid);
+      const giftBreakdownMap = {};
+      for (const g of dedupedGifts) {
+        const name = g.gift_name || '未知';
+        if (!giftBreakdownMap[name]) giftBreakdownMap[name] = { gift_name: name, total_diamonds: 0, count: 0 };
+        giftBreakdownMap[name].total_diamonds += g.total_diamonds || 0;
+        giftBreakdownMap[name].count += g.repeat_count || 1;
+      }
+      const giftBreakdown = Object.values(giftBreakdownMap).sort((a, b) => b.total_diamonds - a.total_diamonds);
 
       return sendJSON(res, {
-        ...userGifts,
-        activeSessions,
-        hourStats,
-        giftBreakdown,
-        danmakuCount,
-        totalDiamonds: userGifts.total_diamonds,
-        totalGifts: userGifts.gift_count,
+        nickname, avatar, total_diamonds: totalDiamonds, gift_count: giftCount,
+        gift_types_count: giftTypes.size, gift_types: [...giftTypes].join(','),
+        activeSessions, hourStats, giftBreakdown, danmakuCount,
+        totalDiamonds, totalGifts: giftCount,
         activeSessionCount: activeSessions.length,
         favoriteStreamer: activeSessions[0]?.streamer_name || '-'
       });
@@ -497,14 +512,37 @@ async function handleAPI(req, res) {
       else if (range === '30d') where = "WHERE CAST(create_time/1000 AS INTEGER) >= CAST(strftime('%s', 'now', '-30 days') AS INTEGER)";
       else if (range === '90d') where = "WHERE CAST(create_time/1000 AS INTEGER) >= CAST(strftime('%s', 'now', '-90 days') AS INTEGER)";
 
-      // 礼物趋势
-      const giftTrend = dbInstance.prepare(`
-        SELECT ${groupExpr} as date,
-          SUM(total_diamonds) as total_diamonds,
-          COUNT(*) as gift_count,
-          COUNT(DISTINCT nickname) as sender_count
-        FROM gifts ${where} GROUP BY ${groupExpr} ORDER BY date
-      `).all();
+      // 礼物趋势（需要去重）
+      let whereSql = '';
+      if (range === '7d') whereSql = "WHERE CAST(create_time/1000 AS INTEGER) >= CAST(strftime('%s', 'now', '-7 days') AS INTEGER)";
+      else if (range === '30d') whereSql = "WHERE CAST(create_time/1000 AS INTEGER) >= CAST(strftime('%s', 'now', '-30 days') AS INTEGER)";
+      else if (range === '90d') whereSql = "WHERE CAST(create_time/1000 AS INTEGER) >= CAST(strftime('%s', 'now', '-90 days') AS INTEGER)";
+
+      const rawGifts = dbInstance.prepare(
+        `SELECT id, nickname, user_display_id, gift_name, user_sec_uid, to_user_sec_uid, to_user_display_id, to_nickname, repeat_count, total_diamonds, combo_count, repeat_end, create_time FROM gifts ${whereSql} ORDER BY id`
+      ).all();
+      const dedupedGifts = comboDedupGifts(rawGifts);
+      // 按日期分组
+      const trendMap = {};
+      for (const g of dedupedGifts) {
+        let dateStr;
+        const ts = g.create_time;
+        if (typeof ts === 'number') {
+          const d = new Date(ts > 1e12 ? ts : ts * 1000);
+          if (groupBy === 'day') dateStr = d.toLocaleDateString('zh-CN');
+          else if (groupBy === 'week') { const wd = d.getDay(); const diff = wd === 0 ? 6 : wd - 1; d.setDate(d.getDate() - diff); dateStr = d.toLocaleDateString('zh-CN'); }
+          else dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+        } else {
+          dateStr = String(ts).slice(0, 10);
+        }
+        if (!trendMap[dateStr]) trendMap[dateStr] = { date: dateStr, total_diamonds: 0, gift_count: 0, senders: new Set() };
+        trendMap[dateStr].total_diamonds += g.total_diamonds || 0;
+        trendMap[dateStr].gift_count += g.repeat_count || 1;
+        if (g.nickname) trendMap[dateStr].senders.add(g.nickname);
+      }
+      const giftTrend = Object.values(trendMap).map(t => ({
+        date: t.date, total_diamonds: t.total_diamonds, gift_count: t.gift_count, sender_count: t.senders.size
+      })).sort((a, b) => a.date.localeCompare(b.date));
 
       // 弹幕趋势
       const danmakuTrend = dbInstance.prepare(`
@@ -660,12 +698,17 @@ async function handleAPI(req, res) {
           (SELECT COUNT(*) FROM sessions) as total_sessions,
           (SELECT COUNT(*) FROM sessions WHERE end_time IS NULL OR archived = 0) as live_count,
           (SELECT COUNT(*) FROM sessions WHERE end_time IS NOT NULL AND archived = 1) as offline_count,
-          (SELECT COUNT(*) FROM gifts) as total_gifts,
-          (SELECT COALESCE(SUM(total_diamonds), 0) FROM gifts) as total_diamonds,
           (SELECT COUNT(*) FROM danmaku) as total_danmaku,
           (SELECT COUNT(DISTINCT user_sec_uid) FROM gifts) as unique_users,
           (SELECT COALESCE(SUM(stats_like), 0) FROM sessions) as total_likes
       `).get();
+      // 礼物和钻石需要先去重再聚合（total_diamonds是累积值）
+      const rawGifts = dbInstance.prepare(
+        'SELECT id, nickname, user_display_id, gift_name, user_sec_uid, to_user_sec_uid, to_user_display_id, to_nickname, repeat_count, total_diamonds, combo_count, repeat_end FROM gifts ORDER BY id'
+      ).all();
+      const dedupedGifts = comboDedupGifts(rawGifts);
+      stats.total_gifts = dedupedGifts.reduce((s, g) => s + (g.repeat_count || 1), 0);
+      stats.total_diamonds = dedupedGifts.reduce((s, g) => s + (g.total_diamonds || 0), 0);
       return sendJSON(res, stats || { total_sessions:0, live_count:0, offline_count:0, total_gifts:0, total_diamonds:0, total_danmaku:0, unique_users:0 });
     }
 
@@ -692,27 +735,44 @@ async function handleAPI(req, res) {
       const hostId = pathname.split('/')[3];
       const streamer = dbInstance.prepare('SELECT id FROM streamers WHERE room_id = ? OR id = ?').get(hostId, parseInt(hostId));
       if (!streamer) return sendJSON(res, []);
-      const rows = dbInstance.prepare(`
-        SELECT s.*,
-          (SELECT COUNT(DISTINCT user_sec_uid) FROM gifts WHERE session_id = s.id) as user_count,
-          (SELECT COUNT(*) FROM gifts WHERE session_id = s.id) as gift_count,
-          (SELECT COALESCE(SUM(total_diamonds), 0) FROM gifts WHERE session_id = s.id) as total_diamonds,
-          (SELECT COUNT(*) FROM danmaku WHERE session_id = s.id) as danmaku_count
-        FROM sessions s WHERE s.streamer_id = ? ORDER BY s.start_time DESC
-      `).all(streamer.id);
-      return sendJSON(res, rows.map(r => ({
-        id: r.id,
-        title: r.room_title || `场次 #${r.id}`,
-        is_live: r.end_time === null && r.archived === 0,
-        started_at: r.start_time,
-        ended_at: r.end_time,
-        duration_min: r.duration_seconds ? Math.round(r.duration_seconds / 60) : null,
-        gift_count: r.gift_count,
-        total_diamonds: r.total_diamonds,
-        danmaku_count: r.danmaku_count,
-        user_count: r.user_count,
-        stats_like: r.stats_like || 0
-      })));
+      // 读取该主播所有场次的礼物，去重后按场次聚合
+      const rawGifts = dbInstance.prepare(
+        'SELECT id, session_id, nickname, user_sec_uid, user_display_id, gift_name, to_user_sec_uid, to_user_display_id, to_nickname, repeat_count, total_diamonds, combo_count, repeat_end FROM gifts WHERE session_id IN (SELECT id FROM sessions WHERE streamer_id = ?) ORDER BY id'
+      ).all(streamer.id);
+      const dedupedGifts = comboDedupGifts(rawGifts);
+      const sessionStats = {};
+      for (const g of dedupedGifts) {
+        const sid = g.session_id;
+        if (!sessionStats[sid]) sessionStats[sid] = { total_diamonds: 0, gift_count: 0, user_set: new Set() };
+        sessionStats[sid].total_diamonds += g.total_diamonds || 0;
+        sessionStats[sid].gift_count += g.repeat_count || 1;
+        if (g.user_sec_uid) sessionStats[sid].user_set.add(g.user_sec_uid);
+      }
+      const sessionDanmaku = dbInstance.prepare(
+        'SELECT session_id, COUNT(*) as danmaku_count FROM danmaku WHERE session_id IN (SELECT id FROM sessions WHERE streamer_id = ?) GROUP BY session_id'
+      ).all(streamer.id);
+      const danmakuMap = {};
+      for (const d of sessionDanmaku) danmakuMap[d.session_id] = d.danmaku_count;
+
+      const rows = dbInstance.prepare(
+        'SELECT s.* FROM sessions s WHERE s.streamer_id = ? ORDER BY s.start_time DESC'
+      ).all(streamer.id);
+      return sendJSON(res, rows.map(r => {
+        const st = sessionStats[r.id] || { total_diamonds: 0, gift_count: 0, user_set: new Set() };
+        return {
+          id: r.id,
+          title: r.room_title || `场次 #${r.id}`,
+          is_live: r.end_time === null && r.archived === 0,
+          started_at: r.start_time,
+          ended_at: r.end_time,
+          duration_min: r.duration_seconds ? Math.round(r.duration_seconds / 60) : null,
+          gift_count: st.gift_count,
+          total_diamonds: st.total_diamonds,
+          danmaku_count: danmakuMap[r.id] || 0,
+          user_count: st.user_set.size,
+          stats_like: r.stats_like || 0
+        };
+      }));
     }
 
     // --- 场次完整详情 ---
@@ -744,7 +804,7 @@ async function handleAPI(req, res) {
       }
       const gifts = Object.values(giftUserMap).sort((a, b) => b.total_diamonds - a.total_diamonds).slice(0, 20);
 
-      // 每个用户的礼物种类明细（去重后）
+      // 每个用户的礼物种类明细
       const giftDetailMap = {};
       for (const g of dedupedGifts) {
         const key = g.nickname + '\x00' + (g.gift_name || '') + '\x00' + (g.to_nickname || '');
@@ -770,32 +830,35 @@ async function handleAPI(req, res) {
       }
       const giftDetails = Object.values(giftDetailMap).sort((a, b) => b.total_diamonds - a.total_diamonds);
 
-      // 主播排名（按 to_user_sec_uid 聚合，同主播不同昵称合并）
-      const anchorRanking = dbInstance.prepare(`
-        SELECT g.anchor_sec_uid, g.anchor_name,
-          COALESCE(g.to_avatar, u.avatar, dg.avatar, mg.avatar) as anchor_avatar,
-          g.total_diamonds, g.gift_count, g.user_count
-        FROM (
-          SELECT to_user_sec_uid as anchor_sec_uid,
-            (SELECT to_nickname FROM gifts WHERE session_id = ? AND to_user_sec_uid = g2.to_user_sec_uid AND to_nickname IS NOT NULL ORDER BY create_time DESC LIMIT 1) as anchor_name,
-            MAX(to_avatar) as to_avatar,
-            SUM(total_diamonds) as total_diamonds,
-            COUNT(*) as gift_count,
-            COUNT(DISTINCT nickname) as user_count
-          FROM gifts g2 WHERE session_id = ? AND to_user_sec_uid IS NOT NULL
-          GROUP BY to_user_sec_uid ORDER BY total_diamonds DESC
-        ) g
-        LEFT JOIN (
-          SELECT user_sec_uid, avatar FROM gifts WHERE avatar IS NOT NULL GROUP BY user_sec_uid
-        ) u ON g.anchor_sec_uid = u.user_sec_uid
-        LEFT JOIN (
-          SELECT user_sec_uid, avatar FROM danmaku WHERE avatar IS NOT NULL GROUP BY user_sec_uid
-        ) dg ON g.anchor_sec_uid = dg.user_sec_uid
-        LEFT JOIN (
-          SELECT user_sec_uid, avatar FROM members WHERE avatar IS NOT NULL GROUP BY user_sec_uid
-        ) mg ON g.anchor_sec_uid = mg.user_sec_uid
-        ORDER BY g.total_diamonds DESC
-      `).all(sid, sid);
+      // 主播排名（用已去重的dedupedGifts聚合）
+      const anchorMap = {};
+      for (const g of dedupedGifts) {
+        const anchorKey = g.to_user_sec_uid || '';
+        if (!anchorKey) continue;
+        if (!anchorMap[anchorKey]) anchorMap[anchorKey] = { anchor_sec_uid: anchorKey, anchor_name: g.to_nickname || '', anchor_avatar: g.to_avatar || null, total_diamonds: 0, gift_count: 0, users: new Set() };
+        anchorMap[anchorKey].total_diamonds += g.total_diamonds || 0;
+        anchorMap[anchorKey].gift_count += g.repeat_count || 1;
+        if (g.nickname) anchorMap[anchorKey].users.add(g.nickname);
+        if (g.to_nickname && !anchorMap[anchorKey].anchor_name) anchorMap[anchorKey].anchor_name = g.to_nickname;
+      }
+      const anchorRanking = Object.values(anchorMap).map(a => ({
+        ...a, user_count: a.users.size
+      })).sort((a, b) => b.total_diamonds - a.total_diamonds);
+      // 补充头像
+      for (const a of anchorRanking) {
+        if (!a.anchor_avatar && a.anchor_sec_uid) {
+          const av = dbInstance.prepare('SELECT avatar FROM gifts WHERE session_id = ? AND user_sec_uid = ? AND avatar IS NOT NULL LIMIT 1').get(sid, a.anchor_sec_uid);
+          if (av) a.anchor_avatar = av.avatar;
+        }
+        if (!a.anchor_avatar && a.anchor_sec_uid) {
+          const av = dbInstance.prepare('SELECT avatar FROM danmaku WHERE session_id = ? AND user_sec_uid = ? AND avatar IS NOT NULL LIMIT 1').get(sid, a.anchor_sec_uid);
+          if (av) a.anchor_avatar = av.avatar;
+        }
+        if (!a.anchor_avatar && a.anchor_sec_uid) {
+          const av = dbInstance.prepare('SELECT avatar FROM members WHERE user_sec_uid = ? AND avatar IS NOT NULL LIMIT 1').get(a.anchor_sec_uid);
+          if (av) a.anchor_avatar = av.avatar;
+        }
+      }
       // 对仍然没有头像的主播，并发调用 API 获取（而非串行）
       const { fetchUserBySecUid } = require('./douyin-user');
       const avatarPromises = anchorRanking
@@ -832,15 +895,23 @@ async function handleAPI(req, res) {
         GROUP BY nickname ORDER BY msg_count DESC LIMIT 30
       `).all(sid);
 
-      // 时间线（按分钟聚合，create_time 是 unix timestamp）
-      const timeline = dbInstance.prepare(`
-        SELECT
-          strftime('%Y-%m-%d %H:%M:00', create_time, 'unixepoch', 'localtime') as time,
-          COUNT(*) as gifts,
-          SUM(total_diamonds) as diamonds
-        FROM gifts WHERE session_id = ?
-        GROUP BY time ORDER BY time
-      `).all(sid);
+      // 时间线（用已去重的dedupedGifts按分钟聚合）
+      const timeLineMap = {};
+      for (const g of dedupedGifts) {
+        const ts = g.create_time;
+        if (!ts) continue;
+        let timeKey;
+        if (typeof ts === 'number') {
+          const d = new Date(ts > 1e12 ? ts : ts * 1000);
+          timeKey = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:00`;
+        } else {
+          timeKey = String(ts).slice(0, 16) + ':00';
+        }
+        if (!timeLineMap[timeKey]) timeLineMap[timeKey] = { time: timeKey, gifts: 0, diamonds: 0 };
+        timeLineMap[timeKey].gifts += g.repeat_count || 1;
+        timeLineMap[timeKey].diamonds += g.total_diamonds || 0;
+      }
+      const timeline = Object.values(timeLineMap).sort((a, b) => (a.time || '').localeCompare(b.time || ''));
       const danmakuTimeline = dbInstance.prepare(`
         SELECT
           strftime('%Y-%m-%d %H:%M:00', create_time, 'unixepoch', 'localtime') as time,
@@ -862,7 +933,7 @@ async function handleAPI(req, res) {
         total_danmaku: danmaku.length,
         danmaku_count: danmaku.length,
         user_count: new Set(dedupedGifts.map(g => g.nickname).concat(danmaku.map(d => d.nickname))).size,
-        timeline: Object.values(timeMap).sort((a, b) => a.time.localeCompare(b.time))
+        timeline: Object.values(timeMap).sort((a, b) => (a.time || '').localeCompare(b.time || ''))
       };
 
       // 检查报告
@@ -888,19 +959,25 @@ async function handleAPI(req, res) {
 
 
 
-        // --- 主播榜前100 ---
+    // --- 主播礼物详情（用已去重的dedupedGifts） ---
     if (pathname.startsWith('/api/sessions/') && pathname.endsWith('/anchor-gifts')) {
       const url = new URL(req.url, `http://${req.headers.host}`);
       const sid = parseInt(pathname.split('/')[3]);
       const anchor = url.searchParams.get('anchor');
       if (!anchor) return sendError(res, '缺少 anchor 参数', 400);
-      const gifts = dbInstance.prepare(`
-        SELECT nickname, avatar as avatar_url, user_sec_uid,
-          SUM(total_diamonds) as total_diamonds,
-          COUNT(*) as gift_count
-        FROM gifts WHERE session_id = ? AND to_nickname = ?
-        GROUP BY nickname ORDER BY total_diamonds DESC LIMIT 100
-      `).all(sid, anchor);
+      // 读取该场次的礼物，去重后按用户聚合
+      const rawGifts = dbInstance.prepare(
+        'SELECT id, nickname, avatar as avatar_url, user_sec_uid, user_display_id, gift_name, to_user_sec_uid, to_user_display_id, to_nickname, repeat_count, total_diamonds, combo_count, repeat_end FROM gifts WHERE session_id = ? AND to_nickname = ? ORDER BY id'
+      ).all(sid, anchor);
+      const dedupedAnchorGifts = comboDedupGifts(rawGifts);
+      const userMap = {};
+      for (const g of dedupedAnchorGifts) {
+        const nick = g.nickname;
+        if (!userMap[nick]) userMap[nick] = { nickname: nick, avatar_url: g.avatar_url, user_sec_uid: g.user_sec_uid, total_diamonds: 0, gift_count: 0 };
+        userMap[nick].total_diamonds += g.total_diamonds || 0;
+        userMap[nick].gift_count += g.repeat_count || 1;
+      }
+      const gifts = Object.values(userMap).sort((a, b) => b.total_diamonds - a.total_diamonds).slice(0, 100);
       return sendJSON(res, { anchor, gifts });
     }
 

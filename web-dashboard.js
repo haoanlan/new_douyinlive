@@ -135,8 +135,8 @@ async function handleAPI(req, res) {
       const rows = dbInstance.prepare(`
         SELECT s.*, 
           (SELECT COUNT(*) FROM sessions WHERE streamer_id = s.id) as session_count,
-          (SELECT SUM(stats_danmaku) FROM sessions WHERE streamer_id = s.id) as total_danmaku,
-          (SELECT SUM(stats_gift) FROM sessions WHERE streamer_id = s.id) as total_gifts
+          (SELECT COUNT(*) FROM gifts g JOIN sessions se ON g.session_id=se.id WHERE se.streamer_id = s.id) as total_gifts,
+          (SELECT COUNT(*) FROM danmaku d JOIN sessions se ON d.session_id=se.id WHERE se.streamer_id = s.id) as total_danmaku
         FROM streamers s ORDER BY s.name
       `).all();
       return sendJSON(res, rows);
@@ -434,7 +434,7 @@ async function handleAPI(req, res) {
       // 活跃场次
       const activeSessions = dbInstance.prepare(`
         SELECT DISTINCT g.session_id, s.start_time, s.end_time, st.name as streamer_name,
-          SUM(g.diamond_count * g.repeat_count) as session_diamonds
+          SUM(g.total_diamonds) as session_diamonds
         FROM gifts g
         LEFT JOIN sessions s ON g.session_id = s.id
         LEFT JOIN streamers st ON s.streamer_id = st.id
@@ -661,7 +661,7 @@ async function handleAPI(req, res) {
           (SELECT COUNT(*) FROM sessions WHERE end_time IS NULL OR archived = 0) as live_count,
           (SELECT COUNT(*) FROM sessions WHERE end_time IS NOT NULL AND archived = 1) as offline_count,
           (SELECT COUNT(*) FROM gifts) as total_gifts,
-          (SELECT COALESCE(SUM(diamond_count * repeat_count), 0) FROM gifts) as total_diamonds,
+          (SELECT COALESCE(SUM(total_diamonds), 0) FROM gifts) as total_diamonds,
           (SELECT COUNT(*) FROM danmaku) as total_danmaku,
           (SELECT COUNT(DISTINCT user_sec_uid) FROM gifts) as unique_users,
           (SELECT COALESCE(SUM(stats_like), 0) FROM sessions) as total_likes

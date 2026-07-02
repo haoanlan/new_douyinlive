@@ -461,18 +461,18 @@ thead .session-cb:hover{opacity:1}
 .lookup-card{display:flex;gap:10px;padding:12px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:all .2s}
 .lookup-card:hover{border-color:var(--accent);background:var(--bg-card-hover);transform:translateY(-1px);box-shadow:var(--shadow)}
 .lookup-card .avatar{flex-shrink:0}
-.lookup-card .user-cell{flex:1;min-width:0}
-.lookup-card .user-cell .user-info{flex:1;min-width:0}
+.lookup-card .user-cell{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.lookup-card .user-cell .user-info{min-width:0}
 .lookup-card .user-cell .user-name{font-weight:500;font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lookup-card .user-cell .user-db-name{font-size:11px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.lookup-card .user-cell .user-detail{display:flex;align-items:center;gap:8px;margin-top:4px;font-size:11px;min-width:0}
-.lookup-card .user-cell .user-detail .sess{color:var(--text-muted);flex-shrink:0;white-space:nowrap}
-.lookup-card .user-cell .user-detail .act{color:var(--accent);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lookup-card .user-cell .user-detail{display:flex;align-items:center;gap:6px;font-size:11px;min-width:0}
+.lookup-card .user-cell .user-detail .sess{color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.lookup-card .user-cell .user-detail .act{color:var(--accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .lookup-action .action-icon{width:12px;height:12px;vertical-align:-2px;margin-right:3px}
 
 @media(max-width:480px){
-  .lookup-card .user-cell .user-detail{flex-wrap:wrap;gap:4px}
-  .lookup-card .user-cell .user-detail .act{-webkit-line-clamp:1}
+  .lookup-card .user-cell .user-detail{flex-direction:column;align-items:flex-start;gap:2px}
+  .lookup-card .user-cell .user-detail .act{max-width:100%}
 }
 .profile-card{padding:20px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);position:relative;overflow:hidden}
 .anon-filter{display:flex;gap:8px;margin-bottom:8px}
@@ -998,8 +998,10 @@ async function doAnonymousLookup() {
       // 实际名字（副显）
       const apiName = u.api_nickname || '';
       const hasDiff = apiName && apiName !== dbName;
-      // 场次文本
-      const sessText = u.sessions?.length ? u.sessions.slice(0, 2).map(s => s.streamer_name).join('、') + (u.sessions.length > 2 ? ` 等${u.sessions.length}场` : '') : '';
+      // 场次文本（移动端最多1个）
+      const isMobile = window.innerWidth <= 480;
+      const maxSess = isMobile ? 1 : 2;
+      const sessText = u.sessions?.length ? u.sessions.slice(0, maxSess).map(s => s.streamer_name).join('、') + (u.sessions.length > maxSess ? ` 等${u.sessions.length}场` : '') : '';
       // 最近动作
       let actionHtml = '';
       if (u.latest_action) {

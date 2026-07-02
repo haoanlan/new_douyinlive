@@ -124,7 +124,7 @@ async function handleAPI(req, res) {
     if (pathname.startsWith('/api/sessions/') && pathname.endsWith('/gifts')) {
       const sid = parseInt(pathname.split('/')[3]);
       const page = parseInt(query.page) || 1;
-      const limit = Math.min(parseInt(query.limit) || 50, 200);
+      const limit = parseInt(query.limit) || 50;
       const offset = (page - 1) * limit;
       const rows = dbInstance.prepare(`
         SELECT * FROM gifts WHERE session_id = ? ORDER BY create_time DESC LIMIT ? OFFSET ?
@@ -137,7 +137,7 @@ async function handleAPI(req, res) {
     if (pathname.startsWith('/api/sessions/') && pathname.endsWith('/danmaku')) {
       const sid = parseInt(pathname.split('/')[3]);
       const page = parseInt(query.page) || 1;
-      const limit = Math.min(parseInt(query.limit) || 50, 200);
+      const limit = parseInt(query.limit) || 50;
       const offset = (page - 1) * limit;
       const user = query.user;
       let sql = 'SELECT * FROM danmaku WHERE session_id = ?';
@@ -496,7 +496,7 @@ async function handleAPI(req, res) {
       const keyword = query.q;
       if (!keyword) return sendError(res, '缺少搜索关键词', 400);
       const page = parseInt(query.page) || 1;
-      const limit = Math.min(parseInt(query.limit) || 50, 200);
+      const limit = parseInt(query.limit) || 50;
       const offset = (page - 1) * limit;
 
       const rows = dbInstance.prepare(`

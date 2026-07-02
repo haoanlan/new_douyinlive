@@ -468,7 +468,7 @@ thead .session-cb:hover{opacity:1}
 .lookup-card .user-cell .user-detail{display:flex;align-items:center;gap:6px;font-size:11px;min-width:0}
 .lookup-card .user-cell .user-detail .sess{color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .lookup-card .user-cell .user-detail .act{color:var(--accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.lookup-action .action-icon{width:12px;height:12px;vertical-align:-2px;margin-right:3px}
+.lookup-card .user-cell .user-detail .act .action-icon{width:12px;height:12px;vertical-align:-2px;margin-right:3px}
 
 @media(max-width:480px){
   .lookup-card .user-cell .user-detail{flex-direction:column;align-items:flex-start;gap:2px}
@@ -998,10 +998,17 @@ async function doAnonymousLookup() {
       // 实际名字（副显）
       const apiName = u.api_nickname || '';
       const hasDiff = apiName && apiName !== dbName;
-      // 场次文本（移动端最多1个）
+      // 场次文本（移动端多场次只显示数量）
       const isMobile = window.innerWidth <= 480;
-      const maxSess = isMobile ? 1 : 2;
-      const sessText = u.sessions?.length ? u.sessions.slice(0, maxSess).map(s => s.streamer_name).join('、') + (u.sessions.length > maxSess ? ` 等${u.sessions.length}场` : '') : '';
+      let sessText = '';
+      if (u.sessions?.length) {
+        if (isMobile && u.sessions.length > 1) {
+          sessText = `${u.sessions.length}个场次`;
+        } else {
+          const max = isMobile ? 1 : 2;
+          sessText = u.sessions.slice(0, max).map(s => s.streamer_name).join('、') + (u.sessions.length > max ? ` 等${u.sessions.length}场` : '');
+        }
+      }
       // 最近动作
       let actionHtml = '';
       if (u.latest_action) {

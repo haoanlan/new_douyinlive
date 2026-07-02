@@ -1601,23 +1601,10 @@ function renderTabPanel(tab, data) {
     html += '<div id="danmakuRight" style="display:flex;flex-direction:column">';
     html += '<div style="margin-bottom:14px"><div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> 弹幕词云</div>';
     html += '<canvas id="wordcloudCanvas" class="wordcloud-canvas"></canvas></div>';
-    const dmTotal = data.danmaku.length;
-    const dmShow = Math.min(dmTotal, 80);
-    html += '<div style="flex:1;min-height:0;display:flex;flex-direction:column"><div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> 最新弹幕' + (dmTotal > 80 ? `<span style="font-weight:400;color:var(--text-muted);font-size:12px;margin-left:auto">显示前 ${dmShow} / 共 ${dmTotal} 条</span>` : '') + '</div>';
+    html += '<div style="flex:1;min-height:0;display:flex;flex-direction:column"><div id="dmTotalBadge" style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> 最新弹幕</div>';
     html += '<div class="search-wrap" style="margin-bottom:8px;flex-shrink:0"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><path d="M11 11l3 3"/></svg><input id="danmakuSearch" placeholder="搜索弹幕内容或用户..." oninput="filterDanmaku()"></div>';
     html += '<div id="rtDanmakuWrap" class="rt-danmaku-wrap" style="flex:1;min-height:0;display:flex;flex-direction:column"><div id="rtDanmakuList" class="rt-danmaku-list" style="flex:1;min-height:0;overflow-y:auto">';
-    const recentDanmaku = (data.danmaku || []).slice(0, 80);
-    if (recentDanmaku.length === 0) {
-      html += '<div class="empty" style="padding:20px">暂无弹幕</div>';
-    } else {
-      recentDanmaku.forEach(d => {
-        html += `<div class="rt-danmaku-item">
-          <div class="rt-time">${fmtTime(d.timestamp)}</div>
-          <div class="rt-user">${esc(d.nickname || '匿名')}</div>
-          <div class="rt-text">${esc(d.content)}</div>
-        </div>`;
-      });
-    }
+    html += '<div class="empty" style="padding:20px">加载中...</div>';
     html += '</div></div></div>';
     html += '</div></div>';
   } else if (tab === 'anon') {

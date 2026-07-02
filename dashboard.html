@@ -1044,8 +1044,9 @@ async function showAnonymousDetail(idx) {
     body.innerHTML = html;
     body.classList.add('modal-body-fade');
   } catch (e) {
-    body.innerHTML = `<div class="empty" style="padding:20px">加载失败: ${esc(e.message)}</div>`;
+    body.innerHTML = '<div class="empty" style="padding:20px">加载失败</div>';
   }
+  modal.classList.add('show');
 }
 
 // 格式化大数字（粉丝/关注等）
@@ -1634,7 +1635,7 @@ function renderTabPanel(tab, data) {
   }
 
   panel.innerHTML = html;
-  // giftDetails loaded on demand when clicking a card
+  if (tab === 'gifts') window._giftDetails = data.giftDetails || [];
 
   // Post-render for specific tabs
   if (tab === 'danmaku') {
@@ -1644,6 +1645,8 @@ function renderTabPanel(tab, data) {
       const right = document.getElementById('danmakuRight');
       if (left && right) right.style.height = left.offsetHeight + 'px';
     }, 30);
+    // Lazy load danmaku
+    loadDanmaku();
   }
 }
 
@@ -1750,26 +1753,35 @@ function renderWordCloud(words) {
 }
 
 // ========== ANCHOR MODAL ==========
-async function openAnchorModal(anchorName, sessionId) {
+function openAnchorModal(anchorName, sessionId) {
   const modal = document.getElementById('anchorModal');
   const title = document.getElementById('anchorModalTitle');
   const body = document.getElementById('anchorModalBody');
   title.textContent = anchorName;
   body.classList.remove('modal-body-fade');
-  body.innerHTML = '<div class="loading">加载中...</div>';
-  modal.classList.add('show');
 
-  try {
-    const data = await fetch(`${API}/api/sessions/${sessionId}/anchor-gifts?anchor=${encodeURIComponent(anchorName)}`).then(r => r.json());
-    if (!data.gifts || data.gifts.length === 0) {
-      body.innerHTML = '<div class="empty" style="padding:20px">暂无礼物数据</div>';
-      return;
-    }
-    const totalD = data.gifts.reduce((s,g) => s + g.total_diamonds, 0);
-    const totalU = data.gifts.length;
-    let html = `<div class="anchor-modal-summary"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:-2px"><path d="M12 2L3 9l9 13 9-13z"/><path d="M3 9l5 2.5L12 2l4 9.5 5-2.5"/><path d="M8 11.5L12 22l4-10.5"/></svg> <span class="sv">${totalD.toLocaleString()}</span> 钻石</span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:-2px"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> <span class="sv">${totalU}</span> 人</span></div>`;
+  // Use existing giftDetails data (instant, no API call)
+  const allGifts = window._giftDetails || [];
+  const filtered = allGifts.filter(g => g.to_nickname === anchorName);
+  if (!filtered.length) {
+    body.innerHTML = '<div class="empty" style="padding:20px">暂无礼物数据</div>';
+    modal.classList.add('show');
+    return;
+  }
+  // Aggregate by nickname (giver)
+  const aggMap = {};
+  filtered.forEach(g => {
+    if (!aggMap[g.nickname]) aggMap[g.nickname] = { nickname: g.nickname, avatar_url: g.avatar_url, total_diamonds: 0, gift_count: 0 };
+    aggMap[g.nickname].total_diamonds += g.total_diamonds;
+    aggMap[g.nickname].gift_count += g.count;
+  });
+  const gifts = Object.values(aggMap).sort((a, b) => b.total_diamonds - a.total_diamonds);
+  const totalD = gifts.reduce((s, g) => s + g.total_diamonds, 0);
+  const totalU = gifts.length;
+
+  let html = `<div class="anchor-modal-summary"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:-2px"><path d="M12 2L3 9l9 13 9-13z"/><path d="M3 9l5 2.5L12 2l4 9.5 5-2.5"/><path d="M8 11.5L12 22l4-10.5"/></svg> <span class="sv">${totalD.toLocaleString()}</span> 钻石</span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:-2px"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> <span class="sv">${totalU}</span> 人</span></div>`;
     html += '<div class="gift-list-card">';
-    data.gifts.forEach((g, i) => {
+    gifts.forEach((g, i) => {
       const rankBadge = `<span class="gift-rank-num">${String(i + 1).padStart(2, '0')}</span>`;
       html += `<div class="gift-list-item">
         ${rankBadge}
@@ -1780,51 +1792,36 @@ async function openAnchorModal(anchorName, sessionId) {
     html += '</div>';
     body.innerHTML = html;
     body.classList.add('modal-body-fade');
-  } catch (e) {
-    body.innerHTML = `<div class="empty" style="padding:20px">加载失败: ${esc(e.message)}</div>`;
-  }
+  modal.classList.add('show');
 }
 
 function closeAnchorModal() {
   document.getElementById('anchorModal')?.classList.remove('show');
 }
 
-async function showGiftDetail(nickname) {
+function showGiftDetail(nickname) {
+  const details = (window._giftDetails || []).filter(d => d.nickname === nickname);
+  if (!details.length) return;
+  const totalD = details.reduce((s, d) => s + d.total_diamonds, 0);
   const modal = document.getElementById('giftDetailModal');
   document.getElementById('giftDetailTitle').textContent = nickname + ' 的礼物';
-  const giftBodyLoad = document.getElementById('giftDetailBody');
-  giftBodyLoad.classList.remove('modal-body-fade');
-  giftBodyLoad.innerHTML = '<div class="loading" style="padding:20px">加载中...</div>';
+  let html = `<div class="anchor-modal-summary"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:-2px"><path d="M12 2L3 9l9 13 9-13z"/><path d="M3 9l5 2.5L12 2l4 9.5 5-2.5"/><path d="M8 11.5L12 22l4-10.5"/></svg> <span class="sv">${totalD.toLocaleString()}</span> 钻石</span><span>${details.length} 种礼物</span></div>`;
+  html += '<div style="display:flex;flex-direction:column;gap:6px">';
+  details.forEach(d => {
+    const icon = d.gift_icon ? `<img src="${esc(d.gift_icon)}" class="gdi-icon">` : '';
+    const to = d.to_nickname ? `<span class="gdi-to">→ ${esc(d.to_nickname)}</span>` : '';
+    html += `<div class="gift-detail-item">
+      ${icon}
+      <span class="gdi-name">${esc(d.gift_name)} ×${d.count}</span>
+      ${to}
+      <span class="gdi-diamonds">${d.total_diamonds.toLocaleString()}</span>
+    </div>`;
+  });
+  html += '</div>';
+  const gb = document.getElementById('giftDetailBody');
+  gb.innerHTML = html;
+  gb.classList.add('modal-body-fade');
   modal.classList.add('show');
-  try {
-    const sid = state.sessionId;
-    const resp = await fetch(`${API}/api/sessions/${sid}/gift-details`);
-    const data = await resp.json();
-    const details = (data.giftDetails || []).filter(d => d.nickname === nickname);
-    if (!details.length) {
-      document.getElementById('giftDetailBody').innerHTML = '<div class="empty" style="padding:20px">暂无礼物明细</div>';
-      return;
-    }
-    const totalD = details.reduce((s, d) => s + d.total_diamonds, 0);
-    let html = `<div class="anchor-modal-summary"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:-2px"><path d="M12 2L3 9l9 13 9-13z"/><path d="M3 9l5 2.5L12 2l4 9.5 5-2.5"/><path d="M8 11.5L12 22l4-10.5"/></svg> <span class="sv">${totalD.toLocaleString()}</span> 钻石</span><span>${details.length} 种礼物</span></div>`;
-    html += '<div style="display:flex;flex-direction:column;gap:6px">';
-    details.forEach(d => {
-      const icon = d.gift_icon ? `<img src="${esc(d.gift_icon)}" class="gdi-icon">` : '';
-      const to = d.to_nickname ? `<span class="gdi-to">→ ${esc(d.to_nickname)}</span>` : '';
-      html += `<div class="gift-detail-item">
-        ${icon}
-        <span class="gdi-name">${esc(d.gift_name)} ×${d.count}</span>
-        ${to}
-        <span class="gdi-diamonds">${d.total_diamonds.toLocaleString()}</span>
-      </div>`;
-    });
-    html += '</div>';
-    const gb = document.getElementById('giftDetailBody');
-    gb.innerHTML = html;
-    gb.classList.add('modal-body-fade');
-  } catch (e) {
-    document.getElementById('giftDetailBody').innerHTML = '<div class="empty" style="padding:20px">加载失败</div>';
-  }
 }
 
 function closeGiftDetailModal() {
@@ -1846,6 +1843,7 @@ function switchTab(tab) {
       if (state._detailData) renderTabPanel(tab, state._detailData);
     }
   }
+  if (tab === 'anon') loadDanmaku();
   if (tab === 'danmaku') setTimeout(() => {
     renderWordCloud(state._detailData?.danmakuWords || []);
     const left = document.getElementById('danmakuLeft');
@@ -1869,7 +1867,7 @@ function queryAnonymous() {
   const qLower = q.toLowerCase();
 
   // Search danmaku
-  (data.danmaku || []).forEach(d => {
+  (state._danmaku || []).forEach(d => {
     const name = (d.nickname || '').toLowerCase();
     const content = (d.content || '').toLowerCase();
     if (name.includes(qLower) || content.includes(qLower)) {
@@ -1877,11 +1875,12 @@ function queryAnonymous() {
     }
   });
 
-  // Search gifts (use aggregated ranking, search by nickname)
-  (data.gifts || []).forEach(g => {
+  // Search gifts (per-gift breakdown, search by nickname OR gift name)
+  (data.giftDetails || []).forEach(g => {
     const nameLower = (g.nickname || '').toLowerCase();
-    if (nameLower.includes(qLower)) {
-      matches.push({ type: '礼物', nickname: g.nickname, content: `共 ${g.gift_count} 种礼物`, time: null, avatar: g.avatar_url, diamonds: g.total_diamonds });
+    const giftLower = (g.gift_name || '').toLowerCase();
+    if (nameLower.includes(qLower) || giftLower.includes(qLower)) {
+      matches.push({ type: '礼物', nickname: g.nickname, content: `${g.gift_name || '礼物'} ×${g.count}`, time: null, avatar: g.avatar_url, diamonds: g.total_diamonds, giftIcon: g.gift_icon || null });
     }
   });
 
@@ -1925,9 +1924,35 @@ function renderDanmakuList(items) {
   list.innerHTML = html || '<div class="empty" style="padding:20px">无匹配弹幕</div>';
 }
 
+async function loadDanmaku() {
+  if (state._danmaku) return; // already loaded
+  try {
+    const sid = state.sessionId;
+    const resp = await fetch(`${API}/api/sessions/${sid}/danmaku?limit=99999`);
+    const data = await resp.json();
+    const raw = data.data || data.danmaku || [];
+    // Normalize field names (API returns create_time/avatar, frontend expects timestamp/avatar_url)
+    state._danmaku = raw.map(d => ({
+      ...d,
+      timestamp: d.timestamp || d.create_time,
+      avatar_url: d.avatar_url || d.avatar
+    }));
+    // Render the list
+    const recent = state._danmaku.slice(0, 80);
+    const badge = document.getElementById('dmTotalBadge');
+    if (badge && state._danmaku.length > 80) {
+      badge.textContent = `显示前 80 / 共 ${state._danmaku.length.toLocaleString()} 条`;
+    }
+    renderDanmakuList(recent);
+  } catch (e) {
+    const list = document.getElementById('rtDanmakuList');
+    if (list) list.innerHTML = '<div class="empty" style="padding:20px">弹幕加载失败</div>';
+  }
+}
+
 function filterDanmaku() {
   const q = (document.getElementById('danmakuSearch')?.value || '').toLowerCase();
-  const all = state._detailData?.danmaku || [];
+  const all = state._danmaku || [];
   const filtered = q ? all.filter(d => d.content?.toLowerCase().includes(q) || d.nickname?.toLowerCase().includes(q)) : all;
   renderDanmakuList(filtered);
 }

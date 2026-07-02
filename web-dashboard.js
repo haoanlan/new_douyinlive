@@ -809,26 +809,11 @@ async function handleAPI(req, res) {
           online_peak: session.online_peak || 0,
           stats_like: session.stats_like || 0
         },
-        gifts, anchorRanking, danmaku, danmakuWords, danmakuRanking, summary, hasReport
+        gifts, giftDetails, anchorRanking, danmakuWords, danmakuRanking, summary, hasReport
       });
     }
 
 
-    // --- 场次礼物明细（懒加载，点击时请求） ---
-    if (pathname.startsWith('/api/sessions/') && pathname.endsWith('/gift-details')) {
-      const sid = parseInt(pathname.split('/')[3]);
-      const giftDetails = dbInstance.prepare(`
-        SELECT g.nickname, g.gift_name, g.to_nickname,
-          SUM(g.diamond_count * g.repeat_count) as total_diamonds,
-          COUNT(*) as count,
-          (SELECT avatar FROM gifts WHERE session_id = ? AND nickname = g.nickname AND avatar IS NOT NULL LIMIT 1) as avatar_url,
-          (SELECT icon FROM gifts WHERE session_id = ? AND nickname = g.nickname AND gift_name = g.gift_name AND icon IS NOT NULL LIMIT 1) as gift_icon
-        FROM gifts g
-        WHERE g.session_id = ?
-        GROUP BY g.nickname, g.gift_name, g.to_nickname ORDER BY g.nickname, total_diamonds DESC
-      `).all(sid, sid, sid);
-      return sendJSON(res, { giftDetails });
-    }
 
         // --- 主播榜前100 ---
     if (pathname.startsWith('/api/sessions/') && pathname.endsWith('/anchor-gifts')) {

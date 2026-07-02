@@ -891,14 +891,45 @@ async function loadSearchView() {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         匿名查询
       </div></div>
-      <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">输入用户昵称，匹配数据库 sec_uid 并通过 API 查询真实信息</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">输入用户昵称，可选直播间/场次缩小范围，匹配 sec_uid 后查询真实信息</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+        <select id="anonStreamer" style="padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:13px;outline:none;min-width:120px" onchange="onAnonStreamerChange()">
+          <option value="">全部直播间</option>
+        </select>
+        <select id="anonSession" style="padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:13px;outline:none;min-width:120px">
+          <option value="">全部场次</option>
+        </select>
+      </div>
       <div style="display:flex;gap:8px;margin-bottom:16px">
         <input id="searchInput" placeholder="输入昵称关键词..." style="flex:1;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:13px;outline:none" onkeydown="if(event.key==='Enter')doAnonymousLookup()">
         <button class="btn btn-ghost btn-sm" onclick="doAnonymousLookup()" style="border-color:var(--border-light)">查询</button>
       </div>
       <div id="searchResults"></div>
     </div>`;
+  // 加载直播间列表
+  const streamers = await api('/api/streamers');
+  const sel = document.getElementById('anonStreamer');
+  streamers.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.id;
+    opt.textContent = s.name || s.room_id;
+    sel.appendChild(opt);
+  });
   document.getElementById('searchInput').focus();
+}
+
+async function onAnonStreamerChange() {
+  const streamerId = document.getElementById('anonStreamer').value;
+  const sessSel = document.getElementById('anonSession');
+  sessSel.innerHTML = '<option value="">全部场次</option>';
+  if (!streamerId) return;
+  const sessions = await api(`/api/hosts/${streamerId}/sessions`);
+  sessions.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.id;
+    opt.textContent = (s.started_at ? fmtTime(s.started_at) : '') + ' ' + (s.title || '');
+    sessSel.appendChild(opt);
+  });
 }
 
 async function doAnonymousLookup() {
@@ -907,7 +938,12 @@ async function doAnonymousLookup() {
   const el = document.getElementById('searchResults');
   el.innerHTML = '<div class="loading">查询中...</div>';
   try {
-    const data = await api(`/api/anonymous-lookup?q=${encodeURIComponent(q)}`);
+    const streamerId = document.getElementById('anonStreamer')?.value || '';
+    const sessionId = document.getElementById('anonSession')?.value || '';
+    let url = `/api/anonymous-lookup?q=${encodeURIComponent(q)}`;
+    if (streamerId) url += `&streamer_id=${streamerId}`;
+    if (sessionId) url += `&session_id=${sessionId}`;
+    const data = await api(url);
     window._anonResults = data.users || []; // 存储结果供弹窗使用
     if (!data.users?.length) {
       el.innerHTML = '<div class="empty" style="padding:30px"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>未找到匹配用户</div>';

@@ -299,15 +299,29 @@ async function handleAPI(req, res) {
     if (pathname === '/api/anonymous-lookup') {
       const q = query.q;
       if (!q) return sendError(res, '缺少搜索词', 400);
-      // 从 gifts + danmaku + members 中查找匹配的 sec_uid，收集所有昵称
+      const filterStreamer = query.streamer_id ? parseInt(query.streamer_id) : null;
+      const filterSession = query.session_id ? parseInt(query.session_id) : null;
+
+      // 先查符合条件的session_id列表
+      let sessionFilter = '';
+      let sessionParams = [];
+      if (filterSession) {
+        sessionFilter = 'AND session_id = ?';
+        sessionParams = [filterSession];
+      } else if (filterStreamer) {
+        sessionFilter = 'AND session_id IN (SELECT id FROM sessions WHERE streamer_id = ?)';
+        sessionParams = [filterStreamer];
+      }
+
+      // 从 gifts + danmaku + members 中查找匹配的 sec_uid
       const allRows = dbInstance.prepare(`
-        SELECT user_sec_uid, nickname, avatar, session_id, create_time, 'gift' as src FROM gifts WHERE nickname LIKE ?
+        SELECT user_sec_uid, nickname, avatar, session_id, create_time, 'gift' as src FROM gifts WHERE nickname LIKE ? ${sessionFilter}
         UNION ALL
-        SELECT user_sec_uid, nickname, avatar, session_id, create_time, 'danmaku' as src FROM danmaku WHERE nickname LIKE ?
+        SELECT user_sec_uid, nickname, avatar, session_id, create_time, 'danmaku' as src FROM danmaku WHERE nickname LIKE ? ${sessionFilter}
         UNION ALL
-        SELECT user_sec_uid, nickname, avatar, session_id, create_time, 'member' as src FROM members WHERE nickname LIKE ?
+        SELECT user_sec_uid, nickname, avatar, session_id, create_time, 'member' as src FROM members WHERE nickname LIKE ? ${sessionFilter}
         LIMIT 200
-      `).all(`%${q}%`, `%${q}%`, `%${q}%`);
+      `).all(`%${q}%`, ...sessionParams, `%${q}%`, ...sessionParams, `%${q}%`, ...sessionParams);
       if (!allRows.length) return sendJSON(res, { users: [] });
 
       // 按 sec_uid 去重聚合
@@ -322,26 +336,44 @@ async function handleAPI(req, res) {
             session_ids: new Set(),
             latest_time: 0,
             latest_action: null,
+            // 缓存各类最新动作的时间
+            gift_latest: 0,
+            danmaku_latest: 0,
+            member_latest: 0,
+            gift_action: null,
+            danmaku_action: null,
+            member_action: null,
           };
         }
         const u = userMap[key];
         if (r.nickname) u.db_nicknames.add(r.nickname);
         if (r.session_id) u.session_ids.add(r.session_id);
-        // 追踪最新动作
+        // 记录各类最新动作（取每类中时间最大的）
         const t = r.create_time || 0;
-        if (t > u.latest_time) {
-          u.latest_time = t;
-          let detail = '';
-          if (r.src === 'gift') {
-            const g = dbInstance.prepare('SELECT gift_name, repeat_count FROM gifts WHERE user_sec_uid = ? AND session_id = ? AND create_time = ? LIMIT 1').get(r.user_sec_uid, r.session_id, r.create_time);
-            detail = g ? `送了 ${g.gift_name}${g.repeat_count > 1 ? ' ×' + g.repeat_count : ''}` : '送了礼物';
-          } else if (r.src === 'danmaku') {
-            const d = dbInstance.prepare('SELECT content FROM danmaku WHERE user_sec_uid = ? AND session_id = ? AND create_time = ? LIMIT 1').get(r.user_sec_uid, r.session_id, r.create_time);
-            detail = d ? d.content : '发了弹幕';
-          } else {
-            detail = '进入直播间';
-          }
-          u.latest_action = { type: r.src, time: t, detail, session_id: r.session_id };
+        if (r.src === 'gift' && t > u.gift_latest) {
+          u.gift_latest = t;
+          const g = dbInstance.prepare('SELECT gift_name, repeat_count, to_nickname FROM gifts WHERE user_sec_uid = ? AND session_id = ? AND create_time = ? LIMIT 1').get(r.user_sec_uid, r.session_id, r.create_time);
+          let detail = g ? `送了${g.to_nickname ? ' ' + g.to_nickname : ''} ${g.gift_name}${g.repeat_count > 1 ? ' ×' + g.repeat_count : ''}` : '送了礼物';
+          u.gift_action = { type: 'gift', time: t, detail, session_id: r.session_id };
+        } else if (r.src === 'danmaku' && t > u.danmaku_latest) {
+          u.danmaku_latest = t;
+          const d = dbInstance.prepare('SELECT content FROM danmaku WHERE user_sec_uid = ? AND session_id = ? AND create_time = ? LIMIT 1').get(r.user_sec_uid, r.session_id, r.create_time);
+          u.danmaku_action = { type: 'danmaku', time: t, detail: d ? d.content : '发了弹幕', session_id: r.session_id };
+        } else if (r.src === 'member' && t > u.member_latest) {
+          u.member_latest = t;
+          u.member_action = { type: 'member', time: t, detail: '进入直播间', session_id: r.session_id };
+        }
+      }
+      // 优先级：弹幕 >= 送礼 > 进场（取时间最大的非进场动作，无则取进场）
+      for (const u of Object.values(userMap)) {
+        if (u.danmaku_action && u.gift_action) {
+          u.latest_action = u.danmaku_action.time >= u.gift_action.time ? u.danmaku_action : u.gift_action;
+        } else if (u.danmaku_action) {
+          u.latest_action = u.danmaku_action;
+        } else if (u.gift_action) {
+          u.latest_action = u.gift_action;
+        } else {
+          u.latest_action = u.member_action;
         }
       }
 

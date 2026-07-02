@@ -458,27 +458,22 @@ thead .session-cb:hover{opacity:1}
 .anchor-modal-body .gift-rank-num{font-size:13px;font-weight:700;color:var(--text-muted);width:22px;text-align:center;flex-shrink:0;font-variant-numeric:tabular-nums;font-family:'Inter',system-ui,monospace}
 
 /* Lookup & Profile views */
-.lookup-card{display:flex;gap:10px;padding:12px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:all .2s}
+.lookup-card{display:flex;gap:10px;padding:12px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:all .2s;justify-content:space-between;align-items:center}
 .lookup-card:hover{border-color:var(--accent);background:var(--bg-card-hover);transform:translateY(-1px);box-shadow:var(--shadow)}
-.lookup-card .avatar{flex-shrink:0}
-.lookup-card .user-cell{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
-.lookup-card .user-cell .user-info{min-width:0}
-.lookup-card .user-cell .user-name{font-weight:500;font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.lookup-card .user-cell .user-db-name{font-size:11px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.lookup-card .user-cell .user-detail{display:flex;align-items:center;gap:6px;font-size:11px;min-width:0}
-.lookup-card .user-cell .user-detail .sess{color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.lookup-card .user-cell .user-detail .act{color:var(--accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.lookup-card .user-cell .user-detail .act .action-icon{width:12px;height:12px;vertical-align:-2px;margin-right:3px}
-
-@media(max-width:480px){
-  .lookup-card .user-cell .user-detail{flex-direction:column;align-items:flex-start;gap:2px}
-  .lookup-card .user-cell .user-detail .act{max-width:100%}
-}
+.lookup-left{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
+.lookup-left .avatar{flex-shrink:0}
+.lookup-left .user-info{min-width:0}
+.lookup-left .user-name{font-weight:500;font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lookup-left .user-db-name{font-size:11px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lookup-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.lookup-right .sess{color:var(--text-muted);font-size:12px}
+.lookup-right .act{color:var(--accent);padding:2px 8px;border-radius:4px;background:rgba(var(--accent-rgb,59,130,246),0.15);font-size:12px}
 .profile-card{padding:20px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);position:relative;overflow:hidden}
 .anon-filter{display:flex;gap:8px;margin-bottom:8px}
 .anon-filter .cs-wrap{position:relative;flex:1;min-width:0}
 .anon-filter .cs-btn{width:100%;padding:8px 28px 8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:13px;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;appearance:none;-webkit-appearance:none}
 .anon-filter .cs-btn::after{content:'';position:absolute;right:10px;top:50%;transform:translateY(-50%);width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid var(--text-muted);pointer-events:none}
+.anon-filter .cs-btn.disabled{opacity:0.5;cursor:not-allowed;pointer-events:none}
 .anon-filter .cs-list{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);z-index:100;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.4)}
 .anon-filter .cs-list.open{display:block}
 .anon-filter .cs-opt{padding:10px 12px;font-size:13px;color:var(--text);cursor:pointer;border-bottom:1px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -915,7 +910,7 @@ async function loadSearchView() {
           <div class="cs-list" id="anonStreamerList"></div>
         </div>
         <div class="cs-wrap" id="anonSessionWrap">
-          <button class="cs-btn" id="anonSessionBtn" onclick="toggleCs('anonSession')">全部场次</button>
+          <button class="cs-btn disabled" id="anonSessionBtn" onclick="toggleCs('anonSession')">全部场次</button>
           <div class="cs-list" id="anonSessionList"></div>
         </div>
       </div>
@@ -956,10 +951,17 @@ function selectCs(name, val, el) {
 }
 async function onAnonStreamerChange(streamerId) {
   const sList = document.getElementById('anonSessionList');
+  const sessionBtn = document.getElementById('anonSessionBtn');
   sList.innerHTML = '<div class="cs-opt selected" data-val="" onclick="selectCs(\'anonSession\',\'\',this)">全部场次</div>';
   _csState['anonSession'] = '';
-  document.getElementById('anonSessionBtn').textContent = '全部场次';
-  if (!streamerId) return;
+  sessionBtn.textContent = '全部场次';
+  if (!streamerId) {
+    // 没选直播间，禁用场次下拉框
+    sessionBtn.classList.add('disabled');
+    return;
+  }
+  // 选了直播间，启用场次下拉框
+  sessionBtn.classList.remove('disabled');
   const sessions = await api(`/api/hosts/${streamerId}/sessions`);
   sessions.forEach(s => {
     const label = (s.started_at ? fmtTime(s.started_at) : '') + ' ' + (s.title || '');
@@ -998,42 +1000,31 @@ async function doAnonymousLookup() {
       // 实际名字（副显）
       const apiName = u.api_nickname || '';
       const hasDiff = apiName && apiName !== dbName;
-      // 场次文本（移动端多场次只显示数量）
-      const isMobile = window.innerWidth <= 480;
+      // 场次文本（显示最新出现的直播间名字）
       let sessText = '';
       if (u.sessions?.length) {
-        if (isMobile && u.sessions.length > 1) {
-          sessText = `${u.sessions.length}个场次`;
-        } else {
-          const max = isMobile ? 1 : 2;
-          sessText = u.sessions.slice(0, max).map(s => s.streamer_name).join('、') + (u.sessions.length > max ? ` 等${u.sessions.length}场` : '');
-        }
+        // 取第一个（最新的）场次的直播间名
+        sessText = u.sessions[0].streamer_name || '';
       }
-      // 最近动作
+      // 最近动作（只显示类型关键词）
       let actionHtml = '';
       if (u.latest_action) {
         const a = u.latest_action;
-        const giftSvg = '<svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><rect x="3" y="8" width="18" height="13" rx="1"/><path d="M12 8V6c0-2-1.5-4-4-4S4 4 4 6h2"/><path d="M20 6c0-2-1.5-4-4-4s-4 2-4 4h2"/><line x1="12" y1="8" x2="12" y2="21"/><line x1="3" y1="13" x2="21" y2="13"/></svg>';
-        const danmakuSvg = '<svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
-        const memberSvg = '<svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/></svg>';
-        const icons = { gift: giftSvg, danmaku: danmakuSvg, member: memberSvg };
-        // 卡片内截断过长的动作文本（保留前20字符）
-        const rawDetail = a.detail || '';
-        const shortDetail = rawDetail.length > 20 ? rawDetail.slice(0, 20) + '…' : rawDetail;
-        actionHtml = `${icons[a.type] || ''}${esc(shortDetail)}`;
+        const actionLabels = { gift: '礼物', danmaku: '弹幕', member: '进场' };
+        actionHtml = actionLabels[a.type] || a.type;
       }
 
       html += `<div class="lookup-card" onclick="showAnonymousDetail(${idx})">
-        ${avatarHtml(u.db_avatar || u.api_avatar || u.avatar, dbName)}
-        <div class="user-cell">
+        <div class="lookup-left">
+          ${avatarHtml(u.db_avatar || u.api_avatar || u.avatar, dbName)}
           <div class="user-info">
             <div class="user-name">${esc(dbName)}</div>
-            ${hasDiff ? `<div class="user-db-name">实际: ${esc(apiName)}${u.db_nicknames.length > 1 ? ` 等${u.db_nicknames.length}个昵称` : ''}</div>` : (u.db_nicknames.length > 1 ? `<div class="user-db-name">${u.db_nicknames.length}个昵称</div>` : '')}
+            ${hasDiff ? `<div class="user-db-name">${esc(apiName)}</div>` : (u.db_nicknames.length > 1 ? `<div class="user-db-name">${u.db_nicknames.length}个昵称</div>` : '')}
           </div>
-          ${(sessText || actionHtml) ? `<div class="user-detail">
-            ${sessText ? `<span class="sess">${esc(sessText)}</span>` : ''}
-            ${actionHtml ? `<span class="act">${actionHtml}</span>` : ''}
-          </div>` : ''}
+        </div>
+        <div class="lookup-right">
+          ${sessText ? `<span class="sess">${esc(sessText)}</span>` : ''}
+          ${actionHtml ? `<span class="act">${actionHtml}</span>` : ''}
         </div>
       </div>`;
     });
@@ -1100,15 +1091,21 @@ async function showAnonymousDetail(idx) {
       const icons = { gift: giftSvg, danmaku: danmakuSvg, member: memberSvg };
       const typeLabel = { gift: '送礼', danmaku: '弹幕', member: '进场' };
       const timeStr = fmtTime(a.time);
+      // 简化detail：去掉emoji，只保留核心信息
+      let simpleDetail = a.detail || '';
+      // 去除emoji（Unicode范围）
+      simpleDetail = simpleDetail.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim();
+      // 截断过长内容
+      if (simpleDetail.length > 40) simpleDetail = simpleDetail.slice(0, 40) + '…';
       html += `<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:14px">
         <div style="font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:8px">最近动作</div>
-        <div style="display:flex;align-items:center;gap:8px">
-          ${icons[a.type] || ''}
+        <div style="display:flex;align-items:flex-start;gap:8px">
+          <div style="margin-top:2px">${icons[a.type] || ''}</div>
           <div style="flex:1;min-width:0">
-            <div style="font-size:13px;color:var(--text)">${esc(a.detail)}</div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${a.streamer_name ? esc(a.streamer_name) + ' · ' : ''}${timeStr}</div>
+            <div style="font-size:13px;color:var(--text);line-height:1.4">${esc(simpleDetail)}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px">${a.streamer_name ? esc(a.streamer_name) : ''} ${timeStr ? '· ' + timeStr : ''}</div>
           </div>
-          <div style="font-size:11px;color:var(--accent);flex-shrink:0">${typeLabel[a.type] || ''}</div>
+          <div style="font-size:11px;color:var(--accent);flex-shrink:0;padding:2px 8px;background:rgba(var(--accent-rgb,59,130,246),0.15);border-radius:4px">${typeLabel[a.type] || ''}</div>
         </div>
       </div>`;
     }

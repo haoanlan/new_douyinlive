@@ -1010,7 +1010,10 @@ async function doAnonymousLookup() {
         const danmakuSvg = '<svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
         const memberSvg = '<svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/></svg>';
         const icons = { gift: giftSvg, danmaku: danmakuSvg, member: memberSvg };
-        actionHtml = `${icons[a.type] || ''}${esc(a.detail)}`;
+        // 卡片内截断过长的动作文本（保留前20字符）
+        const rawDetail = a.detail || '';
+        const shortDetail = rawDetail.length > 20 ? rawDetail.slice(0, 20) + '…' : rawDetail;
+        actionHtml = `${icons[a.type] || ''}${esc(shortDetail)}`;
       }
 
       html += `<div class="lookup-card" onclick="showAnonymousDetail(${idx})">

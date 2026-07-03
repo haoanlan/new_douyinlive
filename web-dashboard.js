@@ -20,7 +20,7 @@ async function fetchWebcastUserProfile(targetUid, anchorUid) {
     let cookie = '';
     try {
       const txt = fs.readFileSync(configPath, 'utf8');
-      const m = txt.match(/^douyin:\s*'(.+?)'/m);
+      const m = txt.match(/douyin:\s*'(.+?)'/);
       if (m) cookie = m[1];
     } catch (e) {}
     const apiUrl = `https://live.douyin.com/webcast/user/profile/?aid=6383&device_platform=web&sec_target_uid=${targetUid}&sec_anchor_id=${anchorUid}`;
@@ -37,11 +37,12 @@ async function fetchWebcastUserProfile(targetUid, anchorUid) {
       res.on('end', () => {
         try {
           const j = JSON.parse(data);
+          if (j.status_code !== 0) console.log(`[webcast] status=${j.status_code} msg=${j.data?.message}`);
           resolve(j.data?.user_profile || null);
-        } catch (e) { resolve(null); }
+        } catch (e) { console.log('[webcast] parse error:', e.message); resolve(null); }
       });
     });
-    req.on('error', () => resolve(null));
+    req.on('error', (e) => { console.log('[webcast] error:', e.message); resolve(null); });
     req.setTimeout(10000, () => { req.destroy(); resolve(null); });
   });
 }
@@ -451,7 +452,7 @@ async function handleAPI(req, res) {
           try { apiInfo = await fetchUserBySecUid(u.sec_uid); } catch (e) {}
           // 用 webcast API 补充粉丝团等级等信息
           if (u.sec_uid) {
-            const anchorRow = dbInstance.prepare('SELECT to_user_sec_uid FROM gifts WHERE user_sec_uid = ? AND to_user_sec_uid IS NOT NULL AND to_user_sec_uid != "" LIMIT 1').get(u.sec_uid);
+            const anchorRow = dbInstance.prepare(`SELECT to_user_sec_uid FROM gifts WHERE user_sec_uid = ? AND to_user_sec_uid IS NOT NULL AND to_user_sec_uid != '' LIMIT 1`).get(u.sec_uid);
             if (anchorRow?.to_user_sec_uid) {
               try { webcastInfo = await fetchWebcastUserProfile(u.sec_uid, anchorRow.to_user_sec_uid); } catch (e) {}
             }

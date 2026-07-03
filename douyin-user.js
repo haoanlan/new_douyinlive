@@ -8,6 +8,12 @@ async function fetchUserBySecUid(secUid) {
   try {
     const info = await api.getUserInfo(secUid);
     if (info) {
+      // IP属地：优先 ip_location，否则用 country/province/city 拼接
+      let ipLocation = info.ip_location || '';
+      if (!ipLocation) {
+        const parts = [info.country, info.province, info.city].filter(Boolean);
+        if (parts.length) ipLocation = 'IP属地：' + parts.join(' ');
+      }
       return {
         sec_uid: secUid,
         nickname: info.nickname || '',
@@ -20,7 +26,7 @@ async function fetchUserBySecUid(secUid) {
         total_favorited: info.total_favorited || 0,
         aweme_count: info.aweme_count || 0,
         commerce_user_level: info.commerce_user_level || 0,
-        ip_location: info.ip_location || '',
+        ip_location: ipLocation,
         is_private: info.is_private || false,
       };
     }

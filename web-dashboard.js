@@ -11,41 +11,6 @@ const url = require('url');
 const zlib = require('zlib');
 const db = require('./db-sqlite.js');
 const reportImg = require('./report-image.js');
-const https = require('https');
-
-// ====== Webcast 用户详情 API ======
-async function fetchWebcastUserProfile(targetUid, anchorUid) {
-  return new Promise((resolve) => {
-    const configPath = path.join(__dirname, 'config.yaml');
-    let cookie = '';
-    try {
-      const txt = fs.readFileSync(configPath, 'utf8');
-      const m = txt.match(/douyin:\s*'(.+?)'/);
-      if (m) cookie = m[1];
-    } catch (e) {}
-    const apiUrl = `https://live.douyin.com/webcast/user/profile/?aid=6383&device_platform=web&sec_target_uid=${targetUid}&sec_anchor_id=${anchorUid}`;
-    const opts = {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Referer': 'https://live.douyin.com/',
-        'Cookie': cookie,
-      }
-    };
-    const req = https.get(apiUrl, opts, (res) => {
-      let data = '';
-      res.on('data', c => data += c);
-      res.on('end', () => {
-        try {
-          const j = JSON.parse(data);
-          if (j.status_code !== 0) console.log(`[webcast] status=${j.status_code} msg=${j.data?.message}`);
-          resolve(j.data?.user_profile || null);
-        } catch (e) { console.log('[webcast] parse error:', e.message); resolve(null); }
-      });
-    });
-    req.on('error', (e) => { console.log('[webcast] error:', e.message); resolve(null); });
-    req.setTimeout(10000, () => { req.destroy(); resolve(null); });
-  });
-}
 
 // ====== 连击去重（复用 report-image.js 逻辑）======
 function comboDedupGifts(gifts) {
@@ -447,25 +412,8 @@ async function handleAPI(req, res) {
       const results = [];
       for (const u of users) {
         let apiInfo = null;
-        let webcastInfo = null;
         if (u.sec_uid) {
           try { apiInfo = await fetchUserBySecUid(u.sec_uid); } catch (e) {}
-          // 用 webcast API 补充消费等级等信息（使用当前直播间的主播 sec_uid）
-          if (u.sec_uid) {
-            // 优先用 filterStreamer 的 sec_uid，否则取任意一个有 sec_uid 的主播
-            let anchorSecUid = '';
-            if (filterStreamer) {
-              const anchorRow = dbInstance.prepare('SELECT sec_uid FROM streamers WHERE id = ? AND sec_uid IS NOT NULL AND sec_uid != \'\'').get(filterStreamer);
-              anchorSecUid = anchorRow?.sec_uid || '';
-            }
-            if (!anchorSecUid) {
-              const anchorRow = dbInstance.prepare('SELECT sec_uid FROM streamers WHERE sec_uid IS NOT NULL AND sec_uid != \'\' LIMIT 1').get();
-              anchorSecUid = anchorRow?.sec_uid || '';
-            }
-            if (anchorSecUid) {
-              try { webcastInfo = await fetchWebcastUserProfile(u.sec_uid, anchorSecUid); } catch (e) {}
-            }
-          }
         }
         // 场次列表（附带钻石数）
         const sessions = [...u.session_ids].map(sid => {
@@ -501,15 +449,9 @@ async function handleAPI(req, res) {
           aweme_count: apiInfo?.aweme_count || 0,
           commerce_user_level: apiInfo?.commerce_user_level || 0,
           ip_location: apiInfo?.ip_location || '',
-          // Webcast API 补充信息
-          consume_level: (() => {
-            const uri = webcastInfo?.grade?.uri || webcastInfo?.basic_area?.grade_icon?.uri || '';
-            const m = uri.match(/level_v1_(\d+)/);
-            return m ? parseInt(m[1]) : 0;
-          })(),
-          user_age: webcastInfo?.base_info?.age || apiInfo?.user_age || 0,
-          user_gender: webcastInfo?.base_info?.gender || apiInfo?.gender || 0,
-          is_private: apiInfo?.is_private || webcastInfo?.base_info?.secret === 1 || false,
+          user_age: apiInfo?.user_age || 0,
+          user_gender: apiInfo?.gender || 0,
+          is_private: apiInfo?.is_private || false,
           unique_id: apiInfo?.unique_id || '',
           sessions,
           latest_action: latestAction,

@@ -744,7 +744,7 @@ function updateBreadcrumb() {
   } else if (state.view === 'sessions') {
     const host = state.rooms.find(h => h.room_id === state.hostId);
     bc.className = 'breadcrumb show';
-    bc.innerHTML = `<span class="breadcrumb-item" onclick="viewHosts()">${state.topNavTab === 'search' ? '匿名查询' : state.topNavTab === 'profile' ? '用户画像' : '房间管理'}</span><span class="breadcrumb-sep">›</span><span class="breadcrumb-current">${host?.name || ''}</span>`;
+    bc.innerHTML = `<span class="breadcrumb-item" onclick="viewHosts(false,true)">${state.topNavTab === 'search' ? '匿名查询' : state.topNavTab === 'profile' ? '用户画像' : '房间管理'}</span><span class="breadcrumb-sep">›</span><span class="breadcrumb-current">${host?.name || ''}</span>`;
     backBtn.className = 'back-btn show';
     title.textContent = host?.name || '';
     topNav.classList.remove('visible');
@@ -752,7 +752,7 @@ function updateBreadcrumb() {
     const host = state.rooms.find(h => h.room_id === state.hostId);
     const sess = state.sessions.find(s => s.id === state.sessionId);
     bc.className = 'breadcrumb show';
-    bc.innerHTML = `<span class="breadcrumb-item" onclick="viewHosts()">房间管理</span><span class="breadcrumb-sep">›</span><span class="breadcrumb-item" onclick="viewSessions('${state.hostId}')">${host?.name || ''}</span><span class="breadcrumb-sep">›</span><span class="breadcrumb-current">${sess?.title || '场次详情'}</span>`;
+    bc.innerHTML = `<span class="breadcrumb-item" onclick="viewHosts(false,true)">房间管理</span><span class="breadcrumb-sep">›</span><span class="breadcrumb-item" onclick="viewSessions('${state.hostId}')">${host?.name || ''}</span><span class="breadcrumb-sep">›</span><span class="breadcrumb-current">${sess?.title || '场次详情'}</span>`;
     backBtn.className = 'back-btn show';
     title.textContent = sess?.title || '场次详情';
     topNav.classList.remove('visible');
@@ -768,11 +768,19 @@ const ICO = {
 };
 
 // ========== VIEW: HOSTS ==========
-async function viewHosts(fromPopState) {
+async function viewHosts(fromPopState, replaceCurrent) {
   state.view = 'hosts';
   state.hostId = null;
   state.sessionId = null;
-  if (!fromPopState) pushNav('hosts');
+  if (replaceCurrent) {
+    // 面包屑回主页：替换当前 entry 而不是 push，这样手势返回不会跳回子页面
+    const url = new URL(location.href);
+    url.searchParams.delete('room');
+    url.searchParams.delete('session');
+    history.replaceState({ view: 'hosts' }, '', url.toString());
+  } else if (!fromPopState) {
+    pushNav('hosts');
+  }
   document.getElementById('batchFloat')?.classList.remove('show');
   document.getElementById('topNav').style.display = 'flex';
   updateBreadcrumb();

@@ -721,7 +721,11 @@ function pushNav(view, params = {}) {
 
 window.addEventListener('popstate', e => {
   const d = e.state;
-  if (!d || d.view === 'hosts') viewHosts(true);
+  if (!d || d.view === 'hosts') {
+    viewHosts(true);
+    // 防止手势返回退出：回到主页时自动补一个 history entry
+    try { history.pushState({ view: 'hosts' }, '', location.href); } catch(e) {}
+  }
   else if (d.view === 'sessions' && d.hostId) viewSessions(d.hostId, true);
   else if (d.view === 'detail' && d.sessionId) viewDetail(d.sessionId, true);
 });
@@ -2270,8 +2274,6 @@ function giftEmoji(name) { if (!name) return '🎁'; if (name.includes('火箭')
 // ========== INIT ==========
 // Set initial history state so back gesture doesn't exit page
 history.replaceState({ view: 'hosts' }, '', location.href);
-// Push an empty entry so first back goes to hosts (not exit)
-history.pushState({ view: 'hosts', _initial: true }, '', location.href);
 viewHosts(true);
 </script>
 </body>

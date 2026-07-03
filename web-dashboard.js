@@ -861,7 +861,11 @@ async function handleAPI(req, res) {
         }
         // 二次 fallback: 从 gift_icons 表查（覆盖融合礼物积累的 icon）
         if (!d.gift_icon) {
-          const gi = dbInstance.prepare('SELECT icon_url FROM gift_icons WHERE name = ?').get(d.gift_name);
+          let gi = dbInstance.prepare('SELECT icon_url FROM gift_icons WHERE name = ?').get(d.gift_name);
+          // 模糊匹配：处理 游轮/邮轮 等协议名与API名不一致的情况
+          if (!gi) {
+            gi = dbInstance.prepare('SELECT icon_url FROM gift_icons WHERE REPLACE(REPLACE(name,\'邮轮\',\'游轮\'),\'游轮\',\'邮轮\') = ? OR name LIKE ?').get(d.gift_name, '%' + d.gift_name.replace(/[·\s]/g, '') + '%');
+          }
           d.gift_icon = gi?.icon_url || null;
         }
       }

@@ -258,6 +258,7 @@ async function insertGifts(sessionId, items) {
   // 确保 icon 列存在
   try { d.exec('ALTER TABLE gifts ADD COLUMN icon TEXT'); } catch(e) {}
   const iconStmt = d.prepare('SELECT icon_url FROM gift_icons WHERE name = ?');
+  const iconFuzzyStmt = d.prepare('SELECT icon_url FROM gift_icons WHERE REPLACE(REPLACE(name,\'邮轮\',\'游轮\'),\'游轮\',\'邮轮\') = ? OR name LIKE ?');
   const iconCheck = d.prepare('SELECT 1 FROM gift_icons WHERE name = ?');
   const iconUpsert = d.prepare('INSERT OR IGNORE INTO gift_icons (gift_id, name, icon_url, diamond_count) VALUES (?, ?, ?, ?)');
   const stmt = d.prepare(
@@ -265,7 +266,7 @@ async function insertGifts(sessionId, items) {
   );
   const tx = d.transaction((rows) => {
     for (const item of rows) {
-      const icon = item.icon || iconStmt.get(item.giftName || '')?.icon_url || null;
+      const icon = item.icon || iconStmt.get(item.giftName || '')?.icon_url || iconFuzzyStmt.get(item.giftName || '', '%' + (item.giftName || '').replace(/[·\s]/g, '') + '%')?.icon_url || null;
       // 如果有 icon 但 gift_icons 表没有，自动补充（积累融合礼物 icon 库）
       if (icon && item.giftName && !iconCheck.get(item.giftName)) {
         iconUpsert.run(-(Math.abs(item.giftName.length) + 10000), item.giftName, icon, item.diamondCount || 0);

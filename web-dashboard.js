@@ -495,6 +495,11 @@ async function handleAPI(req, res) {
           // Webcast API 补充信息
           fans_club_level: webcastInfo?.fans_club?.data?.level || 0,
           fans_club_total: webcastInfo?.fans_club?.total_fans_count || 0,
+          consume_level: (() => {
+            const uri = webcastInfo?.grade?.uri || webcastInfo?.basic_area?.grade_icon?.uri || '';
+            const m = uri.match(/level_v1_(\d+)/);
+            return m ? parseInt(m[1]) : 0;
+          })(),
           user_age: webcastInfo?.base_info?.age || apiInfo?.user_age || 0,
           user_gender: webcastInfo?.base_info?.gender || apiInfo?.gender || 0,
           is_private: apiInfo?.is_private || webcastInfo?.base_info?.secret === 1 || false,

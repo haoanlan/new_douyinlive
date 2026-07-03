@@ -1073,11 +1073,12 @@ async function showAnonymousDetail(idx) {
       </div>
     </div>`;
 
-    // API 统计（粉丝/关注/IP属地）
-    if (u.follower_count || u.following_count || u.ip_location) {
+    // API 统计（粉丝/关注/等级/IP属地）
+    if (u.follower_count || u.following_count || u.commerce_user_level || u.ip_location) {
       html += `<div style="display:flex;gap:12px;margin-bottom:14px">
         <div style="text-align:center;flex:1"><div style="font-size:16px;font-weight:700;color:var(--text)">${fmtNum(u.follower_count)}</div><div style="font-size:11px;color:var(--text-muted)">粉丝</div></div>
         <div style="text-align:center;flex:1"><div style="font-size:16px;font-weight:700;color:var(--text)">${fmtNum(u.following_count)}</div><div style="font-size:11px;color:var(--text-muted)">关注</div></div>
+        <div style="text-align:center;flex:1"><div style="font-size:16px;font-weight:700;color:var(--orange)">${u.commerce_user_level || '-'}</div><div style="font-size:11px;color:var(--text-muted)">等级</div></div>
         <div style="text-align:center;flex:1"><div style="font-size:14px;font-weight:600;color:var(--accent)">${esc(u.ip_location || '未知')}</div><div style="font-size:11px;color:var(--text-muted)">IP属地</div></div>
       </div>`;
     }

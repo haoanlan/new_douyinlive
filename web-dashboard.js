@@ -447,6 +447,7 @@ async function handleAPI(req, res) {
           following_count: apiInfo?.following_count || 0,
           total_favorited: apiInfo?.total_favorited || 0,
           aweme_count: apiInfo?.aweme_count || 0,
+          commerce_user_level: apiInfo?.commerce_user_level || 0,
           ip_location: apiInfo?.ip_location || '',
           is_private: apiInfo?.is_private || false,
           unique_id: apiInfo?.unique_id || '',

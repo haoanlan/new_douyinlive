@@ -859,6 +859,11 @@ async function handleAPI(req, res) {
           const ic = dbInstance.prepare('SELECT icon FROM gifts WHERE session_id = ? AND nickname = ? AND gift_name = ? AND icon IS NOT NULL LIMIT 1').get(sid, d.nickname, d.gift_name);
           d.gift_icon = ic?.icon || null;
         }
+        // 二次 fallback: 从 gift_icons 表查（覆盖融合礼物积累的 icon）
+        if (!d.gift_icon) {
+          const gi = dbInstance.prepare('SELECT icon_url FROM gift_icons WHERE name = ?').get(d.gift_name);
+          d.gift_icon = gi?.icon_url || null;
+        }
       }
       const giftDetails = Object.values(giftDetailMap).sort((a, b) => b.total_diamonds - a.total_diamonds);
 

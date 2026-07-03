@@ -226,6 +226,7 @@ thead .session-cb:hover{opacity:1}
 .gift-detail-row span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .gift-detail-item{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius)}
 .gift-detail-item .gdi-icon{width:20px;height:20px;border-radius:4px;flex-shrink:0}
+.gift-detail-item .gdi-fallback{display:flex;align-items:center;justify-content:center;background:var(--bg-input);font-size:12px;line-height:1}
 .gift-detail-item .gdi-name{font-size:13px;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .gift-detail-item .gdi-to{color:var(--text-muted);font-size:11px;flex-shrink:0}
 .gift-detail-item .gdi-diamonds{color:var(--orange);font-weight:600;font-size:12px;font-variant-numeric:tabular-nums;flex-shrink:0}
@@ -1883,7 +1884,7 @@ function showGiftDetail(nickname, secUid) {
   let html = `<div class="anchor-modal-summary"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:-2px"><path d="M12 2L3 9l9 13 9-13z"/><path d="M3 9l5 2.5L12 2l4 9.5 5-2.5"/><path d="M8 11.5L12 22l4-10.5"/></svg> <span class="sv">${totalD.toLocaleString()}</span> 钻石</span><span>${details.length} 种礼物</span></div>`;
   html += '<div style="display:flex;flex-direction:column;gap:6px">';
   details.forEach(d => {
-    const icon = d.gift_icon ? `<img src="${esc(d.gift_icon)}" class="gdi-icon">` : '';
+    const icon = d.gift_icon ? `<img src="${esc(d.gift_icon)}" class="gdi-icon">` : '<span class="gdi-icon gdi-fallback">🎁</span>';
     const to = d.to_nickname ? `<span class="gdi-to">→ ${esc(d.to_nickname)}</span>` : '';
     html += `<div class="gift-detail-item">
       ${icon}
@@ -1982,7 +1983,7 @@ async function queryAnonymous() {
           <span style="font-size:11px;padding:1px 6px;border-radius:4px;background:${m.type === '礼物' ? 'rgba(251,146,60,0.15)' : 'rgba(108,140,255,0.15)'};color:${m.type === '礼物' ? 'var(--orange)' : 'var(--accent)'}">${m.type}</span>
           ${m.diamonds ? `<span style="font-size:11px;color:var(--orange)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:-2px"><path d="M12 2L3 9l9 13 9-13z"/><path d="M3 9l5 2.5L12 2l4 9.5 5-2.5"/><path d="M8 11.5L12 22l4-10.5"/></svg>${m.diamonds.toLocaleString()}</span>` : ''}
         </div>
-        <div style="font-size:12px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(m.content)}">${m.giftIcon ? `<img src="${esc(m.giftIcon)}" style="width:16px;height:16px;vertical-align:-3px;margin-right:2px;border-radius:3px">` : ''}${esc((m.content || '').substring(0, 80))}</div>
+        <div style="font-size:12px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(m.content)}">${m.giftIcon ? `<img src="${esc(m.giftIcon)}" style="width:16px;height:16px;vertical-align:-3px;margin-right:2px;border-radius:3px">` : '<span style="display:inline-block;width:16px;height:16px;vertical-align:-3px;margin-right:2px;border-radius:3px;background:var(--bg-input);text-align:center;line-height:16px;font-size:10px">🎁</span>'}${esc((m.content || '').substring(0, 80))}</div>
       </div>
     </div>`;
   });

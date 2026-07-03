@@ -258,12 +258,18 @@ async function insertGifts(sessionId, items) {
   // 确保 icon 列存在
   try { d.exec('ALTER TABLE gifts ADD COLUMN icon TEXT'); } catch(e) {}
   const iconStmt = d.prepare('SELECT icon_url FROM gift_icons WHERE name = ?');
+  const iconCheck = d.prepare('SELECT 1 FROM gift_icons WHERE name = ?');
+  const iconUpsert = d.prepare('INSERT OR IGNORE INTO gift_icons (gift_id, name, icon_url, diamond_count) VALUES (?, ?, ?, ?)');
   const stmt = d.prepare(
     'INSERT INTO gifts (session_id, msg_id, nickname, avatar, to_nickname, to_avatar, to_user_display_id, to_user_sec_uid, gift_name, diamond_count, repeat_count, total_diamonds, user_display_id, user_sec_uid, create_time, trace_id, combo_count, repeat_end, group_count, send_type, icon) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
   );
   const tx = d.transaction((rows) => {
     for (const item of rows) {
       const icon = item.icon || iconStmt.get(item.giftName || '')?.icon_url || null;
+      // 如果有 icon 但 gift_icons 表没有，自动补充（积累融合礼物 icon 库）
+      if (icon && item.giftName && !iconCheck.get(item.giftName)) {
+        iconUpsert.run(-(Math.abs(item.giftName.length) + 10000), item.giftName, icon, item.diamondCount || 0);
+      }
       stmt.run(sessionId, item.msgId || null, item.nickname || null, item.avatar || null,
         item.toNickname || null, item.toAvatar || null, item.toUserDisplayId || null, item.toUserSecUid || null,
         item.giftName || null, item.diamondCount || 0, item.repeatCount || 1,

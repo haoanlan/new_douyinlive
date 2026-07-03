@@ -164,15 +164,15 @@ async function init() {
 }
 
 /** 获取/创建主播 */
-async function upsertStreamer(name, roomId, avatar) {
+async function upsertStreamer(name, roomId, avatar, secUid) {
   const d = getDb();
-  // 先按 room_id 查
+  // 先按 roomId 查
   if (roomId) {
     const row = d.prepare('SELECT id FROM streamers WHERE room_id = ?').get(roomId);
     if (row) {
-      if (name || avatar) {
-        d.prepare('UPDATE streamers SET name = COALESCE(?, name), avatar = COALESCE(?, avatar) WHERE id = ?')
-          .run(name || null, avatar || null, row.id);
+      if (name || avatar || secUid) {
+        d.prepare('UPDATE streamers SET name = COALESCE(?, name), avatar = COALESCE(?, avatar), sec_uid = COALESCE(?, sec_uid) WHERE id = ?')
+          .run(name || null, avatar || null, secUid || null, row.id);
       }
       return row.id;
     }
@@ -181,16 +181,16 @@ async function upsertStreamer(name, roomId, avatar) {
   if (name) {
     const row = d.prepare('SELECT id FROM streamers WHERE name = ?').get(name);
     if (row) {
-      if (roomId || avatar) {
-        d.prepare('UPDATE streamers SET room_id = COALESCE(?, room_id), avatar = COALESCE(?, avatar) WHERE id = ?')
-          .run(roomId || null, avatar || null, row.id);
+      if (roomId || avatar || secUid) {
+        d.prepare('UPDATE streamers SET room_id = COALESCE(?, room_id), avatar = COALESCE(?, avatar), sec_uid = COALESCE(?, sec_uid) WHERE id = ?')
+          .run(roomId || null, avatar || null, secUid || null, row.id);
       }
       return row.id;
     }
   }
   // 新建
-  const info = d.prepare('INSERT INTO streamers (name, room_id, avatar) VALUES (?, ?, ?)')
-    .run(name || roomId || '未知主播', roomId || null, avatar || null);
+  const info = d.prepare('INSERT INTO streamers (name, room_id, avatar, sec_uid) VALUES (?, ?, ?, ?)')
+    .run(name || roomId || '未知主播', roomId || null, avatar || null, secUid || null);
   return info.lastInsertRowid;
 }
 

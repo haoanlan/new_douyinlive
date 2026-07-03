@@ -176,7 +176,7 @@ async function loadRoomName(room) {
         room.displayName = userInfo.nickname;
         // 保存到DB
         const avatarUrl = userInfo.avatar_thumb?.url_list?.[0] || '';
-        db.upsertStreamer(userInfo.nickname, room.roomId, avatarUrl)
+        db.upsertStreamer(userInfo.nickname, room.roomId, avatarUrl, liveInfo.sec_uid || '')
           .catch(e => console.error(`[daemon] upsertStreamer 失败:`, e.message));
         console.log(`[daemon] 通过API获取到名字: ${userInfo.nickname}`);
       }
@@ -966,7 +966,7 @@ function startConnection(roomId, config) {
                 if (openId) {
                   feishu.sendText(openId, '🔴 ' + name + ' 开播啦！\n' + (data.title || ''), 'open_id').catch(() => {});
                 }
-                const streamerId = await db.upsertStreamer(room.session.room_author || '', roomId, '');
+                const streamerId = await db.upsertStreamer(room.session.room_author || '', roomId, '', '');
                 room.dbSessionId = await db.createSession(streamerId, room.session.room_title, roomId);
                 room.dbSyncState = { danmaku: 0, gifts: 0, members: 0, online: 0 };
                 console.log(`[${getDisplayName(room)}] [db] session #${room.dbSessionId} 已创建`);

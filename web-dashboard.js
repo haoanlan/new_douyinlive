@@ -450,11 +450,20 @@ async function handleAPI(req, res) {
         let webcastInfo = null;
         if (u.sec_uid) {
           try { apiInfo = await fetchUserBySecUid(u.sec_uid); } catch (e) {}
-          // 用 webcast API 补充粉丝团等级等信息
+          // 用 webcast API 补充消费等级等信息（使用当前直播间的主播 sec_uid）
           if (u.sec_uid) {
-            const anchorRow = dbInstance.prepare(`SELECT to_user_sec_uid FROM gifts WHERE user_sec_uid = ? AND to_user_sec_uid IS NOT NULL AND to_user_sec_uid != '' LIMIT 1`).get(u.sec_uid);
-            if (anchorRow?.to_user_sec_uid) {
-              try { webcastInfo = await fetchWebcastUserProfile(u.sec_uid, anchorRow.to_user_sec_uid); } catch (e) {}
+            // 优先用 filterStreamer 的 sec_uid，否则取任意一个有 sec_uid 的主播
+            let anchorSecUid = '';
+            if (filterStreamer) {
+              const anchorRow = dbInstance.prepare('SELECT sec_uid FROM streamers WHERE id = ? AND sec_uid IS NOT NULL AND sec_uid != \'\'').get(filterStreamer);
+              anchorSecUid = anchorRow?.sec_uid || '';
+            }
+            if (!anchorSecUid) {
+              const anchorRow = dbInstance.prepare('SELECT sec_uid FROM streamers WHERE sec_uid IS NOT NULL AND sec_uid != \'\' LIMIT 1').get();
+              anchorSecUid = anchorRow?.sec_uid || '';
+            }
+            if (anchorSecUid) {
+              try { webcastInfo = await fetchWebcastUserProfile(u.sec_uid, anchorSecUid); } catch (e) {}
             }
           }
         }
@@ -493,8 +502,6 @@ async function handleAPI(req, res) {
           commerce_user_level: apiInfo?.commerce_user_level || 0,
           ip_location: apiInfo?.ip_location || '',
           // Webcast API 补充信息
-          fans_club_level: webcastInfo?.fans_club?.data?.level || 0,
-          fans_club_total: webcastInfo?.fans_club?.total_fans_count || 0,
           consume_level: (() => {
             const uri = webcastInfo?.grade?.uri || webcastInfo?.basic_area?.grade_icon?.uri || '';
             const m = uri.match(/level_v1_(\d+)/);

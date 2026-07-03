@@ -371,7 +371,8 @@ async function dbFlush(room) {
         comboCount: g.comboCount || 0,
         repeatEnd: g.repeatEnd !== undefined && g.repeatEnd !== null ? g.repeatEnd : null,
         groupCount: g.groupCount || 1,
-        sendType: g.sendType !== undefined && g.sendType !== null ? g.sendType : null
+        sendType: g.sendType !== undefined && g.sendType !== null ? g.sendType : null,
+        icon: g.icon || null
       })));
       room.dbSyncState.gifts = room.session.gifts.length;
     }
@@ -635,6 +636,26 @@ function handleMessage(room, data) {
         sendType: data.sendType !== undefined ? parseInt(data.sendType, 10) : null,
         icon: data.gift?.icon?.urlList?.[0] || null,
       });
+      // DEBUG: 记录无icon的礼物原始结构，排查融合礼物icon字段位置
+      if (!data.gift?.icon?.urlList?.[0]) {
+        const fs = require('fs');
+        const debugPath = require('path').join(__dirname, 'debug-gift-icon.json');
+        try {
+          let existing = [];
+          try { existing = JSON.parse(fs.readFileSync(debugPath, 'utf8')); } catch(e) {}
+          existing.push({
+            time: new Date().toISOString(),
+            giftName,
+            baseName,
+            displayName,
+            giftKeys: data.gift ? Object.keys(data.gift) : [],
+            giftRaw: JSON.parse(JSON.stringify(data.gift || {})),
+          });
+          // 只保留最近50条
+          if (existing.length > 50) existing = existing.slice(-50);
+          fs.writeFileSync(debugPath, JSON.stringify(existing, null, 2));
+        } catch(e) {}
+      }
       if (!room.stats.giftUsers[user.nickname]) {
         room.stats.giftUsers[user.nickname] = { count: 0, totalDiamonds: 0, giftNames: [] };
       }

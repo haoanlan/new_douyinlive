@@ -19,6 +19,7 @@ async function fetchUserBySecUid(secUid) {
         following_count: info.following_count || 0,
         total_favorited: info.total_favorited || 0,
         aweme_count: info.aweme_count || 0,
+        ip_location: info.ip_location || '',
         is_private: info.is_private || false,
       };
     }

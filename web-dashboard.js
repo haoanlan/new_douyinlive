@@ -11,6 +11,40 @@ const url = require('url');
 const zlib = require('zlib');
 const db = require('./db-sqlite.js');
 const reportImg = require('./report-image.js');
+const https = require('https');
+
+// ====== Webcast 用户详情 API ======
+async function fetchWebcastUserProfile(targetUid, anchorUid) {
+  return new Promise((resolve) => {
+    const configPath = path.join(__dirname, 'config.yaml');
+    let cookie = '';
+    try {
+      const txt = fs.readFileSync(configPath, 'utf8');
+      const m = txt.match(/^douyin:\s*'(.+?)'/m);
+      if (m) cookie = m[1];
+    } catch (e) {}
+    const apiUrl = `https://live.douyin.com/webcast/user/profile/?aid=6383&device_platform=web&sec_target_uid=${targetUid}&sec_anchor_id=${anchorUid}`;
+    const opts = {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Referer': 'https://live.douyin.com/',
+        'Cookie': cookie,
+      }
+    };
+    const req = https.get(apiUrl, opts, (res) => {
+      let data = '';
+      res.on('data', c => data += c);
+      res.on('end', () => {
+        try {
+          const j = JSON.parse(data);
+          resolve(j.data?.user_profile || null);
+        } catch (e) { resolve(null); }
+      });
+    });
+    req.on('error', () => resolve(null));
+    req.setTimeout(10000, () => { req.destroy(); resolve(null); });
+  });
+}
 
 // ====== 连击去重（复用 report-image.js 逻辑）======
 function comboDedupGifts(gifts) {
@@ -412,8 +446,16 @@ async function handleAPI(req, res) {
       const results = [];
       for (const u of users) {
         let apiInfo = null;
+        let webcastInfo = null;
         if (u.sec_uid) {
           try { apiInfo = await fetchUserBySecUid(u.sec_uid); } catch (e) {}
+          // 用 webcast API 补充粉丝团等级等信息
+          if (u.sec_uid) {
+            const anchorRow = dbInstance.prepare('SELECT to_user_sec_uid FROM gifts WHERE user_sec_uid = ? AND to_user_sec_uid IS NOT NULL AND to_user_sec_uid != "" LIMIT 1').get(u.sec_uid);
+            if (anchorRow?.to_user_sec_uid) {
+              try { webcastInfo = await fetchWebcastUserProfile(u.sec_uid, anchorRow.to_user_sec_uid); } catch (e) {}
+            }
+          }
         }
         // 场次列表（附带钻石数）
         const sessions = [...u.session_ids].map(sid => {
@@ -449,7 +491,12 @@ async function handleAPI(req, res) {
           aweme_count: apiInfo?.aweme_count || 0,
           commerce_user_level: apiInfo?.commerce_user_level || 0,
           ip_location: apiInfo?.ip_location || '',
-          is_private: apiInfo?.is_private || false,
+          // Webcast API 补充信息
+          fans_club_level: webcastInfo?.fans_club?.data?.level || 0,
+          fans_club_total: webcastInfo?.fans_club?.total_fans_count || 0,
+          user_age: webcastInfo?.base_info?.age || apiInfo?.user_age || 0,
+          user_gender: webcastInfo?.base_info?.gender || apiInfo?.gender || 0,
+          is_private: apiInfo?.is_private || webcastInfo?.base_info?.secret === 1 || false,
           unique_id: apiInfo?.unique_id || '',
           sessions,
           latest_action: latestAction,

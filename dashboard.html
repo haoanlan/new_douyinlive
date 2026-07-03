@@ -1068,17 +1068,18 @@ async function showAnonymousDetail(idx) {
         <div style="font-size:16px;font-weight:600;color:var(--text)">${esc(u.nickname || '未知')}</div>
         ${u.db_nicknames?.length > 1 ? `<div style="font-size:12px;color:var(--text-muted);margin-top:3px">库中昵称: ${u.db_nicknames.map(n => esc(n)).join('、')}</div>` : ''}
         ${u.signature ? `<div style="font-size:12px;color:var(--text-muted);margin-top:4px;font-style:italic">${esc(u.signature)}</div>` : ''}
+        ${(u.user_age || u.user_gender) ? `<div style="font-size:11px;color:var(--text-muted);margin-top:3px">${u.user_gender ? (u.user_gender === 1 ? '♂ 男' : u.user_gender === 2 ? '♀ 女' : '') : ''}${u.user_age ? ' · ' + u.user_age + '岁' : ''}</div>` : ''}
         ${u.unique_id ? `<div style="font-size:11px;color:var(--text-muted);margin-top:2px">抖音号: ${esc(u.unique_id)}</div>` : ''}
         ${u.is_private ? '<div style="display:inline-block;font-size:10px;color:var(--orange);background:rgba(255,152,0,0.1);padding:2px 6px;border-radius:3px;margin-top:4px">私密账号</div>' : ''}
       </div>
     </div>`;
 
-    // API 统计（粉丝/关注/等级/IP属地）
-    if (u.follower_count || u.following_count || u.commerce_user_level || u.ip_location) {
+    // API 统计（粉丝/关注/粉丝团等级/IP属地）
+    if (u.follower_count || u.following_count || u.fans_club_level || u.ip_location) {
       html += `<div style="display:flex;gap:12px;margin-bottom:14px">
         <div style="text-align:center;flex:1"><div style="font-size:16px;font-weight:700;color:var(--text)">${fmtNum(u.follower_count)}</div><div style="font-size:11px;color:var(--text-muted)">粉丝</div></div>
         <div style="text-align:center;flex:1"><div style="font-size:16px;font-weight:700;color:var(--text)">${fmtNum(u.following_count)}</div><div style="font-size:11px;color:var(--text-muted)">关注</div></div>
-        <div style="text-align:center;flex:1"><div style="font-size:16px;font-weight:700;color:var(--orange)">${u.commerce_user_level || '-'}</div><div style="font-size:11px;color:var(--text-muted)">等级</div></div>
+        <div style="text-align:center;flex:1"><div style="font-size:16px;font-weight:700;color:var(--orange)">${u.fans_club_level || '-'}</div><div style="font-size:11px;color:var(--text-muted)">粉丝团</div></div>
         <div style="text-align:center;flex:1"><div style="font-size:14px;font-weight:600;color:var(--accent)">${esc(u.ip_location || '未知')}</div><div style="font-size:11px;color:var(--text-muted)">IP属地</div></div>
       </div>`;
     }

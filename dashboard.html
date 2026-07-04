@@ -687,7 +687,7 @@ thead .session-cb:hover{opacity:1}
 
 <script>
 const API = '';
-let state = { view: 'hosts', hostId: null, sessionId: null, hosts: [], sessions: [], tab: 'gifts' };
+let state = { view: 'hosts', hostId: null, sessionId: null, hosts: [], sessions: [], tab: 'gifts', _gen: 0 };
 let charts = {};
 
 // ========== API ==========
@@ -796,12 +796,14 @@ async function viewHosts(fromPopState, replaceCurrent) {
 }
 
 async function loadRoomsView() {
+  const gen = ++state._gen;
   const el = document.getElementById('content');
   el.classList.remove('content-fade-in');
   el.innerHTML = '<div class="loading">加载中...</div>';
 
   try {
     const [summary, rooms] = await Promise.all([api('/api/summary'), api('/api/rooms')]);
+    if (gen !== state._gen) return;
     state.rooms = rooms;
 
     let html = '';
@@ -898,6 +900,7 @@ async function loadRoomsView() {
 // ========== TOP NAV SWITCH ==========
 function switchTopNav(tab) {
   state.topNavTab = tab;
+  state._gen++;
   document.querySelectorAll('.top-nav-btn').forEach(b => {
     const match = b.getAttribute('onclick')?.match(/switchTopNav\('(\w+)'\)/);
     b.classList.toggle('active', match && match[1] === tab);
@@ -909,6 +912,7 @@ function switchTopNav(tab) {
 
 // ========== VIEW: ANONYMOUS LOOKUP ==========
 async function loadSearchView() {
+  const gen = ++state._gen;
   const el = document.getElementById('content');
   el.innerHTML = `
     <div class="section">
@@ -935,6 +939,7 @@ async function loadSearchView() {
     </div>`;
   // 加载直播间列表到自定义下拉框
   const streamers = await api('/api/streamers');
+  if (gen !== state._gen) return;
   const sList = document.getElementById('anonStreamerList');
   sList.innerHTML = '<div class="cs-opt selected" data-val="" onclick="selectCs(\'anonStreamer\',\'\',this)">全部直播间</div>';
   streamers.forEach(s => {

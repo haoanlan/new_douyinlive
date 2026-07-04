@@ -1249,11 +1249,10 @@ async function showUserProfile(secUid) {
         </div>
       </div>`;
     // 统计卡片
-    html += `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">`;
+    html += `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">`;
     html += `<div class="profile-stat"><div class="profile-stat-val orange">${p.totalDiamonds?.toLocaleString() || 0}<svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:-3px;fill:currentColor;opacity:0.6"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg></div><div class="profile-stat-label">总钻石</div></div>`;
     html += `<div class="profile-stat"><div class="profile-stat-val">${p.totalGifts || 0}</div><div class="profile-stat-label">礼物数</div></div>`;
     html += `<div class="profile-stat"><div class="profile-stat-val">${p.danmakuCount || 0}</div><div class="profile-stat-label">弹幕</div></div>`;
-    html += `<div class="profile-stat"><div class="profile-stat-val">${p.gift_types_count || 0}</div><div class="profile-stat-label">种类</div></div>`;
     html += '</div>';
     // 活跃场次
     if (p.activeSessions?.length) {

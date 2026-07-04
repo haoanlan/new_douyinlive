@@ -527,7 +527,7 @@ async function handleAPI(req, res) {
       // 用session关联的主播名代替to_nickname（to_nickname可能为空）
       const sessionStreamerMap = {};
       for (const s of activeSessions) {
-        sessionStreamerMap[s.session_id] = s.streamer_name || '未知';
+        sessionStreamerMap[s.id] = s.streamer_name || '未知';
       }
       const streamerMap = {};
       for (const g of dedupedGifts) {

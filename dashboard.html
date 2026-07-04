@@ -1284,21 +1284,7 @@ async function showUserProfile(secUid) {
       html += '</div>';
       html += '<div class="hour-labels"><span>0</span><span>6</span><span>12</span><span>18</span><span>23</span></div>';
     }
-    // 礼物明细
-    if (p.giftBreakdown?.length) {
-      html += `<div class="profile-section-title" style="margin-top:14px">礼物明细</div>`;
-      html += '<div style="display:flex;flex-direction:column;gap:4px">';
-      p.giftBreakdown.forEach(g => {
-        html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:var(--bg-card);border-radius:6px;font-size:12px">
-          <span style="color:var(--text)">${esc(g.gift_name)}</span>
-          <div style="display:flex;gap:12px;align-items:center;color:var(--text-muted)">
-            <span>×${g.count}</span>
-            <span style="color:var(--orange);font-weight:600;font-variant-numeric:tabular-nums">💎 ${g.total_diamonds.toLocaleString()}</span>
-          </div>
-        </div>`;
-      });
-      html += '</div>';
-    }
+
     body.innerHTML = html;
   } catch (e) { body.innerHTML = `<div class="empty" style="padding:20px">加载失败: ${esc(e.message)}</div>`; }
 }

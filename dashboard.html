@@ -1146,7 +1146,7 @@ async function showAnonymousDetail(idx) {
     if (sessions.length) {
       html += `<div style="font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:8px">活跃场次 (${sessions.length})</div>`;
       html += '<div style="display:flex;flex-direction:column;gap:4px">';
-      sessions.slice(0, 10).forEach(s => {
+      sessions.slice(0, 5).forEach(s => {
         const d = s.diamonds || 0;
         html += `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm)">
           <span style="font-size:11px;color:var(--text-muted);width:52px;flex-shrink:0;font-variant-numeric:tabular-nums">${fmtSessionTime(s.start_time)}</span>
@@ -1154,7 +1154,7 @@ async function showAnonymousDetail(idx) {
           <span style="font-size:11px;color:${d > 0 ? 'var(--orange)' : 'var(--text-muted)'};flex-shrink:0;font-variant-numeric:tabular-nums">${d.toLocaleString()}<svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:-2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg></span>
         </div>`;
       });
-      if (sessions.length > 10) html += `<div style="text-align:center;font-size:11px;color:var(--text-muted);padding:4px">还有 ${sessions.length - 10} 场</div>`;
+      if (sessions.length > 5) html += `<div style="text-align:center;font-size:11px;color:var(--text-muted);padding:4px">还有 ${sessions.length - 5} 场</div>`;
       html += '</div>';
     }
 

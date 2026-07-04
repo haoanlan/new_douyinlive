@@ -521,6 +521,53 @@ async function handleAPI(req, res) {
         giftBreakdownMap[name].count += g.repeat_count || 1;
       }
       const giftBreakdown = Object.values(giftBreakdownMap).sort((a, b) => b.total_diamonds - a.total_diamonds);
+      // ====== 用户画像分析 ======
+
+      // 送礼主播偏好（按钻石总额排序）
+      const streamerMap = {};
+      for (const g of dedupedGifts) {
+        const name = g.to_nickname || '未知';
+        if (!streamerMap[name]) streamerMap[name] = { name, diamonds: 0, count: 0 };
+        streamerMap[name].diamonds += g.total_diamonds || 0;
+        streamerMap[name].count += g.repeat_count || 1;
+      }
+      const topStreamers = Object.values(streamerMap).sort((a, b) => b.diamonds - a.diamonds).slice(0, 5);
+
+      // 送礼频率最高的礼物（按次数）
+      const topGiftsByCount = Object.values(giftBreakdownMap).sort((a, b) => b.count - a.count).slice(0, 5);
+
+      // 场均消费
+      const sessionCount = sessionIds.length || 1;
+      const avgPerSession = Math.round(totalDiamonds / sessionCount);
+
+      // 送礼风格判断
+      let giftStyle = '随缘观众';
+      const maxGiftDiamonds = giftBreakdown[0]?.total_diamonds || 0;
+      const bigGiftRatio = maxGiftDiamonds / (totalDiamonds || 1);
+      if (totalDiamonds > 50000) giftStyle = '大哥级';
+      else if (totalDiamonds > 10000) giftStyle = '重度粉丝';
+      else if (totalDiamonds > 2000) giftStyle = '活跃粉丝';
+      else if (totalDiamonds > 500) giftStyle = '轻度粉丝';
+      if (giftTypes.size <= 3 && giftCount > 5) giftStyle += '（专注型）';
+      else if (giftTypes.size > 8) giftStyle += '（多元型）';
+
+      // 活跃时段分析
+      let peakHour = '';
+      if (hourStats.length) {
+        const maxH = hourStats.reduce((a, b) => a.count > b.count ? a : b);
+        peakHour = maxH.hour + ':00';
+      }
+
+      // 弹幕采样（最近10条）
+      const danmakuSamples = dbInstance.prepare(
+        'SELECT content, create_time FROM danmaku WHERE user_sec_uid = ? ORDER BY id DESC LIMIT 10'
+      ).all(secUid);
+
+      // 首次/末次活跃
+      const firstGift = dedupedGifts[0];
+      const lastGift = dedupedGifts[dedupedGifts.length - 1];
+      const firstSeen = firstGift?.create_time || '';
+      const lastSeen = lastGift?.create_time || '';
 
       return sendJSON(res, {
         nickname, avatar, total_diamonds: totalDiamonds, gift_count: giftCount,
@@ -528,7 +575,10 @@ async function handleAPI(req, res) {
         activeSessions, hourStats, giftBreakdown, danmakuCount,
         totalDiamonds, totalGifts: giftCount,
         activeSessionCount: activeSessions.length,
-        favoriteStreamer: activeSessions[0]?.streamer_name || '-'
+        favoriteStreamer: activeSessions[0]?.streamer_name || '-',
+        // 分析数据
+        topStreamers, topGiftsByCount, avgPerSession, giftStyle,
+        peakHour, danmakuSamples, firstSeen, lastSeen
       });
     }
 

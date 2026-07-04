@@ -1995,7 +1995,7 @@ async function queryAnonymous() {
           <span style="font-size:11px;padding:1px 6px;border-radius:4px;background:${m.type === '礼物' ? 'rgba(251,146,60,0.15)' : 'rgba(108,140,255,0.15)'};color:${m.type === '礼物' ? 'var(--orange)' : 'var(--accent)'}">${m.type}</span>
           ${m.diamonds ? `<span style="font-size:11px;color:var(--orange)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:-2px"><path d="M12 2L3 9l9 13 9-13z"/><path d="M3 9l5 2.5L12 2l4 9.5 5-2.5"/><path d="M8 11.5L12 22l4-10.5"/></svg>${m.diamonds.toLocaleString()}</span>` : ''}
         </div>
-        <div style="font-size:12px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(m.content)}">${m.giftIcon ? `<img src="${esc(m.giftIcon)}" style="width:16px;height:16px;vertical-align:-3px;margin-right:2px;border-radius:3px">` : '<span style="display:inline-block;width:16px;height:16px;vertical-align:-3px;margin-right:2px;border-radius:3px;background:var(--bg-input);text-align:center;line-height:16px;font-size:10px">🎁</span>'}${esc((m.content || '').substring(0, 80))}</div>
+        <div style="font-size:12px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(m.content)}">${m.type === '礼物' ? (m.giftIcon ? `<img src="${esc(m.giftIcon)}" style="width:16px;height:16px;vertical-align:-3px;margin-right:2px;border-radius:3px">` : '<span style="display:inline-block;width:16px;height:16px;vertical-align:-3px;margin-right:2px;border-radius:3px;background:var(--bg-input);text-align:center;line-height:16px;font-size:10px">🎁</span>') : ''}${esc((m.content || '').substring(0, 80))}</div>
       </div>
     </div>`;
   });

@@ -285,11 +285,17 @@ async function handleAPI(req, res) {
       const q = query.q;
       if (!q) return sendError(res, '缺少搜索词', 400);
       const rows = dbInstance.prepare(`
-        SELECT DISTINCT user_sec_uid, nickname, avatar
-        FROM gifts WHERE nickname LIKE ? OR user_sec_uid LIKE ?
+        SELECT user_sec_uid,
+               (SELECT nickname FROM gifts WHERE user_sec_uid = g.user_sec_uid ORDER BY id DESC LIMIT 1) as nickname,
+               (SELECT avatar FROM gifts WHERE user_sec_uid = g.user_sec_uid AND avatar != '' ORDER BY id DESC LIMIT 1) as avatar
+        FROM gifts g WHERE nickname LIKE ? OR user_sec_uid LIKE ?
+        GROUP BY user_sec_uid
         UNION
-        SELECT DISTINCT user_sec_uid, nickname, avatar
-        FROM danmaku WHERE nickname LIKE ? OR user_sec_uid LIKE ?
+        SELECT user_sec_uid,
+               (SELECT nickname FROM danmaku WHERE user_sec_uid = d.user_sec_uid ORDER BY id DESC LIMIT 1) as nickname,
+               (SELECT avatar FROM danmaku WHERE user_sec_uid = d.user_sec_uid AND avatar != '' ORDER BY id DESC LIMIT 1) as avatar
+        FROM danmaku d WHERE nickname LIKE ? OR user_sec_uid LIKE ?
+        GROUP BY user_sec_uid
         LIMIT 20
       `).all(`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`);
       return sendJSON(res, rows);

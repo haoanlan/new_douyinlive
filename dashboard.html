@@ -1259,15 +1259,15 @@ async function showUserProfile(secUid) {
     if (p.activeSessions?.length) {
       html += `<div class="profile-section-title" style="margin-bottom:8px">活跃场次 (${p.activeSessions.length})</div>`;
       html += '<div style="display:flex;flex-direction:column;gap:4px">';
-      p.activeSessions.slice(0, 10).forEach(s => {
+      p.activeSessions.slice(0, 5).forEach(s => {
         const d = s.session_diamonds || 0;
         html += `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm)">
-          <span style="font-size:11px;color:var(--text-muted);width:32px;flex-shrink:0;text-align:center;font-variant-numeric:tabular-nums">${fmtSessionTime(s.start_time)}</span>
+          <span style="font-size:11px;color:var(--text-muted);width:68px;flex-shrink:0;font-variant-numeric:tabular-nums">${fmtSessionTime(s.start_time)}</span>
           <span style="font-size:13px;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.streamer_name || '未知')}</span>
           <span style="font-size:11px;color:${d > 0 ? 'var(--orange)' : 'var(--text-muted)'};flex-shrink:0;font-variant-numeric:tabular-nums">${d.toLocaleString()}<svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:-2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg></span>
         </div>`;
       });
-      if (p.activeSessions.length > 10) html += `<div style="text-align:center;font-size:11px;color:var(--text-muted);padding:4px">还有 ${p.activeSessions.length - 10} 场</div>`;
+      if (p.activeSessions.length > 5) html += `<div style="text-align:center;font-size:11px;color:var(--text-muted);padding:4px">还有 ${p.activeSessions.length - 5} 场</div>`;
       html += '</div>';
     }
     // 活跃时段

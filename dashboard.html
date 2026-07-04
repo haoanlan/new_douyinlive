@@ -1323,19 +1323,29 @@ async function showUserProfile(secUid) {
     }
 
     // ====== 弹幕采样 ======
-    if (p.danmakuSamples?.length) {
-      html += `<div class="profile-section-title" style="margin-top:14px">最近弹幕</div>`;
-      html += '<div style="display:flex;flex-direction:column;gap:3px">';
-      p.danmakuSamples.slice(0, 8).forEach(d => {
-        let content = d.content || '';
-        if (content.length > 60) content = content.slice(0, 60) + '…';
-        const ts = fmtTime(d.create_time);
-        html += `<div style="padding:5px 8px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;font-size:12px;display:flex;gap:8px;align-items:flex-start">
-          <span style="color:var(--text);flex:1;line-height:1.4">${esc(content)}</span>
-          <span style="color:var(--text-muted);font-size:10px;flex-shrink:0;white-space:nowrap">${ts}</span>
-        </div>`;
-      });
-      html += '</div>';
+    if (p.danmakuSamples?.length || p.danmakuStyle) {
+      html += `<div class="profile-section-title" style="margin-top:14px">弹幕风格</div>`;
+      if (p.danmakuStyle) {
+        html += `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">`;
+        p.danmakuStyle.split('·').forEach(t => {
+          html += `<div style="padding:4px 10px;background:rgba(var(--accent-rgb,59,130,246),0.12);border-radius:5px;font-size:11px;color:var(--accent)">${esc(t)}</div>`;
+        });
+        html += `<div style="padding:4px 10px;background:var(--bg-card);border:1px solid var(--border);border-radius:5px;font-size:11px;color:var(--text-muted)">共 ${p.danmakuCount || 0} 条弹幕</div>`;
+        html += '</div>';
+      }
+      if (p.danmakuSamples?.length) {
+        html += '<div style="display:flex;flex-direction:column;gap:3px">';
+        p.danmakuSamples.forEach(d => {
+          let content = d.content || '';
+          if (content.length > 60) content = content.slice(0, 60) + '…';
+          const ts = fmtTime(d.create_time);
+          html += `<div style="padding:5px 8px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;font-size:12px;display:flex;gap:8px;align-items:flex-start">
+            <span style="color:var(--text);flex:1;line-height:1.4">${esc(content)}</span>
+            <span style="color:var(--text-muted);font-size:10px;flex-shrink:0;white-space:nowrap">${ts}</span>
+          </div>`;
+        });
+        html += '</div>';
+      }
     }
 
     body.innerHTML = html;

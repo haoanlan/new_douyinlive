@@ -558,10 +558,32 @@ async function handleAPI(req, res) {
         peakHour = maxH.hour + ':00';
       }
 
-      // 弹幕采样（最近10条）
+      // 弹幕采样（最近3条）
       const danmakuSamples = dbInstance.prepare(
-        'SELECT content, create_time FROM danmaku WHERE user_sec_uid = ? ORDER BY id DESC LIMIT 10'
+        'SELECT content, create_time FROM danmaku WHERE user_sec_uid = ? ORDER BY id DESC LIMIT 3'
       ).all(secUid);
+
+      // 弹幕风格分析
+      const allDanmaku = dbInstance.prepare(
+        'SELECT content FROM danmaku WHERE user_sec_uid = ? ORDER BY id DESC LIMIT 100'
+      ).all(secUid);
+      let danmakuStyle = '';
+      if (allDanmaku.length) {
+        const contents = allDanmaku.map(d => d.content || '');
+        const avgLen = contents.reduce((s, c) => s + c.length, 0) / contents.length;
+        const emojiCount = contents.filter(c => /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u.test(c)).length;
+        const emojiRatio = emojiCount / contents.length;
+        const shortMsgs = contents.filter(c => c.length <= 4).length;
+        const shortRatio = shortMsgs / contents.length;
+
+        const traits = [];
+        if (emojiRatio > 0.3) traits.push('表情丰富');
+        else if (emojiRatio < 0.05) traits.push('纯文字型');
+        if (shortRatio > 0.5) traits.push('言简意赅');
+        else if (avgLen > 15) traits.push('话痨型');
+        if (contents.some(c => /[？?！!~～]/.test(c))) traits.push('热情互动');
+        danmakuStyle = traits.length ? traits.join('·') : '安静型';
+      }
 
       // 首次/末次活跃
       const firstGift = dedupedGifts[0];
@@ -578,7 +600,7 @@ async function handleAPI(req, res) {
         favoriteStreamer: activeSessions[0]?.streamer_name || '-',
         // 分析数据
         topStreamers, topGiftsByCount, avgPerSession, giftStyle,
-        peakHour, danmakuSamples, firstSeen, lastSeen
+        peakHour, danmakuSamples, danmakuStyle, firstSeen, lastSeen
       });
     }
 

@@ -1187,7 +1187,7 @@ function fmtSessionTime(t) {
     date = new Date(t);
   }
   if (isNaN(date.getTime())) return t.slice(0, 10);
-  return `${date.getMonth() + 1}/${date.getDate()}`;
+  return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`;
 }
 
 // ========== VIEW: USER PROFILE ==========
@@ -2295,7 +2295,7 @@ async function deleteSelectedSessions() {
 
 // ========== HELPERS ==========
 function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
-function fmtTime(ts) { if (!ts) return '-'; let d; if (typeof ts === 'number' || (typeof ts === 'string' && /^\d+$/.test(ts.trim()))) { const n = Number(ts); d = new Date(n > 1e12 ? n : n * 1000); } else { d = new Date(ts); } return d.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }); }
+function fmtTime(ts) { if (!ts) return '-'; let d; if (typeof ts === 'number' || (typeof ts === 'string' && /^\d+$/.test(ts.trim()))) { const n = Number(ts); d = new Date(n > 1e12 ? n : n * 1000); } else { d = new Date(ts); } return d.toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }); }
 function formatDuration(min) { if (min < 60) return min + '分钟'; const h = Math.floor(min / 60), m = min % 60; return m > 0 ? `${h}h ${m}m` : `${h}h`; }
 function avatarHtml(url, name, size) { const s = size ? `width:${size}px;height:${size}px` : ''; return url ? `<div class="avatar" style="${s}"><img src="${url}" alt="" onerror="this.parentElement.innerHTML='${name?.[0] || '?'}'"></div>` : `<div class="avatar" style="${s};display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--text-muted)">${name?.[0] || '?'}</div>`; }
 function giftEmoji(name) { if (!name) return '🎁'; if (name.includes('火箭') || name.includes('🚀')) return '🚀'; if (name.includes('跑车') || name.includes('🚗')) return '🚗'; if (name.includes('嘉年华')) return '🎪'; if (name.includes('玫瑰')) return '🌹'; if (name.includes('棒棒糖')) return '🍭'; if (name.includes('啤酒')) return '🍺'; if (name.includes('比心')) return '❤️'; return '🎁'; }

@@ -1212,8 +1212,6 @@ async function searchProfileUser() {
   const q = document.getElementById('profileInput')?.value.trim();
   if (!q) return;
   const el = document.getElementById('profileUserList');
-  const detail = document.getElementById('profileDetail');
-  detail.innerHTML = '';
   el.innerHTML = '<div class="loading">搜索中...</div>';
   try {
     const users = await api(`/api/users/search?q=${encodeURIComponent(q)}`);

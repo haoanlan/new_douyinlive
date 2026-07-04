@@ -524,9 +524,14 @@ async function handleAPI(req, res) {
       // ====== 用户画像分析 ======
 
       // 送礼主播偏好（按钻石总额排序）
+      // 用session关联的主播名代替to_nickname（to_nickname可能为空）
+      const sessionStreamerMap = {};
+      for (const s of activeSessions) {
+        sessionStreamerMap[s.session_id] = s.streamer_name || '未知';
+      }
       const streamerMap = {};
       for (const g of dedupedGifts) {
-        const name = g.to_nickname || '未知';
+        const name = sessionStreamerMap[g.session_id] || g.to_nickname || '未知';
         if (!streamerMap[name]) streamerMap[name] = { name, diamonds: 0, count: 0 };
         streamerMap[name].diamonds += g.total_diamonds || 0;
         streamerMap[name].count += g.repeat_count || 1;

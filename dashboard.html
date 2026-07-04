@@ -212,12 +212,12 @@ thead .session-cb:hover{opacity:1}
 .gift-rank-num{font-size:13px;font-weight:700;color:var(--text-muted);width:22px;text-align:center;flex-shrink:0;font-variant-numeric:tabular-nums;font-family:'Inter',system-ui,monospace}
 /* Gift ranking - grid card style */
 .gift-rank-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.gift-rank-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:border-color .15s}
+.gift-rank-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:border-color .15s;min-width:0;overflow:hidden}
 .gift-rank-card:hover{border-color:var(--border-light)}
 .gift-rank-card:nth-child(1){border-color:rgba(255,215,0,0.3);background:linear-gradient(135deg,var(--bg-card) 0%,rgba(255,215,0,0.05) 100%)}
 .gift-rank-card:nth-child(2){border-color:rgba(192,192,192,0.3);background:linear-gradient(135deg,var(--bg-card) 0%,rgba(192,192,192,0.05) 100%)}
 .gift-rank-card:nth-child(3){border-color:rgba(205,127,50,0.3);background:linear-gradient(135deg,var(--bg-card) 0%,rgba(205,127,50,0.05) 100%)}
-.gift-rank-card-top{display:flex;align-items:center;gap:8px;padding:10px 14px}
+.gift-rank-card-top{display:flex;align-items:center;gap:8px;padding:10px 14px;min-width:0;overflow:hidden}
 .gift-rank-card-top .user-cell{flex:1;min-width:0}
 .gift-rank-card-top .user-cell span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
 .gift-rank-card-top .diamonds{flex-shrink:0;margin-left:auto;color:var(--orange);font-weight:600;font-size:12px}

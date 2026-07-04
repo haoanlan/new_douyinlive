@@ -1250,7 +1250,7 @@ async function showUserProfile(secUid) {
       </div>`;
     // 统计卡片
     html += `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">`;
-    html += `<div class="profile-stat"><div class="profile-stat-val orange">${p.totalDiamonds?.toLocaleString() || 0}</div><div class="profile-stat-label">总钻石</div></div>`;
+    html += `<div class="profile-stat"><div class="profile-stat-val orange">${p.totalDiamonds?.toLocaleString() || 0}<svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:-3px;fill:currentColor;opacity:0.6"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg></div><div class="profile-stat-label">总钻石</div></div>`;
     html += `<div class="profile-stat"><div class="profile-stat-val">${p.totalGifts || 0}</div><div class="profile-stat-label">礼物数</div></div>`;
     html += `<div class="profile-stat"><div class="profile-stat-val">${p.danmakuCount || 0}</div><div class="profile-stat-label">弹幕</div></div>`;
     html += `<div class="profile-stat"><div class="profile-stat-val">${p.gift_types_count || 0}</div><div class="profile-stat-label">种类</div></div>`;
@@ -1290,7 +1290,7 @@ async function showUserProfile(secUid) {
       html += `<div class="profile-section-title" style="margin-top:14px">送礼画像</div>`;
       html += `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">`;
       html += `<div style="padding:6px 12px;background:rgba(var(--orange-rgb,255,152,0),0.12);border-radius:6px;font-size:12px;color:var(--orange)">${esc(p.giftStyle || '-')}</div>`;
-      html += `<div style="padding:6px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text-muted)">场均 <span style="color:var(--text);font-weight:600">${(p.avgPerSession || 0).toLocaleString()}</span> 钻石</div>`;
+      html += `<div style="padding:6px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text-muted)">场均 <span style="color:var(--text);font-weight:600;font-variant-numeric:tabular-nums">${(p.avgPerSession || 0).toLocaleString()}</span><svg viewBox="0 0 24 24" width="11" height="11" style="vertical-align:-1px;fill:var(--orange);margin-left:2px"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg></div>`;
       html += `<div style="padding:6px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text-muted)">巅峰时段 <span style="color:var(--text);font-weight:600">${esc(p.peakHour || '-')}</span></div>`;
       html += '</div>';
       // 最爱送礼主播
@@ -1313,7 +1313,7 @@ async function showUserProfile(secUid) {
         p.topGiftsByCount.slice(0, 3).forEach((g, i) => {
           html += `<div style="display:flex;align-items:center;gap:6px;padding:5px 8px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;font-size:12px">
             <span style="color:var(--orange);font-weight:700;width:16px;text-align:center;font-variant-numeric:tabular-nums">${String(i+1).padStart(2,'0')}</span>
-            <span style="font-size:14px">${giftEmoji(g.gift_name)}</span>
+            <span style="font-size:14px">${g.icon_url ? `<img src="${esc(g.icon_url)}" style="width:20px;height:20px;vertical-align:-4px" onerror="this.style.display='none'">` : giftEmoji(g.gift_name)}</span>
             <span style="color:var(--text);flex:1">${esc(g.gift_name)}</span>
             <span style="color:var(--text-muted)">×${g.count}</span>
             <span style="color:var(--orange);font-weight:600;font-variant-numeric:tabular-nums">${g.total_diamonds.toLocaleString()}<svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:-2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg></span>

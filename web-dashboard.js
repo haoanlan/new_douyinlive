@@ -538,8 +538,15 @@ async function handleAPI(req, res) {
       }
       const topStreamers = Object.values(streamerMap).sort((a, b) => b.diamonds - a.diamonds).slice(0, 5);
 
-      // 送礼频率最高的礼物（按次数）
+      // 送礼频率最高的礼物（按次数）+ 查icon
       const topGiftsByCount = Object.values(giftBreakdownMap).sort((a, b) => b.count - a.count).slice(0, 5);
+      const iconStmt = dbInstance.prepare("SELECT icon_url FROM gift_icons WHERE name = ?");
+      const iconFuzzyStmt = dbInstance.prepare("SELECT icon_url FROM gift_icons WHERE REPLACE(REPLACE(name,'邮轮','游轮'),'游轮','邮轮') = ? OR name LIKE ?");
+      for (const g of topGiftsByCount) {
+        let ic = iconStmt.get(g.gift_name);
+        if (!ic) ic = iconFuzzyStmt.get(g.gift_name, '%' + g.gift_name.replace(/[\s·]/g, '') + '%');
+        g.icon_url = ic?.icon_url || null;
+      }
 
       // 场均消费
       const sessionCount = sessionIds.length || 1;

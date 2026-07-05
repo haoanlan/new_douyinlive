@@ -1029,12 +1029,14 @@ async function handleAPI(req, res) {
         });
       await Promise.all(avatarPromises);
 
-      // 弹幕（最近500条，用于展示和搜索）
-      const danmaku = dbInstance.prepare(`
+      // 弹幕（用于展示和搜索；latestDanmaku 限制200条给前端实时显示）
+      const allDanmaku = dbInstance.prepare(`
         SELECT nickname, avatar as avatar_url, content, create_time as timestamp, user_sec_uid
         FROM danmaku WHERE session_id = ?
         ORDER BY create_time DESC
       `).all(sid);
+      const danmaku = allDanmaku;
+      const latestDanmaku = allDanmaku.slice(0, 200);
 
       // 弹幕词频（用于词云）
       const danmakuWords = dbInstance.prepare(`
@@ -1108,7 +1110,7 @@ async function handleAPI(req, res) {
           online_peak: session.online_peak || 0,
           stats_like: session.stats_like || 0
         },
-        gifts, giftDetails, anchorRanking, danmakuWords, danmakuRanking, summary, hasReport
+        gifts, giftDetails, anchorRanking, danmakuWords, danmakuRanking, danmaku: latestDanmaku, summary, hasReport
       });
     }
 

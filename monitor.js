@@ -597,17 +597,94 @@ function handleMessage(room, data) {
         }
       }
       const baseName = data.gift?.name || data.giftName || '礼物';
-      let giftName = displayName || baseName;
-      if (displayName && !displayName.includes(baseName) && baseName !== '礼物') giftName = displayName + baseName;
+      const IGNORE_DISPLAY_NAMES = ['主播照片'];
+      const effectiveDisplayName = IGNORE_DISPLAY_NAMES.includes(displayName) ? '' : displayName;
+      let giftName = effectiveDisplayName || baseName;
       let diamondPerUnit = parseInt(String(data.gift?.diamondCount || 0), 10);
+      // ===== 融合礼物价格匹配 =====
+      const FUSION_KEYWORDS = {
+        '气球': '热气球', '兔兔': '比心兔兔', '小心心': '小心心',
+        '烟花': '万象烟花', '礼花': '礼花筒', '玫瑰': '真爱玫瑰',
+        '跑车': '跑车', '飞机': '私人飞机', '邮轮': '豪华邮轮',
+      };
+      const FUSION_RULES = [
+        { k: ['邮轮','飞机'], t: 4 },
+        { k: ['邮轮','兔兔','气球','跑车'], t: 4 },
+        { k: ['邮轮','兔兔','气球'], t: 4 },
+        { k: ['邮轮','兔兔','跑车'], t: 4 },
+        { k: ['邮轮','气球','跑车'], t: 4 },
+        { k: ['邮轮','兔兔'], t: 4 },
+        { k: ['邮轮','气球'], t: 4 },
+        { k: ['邮轮','跑车'], t: 4 },
+        { k: ['邮轮'], t: 4 },
+        { k: ['飞机','兔兔','气球','跑车'], t: 3 },
+        { k: ['飞机','兔兔','气球'], t: 3 },
+        { k: ['飞机','兔兔','跑车'], t: 3 },
+        { k: ['飞机','气球','跑车'], t: 3 },
+        { k: ['飞机','兔兔'], t: 3 },
+        { k: ['飞机','气球'], t: 3 },
+        { k: ['飞机','跑车'], t: 3 },
+        { k: ['兔兔','气球','跑车'], t: 2 },
+        { k: ['兔兔','跑车'], t: 2 },
+        { k: ['气球','跑车'], t: 2 },
+        { k: ['兔兔','小心心'], t: 2 },
+        { k: ['兔兔','烟花'], t: 2 },
+        { k: ['兔兔','礼花'], t: 2 },
+        { k: ['兔兔','玫瑰'], t: 2 },
+        { k: ['气球','小心心'], t: 2 },
+        { k: ['气球','烟花'], t: 2 },
+        { k: ['气球','礼花'], t: 2 },
+        { k: ['气球','玫瑰'], t: 2 },
+        { k: ['跑车','小心心'], t: 2 },
+        { k: ['跑车','烟花'], t: 2 },
+        { k: ['跑车','礼花'], t: 2 },
+        { k: ['跑车','玫瑰'], t: 2 },
+        { k: ['小心心','烟花'], t: 2 },
+        { k: ['小心心','礼花'], t: 2 },
+        { k: ['小心心','玫瑰'], t: 2 },
+        { k: ['烟花','礼花'], t: 2 },
+        { k: ['烟花','玫瑰'], t: 2 },
+        { k: ['礼花','玫瑰'], t: 2 },
+        { k: ['兔兔','礼花','玫瑰'], t: 1 },
+        { k: ['气球','兔兔'], t: 1 },
+        { k: ['气球','礼花'], t: 1 },
+        { k: ['气球','玫瑰'], t: 1 },
+        { k: ['兔兔','小心心'], t: 1 },
+        { k: ['兔兔','烟花'], t: 1 },
+        { k: ['兔兔','礼花'], t: 1 },
+        { k: ['兔兔','玫瑰'], t: 1 },
+        { k: ['小心心','礼花'], t: 1 },
+        { k: ['小心心','玫瑰'], t: 1 },
+        { k: ['烟花','礼花'], t: 1 },
+        { k: ['礼花','玫瑰'], t: 1 },
+      ];
+      const FUSION_PRICES = {
+        1: { 2:819, 3:864 },
+        2: { 2:1239, 3:1539, 4:1719, 5:1886 },
+        3: { 2:3199, 3:3499, 4:3679, 5:3846, 6:3879 },
+        4: { 2:6199, 3:7199, 4:8199, 5:9199, 6:10200 },
+      };
+      if (giftName && displayName && giftName.includes('工坊宝箱')) {
+        const found = [];
+        for (const [kw, base] of Object.entries(FUSION_KEYWORDS)) {
+          if (giftName.includes(kw)) found.push({ kw, base });
+        }
+        if (found.length > 0) {
+          const matched = FUSION_RULES.find(r => r.k.every(k => found.some(f => f.kw === k)));
+          if (matched) {
+            const tier = FUSION_PRICES[matched.t];
+            const price = tier[Math.min(found.length, Object.keys(tier).length)];
+            if (price !== undefined) diamondPerUnit = price;
+          }
+        }
+      }
       const GIFT_PRICE_MAP = {
         '闪烁星河': 99, '点点星光': 9, '星光闪耀': 9, '闪耀星辰': 99,
         '钻石跑车': 1500, '豪华跑车': 1200, '钻石兔兔': 360, '钻石热气球': 620,
         '钻石火箭': 12001, '钻石飞艇': 23333, '烈焰跑车': 6000, '至尊超跑': 12000,
-        '御风飞机': 9000,
+        '御风飞机': 9000, '钻石邮轮': 7200,
         '青绿典藏版嘉年华': 36000, '凌霄战机': 18000,
-        // 工坊宝箱融合礼物（协议传 diamondCount=99，实际价格不同）
-        '礼花兔兔气球工坊宝箱': 1018,
+        '无界超跑': 36000, '星际战舰': 36000,
       };
       const fixedPrice = GIFT_PRICE_MAP[giftName];
       if (fixedPrice !== undefined) diamondPerUnit = fixedPrice;

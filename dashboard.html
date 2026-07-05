@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>直播监控仪表板</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -370,9 +371,9 @@ thead .session-cb:hover{opacity:1}
   /* 第二行：时间 */
   .session-table td:nth-child(4){display:block !important;font-size:11px;color:var(--text-muted);margin-top:4px}
   /* 第三行：礼物 + 钻石 */
-  .session-table td:nth-child(7){display:inline !important;font-size:11px;color:var(--text-muted)}
+  .session-table td:nth-child(7){display:inline !important;font-size:11px;color:var(--text-muted);font-weight:600}
   
-  .session-table td:nth-child(8){display:inline !important;font-size:11px;color:var(--text-muted);margin-left:6px}
+  .session-table td:nth-child(8){display:inline !important;font-size:11px;color:var(--text-muted);margin-left:6px;font-weight:600}
   
   /* 操作按钮 → 绝对定位右下角 */
   .session-table td:nth-child(11){
@@ -795,6 +796,7 @@ const ICO = {
 // ========== VIEW: HOSTS ==========
 async function viewHosts(fromPopState, replaceCurrent) {
   stopAutoRefresh();
+  state._gen++;
   state.view = 'hosts';
   state.hostId = null;
   state.sessionId = null;
@@ -1931,6 +1933,21 @@ function smoothUpdateDetail(data) {
   
   // 5. Update giftDetails cache for modal
   if (data.giftDetails) window._giftDetails = data.giftDetails;
+  
+  // 6. Update danmaku list
+  if (data.danmaku && data.danmaku.length > 0) {
+    state._danmaku = data.danmaku.map(d => ({
+      ...d,
+      timestamp: d.timestamp || d.create_time,
+      avatar_url: d.avatar_url || d.avatar
+    }));
+    const recent = state._danmaku.slice(0, 80);
+    renderDanmakuList(recent);
+    const badge = document.getElementById('dmTotalBadge');
+    if (badge && state._danmaku.length > 80) {
+      badge.textContent = `显示前 80 / 共 ${state._danmaku.length.toLocaleString()} 条`;
+    }
+  }
 }
 
 // Lazy tab panel renderer

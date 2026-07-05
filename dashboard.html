@@ -1823,6 +1823,36 @@ async function refreshDetail() {
 
 function smoothUpdateDetail(data) {
   const s = data.session;
+  
+  // 0. Dynamic anchor tab — add if anchor count crosses threshold
+  const anchorCount = data.anchorRanking ? data.anchorRanking.length : 0;
+  const tabBar = document.getElementById('tabBar');
+  const existingAnchorBtn = tabBar?.querySelector('button[onclick*="anchors"]');
+  const existingAnchorPanel = document.getElementById('panel-anchors');
+  
+  if (anchorCount > 1 && !existingAnchorBtn && tabBar) {
+    // Add anchor tab button at the beginning
+    const anchorBtn = document.createElement('button');
+    anchorBtn.className = 'tab-btn';
+    anchorBtn.setAttribute('onclick', "switchTab('anchors')");
+    anchorBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> 主播排名';
+    tabBar.insertBefore(anchorBtn, tabBar.firstChild);
+    
+    // Add anchor panel
+    const anchorPanel = document.createElement('div');
+    anchorPanel.className = 'tab-panel';
+    anchorPanel.id = 'panel-anchors';
+    const firstPanel = tabBar.nextElementSibling;
+    if (firstPanel) tabBar.parentElement.insertBefore(anchorPanel, firstPanel);
+    
+    // Notify user
+    const notice = document.createElement('div');
+    notice.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--accent-bg);color:var(--accent);padding:8px 16px;border-radius:var(--radius);font-size:13px;z-index:999;animation:flipFadeIn .4s ease';
+    notice.textContent = '🎯 检测到多位主播，已自动添加主播排名tab';
+    document.body.appendChild(notice);
+    setTimeout(() => notice.remove(), 3000);
+  }
+  
   // 1. Stats — update numbers in place
   const statCards = document.querySelectorAll('.stats-row .stat-card');
   const newStats = [

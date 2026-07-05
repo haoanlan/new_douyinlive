@@ -395,6 +395,14 @@ thead .session-cb:hover{opacity:1}
 .detail-section-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px}
 .detail-section-title svg{width:18px;height:18px;color:var(--accent)}
 
+/* FLIP animation for ranking updates */
+.gift-rank-card,.danmaku-user-rank,.anchor-card{transition:transform .4s cubic-bezier(.25,.1,.25,1),opacity .3s}
+.gift-rank-grid,.danmaku-user-rank-list,.anchor-grid{position:relative}
+
+/* Pulse animation for live indicator */
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+
 /* Anchor ranking cards */
 .anchor-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
 .anchor-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
@@ -519,13 +527,15 @@ thead .session-cb:hover{opacity:1}
   .wordcloud-canvas{height:200px}
   #panel-danmaku > .detail-section > div[style*="grid-template-columns:340px 1fr"]{grid-template-columns:1fr !important}
   .rt-danmaku-list{max-height:300px}
+  .rt-danmaku-wrap{overflow:hidden;flex:none!important;min-height:auto!important}
   .top-nav{overflow-x:auto;-webkit-overflow-scrolling:touch}
   .top-nav-btn{font-size:13px;padding:10px 12px;flex-shrink:1}
   .top-nav-btn svg{width:13px;height:13px}
   .profile-stats{grid-template-columns:repeat(2,1fr)}
   .profile-card{padding:14px}
-  .rt-danmaku-item .rt-time{display:none}
-  .rt-danmaku-item .rt-user{max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rt-danmaku-item{flex-wrap:wrap;gap:2px 6px}
+  .rt-danmaku-item .rt-time{width:auto;min-width:0}
+  .rt-danmaku-item .rt-user{max-width:120px}
   .danmaku-user-rank .msg-count{font-size:12px}
   .danmaku-user-rank .rank-num{font-size:12px;width:20px}
   .gift-rank-num{font-size:12px;width:20px}
@@ -782,6 +792,7 @@ const ICO = {
 
 // ========== VIEW: HOSTS ==========
 async function viewHosts(fromPopState, replaceCurrent) {
+  stopAutoRefresh();
   state.view = 'hosts';
   state.hostId = null;
   state.sessionId = null;
@@ -912,6 +923,7 @@ async function loadRoomsView() {
 
 // ========== TOP NAV SWITCH ==========
 function switchTopNav(tab) {
+  stopAutoRefresh(); // stop detail auto-refresh when switching away
   state.topNavTab = tab;
   state._gen++;
   document.querySelectorAll('.top-nav-btn').forEach(b => {
@@ -1540,6 +1552,7 @@ function statCard(label, value, key, sub) {
 
 // ========== VIEW: SESSIONS ==========
 async function viewSessions(hostId, fromPopState) {
+  stopAutoRefresh();
   state.view = 'sessions';
   state.hostId = hostId;
   state.sessionId = null;
@@ -1623,6 +1636,7 @@ async function viewSessions(hostId, fromPopState) {
 
 // ========== VIEW: DETAIL ==========
 async function viewDetail(sessionId, fromPopState) {
+  stopAutoRefresh(); // stop any previous timer
   state.view = 'detail';
   state.sessionId = sessionId;
   state.tab = 'gifts';
@@ -1638,6 +1652,8 @@ async function viewDetail(sessionId, fromPopState) {
     const data = await fetch(`${API}/api/sessions/${sessionId}/detail`).then(r => r.json());
     state._detailData = data;
   renderDetail(data);
+  // Start auto-refresh if session is live
+  if (data.session.is_live) startAutoRefresh();
   } catch (e) { el.innerHTML = `<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>加载失败: ${esc(e.message)}</div>`; }
 }
 
@@ -1668,6 +1684,14 @@ function renderDetail(data) {
   if (data.has_report) html += `<button class="tab-btn" onclick="switchTab('report')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> 报告</button>`;
   html += '</div>';
 
+  // Refresh button for live sessions
+  if (data.session.is_live) {
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">';
+    html += '<div style="font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:4px"><span class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse 2s infinite"></span> 直播中 · 每15秒自动刷新</div>';
+    html += '<button class="btn btn-ghost btn-sm" onclick="manualRefresh()" id="refreshBtn" style="font-size:12px;padding:4px 10px;display:flex;align-items:center;gap:4px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> 刷新</button>';
+    html += '</div>';
+  }
+
   // Empty panel placeholders — lazy rendered on tab switch
   const activeTab = hasMultiAnchor ? 'anchors' : 'gifts';
   if (hasMultiAnchor) html += '<div class="tab-panel active" id="panel-anchors"></div>';
@@ -1696,6 +1720,158 @@ function renderDetail(data) {
   }
   if (typeof requestIdleCallback !== 'undefined') requestIdleCallback(renderNext, { timeout: 200 });
   else setTimeout(renderNext, 50);
+}
+
+// ========== AUTO-REFRESH (live sessions) ==========
+let _refreshTimer = null;
+let _refreshing = false;
+
+function startAutoRefresh() {
+  stopAutoRefresh();
+  _refreshTimer = setInterval(async () => {
+    if (state.view !== 'detail' || !state.sessionId || _refreshing) return;
+    await refreshDetail();
+  }, 15000);
+}
+
+function stopAutoRefresh() {
+  if (_refreshTimer) { clearInterval(_refreshTimer); _refreshTimer = null; }
+}
+
+async function manualRefresh() {
+  const btn = document.getElementById('refreshBtn');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="animation:spin .6s linear infinite"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> 刷新中...'; }
+  await refreshDetail();
+  if (btn) { btn.disabled = false; btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> 刷新'; }
+}
+
+// FLIP animation helper: records positions, updates DOM, animates
+function flipAnimate(container, selector, updateFn) {
+  if (!container) return;
+  const items = container.querySelectorAll(selector);
+  const oldRects = new Map();
+  items.forEach(el => oldRects.set(el, el.getBoundingClientRect()));
+  updateFn();
+  const newItems = container.querySelectorAll(selector);
+  newItems.forEach(el => {
+    const oldRect = oldRects.get(el);
+    if (!oldRect) return; // new item, fade in
+    const newRect = el.getBoundingClientRect();
+    const dy = oldRect.top - newRect.top;
+    if (Math.abs(dy) < 1) return; // no significant move
+    el.style.transform = `translateY(${dy}px)`;
+    el.style.transition = 'none';
+    requestAnimationFrame(() => {
+      el.style.transition = '';
+      el.style.transform = '';
+    });
+  });
+}
+
+// Smooth number update with counter animation
+function animateNumber(el, newVal) {
+  if (!el) return;
+  const oldText = el.textContent.replace(/[^\d]/g, '');
+  const oldVal = parseInt(oldText) || 0;
+  if (oldVal === newVal) return;
+  const diff = newVal - oldVal;
+  const steps = 20;
+  const stepTime = 300 / steps;
+  let step = 0;
+  const tick = () => {
+    step++;
+    const progress = step / steps;
+    const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+    const current = Math.round(oldVal + diff * eased);
+    el.textContent = current.toLocaleString();
+    if (step < steps) setTimeout(tick, stepTime);
+    else el.textContent = newVal.toLocaleString();
+  };
+  tick();
+}
+
+async function refreshDetail() {
+  if (!state.sessionId || _refreshing) return;
+  _refreshing = true;
+  try {
+    const data = await fetch(`${API}/api/sessions/${state.sessionId}/detail`).then(r => r.json());
+    state._detailData = data;
+    smoothUpdateDetail(data);
+    // Stop auto-refresh if session ended
+    if (!data.session.is_live) stopAutoRefresh();
+  } catch (e) { /* silent */ }
+  _refreshing = false;
+}
+
+function smoothUpdateDetail(data) {
+  const s = data.session;
+  // 1. Stats — update numbers in place
+  const statCards = document.querySelectorAll('.stats-row .stat-card');
+  const newStats = [
+    data.session.online_peak || 0,
+    data.summary.total_diamonds,
+    s.stats_like || 0,
+    data.summary.danmaku_count,
+    data.summary.user_count,
+    null // duration — don't animate
+  ];
+  statCards.forEach((card, i) => {
+    if (i < newStats.length && newStats[i] != null) {
+      const valEl = card.querySelector('.stat-value');
+      if (valEl) {
+        const num = typeof newStats[i] === 'number' ? newStats[i] : parseInt(newStats[i]);
+        if (!isNaN(num)) animateNumber(valEl, num);
+      }
+    }
+  });
+
+  // 2. Gift ranking — FLIP update
+  const giftGrid = document.querySelector('#panel-gifts .gift-rank-grid');
+  if (giftGrid && data.gifts && data.gifts.length > 0) {
+    flipAnimate(giftGrid, '.gift-rank-card', () => {
+      giftGrid.innerHTML = data.gifts.slice(0, 10).map((g, i) => `
+        <div class="gift-rank-card" onclick="showGiftDetail('${esc(g.nickname).replace(/'/g,"\\'")}', '${esc(g.user_sec_uid || '')}')">
+          <div class="gift-rank-card-top">
+            <span class="gift-rank-num">${String(i + 1).padStart(2, '0')}</span>
+            <div class="user-cell">${avatarHtml(g.avatar_url, g.nickname)}<span>${esc(g.nickname)}</span></div>
+            <div class="diamonds"><svg viewBox="0 0 24 24" width="11" height="11" style="vertical-align:-1px;margin-right:2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg> ${g.total_diamonds.toLocaleString()}</div>
+          </div>
+        </div>`).join('');
+    });
+  }
+
+  // 3. Danmaku ranking — FLIP update
+  const danmakuList = document.querySelector('#panel-danmaku .danmaku-user-rank-list');
+  if (danmakuList && data.danmakuRanking && data.danmakuRanking.length > 0) {
+    flipAnimate(danmakuList, '.danmaku-user-rank', () => {
+      danmakuList.innerHTML = data.danmakuRanking.slice(0, 10).map((d, i) => `
+        <div class="danmaku-user-rank">
+          <span class="rank-num${i < 3 ? ' top3' : ''}">${String(i + 1).padStart(2, '0')}</span>
+          <div class="user-cell">${avatarHtml(d.avatar, d.nickname)}<span style="font-size:13px">${esc(d.nickname)}</span></div>
+          <div class="msg-count"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11" style="vertical-align:-1px;margin-right:2px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> ${d.msg_count.toLocaleString()}条</div>
+        </div>`).join('');
+    });
+  }
+
+  // 4. Anchor ranking — FLIP update
+  const anchorGrid = document.querySelector('#panel-anchors .anchor-grid');
+  if (anchorGrid && data.anchorRanking && data.anchorRanking.length > 0) {
+    flipAnimate(anchorGrid, '.anchor-card', () => {
+      anchorGrid.innerHTML = data.anchorRanking.map((a, i) => `
+        <div class="anchor-card" onclick="openAnchorModal('${esc(a.anchor_name)}', ${s.id})">
+          <div class="anchor-card-rank">${String(i + 1).padStart(2, '0')}</div>
+          <div class="anchor-card-header">
+            <div class="anchor-card-avatar">${a.anchor_avatar ? `<img src="${a.anchor_avatar}" alt="" onerror="this.parentElement.innerHTML='<svg viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot; width=&quot;18&quot; height=&quot;18&quot;><path d=&quot;M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2&quot;/><circle cx=&quot;9&quot; cy=&quot;7&quot; r=&quot;4&quot;/></svg>'">` : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>'}</div>
+            <div class="anchor-card-name">${esc(a.anchor_name)}</div>
+          </div>
+          <div class="anchor-card-stats">
+            <div class="stat"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:-2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg> <span class="stat-val">${a.total_diamonds.toLocaleString()}</span></div>
+            <div class="stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:-2px"><rect x="3" y="8" width="18" height="13" rx="1"/><path d="M12 8V6c0-2-1.5-4-4-4S4 4 4 6h2"/><path d="M20 6c0-2-1.5-4-4-4s-4 2-4 4h2"/><line x1="12" y1="8" x2="12" y2="21"/><line x1="3" y1="13" x2="21" y2="13"/></svg> <span class="stat-val">${a.gift_count.toLocaleString()}</span></div>
+            <div class="stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:-2px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> <span class="stat-val">${a.user_count}</span></div>
+          </div>
+        </div>`).join('');
+    });
+  }
 }
 
 // Lazy tab panel renderer
@@ -1800,7 +1976,7 @@ function renderTabPanel(tab, data) {
       renderWordCloud(data.danmakuWords || []);
       const left = document.getElementById('danmakuLeft');
       const right = document.getElementById('danmakuRight');
-      if (left && right) right.style.height = left.offsetHeight + 'px';
+      if (left && right && window.innerWidth > 768) right.style.height = left.offsetHeight + 'px';
     }, 30);
     // Lazy load danmaku
     loadDanmaku();

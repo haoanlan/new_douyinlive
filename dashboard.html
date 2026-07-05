@@ -2199,7 +2199,7 @@ function openAnchorModal(anchorName, sessionId) {
     const uid = g.user_sec_uid || g.nickname;
     if (!aggMap[uid]) aggMap[uid] = { nickname: g.nickname, avatar_url: g.avatar_url, total_diamonds: 0, gift_count: 0 };
     // 优先用非神秘人的名字和头像（脱了衣服后的最新身份）
-    if (g.nickname && g.nickname !== '神秘人') {
+    if (g.nickname && !g.nickname.startsWith('神秘人')) {
       aggMap[uid].nickname = g.nickname;
       if (g.avatar_url) aggMap[uid].avatar_url = g.avatar_url;
     }

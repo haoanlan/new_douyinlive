@@ -944,6 +944,10 @@ async function handleAPI(req, res) {
       for (const g of dedupedGifts) {
         const uid = g.user_sec_uid || g.nickname;
         if (!giftUserMap[uid]) giftUserMap[uid] = { nickname: g.nickname, avatar_url: g.avatar_url, user_sec_uid: g.user_sec_uid, total_diamonds: 0, gift_count: 0 };
+        if (g.nickname && !g.nickname.startsWith('神秘人')) {
+          giftUserMap[uid].nickname = g.nickname;
+          if (g.avatar_url) giftUserMap[uid].avatar_url = g.avatar_url;
+        }
         giftUserMap[uid].total_diamonds += g.total_diamonds || 0;
         giftUserMap[uid].gift_count += g.repeat_count || 1;
       }
@@ -958,6 +962,10 @@ async function handleAPI(req, res) {
             nickname: g.nickname, user_sec_uid: g.user_sec_uid, gift_name: g.gift_name, to_nickname: g.to_nickname,
             total_diamonds: 0, count: 0, avatar_url: g.avatar_url, gift_icon: null
           };
+        }
+        if (g.nickname && !g.nickname.startsWith('神秘人')) {
+          giftDetailMap[key].nickname = g.nickname;
+          if (g.avatar_url) giftDetailMap[key].avatar_url = g.avatar_url;
         }
         giftDetailMap[key].total_diamonds += g.total_diamonds || 0;
         giftDetailMap[key].count += g.repeat_count || 1;

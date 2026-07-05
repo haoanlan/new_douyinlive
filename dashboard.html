@@ -1877,7 +1877,7 @@ function smoothUpdateDetail(data) {
   const giftGrid = document.querySelector('#panel-gifts .gift-rank-grid');
   if (giftGrid && data.gifts && data.gifts.length > 0) {
     flipAnimate(giftGrid, '.gift-rank-card', () => {
-      giftGrid.innerHTML = data.gifts.slice(0, 10).map((g, i) => `
+      giftGrid.innerHTML = data.gifts.map((g, i) => `
         <div class="gift-rank-card" onclick="showGiftDetail('${esc(g.nickname).replace(/'/g,"\\'")}', '${esc(g.user_sec_uid || '')}')">
           <div class="gift-rank-card-top">
             <span class="gift-rank-num">${String(i + 1).padStart(2, '0')}</span>

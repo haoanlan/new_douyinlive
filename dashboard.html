@@ -2413,8 +2413,8 @@ function toggleSelectAll() {
 }
 
 function updateBatchBar() {
-  const cbs = document.querySelectorAll('.session-cb');
-  const checked = [...cbs].filter(cb => cb.checked);
+  const cbs = [...document.querySelectorAll('.session-cb')].filter(cb => cb.id !== 'selectAll');
+  const checked = cbs.filter(cb => cb.checked);
   const float = document.getElementById('batchFloat');
   const count = document.getElementById('batchCount');
   // 更新行选中样式

@@ -872,6 +872,13 @@ async function handleAPI(req, res) {
       ).all(streamer.id);
       const dedupedGifts = comboDedupGifts(rawGifts);
       const sessionStats = {};
+      // Initialize stats for all sessions
+      const allSessions = dbInstance.prepare(
+        'SELECT id FROM sessions WHERE streamer_id = ?'
+      ).all(streamer.id);
+      for (const s of allSessions) {
+        sessionStats[s.id] = { total_diamonds: 0, gift_count: 0, user_set: new Set() };
+      }
       for (const g of dedupedGifts) {
         const sid = g.session_id;
         if (!sessionStats[sid]) sessionStats[sid] = { total_diamonds: 0, gift_count: 0, user_set: new Set() };
@@ -880,10 +887,15 @@ async function handleAPI(req, res) {
         if (g.user_sec_uid) sessionStats[sid].user_set.add(g.user_sec_uid);
       }
       const sessionDanmaku = dbInstance.prepare(
-        'SELECT session_id, COUNT(*) as danmaku_count FROM danmaku WHERE session_id IN (SELECT id FROM sessions WHERE streamer_id = ?) GROUP BY session_id'
+        "SELECT session_id, user_sec_uid FROM danmaku WHERE session_id IN (SELECT id FROM sessions WHERE streamer_id = ?) AND user_sec_uid IS NOT NULL AND user_sec_uid != ''"
       ).all(streamer.id);
       const danmakuMap = {};
-      for (const d of sessionDanmaku) danmakuMap[d.session_id] = d.danmaku_count;
+      for (const d of sessionDanmaku) {
+        danmakuMap[d.session_id] = (danmakuMap[d.session_id] || 0) + 1;
+        if (sessionStats[d.session_id] && d.user_sec_uid) {
+          sessionStats[d.session_id].user_set.add(d.user_sec_uid);
+        }
+      }
 
       const rows = dbInstance.prepare(
         'SELECT s.* FROM sessions s WHERE s.streamer_id = ? ORDER BY s.start_time DESC'
@@ -1019,7 +1031,7 @@ async function handleAPI(req, res) {
 
       // 弹幕（最近500条，用于展示和搜索）
       const danmaku = dbInstance.prepare(`
-        SELECT nickname, avatar as avatar_url, content, create_time as timestamp
+        SELECT nickname, avatar as avatar_url, content, create_time as timestamp, user_sec_uid
         FROM danmaku WHERE session_id = ?
         ORDER BY create_time DESC
       `).all(sid);
@@ -1075,7 +1087,7 @@ async function handleAPI(req, res) {
         total_gifts: dedupedGifts.reduce((s, g) => s + (g.repeat_count || 1), 0),
         total_danmaku: danmaku.length,
         danmaku_count: danmaku.length,
-        user_count: new Set(dedupedGifts.map(g => g.nickname).concat(danmaku.map(d => d.nickname))).size,
+        user_count: new Set(dedupedGifts.map(g => g.user_sec_uid).filter(Boolean).concat(danmaku.map(d => d.user_sec_uid).filter(Boolean))).size,
         timeline: Object.values(timeMap).sort((a, b) => (a.time || '').localeCompare(b.time || ''))
       };
 

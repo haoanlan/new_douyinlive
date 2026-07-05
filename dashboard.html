@@ -1742,9 +1742,17 @@ function stopAutoRefresh() {
 
 async function manualRefresh() {
   const btn = document.getElementById('refreshBtn');
-  if (btn) { btn.disabled = true; btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="animation:spin .6s linear infinite"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> 刷新中...'; }
+  if (btn) {
+    btn.disabled = true;
+    const svg = btn.querySelector('svg');
+    if (svg) svg.style.animation = 'spin .6s linear infinite';
+  }
   await refreshDetail();
-  if (btn) { btn.disabled = false; btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> 刷新'; }
+  if (btn) {
+    btn.disabled = false;
+    const svg = btn.querySelector('svg');
+    if (svg) svg.style.animation = '';
+  }
 }
 
 // FLIP animation helper: records positions, updates DOM, animates

@@ -396,8 +396,10 @@ thead .session-cb:hover{opacity:1}
 .detail-section-title svg{width:18px;height:18px;color:var(--accent)}
 
 /* FLIP animation for ranking updates */
-.gift-rank-card,.danmaku-user-rank,.anchor-card{transition:transform .4s cubic-bezier(.25,.1,.25,1),opacity .3s}
+.gift-rank-card,.danmaku-user-rank,.anchor-card{transition:transform .5s cubic-bezier(.23,1,.32,1),opacity .4s ease,box-shadow .3s}
 .gift-rank-grid,.danmaku-user-rank-list,.anchor-grid{position:relative}
+.flip-new{animation:flipFadeIn .4s ease both}
+@keyframes flipFadeIn{from{opacity:0;transform:scale(.95) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
 
 /* Pulse animation for live indicator */
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
@@ -1750,20 +1752,36 @@ function flipAnimate(container, selector, updateFn) {
   if (!container) return;
   const items = container.querySelectorAll(selector);
   const oldRects = new Map();
-  items.forEach(el => oldRects.set(el, el.getBoundingClientRect()));
+  const oldKeys = new Map();
+  items.forEach(el => {
+    oldRects.set(el, el.getBoundingClientRect());
+    // Use text content as key for matching
+    oldKeys.set(el, el.textContent.trim().substring(0, 30));
+  });
   updateFn();
   const newItems = container.querySelectorAll(selector);
+  // Build reverse lookup: oldKey -> oldRect
+  const oldByKey = new Map();
+  oldKeys.forEach((key, el) => oldByKey.set(key, oldRects.get(el)));
+  
   newItems.forEach(el => {
-    const oldRect = oldRects.get(el);
-    if (!oldRect) return; // new item, fade in
+    const newKey = el.textContent.trim().substring(0, 30);
+    const oldRect = oldByKey.get(newKey);
+    if (!oldRect) {
+      // New item — fade in with scale
+      el.classList.add('flip-new');
+      return;
+    }
     const newRect = el.getBoundingClientRect();
     const dy = oldRect.top - newRect.top;
-    if (Math.abs(dy) < 1) return; // no significant move
+    if (Math.abs(dy) < 1) return;
     el.style.transform = `translateY(${dy}px)`;
     el.style.transition = 'none';
     requestAnimationFrame(() => {
-      el.style.transition = '';
-      el.style.transform = '';
+      requestAnimationFrame(() => {
+        el.style.transition = '';
+        el.style.transform = '';
+      });
     });
   });
 }

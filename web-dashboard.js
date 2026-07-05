@@ -985,21 +985,8 @@ async function handleAPI(req, res) {
         ...a, user_count: a.users.size
       })).sort((a, b) => b.total_diamonds - a.total_diamonds);
       
-      // Fallback: if no anchors from gift data, use room streamer
-      if (anchorRanking.length === 0 && session.streamer_name) {
-        const totalGiftDiamonds = dedupedGifts.reduce((s, g) => s + (g.total_diamonds || 0), 0);
-        const totalGiftCount = dedupedGifts.reduce((s, g) => s + (g.repeat_count || 1), 0);
-        const giftUsers = new Set(dedupedGifts.map(g => g.nickname).filter(Boolean));
-        anchorRanking.push({
-          anchor_sec_uid: '',
-          anchor_name: session.streamer_name,
-          anchor_avatar: session.streamer_avatar || null,
-          total_diamonds: totalGiftDiamonds,
-          gift_count: totalGiftCount,
-          users: giftUsers,
-          user_count: giftUsers.size
-        });
-      }
+      // Note: No fallback for个播 — if no to_user_sec_uid in gifts, anchorRanking stays empty
+      // Frontend only shows anchor tab when anchorRanking.length > 1 (团播 detection)
       // 补充头像
       for (const a of anchorRanking) {
         if (!a.anchor_avatar && a.anchor_sec_uid) {

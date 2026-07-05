@@ -1890,6 +1890,9 @@ function smoothUpdateDetail(data) {
         </div>`).join('');
     });
   }
+  
+  // 5. Update giftDetails cache for modal
+  if (data.giftDetails) window._giftDetails = data.giftDetails;
 }
 
 // Lazy tab panel renderer
@@ -2152,7 +2155,13 @@ function closeAnchorModal() {
 }
 
 function showGiftDetail(nickname, secUid) {
-  const details = (window._giftDetails || []).filter(d => secUid ? d.user_sec_uid === secUid : d.nickname === nickname);
+  const details = (window._giftDetails || []).filter(d => {
+    if (secUid && d.user_sec_uid === secUid) return true;
+    if (!secUid && d.nickname === nickname) return true;
+    // Fallback: match by nickname if secUid provided but no match
+    if (secUid && d.nickname === nickname) return true;
+    return false;
+  });
   if (!details.length) return;
   const totalD = details.reduce((s, d) => s + d.total_diamonds, 0);
   const modal = document.getElementById('giftDetailModal');

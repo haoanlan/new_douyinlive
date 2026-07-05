@@ -461,6 +461,8 @@ async function handleAPI(req, res) {
           unique_id: apiInfo?.unique_id || '',
           sessions,
           latest_action: latestAction,
+          latest_danmaku: u.danmaku_action ? { ...u.danmaku_action, streamer_name: sessionMap[u.danmaku_action.session_id]?.streamer_name || "" } : null,
+          latest_gift: u.gift_action ? { ...u.gift_action, streamer_name: sessionMap[u.gift_action.session_id]?.streamer_name || "" } : null,
         });
       }
       return sendJSON(res, { users: results });

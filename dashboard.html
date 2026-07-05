@@ -1742,7 +1742,10 @@ function stopAutoRefresh() {
   if (_refreshTimer) { clearInterval(_refreshTimer); _refreshTimer = null; }
 }
 
+let _manualRefresh = false;
+
 async function manualRefresh() {
+  _manualRefresh = true;
   const btn = document.getElementById('refreshBtn');
   if (btn) {
     btn.disabled = true;
@@ -1750,6 +1753,7 @@ async function manualRefresh() {
     if (svg) svg.style.animation = 'spin .6s linear infinite';
   }
   await refreshDetail();
+  _manualRefresh = false;
   if (btn) {
     btn.disabled = false;
     const svg = btn.querySelector('svg');
@@ -1934,10 +1938,10 @@ function smoothUpdateDetail(data) {
   // 5. Update giftDetails cache for modal
   if (data.giftDetails) window._giftDetails = data.giftDetails;
   
-  // 6. Update danmaku list — 跳过如果弹幕tab正在激活（避免刷新打断用户浏览/搜索）
+  // 6. Update danmaku list — 自动刷新时跳过弹幕tab（避免打断浏览），手动刷新时正常更新
   const danmakuPanel = document.getElementById('panel-danmaku');
   const isDanmakuActive = danmakuPanel && danmakuPanel.classList.contains('active');
-  if (!isDanmakuActive && data.danmaku && data.danmaku.length > 0) {
+  if ((!isDanmakuActive || _manualRefresh) && data.danmaku && data.danmaku.length > 0) {
     const normalized = data.danmaku.map(d => ({
       ...d,
       timestamp: d.timestamp || d.create_time,

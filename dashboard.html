@@ -1934,8 +1934,10 @@ function smoothUpdateDetail(data) {
   // 5. Update giftDetails cache for modal
   if (data.giftDetails) window._giftDetails = data.giftDetails;
   
-  // 6. Update danmaku list (只渲染不覆盖state._danmaku，全量数据由loadDanmaku管理)
-  if (data.danmaku && data.danmaku.length > 0) {
+  // 6. Update danmaku list — 跳过如果弹幕tab正在激活（避免刷新打断用户浏览/搜索）
+  const danmakuPanel = document.getElementById('panel-danmaku');
+  const isDanmakuActive = danmakuPanel && danmakuPanel.classList.contains('active');
+  if (!isDanmakuActive && data.danmaku && data.danmaku.length > 0) {
     const normalized = data.danmaku.map(d => ({
       ...d,
       timestamp: d.timestamp || d.create_time,

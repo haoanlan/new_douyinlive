@@ -1937,7 +1937,7 @@ function openAnchorModal(anchorName, sessionId) {
   const totalD = gifts.reduce((s, g) => s + g.total_diamonds, 0);
   const totalU = gifts.length;
 
-  let html = `<div class="anchor-modal-summary"><span><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:-2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg> <span class="sv">${totalD.toLocaleString()}</span> 钻石</span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:-2px"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> <span class="sv">${totalU}</span> 人</span></div>`;
+  let html = `<div class="anchor-modal-summary"><span><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:-2px;fill:var(--orange)"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg> <span class="sv">${totalD.toLocaleString()}</span></span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:-2px"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> <span class="sv">${totalU}</span> 人</span></div>`;
     html += '<div class="gift-list-card">';
     gifts.forEach((g, i) => {
       const rankBadge = `<span class="gift-rank-num">${String(i + 1).padStart(2, '0')}</span>`;
@@ -1963,7 +1963,7 @@ function showGiftDetail(nickname, secUid) {
   const totalD = details.reduce((s, d) => s + d.total_diamonds, 0);
   const modal = document.getElementById('giftDetailModal');
   document.getElementById('giftDetailTitle').textContent = nickname + ' 的礼物';
-  let html = `<div class="anchor-modal-summary"><span><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:-2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg> <span class="sv">${totalD.toLocaleString()}</span> 钻石</span><span>${details.length} 种礼物</span></div>`;
+  let html = `<div class="anchor-modal-summary"><span><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:-2px;fill:var(--orange)"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg> <span class="sv">${totalD.toLocaleString()}</span></span><span>${details.length} 种礼物</span></div>`;
   html += '<div style="display:flex;flex-direction:column;gap:6px">';
   details.forEach(d => {
     const icon = d.gift_icon ? `<img src="${esc(d.gift_icon)}" class="gdi-icon">` : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="gdi-icon" style="padding:2px;box-sizing:border-box"><rect x="3" y="8" width="18" height="13" rx="1"/><path d="M12 8V6c0-2-1.5-4-4-4S4 4 4 6h2"/><path d="M20 6c0-2-1.5-4-4-4s-4 2-4 4h2"/><line x1="12" y1="8" x2="12" y2="21"/><line x1="3" y1="13" x2="21" y2="13"/></svg>';

@@ -1241,7 +1241,7 @@ async function showUserProfile(secUid) {
   try {
     const p = await api(`/api/users/${secUid}`);
     document.getElementById('profileModalTitle').textContent = p.nickname || '用户画像';
-    let html = `<div style="display:flex;align-items:center;gap:14px;padding-top:4px;margin-bottom:16px">
+    let html = `<div style="display:flex;align-items:center;gap:14px;padding:16px 0;border-bottom:1px solid var(--border);margin-bottom:14px">
         ${avatarHtml(p.avatar, p.nickname, 52)}
         <div>
           <div style="font-size:16px;font-weight:600;color:var(--text)">${esc(p.nickname)}</div>

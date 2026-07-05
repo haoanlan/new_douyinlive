@@ -1934,18 +1934,19 @@ function smoothUpdateDetail(data) {
   // 5. Update giftDetails cache for modal
   if (data.giftDetails) window._giftDetails = data.giftDetails;
   
-  // 6. Update danmaku list
+  // 6. Update danmaku list (只渲染不覆盖state._danmaku，全量数据由loadDanmaku管理)
   if (data.danmaku && data.danmaku.length > 0) {
-    state._danmaku = data.danmaku.map(d => ({
+    const normalized = data.danmaku.map(d => ({
       ...d,
       timestamp: d.timestamp || d.create_time,
       avatar_url: d.avatar_url || d.avatar
     }));
-    const recent = state._danmaku.slice(0, 80);
+    const recent = normalized.slice(0, 80);
     renderDanmakuList(recent);
     const badge = document.getElementById('dmTotalBadge');
-    if (badge && state._danmaku.length > 80) {
-      badge.textContent = `显示前 80 / 共 ${state._danmaku.length.toLocaleString()} 条`;
+    if (badge) {
+      const total = state._danmaku ? state._danmaku.length : data.danmaku.length;
+      badge.textContent = total > 80 ? `显示前 80 / 共 ${total.toLocaleString()} 条` : '';
     }
   }
 }

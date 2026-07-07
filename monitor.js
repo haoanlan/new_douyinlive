@@ -885,6 +885,7 @@ function handleMessage(room, data) {
           }
         }
       } catch(e) {}
+      break;
     }
 
     default: {

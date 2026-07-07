@@ -626,6 +626,12 @@ async function handleAPI(req, res) {
       const range = query.range || '7d'; // 7d, 30d, 90d, all
       const groupBy = query.group || 'day'; // day, week, month
 
+      // 白名单校验，防止 SQL 注入
+      const validRanges = ['7d', '30d', '90d', 'all'];
+      const validGroups = ['day', 'week', 'month'];
+      if (!validRanges.includes(range)) { res.writeHead(400); res.end(JSON.stringify({ error: 'Invalid range' })); return; }
+      if (!validGroups.includes(groupBy)) { res.writeHead(400); res.end(JSON.stringify({ error: 'Invalid group' })); return; }
+
       let dateExpr, groupExpr;
       if (groupBy === 'day') {
         dateExpr = "date(create_time/1000, 'unixepoch', 'localtime')";
@@ -1423,6 +1429,12 @@ function serveStatic(req, res) {
 
   // 安全检查：防止目录遍历
   if (!filePath.startsWith(DATA_DIR)) {
+    res.writeHead(403); res.end('Forbidden'); return;
+  }
+
+  // 屏蔽敏感文件（config、备份、数据库、日志）
+  const blockedExts = ['.yaml', '.yml', '.bak', '.db', '.db-journal', '.jsonl'];
+  if (blockedExts.some(e => filePath.endsWith(e)) || filePath.endsWith('.log') || path.basename(filePath).startsWith('.')) {
     res.writeHead(403); res.end('Forbidden'); return;
   }
 

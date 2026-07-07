@@ -1441,14 +1441,16 @@ async function confirmAddRoom() {
   const btn = document.getElementById('addRoomConfirmBtn');
   btn.disabled = true;
   btn.textContent = '添加中...';
-  const r = await fetch(`${API}/api/rooms/add`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ room_id: _lookupData.room_id, name }) }).then(r => r.json());
-  toast(r.ok ? `已添加 ${name || _lookupData.room_id}` : (r.error || '添加失败'), r.ok ? 'success' : 'error');
-  closeAddRoom();
-  if (r.ok) {
-    viewHosts();
-    // 等 2 秒再刷新，让 monitor 解析完主播名
-    setTimeout(() => viewHosts(), 2000);
-  }
+  try {
+    const r = await fetch(`${API}/api/rooms/add`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ room_id: _lookupData.room_id, name }) }).then(r => r.json());
+    toast(r.ok ? `已添加 ${name || _lookupData.room_id}` : (r.error || '添加失败'), r.ok ? 'success' : 'error');
+    closeAddRoom();
+    if (r.ok) {
+      viewHosts();
+      setTimeout(() => viewHosts(), 2000);
+    }
+  } catch(e) { toast('网络错误: ' + e.message, 'error'); }
+  finally { btn.disabled = false; btn.textContent = '确认添加'; }
 }
 
 async function updateStats() {
@@ -1519,46 +1521,51 @@ function updateCard(roomId, patch) {
 }
 async function pauseRoom(roomId) {
   if (!await showConfirm(ICO.pause, '确定暂停这个房间的监控？')) return;
-  const r = await fetch(`${API}/api/rooms/pause`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ room_id: roomId }) }).then(r => r.json());
-  toast(r.ok ? '已暂停' : (r.error || '操作失败'), r.ok ? 'success' : 'error');
-  if (r.ok) { updateCard(roomId, { enabled: false, badge: { cls: 'badge-paused', text: '已暂停' } }); updateStats(); }
+  try {
+    const r = await fetch(`${API}/api/rooms/pause`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ room_id: roomId }) }).then(r => r.json());
+    toast(r.ok ? '已暂停' : (r.error || '操作失败'), r.ok ? 'success' : 'error');
+    if (r.ok) { updateCard(roomId, { enabled: false, badge: { cls: 'badge-paused', text: '已暂停' } }); updateStats(); }
+  } catch(e) { toast('网络错误: ' + e.message, 'error'); }
 }
 
 async function resumeRoom(roomId) {
-  const r = await fetch(`${API}/api/rooms/resume`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ room_id: roomId }) }).then(r => r.json());
-  toast(r.ok ? '已恢复' : (r.error || '操作失败'), r.ok ? 'success' : 'error');
-  if (r.ok) { updateCard(roomId, { enabled: true, badge: { cls: 'badge-idle', text: '已启用' } }); updateStats(); }
+  try {
+    const r = await fetch(`${API}/api/rooms/resume`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ room_id: roomId }) }).then(r => r.json());
+    toast(r.ok ? '已恢复' : (r.error || '操作失败'), r.ok ? 'success' : 'error');
+    if (r.ok) { updateCard(roomId, { enabled: true, badge: { cls: 'badge-idle', text: '已启用' } }); updateStats(); }
+  } catch(e) { toast('网络错误: ' + e.message, 'error'); }
 }
 
 
 async function confirmDeleteRoom(roomId, name) {
   const confirmed = await showConfirm('🗑️', `确定删除 <strong>${esc(name || roomId)}</strong>？<br><br>将停止监控并清除所有历史数据<br>（弹幕、礼物、场次记录）<br><br>此操作不可恢复！`);
   if (!confirmed) return;
-  const r = await fetch(`${API}/api/rooms/remove`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ room_id: roomId, delete_data: true }) }).then(r => r.json());
-  toast(r.ok ? '已删除' : (r.error || '删除失败'), r.ok ? 'success' : 'error');
-  if (r.ok) {
-    const cards = document.querySelectorAll('.room-card');
-    for (const card of cards) {
-      if (card.getAttribute('onclick')?.includes(roomId)) {
-        card.style.transition = 'opacity .2s, transform .2s';
-        card.style.opacity = '0';
-        card.style.transform = 'scale(0.95)';
-        setTimeout(() => { card.remove(); updateStats(); }, 200);
-        break;
+  try {
+    const r = await fetch(`${API}/api/rooms/remove`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ room_id: roomId, delete_data: true }) }).then(r => r.json());
+    toast(r.ok ? '已删除' : (r.error || '删除失败'), r.ok ? 'success' : 'error');
+    if (r.ok) {
+      const cards = document.querySelectorAll('.room-card');
+      for (const card of cards) {
+        if (card.getAttribute('onclick')?.includes(roomId)) {
+          card.style.transition = 'opacity .2s, transform .2s';
+          card.style.opacity = '0';
+          card.style.transform = 'scale(0.95)';
+          setTimeout(() => { card.remove(); updateStats(); }, 200);
+          break;
+        }
       }
     }
-  }
+  } catch(e) { toast('网络错误: ' + e.message, 'error'); }
 }
 
 async function deleteSession(sessionId) {
   const confirmed = await showConfirm('🗑️', `确定删除这场直播数据？<br><br>弹幕、礼物、在线记录将一并清除<br>此操作不可恢复！`);
   if (!confirmed) return;
-  const r = await fetch(`${API}/api/sessions/${sessionId}/delete`, { method: 'POST' }).then(r => r.json());
-  toast(r.ok ? '场次已删除' : (r.error || '删除失败'), r.ok ? 'success' : 'error');
-  if (r.ok) {
-    // 返回场次列表
-    viewSessions(state.hostId);
-  }
+  try {
+    const r = await fetch(`${API}/api/sessions/${sessionId}/delete`, { method: 'POST' }).then(r => r.json());
+    toast(r.ok ? '场次已删除' : (r.error || '删除失败'), r.ok ? 'success' : 'error');
+    if (r.ok) { viewSessions(state.hostId); }
+  } catch(e) { toast('网络错误: ' + e.message, 'error'); }
 }
 
 function statCard(label, value, key, sub) {
@@ -2614,9 +2621,11 @@ function downloadSelectedReports() {
 async function deleteSessionFromList(sessionId) {
   const confirmed = await showConfirm('🗑️', '确定删除这场直播数据？<br><br>弹幕、礼物、在线记录将一并清除<br>此操作不可恢复！');
   if (!confirmed) return;
-  const r = await fetch(`${API}/api/sessions/${sessionId}/delete`, { method: 'POST' }).then(r => r.json());
-  toast(r.ok ? '场次已删除' : (r.error || '删除失败'), r.ok ? 'success' : 'error');
-  if (r.ok) viewSessions(state.hostId);
+  try {
+    const r = await fetch(`${API}/api/sessions/${sessionId}/delete`, { method: 'POST' }).then(r => r.json());
+    toast(r.ok ? '场次已删除' : (r.error || '删除失败'), r.ok ? 'success' : 'error');
+    if (r.ok) viewSessions(state.hostId);
+  } catch(e) { toast('网络错误: ' + e.message, 'error'); }
 }
 
 async function deleteSelectedSessions() {
@@ -2626,8 +2635,10 @@ async function deleteSelectedSessions() {
   if (!confirmed) return;
   let ok = 0, fail = 0;
   for (const id of ids) {
-    const r = await fetch(`${API}/api/sessions/${id}/delete`, { method: 'POST' }).then(r => r.json());
-    r.ok ? ok++ : fail++;
+    try {
+      const r = await fetch(`${API}/api/sessions/${id}/delete`, { method: 'POST' }).then(r => r.json());
+      r.ok ? ok++ : fail++;
+    } catch(e) { fail++; }
   }
   toast(`已删除 ${ok} 场${fail ? `，${fail} 场失败` : ''}`, ok > 0 ? 'success' : 'error');
   viewSessions(state.hostId);

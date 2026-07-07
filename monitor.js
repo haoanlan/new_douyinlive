@@ -730,7 +730,11 @@ function handleMessage(room, data) {
           to_nickname,
           giftKeys: data.gift ? Object.keys(data.gift) : [],
         });
-        if (existing.length > 200) existing = existing.slice(-200);
+        // 超过20MB时从头部删除一半
+        const jsonStr = JSON.stringify(existing, null, 2);
+        if (Buffer.byteLength(jsonStr, 'utf8') > 20 * 1024 * 1024) {
+          existing = existing.slice(Math.floor(existing.length / 2));
+        }
         fs.writeFileSync(debugPath, JSON.stringify(existing, null, 2));
       } catch(e) {}
       if (!room.stats.giftUsers[user.nickname]) {

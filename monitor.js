@@ -709,26 +709,30 @@ function handleMessage(room, data) {
         sendType: data.sendType !== undefined ? parseInt(data.sendType, 10) : null,
         icon: data.gift?.icon?.urlList?.[0] || null,
       });
-      // DEBUG: 记录无icon的礼物原始结构，排查融合礼物icon字段位置
-      if (!data.gift?.icon?.urlList?.[0]) {
-        const fs = require('fs');
-        const debugPath = require('path').join(__dirname, 'debug-gift-icon.json');
-        try {
-          let existing = [];
-          try { existing = JSON.parse(fs.readFileSync(debugPath, 'utf8')); } catch(e) {}
-          existing.push({
-            time: new Date().toISOString(),
-            giftName,
-            baseName,
-            displayName,
-            giftKeys: data.gift ? Object.keys(data.gift) : [],
-            giftRaw: JSON.parse(JSON.stringify(data.gift || {})),
-          });
-          // 只保留最近50条
-          if (existing.length > 50) existing = existing.slice(-50);
-          fs.writeFileSync(debugPath, JSON.stringify(existing, null, 2));
-        } catch(e) {}
-      }
+      // 礼物调试日志：记录所有礼物的完整解析结构，方便排查 icon 等问题
+      try {
+        const debugPath = path.join(DATA_DIR, 'gift_debug.json');
+        let existing = [];
+        try { existing = JSON.parse(fs.readFileSync(debugPath, 'utf8')); } catch(e) {}
+        existing.push({
+          time: cstISO(),
+          giftId: data.giftId || data.gift?.id || null,
+          giftName,
+          baseName,
+          displayName,
+          icon: data.gift?.icon?.urlList || null,
+          iconType: data.gift?.iconType || null,
+          diamondCount: data.gift?.diamondCount || null,
+          diamondPerUnit,
+          count: giftCount,
+          totalDiamonds,
+          nickname: user.nickname,
+          to_nickname,
+          giftKeys: data.gift ? Object.keys(data.gift) : [],
+        });
+        if (existing.length > 200) existing = existing.slice(-200);
+        fs.writeFileSync(debugPath, JSON.stringify(existing, null, 2));
+      } catch(e) {}
       if (!room.stats.giftUsers[user.nickname]) {
         room.stats.giftUsers[user.nickname] = { count: 0, totalDiamonds: 0, giftNames: [] };
       }
@@ -1007,11 +1011,6 @@ function startConnection(roomId, config) {
   room.ws.on('message', (raw) => {
     try {
       const str = raw.toString();
-      if (str.includes('Fansclub') || str.includes('ScreenChat') || str.includes('HotChat') || str.includes('GroupLiveContainer')) {
-        const reportsDir = path.join(DATA_DIR, 'reports');
-        if (!fs.existsSync(reportsDir)) fs.mkdirSync(reportsDir, { recursive: true });
-        fs.appendFileSync(reportsDir + '/ws_dump.jsonl', str + '\n', 'utf8');
-      }
       const data = JSON.parse(str);
 
       // ====== 系统消息 ======

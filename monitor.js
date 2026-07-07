@@ -107,23 +107,20 @@ function cstFileTimestamp() {
 }
 
 // ====== 目录管理 ======
-let SESSION_DIR = DATA_DIR;
-let SESSION_FILE = path.join(DATA_DIR, 'current_session.json');
-let REPORT_FILE = path.join(DATA_DIR, 'pending_report.json');
 
-function setStreamerDir(authorName) {
+function setStreamerDir(room, authorName) {
   if (!authorName) return;
   const streamersDir = path.join(DATA_DIR, 'streamers');
   if (!fs.existsSync(streamersDir)) fs.mkdirSync(streamersDir, { recursive: true });
   const dir = path.join(streamersDir, authorName.replace(/[\\/:*?"<>|]/g, '_'));
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  SESSION_DIR = dir;
-  SESSION_FILE = path.join(dir, 'current_session.json');
-  REPORT_FILE = path.join(dir, 'pending_report.json');
-  const rootLink = path.join(DATA_DIR, 'current_session.json');
+  room.sessionDir = dir;
+  room.sessionFile = path.join(dir, 'current_session.json');
+  room.reportFile = path.join(dir, 'pending_report.json');
+  const rootLink = path.join(DATA_DIR, `current_session_${room.roomId}.json`);
   try { fs.unlinkSync(rootLink); } catch(e) {}
-  try { fs.symlinkSync(SESSION_FILE, rootLink); } catch(e) {
-    try { fs.copyFileSync(SESSION_FILE, rootLink); } catch(e2) {}
+  try { fs.symlinkSync(room.sessionFile, rootLink); } catch(e) {
+    try { fs.copyFileSync(room.sessionFile, rootLink); } catch(e2) {}
   }
 }
 
@@ -139,6 +136,9 @@ function createRoomState(roomId) {
     displayName: roomId,  // 初始用roomId，获取到主播名后更新
     ws: null,
     session: null,
+    sessionFile: path.join(DATA_DIR, `current_session_${roomId}.json`),
+    sessionDir: DATA_DIR,
+    reportFile: path.join(DATA_DIR, `pending_report_${roomId}.json`),
     isRecording: false,
     dbSessionId: null,
     dbSyncState: { danmaku: 0, gifts: 0, members: 0, online: 0, likes: 0 },
@@ -265,10 +265,6 @@ function createSession(room, roomId) {
   room.stats.danmakuUsers = {};
   room.stats.giftUsers = {};
 
-  SESSION_DIR = DATA_DIR;
-  SESSION_FILE = path.join(DATA_DIR, 'current_session.json');
-  REPORT_FILE = path.join(DATA_DIR, 'pending_report.json');
-
   const s = {
     room_id: roomId,
     room_title: '',
@@ -298,7 +294,7 @@ function saveSession(room) {
   );
   if (loadConfig().save_json) {
     try {
-      fs.writeFileSync(SESSION_FILE, JSON.stringify(room.session, null, 2), 'utf-8');
+      fs.writeFileSync(room.sessionFile, JSON.stringify(room.session, null, 2), 'utf-8');
     } catch(e) {}
   }
 }
@@ -461,9 +457,9 @@ function finalizeSession(room) {
 
   if (loadConfig().save_json) {
     const ts = cstFileTimestamp();
-    const bakFile = path.join(SESSION_DIR, `session_${ts}.json`);
+    const bakFile = path.join(room.sessionDir, `session_${ts}.json`);
     try {
-      fs.copyFileSync(SESSION_FILE, bakFile);
+      fs.copyFileSync(room.sessionFile, bakFile);
       console.log(`[session][${room.roomId}] 已备份: ${bakFile}`);
     } catch(e) {}
   }
@@ -844,7 +840,7 @@ function handleMessage(room, data) {
         }
         if (data.livename && !session.room_author) {
           session.room_author = data.livename;
-          setStreamerDir(data.livename);
+          setStreamerDir(room, data.livename);
           if (sid) db.updateStreamerName(sid, data.livename, data.avatarThumb || '').catch(e => console.error(`[session] 更新主播名失败:`, e.message));
           console.log(`[${room.roomId}] 🔴 主播名确认: ` + data.livename);
         }
@@ -1033,7 +1029,7 @@ function startConnection(roomId, config) {
             room.session = createSession(room, roomId);
             room.session.room_title = data.title || '';
             room.session.room_author = data.livename || '';
-            if (room.session.room_author) setStreamerDir(room.session.room_author);
+            if (room.session.room_author) setStreamerDir(room, room.session.room_author);
             room.isRecording = true;
             saveSession(room);
             db.init().then(async () => {
@@ -1089,7 +1085,7 @@ function startConnection(roomId, config) {
           room.displayName = data.livename;
           console.log(`[${getDisplayName(room)}] 🏷️ 抓到主播名:`, data.livename);
           room.session.room_author = data.livename;
-          setStreamerDir(data.livename);
+          setStreamerDir(room, data.livename);
           const doUpdate = (sid) => {
             db.updateStreamerName(sid, data.livename, data.avatarThumb || '').catch(e => console.error(`[session] 更新主播名失败:`, e.message));
           };

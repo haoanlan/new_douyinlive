@@ -221,20 +221,20 @@ thead .session-cb:hover{opacity:1}
 .gift-rank-card-top{display:flex;align-items:center;gap:8px;padding:10px 14px;min-width:0;overflow:hidden}
 .gift-rank-card-top .user-cell{flex:1;min-width:0}
 .gift-rank-card-top .user-cell span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
-.gift-rank-card-top .diamonds{flex-shrink:0;margin-left:auto;color:var(--orange);font-weight:600;font-size:12px}
+.gift-rank-card-top .diamonds{flex-shrink:0;margin-left:auto;color:var(--orange);font-weight:600;font-size:12px;display:inline-flex;align-items:center}
 .gift-detail-row{display:flex;align-items:center;gap:6px;padding:5px 0;font-size:12px;color:var(--text-secondary);border-bottom:1px solid var(--border)}
 .gift-detail-row:last-child{border-bottom:none}
 .gift-detail-row span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .gift-detail-item{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius)}
 .gift-detail-item .gdi-icon{width:20px;height:20px;border-radius:4px;flex-shrink:0}
 .gift-detail-item .gdi-fallback{display:flex;align-items:center;justify-content:center;background:var(--bg-input);font-size:12px;line-height:1}
-.gift-detail-item .gdi-name{font-size:13px;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gift-detail-item .gdi-name{font-size:12px;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .gift-detail-item .gdi-to{color:var(--text-muted);font-size:11px;flex-shrink:0}
-.gift-detail-item .gdi-diamonds{color:var(--orange);font-weight:600;font-size:12px;font-variant-numeric:tabular-nums;flex-shrink:0}
+.gift-detail-item .gdi-diamonds{color:var(--orange);font-weight:600;font-size:12px;font-variant-numeric:tabular-nums;flex-shrink:0;display:inline-flex;align-items:center}
 #panel-gifts .user-cell{flex:1;min-width:0}
 #panel-gifts .diamonds{flex-shrink:0}
 #panel-gifts .user-cell{flex:1;min-width:0}
-#panel-gifts .diamonds{flex-shrink:0;margin-left:auto;color:var(--orange);font-weight:600}
+#panel-gifts .diamonds{flex-shrink:0;margin-left:auto;color:var(--orange);font-weight:600;display:inline-flex;align-items:center}
 
 /* Danmaku user ranking - card style */
 .danmaku-user-rank-list{display:flex;flex-direction:column;gap:8px}
@@ -465,7 +465,7 @@ thead .session-cb:hover{opacity:1}
 .anchor-modal-body .gift-list-item:nth-child(3):hover{border-color:rgba(205,127,50,0.5)}
 .anchor-modal-body .gift-list-item .user-cell{flex:1;min-width:0}
 .anchor-modal-body .gift-list-item .user-cell span{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.anchor-modal-body .gift-list-item .diamonds{flex-shrink:0;margin-left:auto;color:var(--orange);font-weight:600;font-size:12px}
+.anchor-modal-body .gift-list-item .diamonds{flex-shrink:0;margin-left:auto;color:var(--orange);font-weight:600;font-size:12px;display:inline-flex;align-items:center}
 
 .anchor-modal-body .gift-rank-num{font-size:13px;font-weight:700;color:var(--text-muted);width:22px;text-align:center;flex-shrink:0;font-variant-numeric:tabular-nums;font-family:'Inter',system-ui,monospace}
 
@@ -1125,7 +1125,7 @@ async function showAnonymousDetail(idx) {
       html += `<div style="display:flex;gap:12px;margin-bottom:14px">
         <div style="text-align:center;flex:1"><div style="font-size:16px;font-weight:700;color:var(--text)">${fmtNum(u.follower_count)}</div><div style="font-size:11px;color:var(--text-muted)">粉丝</div></div>
         <div style="text-align:center;flex:1"><div style="font-size:16px;font-weight:700;color:var(--text)">${fmtNum(u.following_count)}</div><div style="font-size:11px;color:var(--text-muted)">关注</div></div>
-        <div style="text-align:center;flex:1"><div style="font-size:14px;font-weight:600;color:var(--accent)">${esc(u.ip_location || '未知')}</div><div style="font-size:11px;color:var(--text-muted)">IP属地</div></div>
+        <div style="text-align:center;flex:1"><div style="font-size:14px;font-weight:600;color:var(--accent)">${esc((u.ip_location || '未知').replace(/^IP属地[：:]\s*/, ''))}</div><div style="font-size:11px;color:var(--text-muted)">IP属地</div></div>
       </div>`;
     }
 
@@ -1133,8 +1133,8 @@ async function showAnonymousDetail(idx) {
     const hasDanmaku = u.latest_danmaku;
     const hasGift = u.latest_gift;
     if (hasDanmaku || hasGift) {
-      const giftSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="vertical-align:-2px"><rect x="3" y="8" width="18" height="13" rx="1"/><path d="M12 8V6c0-2-1.5-4-4-4S4 4 4 6h2"/><path d="M20 6c0-2-1.5-4-4-4s-4 2-4 4h2"/><line x1="12" y1="8" x2="12" y2="21"/><line x1="3" y1="13" x2="21" y2="13"/></svg>';
-      const danmakuSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="vertical-align:-2px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+      const giftSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="vertical-align:middle"><rect x="3" y="8" width="18" height="13" rx="1"/><path d="M12 8V6c0-2-1.5-4-4-4S4 4 4 6h2"/><path d="M20 6c0-2-1.5-4-4-4s-4 2-4 4h2"/><line x1="12" y1="8" x2="12" y2="21"/><line x1="3" y1="13" x2="21" y2="13"/></svg>';
+      const danmakuSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="vertical-align:middle"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
       html += `<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:14px">
         <div style="font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:8px">最近动作</div>`;
       // 最近弹幕
@@ -1174,9 +1174,9 @@ async function showAnonymousDetail(idx) {
       sessions.slice(0, 5).forEach(s => {
         const d = s.diamonds || 0;
         html += `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm)">
-          <span style="font-size:11px;color:var(--text-muted);width:52px;flex-shrink:0;font-variant-numeric:tabular-nums">${fmtSessionTime(s.start_time)}</span>
-          <span style="font-size:13px;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.streamer_name || '未知')}</span>
-          <span style="font-size:12px;color:${d > 0 ? 'var(--orange)' : 'var(--text-muted)'};flex-shrink:0;font-weight:600;font-variant-numeric:tabular-nums">${d.toLocaleString()}<svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:-2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg></span>
+          <span style="font-size:12px;color:var(--text-muted);width:72px;flex-shrink:0;font-variant-numeric:tabular-nums">${fmtSessionTime(s.start_time)}</span>
+          <span style="font-size:12px;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.streamer_name || '未知')}</span>
+          <span style="font-size:12px;color:${d > 0 ? 'var(--orange)' : 'var(--text-muted)'};flex-shrink:0;font-weight:600;font-variant-numeric:tabular-nums;display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" width="12" height="12" style="margin-left:2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg>${d.toLocaleString()}</span>
         </div>`;
       });
       if (sessions.length > 5) html += `<div style="text-align:center;font-size:11px;color:var(--text-muted);padding:4px">还有 ${sessions.length - 5} 场</div>`;
@@ -1212,7 +1212,9 @@ function fmtSessionTime(t) {
     date = new Date(t);
   }
   if (isNaN(date.getTime())) return t.slice(0, 10);
-  return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`;
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${date.getFullYear()}/${mm}/${dd}`;
 }
 
 // ========== VIEW: USER PROFILE ==========
@@ -1275,7 +1277,7 @@ async function showUserProfile(secUid) {
       </div>`;
     // 统计卡片
     html += `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">`;
-    html += `<div class="profile-stat"><div class="profile-stat-val orange">${p.totalDiamonds?.toLocaleString() || 0}<svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:-3px;fill:currentColor;opacity:0.6"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg></div><div class="profile-stat-label">总钻石</div></div>`;
+    html += `<div class="profile-stat"><div class="profile-stat-val orange" style="display:inline-flex;align-items:center">${p.totalDiamonds?.toLocaleString() || 0}<svg viewBox="0 0 24 24" width="14" height="14" style="margin-left:2px;fill:currentColor;opacity:0.6"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg></div><div class="profile-stat-label">总钻石</div></div>`;
     html += `<div class="profile-stat"><div class="profile-stat-val">${p.totalGifts || 0}</div><div class="profile-stat-label">礼物数</div></div>`;
     html += `<div class="profile-stat"><div class="profile-stat-val">${p.danmakuCount || 0}</div><div class="profile-stat-label">弹幕</div></div>`;
     html += '</div>';
@@ -1286,9 +1288,9 @@ async function showUserProfile(secUid) {
       p.activeSessions.slice(0, 5).forEach(s => {
         const d = s.session_diamonds || 0;
         html += `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm)">
-          <span style="font-size:11px;color:var(--text-muted);width:52px;flex-shrink:0;font-variant-numeric:tabular-nums">${fmtSessionTime(s.start_time)}</span>
-          <span style="font-size:13px;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.streamer_name || '未知')}</span>
-          <span style="font-size:12px;color:${d > 0 ? 'var(--orange)' : 'var(--text-muted)'};flex-shrink:0;font-weight:600;font-variant-numeric:tabular-nums">${d.toLocaleString()}<svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:-2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg></span>
+          <span style="font-size:12px;color:var(--text-muted);width:72px;flex-shrink:0;font-variant-numeric:tabular-nums">${fmtSessionTime(s.start_time)}</span>
+          <span style="font-size:12px;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.streamer_name || '未知')}</span>
+          <span style="font-size:12px;color:${d > 0 ? 'var(--orange)' : 'var(--text-muted)'};flex-shrink:0;font-weight:600;font-variant-numeric:tabular-nums;display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" width="12" height="12" style="margin-left:2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg>${d.toLocaleString()}</span>
         </div>`;
       });
       if (p.activeSessions.length > 5) html += `<div style="text-align:center;font-size:11px;color:var(--text-muted);padding:4px">还有 ${p.activeSessions.length - 5} 场</div>`;
@@ -1313,9 +1315,9 @@ async function showUserProfile(secUid) {
     if (p.giftStyle || p.topStreamers?.length) {
       html += `<div class="profile-section-title" style="margin-top:14px">送礼画像</div>`;
       html += `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">`;
-      html += `<div style="padding:6px 12px;background:rgba(var(--orange-rgb,255,152,0),0.12);border-radius:6px;font-size:12px;color:var(--orange)">${esc(p.giftStyle || '-')}</div>`;
-      html += `<div style="padding:6px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text-muted)">场均 <span style="color:var(--text);font-weight:600;font-variant-numeric:tabular-nums">${(p.avgPerSession || 0).toLocaleString()}</span><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:-1px;fill:var(--orange);margin-left:2px"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg></div>`;
-      html += `<div style="padding:6px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text-muted)">巅峰时段 <span style="color:var(--text);font-weight:600">${esc(p.peakHour || '-')}</span></div>`;
+      html += `<div style="padding:6px 12px;background:rgba(var(--orange-rgb,255,152,0),0.12);border-radius:6px;font-size:12px;color:var(--orange);display:inline-flex;align-items:center">${esc(p.giftStyle || '-')}</div>`;
+      html += `<div style="padding:6px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text-muted);display:inline-flex;align-items:center;gap:4px">场均 <span style="color:var(--text);font-weight:600;font-variant-numeric:tabular-nums;display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" width="12" height="12" style="margin-right:2px;fill:var(--orange)"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg>${(p.avgPerSession || 0).toLocaleString()}</span></div>`;
+      html += `<div style="padding:6px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text-muted);display:inline-flex;align-items:center;gap:4px">巅峰时段 <span style="color:var(--text);font-weight:600">${esc(p.peakHour || '-')}</span></div>`;
       html += '</div>';
       // 最爱送礼主播
       if (p.topStreamers?.length) {
@@ -1325,7 +1327,7 @@ async function showUserProfile(secUid) {
           html += `<div style="display:flex;align-items:center;gap:6px;padding:5px 8px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;font-size:12px">
             <span style="color:var(--orange);font-weight:700;width:16px;text-align:center;font-variant-numeric:tabular-nums">${String(i+1).padStart(2,'0')}</span>
             <span style="color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.name)}</span>
-            <span style="color:var(--orange);font-weight:600;font-variant-numeric:tabular-nums">${s.diamonds.toLocaleString()}<svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:-2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg></span>
+            <span style="color:var(--orange);font-weight:600;font-variant-numeric:tabular-nums"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:-2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg>${s.diamonds.toLocaleString()}</span>
           </div>`;
         });
         html += '</div>';
@@ -1340,7 +1342,7 @@ async function showUserProfile(secUid) {
             <span style="font-size:14px">${g.icon_url ? `<img src="${esc(g.icon_url)}" style="width:20px;height:20px;vertical-align:-4px" onerror="this.style.display='none'">` : giftEmoji(g.gift_name)}</span>
             <span style="color:var(--text);flex:1">${esc(g.gift_name)}</span>
             <span style="color:var(--text-muted)">×${g.count}</span>
-            <span style="color:var(--orange);font-weight:600;font-variant-numeric:tabular-nums">${g.total_diamonds.toLocaleString()}<svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:-2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg></span>
+            <span style="color:var(--orange);font-weight:600;font-variant-numeric:tabular-nums"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:-2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg>${g.total_diamonds.toLocaleString()}</span>
           </div>`;
         });
         html += '</div>';
@@ -1627,8 +1629,8 @@ async function viewSessions(hostId, fromPopState) {
           <td data-label="开始" onclick="viewDetail('${s.id}')" style="color:var(--text-secondary)">${fmtTime(s.started_at)}</td>
           <td data-label="结束" onclick="viewDetail('${s.id}')" style="color:var(--text-secondary)">${s.ended_at ? fmtTime(s.ended_at) : '<span style="color:var(--green)">进行中</span>'}</td>
           <td data-label="时长" onclick="viewDetail('${s.id}')" style="color:var(--text-secondary)">${dur}</td>
-          <td data-label="礼物" onclick="viewDetail('${s.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:-1px;margin-right:2px"><rect x="3" y="8" width="18" height="13" rx="1"/><path d="M12 8V6c0-2-1.5-4-4-4S4 4 4 6h2"/><path d="M20 6c0-2-1.5-4-4-4s-4 2-4 4h2"/><line x1="12" y1="8" x2="12" y2="21"/><line x1="3" y1="13" x2="21" y2="13"/></svg> ${s.gift_count.toLocaleString()}</td>
-          <td data-label="钻石" onclick="viewDetail('${s.id}')" class="diamonds"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:-1px;margin-right:2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg> ${s.total_diamonds.toLocaleString()}</td>
+          <td data-label="礼物" onclick="viewDetail('${s.id}')"><span style="display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="margin-right:2px"><rect x="3" y="8" width="18" height="13" rx="1"/><path d="M12 8V6c0-2-1.5-4-4-4S4 4 4 6h2"/><path d="M20 6c0-2-1.5-4-4-4s-4 2-4 4h2"/><line x1="12" y1="8" x2="12" y2="21"/><line x1="3" y1="13" x2="21" y2="13"/></svg> ${s.gift_count.toLocaleString()}</span></td>
+          <td data-label="钻石" onclick="viewDetail('${s.id}')" class="diamonds"><span style="display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" width="12" height="12" style="margin-right:2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg> ${s.total_diamonds.toLocaleString()}</span></td>
           <td data-label="弹幕" onclick="viewDetail('${s.id}')">${s.danmaku_count.toLocaleString()}</td>
           <td data-label="用户" onclick="viewDetail('${s.id}')">${s.user_count.toLocaleString()}</td>
           <td data-label="" onclick="event.stopPropagation()">
@@ -1905,7 +1907,7 @@ function smoothUpdateDetail(data) {
           <div class="gift-rank-card-top">
             <span class="gift-rank-num">${String(i + 1).padStart(2, '0')}</span>
             <div class="user-cell">${avatarHtml(g.avatar_url, g.nickname)}<span>${esc(g.nickname)}</span></div>
-            <div class="diamonds"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:-1px;margin-right:2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg> ${g.total_diamonds.toLocaleString()}</div>
+            <div class="diamonds"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:-2px;margin-right:2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg> ${g.total_diamonds.toLocaleString()}</div>
           </div>
         </div>`).join('');
     });
@@ -1919,7 +1921,7 @@ function smoothUpdateDetail(data) {
         <div class="danmaku-user-rank">
           <span class="rank-num${i < 3 ? ' top3' : ''}">${String(i + 1).padStart(2, '0')}</span>
           <div class="user-cell">${avatarHtml(d.avatar, d.nickname)}<span style="font-size:13px">${esc(d.nickname)}</span></div>
-          <div class="msg-count"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:-1px;margin-right:2px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> ${d.msg_count.toLocaleString()}条</div>
+          <div class="msg-count"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:middle;margin-right:2px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> ${d.msg_count.toLocaleString()}条</div>
         </div>`).join('');
     });
   }
@@ -2009,7 +2011,7 @@ function renderTabPanel(tab, data) {
           <div class="gift-rank-card-top">
             ${rankBadge}
             <div class="user-cell">${avatarHtml(g.avatar_url, g.nickname)}<span>${esc(g.nickname)}</span></div>
-            <div class="diamonds"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:-1px;margin-right:2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg> ${g.total_diamonds.toLocaleString()}</div>
+            <div class="diamonds"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:-2px;margin-right:2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg> ${g.total_diamonds.toLocaleString()}</div>
           </div>
         </div>`;
       });
@@ -2030,7 +2032,7 @@ function renderTabPanel(tab, data) {
         html += `<div class="danmaku-user-rank">
           ${rankBadge}
           <div class="user-cell">${avatarHtml(d.avatar, d.nickname)}<span style="font-size:13px">${esc(d.nickname)}</span></div>
-          <div class="msg-count"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:-1px;margin-right:2px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> ${d.msg_count.toLocaleString()}条</div>
+          <div class="msg-count"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:middle;margin-right:2px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> ${d.msg_count.toLocaleString()}条</div>
         </div>`;
       });
     }
@@ -2217,7 +2219,7 @@ function openAnchorModal(anchorName, sessionId) {
       html += `<div class="gift-list-item">
         ${rankBadge}
         <div class="user-cell">${avatarHtml(g.avatar_url, g.nickname)}<span>${esc(g.nickname)}</span></div>
-        <div class="diamonds"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:-1px;margin-right:2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg> ${g.total_diamonds.toLocaleString()}</div>
+        <div class="diamonds"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:-2px;margin-right:2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg> ${g.total_diamonds.toLocaleString()}</div>
       </div>`;
     });
     html += '</div>';
@@ -2245,7 +2247,7 @@ function showGiftDetail(nickname, secUid) {
       ${icon}
       <span class="gdi-name">${esc(d.gift_name)} ×${d.count}</span>
       ${to}
-      <span class="gdi-diamonds">${d.total_diamonds.toLocaleString()}</span>
+      <span class="gdi-diamonds"><svg viewBox="0 0 24 24" width="12" height="12" style="margin-right:2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg>${d.total_diamonds.toLocaleString()}</span>
     </div>`;
   });
   html += '</div>';
@@ -2326,9 +2328,10 @@ async function queryAnonymous() {
     return;
   }
 
+  let html = '<div class="anon-result">';
   // 匹配记录区
-  html += `<div style="font-size:13px;color:var(--text-muted);margin-bottom:12px">找到 ${matches.length} 条匹配记录${matches.length > 50 ? '（显示前50条）' : ''}</div>`;
-  display.forEach(m => {
+  html += `<div style="font-size:13px;color:var(--text-muted);margin-bottom:12px">找到 ${matches.length} 条匹配记录</div>`;
+  matches.forEach(m => {
     html += `<div class="anon-result-item">
       <div style="flex-shrink:0">${avatarHtml(m.avatar, m.nickname)}</div>
       <div style="flex:1;min-width:0">
@@ -2394,7 +2397,18 @@ async function loadDanmaku() {
 function filterDanmaku() {
   const q = (document.getElementById('danmakuSearch')?.value || '').toLowerCase();
   const all = state._danmaku || [];
-  const filtered = q ? all.filter(d => d.content?.toLowerCase().includes(q) || d.nickname?.toLowerCase().includes(q)) : all;
+  let filtered;
+  if (q) {
+    filtered = all.filter(d => d.content?.toLowerCase().includes(q) || d.nickname?.toLowerCase().includes(q));
+  } else {
+    filtered = all.slice(0, 80);
+    const badge = document.getElementById('dmTotalBadge');
+    if (badge && all.length > 80) {
+      badge.textContent = `显示前 80 / 共 ${all.length.toLocaleString()} 条`;
+    } else if (badge) {
+      badge.textContent = '';
+    }
+  }
   renderDanmakuList(filtered, !!q);
 }
 

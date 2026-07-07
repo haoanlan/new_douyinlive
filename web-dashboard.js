@@ -156,7 +156,7 @@ async function handleAPI(req, res) {
     }
 
     // --- 场次详情 ---
-    if (pathname.startsWith('/api/sessions/') && !pathname.includes('/')) {
+    if (/^\/api\/sessions\/\d+$/.test(pathname)) {
       const sid = parseInt(pathname.split('/')[3]);
       const session = dbInstance.prepare(`
         SELECT s.*, st.name as streamer_name, st.avatar as streamer_avatar
@@ -286,15 +286,13 @@ async function handleAPI(req, res) {
       if (!q) return sendError(res, '缺少搜索词', 400);
       const rows = dbInstance.prepare(`
         SELECT user_sec_uid,
-               (SELECT nickname FROM gifts WHERE user_sec_uid = g.user_sec_uid ORDER BY id DESC LIMIT 1) as nickname,
-               (SELECT avatar FROM gifts WHERE user_sec_uid = g.user_sec_uid AND avatar != '' ORDER BY id DESC LIMIT 1) as avatar
-        FROM gifts g WHERE nickname LIKE ?
-        GROUP BY user_sec_uid
-        UNION
-        SELECT user_sec_uid,
-               (SELECT nickname FROM danmaku WHERE user_sec_uid = d.user_sec_uid ORDER BY id DESC LIMIT 1) as nickname,
-               (SELECT avatar FROM danmaku WHERE user_sec_uid = d.user_sec_uid AND avatar != '' ORDER BY id DESC LIMIT 1) as avatar
-        FROM danmaku d WHERE nickname LIKE ?
+               (SELECT nickname FROM gifts WHERE user_sec_uid = all_users.user_sec_uid ORDER BY id DESC LIMIT 1) as nickname,
+               (SELECT avatar FROM gifts WHERE user_sec_uid = all_users.user_sec_uid AND avatar != '' ORDER BY id DESC LIMIT 1) as avatar
+        FROM (
+          SELECT user_sec_uid FROM gifts WHERE nickname LIKE ?
+          UNION
+          SELECT user_sec_uid FROM danmaku WHERE nickname LIKE ?
+        ) all_users
         GROUP BY user_sec_uid
         LIMIT 20
       `).all(`%${q}%`, `%${q}%`);

@@ -716,18 +716,32 @@ function handleMessage(room, data) {
         try { existing = JSON.parse(fs.readFileSync(debugPath, 'utf8')); } catch(e) {}
         existing.push({
           time: cstISO(),
+          // 基本信息
           giftId: data.giftId || data.gift?.id || null,
-          giftName,
-          baseName,
-          displayName,
+          giftName, baseName, displayName,
+          // 价格
+          diamondCount: data.gift?.diamondCount || null,
+          diamondPerUnit, count: giftCount, totalDiamonds,
+          // 图标
           icon: data.gift?.icon?.urlList || null,
           iconType: data.gift?.iconType || null,
-          diamondCount: data.gift?.diamondCount || null,
-          diamondPerUnit,
-          count: giftCount,
-          totalDiamonds,
-          nickname: user.nickname,
-          to_nickname,
+          image: data.gift?.image?.urlList || null,
+          webpImage: data.gift?.webpImage?.urlList || null,
+          // 送礼人
+          uid: user.id, nickname: user.nickname, avatar: user.avatar,
+          user_display_id: userDisplayId, user_sec_uid: userSecUid,
+          // 收礼人
+          to_nickname, to_avatar,
+          to_user_display_id: toUserDisplayId, to_user_sec_uid: toUserSecUid,
+          // 组合/连击
+          traceId: data.traceId || null,
+          comboCount: parseInt(String(data.comboCount || '1'), 10),
+          repeatEnd: data.repeatEnd !== undefined ? data.repeatEnd : null,
+          groupCount: parseInt(String(data.groupCount || '1'), 10),
+          sendType: data.sendType !== undefined ? parseInt(data.sendType, 10) : null,
+          // 原始 gift 对象（完整结构）
+          giftRaw: JSON.parse(JSON.stringify(data.gift || {})),
+          // gift 所有 key
           giftKeys: data.gift ? Object.keys(data.gift) : [],
         });
         // 超过20MB时从头部删除一半

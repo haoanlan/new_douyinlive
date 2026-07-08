@@ -827,13 +827,24 @@ async function loadRoomsView() {
   const gen = ++state._gen;
   const el = document.getElementById('content');
   el.classList.remove('content-fade-in');
-  el.innerHTML = '<div class="loading">加载中...</div>';
+  // 如果有缓存数据，先渲染缓存（无感刷新），不显示loading
+  if (state.rooms && state.rooms.length > 0) {
+    _renderRoomsView(el, state.summary, state.rooms);
+  } else {
+    el.innerHTML = '<div class="loading">加载中...</div>';
+  }
 
   try {
     const [summary, rooms] = await Promise.all([api('/api/summary'), api('/api/rooms')]);
     if (gen !== state._gen) return;
     state.rooms = rooms;
+    state.summary = summary;
 
+    _renderRoomsView(el, summary, rooms);
+  } catch (e) { el.innerHTML = `<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>加载失败: ${esc(e.message)}</div>`; }
+}
+
+function _renderRoomsView(el, summary, rooms) {
     let html = '';
 
     // Status bar - 用 rooms 数据统计真实监控状态
@@ -922,7 +933,6 @@ async function loadRoomsView() {
 
 
     el.innerHTML = html;
-  } catch (e) { el.innerHTML = `<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>加载失败: ${esc(e.message)}</div>`; }
 }
 
 // ========== TOP NAV SWITCH ==========
@@ -1446,8 +1456,13 @@ async function confirmAddRoom() {
     toast(r.ok ? `已添加 ${name || _lookupData.room_id}` : (r.error || '添加失败'), r.ok ? 'success' : 'error');
     closeAddRoom();
     if (r.ok) {
-      viewHosts();
-      setTimeout(() => viewHosts(), 2000);
+      // 乐观更新：立即插入本地缓存并渲染，不转圈
+      const newRoom = { room_id: _lookupData.room_id, name: name || _lookupData.nickname, avatar: _lookupData.avatar, enabled: true, connected: false, recording: false, session_count: 0 };
+      if (state.rooms) state.rooms.push(newRoom);
+      const el = document.getElementById('content');
+      if (el && state.summary) _renderRoomsView(el, state.summary, state.rooms);
+      // 2秒后后台刷新，让 monitor 解析完主播名
+      setTimeout(() => loadRoomsView(), 2000);
     }
   } catch(e) { toast('网络错误: ' + e.message, 'error'); }
   finally { btn.disabled = false; btn.textContent = '确认添加'; }

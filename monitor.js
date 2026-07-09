@@ -594,7 +594,8 @@ function handleMessage(room, data) {
       }
       const baseName = data.gift?.name || data.giftName || '礼物';
       const IGNORE_DISPLAY_NAMES = ['主播照片'];
-      const effectiveDisplayName = IGNORE_DISPLAY_NAMES.includes(displayName) ? '' : displayName;
+      const GIFT_NAME_REWRITE = {'甄爱皮肤': '甄爱跑车'};
+      const effectiveDisplayName = IGNORE_DISPLAY_NAMES.includes(displayName) ? '' : (GIFT_NAME_REWRITE[displayName] || displayName);
       let giftName = effectiveDisplayName || baseName;
       let diamondPerUnit = parseInt(String(data.gift?.diamondCount || 0), 10);
       // ===== 融合礼物价格匹配 =====

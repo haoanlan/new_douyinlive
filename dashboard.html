@@ -530,7 +530,8 @@ thead .session-cb:hover{opacity:1}
   .wordcloud-canvas{height:200px}
   #panel-danmaku > .detail-section > div[style*="grid-template-columns:340px 1fr"]{grid-template-columns:1fr !important}
   .rt-danmaku-list{max-height:300px}
-  .rt-danmaku-wrap{overflow:hidden;flex:none!important;min-height:auto!important}
+  .rt-danmaku-wrap{overflow:hidden;flex:none!important;min-height:300px}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
   .top-nav{overflow-x:auto;-webkit-overflow-scrolling:touch}
   .top-nav-btn{font-size:13px;padding:10px 12px;flex-shrink:1}
   .top-nav-btn svg{width:13px;height:13px}
@@ -2381,7 +2382,7 @@ function renderDanmakuList(items, isSearch = false) {
   if (!list) return;
   let html = '';
   for (const d of items) {
-    html += `<div class="anon-result-item" style="padding:6px 0">
+    html += `<div class="anon-result-item" style="padding:6px 0;animation:fadeIn .3s ease">
       <div style="flex-shrink:0;min-width:0">${avatarHtml(d.avatar_url || d.avatar, d.nickname)}</div>
       <div style="flex:1;min-width:0;overflow:hidden">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:1px;min-width:0">
@@ -2394,7 +2395,7 @@ function renderDanmakuList(items, isSearch = false) {
   }
   if (!html) {
     const msg = isSearch ? '无匹配弹幕' : '暂时没有弹幕';
-    list.innerHTML = `<div class="empty" style="padding:40px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:180px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32" style="margin-bottom:10px;opacity:0.3"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><div style="color:var(--text-muted);font-size:13px">${msg}</div></div>`;
+    list.innerHTML = `<div class="empty" style="padding:40px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;animation:fadeIn .3s ease"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32" style="margin-bottom:10px;opacity:0.3"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><div style="color:var(--text-muted);font-size:13px">${msg}</div></div>`;
   } else {
     list.innerHTML = html;
   }

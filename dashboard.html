@@ -739,7 +739,7 @@ function goBack() {
   if (_navLock) return;
   _navLock = true;
   history.back();
-  setTimeout(() => { _navLock = false; }, 300);
+  setTimeout(() => { _navLock = false; }, 50);
 }
 
 // ========== BROWSER HISTORY ==========
@@ -754,7 +754,7 @@ function pushNav(view, params = {}) {
 window.addEventListener('popstate', e => {
   if (_navLock) return;
   _navLock = true;
-  setTimeout(() => { _navLock = false; }, 300);
+  setTimeout(() => { _navLock = false; }, 50);
   const d = e.state;
   if (!d || d.view === 'hosts') {
     viewHosts(true);

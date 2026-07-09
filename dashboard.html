@@ -734,8 +734,12 @@ function toast(msg, type = '') {
 }
 
 // ========== NAVIGATION ==========
+let _navLock = false;
 function goBack() {
+  if (_navLock) return;
+  _navLock = true;
   history.back();
+  setTimeout(() => { _navLock = false; }, 300);
 }
 
 // ========== BROWSER HISTORY ==========

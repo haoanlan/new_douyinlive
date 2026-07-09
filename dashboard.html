@@ -753,16 +753,15 @@ function pushNav(view, params = {}) {
 }
 
 window.addEventListener('popstate', e => {
+  // 如果是 goBack() 触发的，已经在处理中，跳过重复渲染
+  if (_navLock) { _navLock = false; return; }
   const d = e.state;
   if (!d || d.view === 'hosts') {
     viewHosts(true);
-    // 防止手势返回退出：回到主页时自动补一个 history entry
     try { history.pushState({ view: 'hosts' }, '', location.href); } catch(e) {}
   }
   else if (d.view === 'sessions' && d.hostId) viewSessions(d.hostId, true);
   else if (d.view === 'detail' && d.sessionId) viewDetail(d.sessionId, true);
-  // popstate 处理完才解锁
-  _navLock = false;
 });
 
 function updateBreadcrumb() {

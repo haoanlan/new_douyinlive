@@ -715,6 +715,7 @@ thead .session-cb:hover{opacity:1}
 const API = '';
 let state = { view: 'hosts', hostId: null, sessionId: null, hosts: [], sessions: [], tab: 'gifts', _gen: 0 };
 let charts = {};
+let _dmSearchTimer;
 
 // ========== API ==========
 async function api(path) {

@@ -2397,7 +2397,8 @@ function renderDanmakuList(items, isSearch = false) {
     const msg = isSearch ? '无匹配弹幕' : '暂时没有弹幕';
     list.innerHTML = `<div class="empty" style="padding:40px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;animation:fadeIn .3s ease"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32" style="margin-bottom:10px;opacity:0.3"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><div style="color:var(--text-muted);font-size:13px">${msg}</div></div>`;
   } else {
-    list.innerHTML = html;
+    // 内容少时用flex容器撑满高度，保持和内容多时一致
+    list.innerHTML = `<div style="display:flex;flex-direction:column;height:100%">${html}</div>`;
   }
 }
 

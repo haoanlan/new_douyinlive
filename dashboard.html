@@ -734,13 +734,12 @@ function toast(msg, type = '') {
 }
 
 // ========== NAVIGATION ==========
-let _navLock = false;
+let _lastBackTime = 0;
 function goBack() {
-  if (_navLock) return;
-  _navLock = true;
+  const now = Date.now();
+  if (now - _lastBackTime < 300) return;  // 300ms 内不重复触发
+  _lastBackTime = now;
   history.back();
-  // popstate 会处理渲染，这里只在没有 popstate 触发时才解锁
-  setTimeout(() => { _navLock = false; }, 200);
 }
 
 // ========== BROWSER HISTORY ==========
@@ -753,8 +752,6 @@ function pushNav(view, params = {}) {
 }
 
 window.addEventListener('popstate', e => {
-  // 如果是 goBack() 触发的，已经在处理中，跳过重复渲染
-  if (_navLock) { _navLock = false; return; }
   const d = e.state;
   if (!d || d.view === 'hosts') {
     viewHosts(true);

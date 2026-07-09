@@ -1141,38 +1141,29 @@ async function showAnonymousDetail(idx) {
       </div>`;
     }
 
-    // 最近动作（弹幕 + 礼物各一条）
+    // 最近动作（弹幕 + 礼物各一条，按时间倒序）
     const hasDanmaku = u.latest_danmaku;
     const hasGift = u.latest_gift;
     if (hasDanmaku || hasGift) {
       const giftSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="vertical-align:middle"><rect x="3" y="8" width="18" height="13" rx="1"/><path d="M12 8V6c0-2-1.5-4-4-4S4 4 4 6h2"/><path d="M20 6c0-2-1.5-4-4-4s-4 2-4 4h2"/><line x1="12" y1="8" x2="12" y2="21"/><line x1="3" y1="13" x2="21" y2="13"/></svg>';
       const danmakuSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="vertical-align:middle"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+      // 按时间倒序排列
+      const actions = [];
+      if (hasDanmaku) actions.push({ type: 'danmaku', svg: danmakuSvg, color: 'var(--accent)', bg: 'rgba(var(--accent-rgb,59,130,246),0.15)', label: '弹幕', ...u.latest_danmaku });
+      if (hasGift) actions.push({ type: 'gift', svg: giftSvg, color: 'var(--orange)', bg: 'rgba(251,146,60,0.15)', label: '送礼', ...u.latest_gift });
+      actions.sort((a, b) => (b.time || 0) - (a.time || 0));
       html += `<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:14px">
         <div style="font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:8px">最近动作</div>`;
-      // 最近弹幕
-      if (hasDanmaku) {
-        let detail = u.latest_danmaku.detail || '发了弹幕';
+      for (const a of actions) {
+        let detail = a.detail || (a.type === 'danmaku' ? '发了弹幕' : '送了礼物');
         if (detail.length > 40) detail = detail.slice(0, 40) + '…';
-        html += `<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px">
-          <div style="margin-top:2px;color:var(--accent)">${danmakuSvg}</div>
+        html += `<div style="display:flex;align-items:flex-start;gap:8px;${a !== actions[actions.length-1] ? 'margin-bottom:6px' : ''}">
+          <div style="margin-top:2px;color:${a.color}">${a.svg}</div>
           <div style="flex:1;min-width:0">
             <div style="font-size:13px;color:var(--text);line-height:1.4">${esc(detail)}</div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:4px">${u.latest_danmaku.streamer_name ? esc(u.latest_danmaku.streamer_name) : ''} ${u.latest_danmaku.time ? '· ' + fmtTime(u.latest_danmaku.time) : ''}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px">${a.streamer_name ? esc(a.streamer_name) : ''} ${a.time ? '· ' + fmtTime(a.time) : ''}</div>
           </div>
-          <div style="font-size:11px;color:var(--accent);flex-shrink:0;padding:2px 8px;background:rgba(var(--accent-rgb,59,130,246),0.15);border-radius:4px">弹幕</div>
-        </div>`;
-      }
-      // 最近礼物
-      if (hasGift) {
-        let detail = u.latest_gift.detail || '送了礼物';
-        if (detail.length > 40) detail = detail.slice(0, 40) + '…';
-        html += `<div style="display:flex;align-items:flex-start;gap:8px${!hasDanmaku ? '' : ''}">
-          <div style="margin-top:2px;color:var(--orange)">${giftSvg}</div>
-          <div style="flex:1;min-width:0">
-            <div style="font-size:13px;color:var(--text);line-height:1.4">${esc(detail)}</div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:4px">${u.latest_gift.streamer_name ? esc(u.latest_gift.streamer_name) : ''} ${u.latest_gift.time ? '· ' + fmtTime(u.latest_gift.time) : ''}</div>
-          </div>
-          <div style="font-size:11px;color:var(--orange);flex-shrink:0;padding:2px 8px;background:rgba(251,146,60,0.15);border-radius:4px">送礼</div>
+          <div style="font-size:11px;color:${a.color};flex-shrink:0;padding:2px 8px;background:${a.bg};border-radius:4px">${a.label}</div>
         </div>`;
       }
       html += `</div>`;

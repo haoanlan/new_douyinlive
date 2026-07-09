@@ -1589,7 +1589,7 @@ function statCard(label, value, key, sub) {
 // ========== VIEW: SESSIONS ==========
 async function viewSessions(hostId, fromPopState) {
   stopAutoRefresh();
-  state._gen++;  // 取消正在进行的 loadRoomsView 等请求
+  const gen = ++state._gen;  // 取消正在进行的请求
   state.view = 'sessions';
   state.hostId = hostId;
   state.sessionId = null;
@@ -1601,6 +1601,7 @@ async function viewSessions(hostId, fromPopState) {
 
   try {
     const sessions = await fetch(`${API}/api/hosts/${hostId}/sessions`).then(r => r.json());
+    if (gen !== state._gen) return;  // 已被新操作取代，放弃渲染
     state.sessions = sessions;
 
     // Stats
@@ -1674,7 +1675,7 @@ async function viewSessions(hostId, fromPopState) {
 // ========== VIEW: DETAIL ==========
 async function viewDetail(sessionId, fromPopState) {
   stopAutoRefresh(); // stop any previous timer
-  state._gen++;  // 取消正在进行的请求
+  const gen = ++state._gen;  // 取消正在进行的请求
   state.view = 'detail';
   state.sessionId = sessionId;
   state.tab = 'gifts';
@@ -1688,6 +1689,7 @@ async function viewDetail(sessionId, fromPopState) {
 
   try {
     const data = await fetch(`${API}/api/sessions/${sessionId}/detail`).then(r => r.json());
+    if (gen !== state._gen) return;  // 已被新操作取代，放弃渲染
     state._detailData = data;
   renderDetail(data);
   // Start auto-refresh if session is live

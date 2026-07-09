@@ -2397,8 +2397,11 @@ function renderDanmakuList(items, isSearch = false) {
   }
 }
 
+let _danmakuLoading = false;
 async function loadDanmaku() {
   if (state._danmaku) return; // already loaded
+  if (_danmakuLoading) return; // already loading
+  _danmakuLoading = true;
   try {
     const sid = state.sessionId;
     const resp = await fetch(`${API}/api/sessions/${sid}/danmaku?limit=99999`);
@@ -2410,14 +2413,21 @@ async function loadDanmaku() {
       timestamp: d.timestamp || d.create_time,
       avatar_url: d.avatar_url || d.avatar
     }));
-    // Render the list
-    const recent = state._danmaku.slice(0, 80);
-    const badge = document.getElementById('dmTotalBadge');
-    if (badge && state._danmaku.length > 80) {
-      badge.textContent = `显示前 80 / 共 ${state._danmaku.length.toLocaleString()} 条`;
+    _danmakuLoading = false;
+    // If user typed a search query while loading, re-run filter; otherwise show recent 80
+    const searchInput = document.getElementById('danmakuSearch');
+    if (searchInput && searchInput.value.trim()) {
+      filterDanmaku();
+    } else {
+      const recent = state._danmaku.slice(0, 80);
+      const badge = document.getElementById('dmTotalBadge');
+      if (badge && state._danmaku.length > 80) {
+        badge.textContent = `显示前 80 / 共 ${state._danmaku.length.toLocaleString()} 条`;
+      }
+      renderDanmakuList(recent);
     }
-    renderDanmakuList(recent);
   } catch (e) {
+    _danmakuLoading = false;
     const list = document.getElementById('rtDanmakuList');
     if (list) list.innerHTML = '<div class="empty" style="padding:20px">弹幕加载失败</div>';
   }
@@ -2425,6 +2435,12 @@ async function loadDanmaku() {
 
 function filterDanmaku() {
   const q = (document.getElementById('danmakuSearch')?.value || '').toLowerCase();
+  // 如果数据还没加载完，触发加载（加载完成后会自动重新调用 filterDanmaku）
+  if (!state._danmaku && !_danmakuLoading) {
+    loadDanmaku();
+    return;
+  }
+  if (_danmakuLoading) return; // 加载中，等 loadDanmaku 完成后自动触发
   const all = state._danmaku || [];
   let filtered;
   if (q) {

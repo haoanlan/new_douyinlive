@@ -256,8 +256,8 @@ thead .session-cb:hover{opacity:1}
 .anon-result-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);min-width:0;width:100%}
 .anon-result-item:last-child{border-bottom:none}
 /* Realtime danmaku */
-.rt-danmaku-wrap{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
-.rt-danmaku-list{padding:8px;min-width:0;width:100%}
+.rt-danmaku-wrap{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column}
+.rt-danmaku-list{padding:8px;min-width:0;width:100%;flex:1;overflow-y:auto;overflow-x:hidden}
 .rt-danmaku-item{display:flex;align-items:flex-start;gap:8px;padding:6px 8px;border-radius:var(--radius-sm);transition:background .15s}
 .rt-danmaku-item:hover{background:var(--bg-card-hover)}
 .rt-danmaku-item .rt-time{font-size:12px;color:var(--text-muted);flex-shrink:0;min-width:44px}
@@ -2069,7 +2069,7 @@ function renderTabPanel(tab, data) {
     html += '<canvas id="wordcloudCanvas" class="wordcloud-canvas"></canvas></div>';
     html += '<div style="flex:1;min-height:0;display:flex;flex-direction:column"><div id="dmTotalBadge" style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> 最新弹幕</div>';
     html += '<div class="search-wrap" style="margin-bottom:8px;flex-shrink:0"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><path d="M11 11l3 3"/></svg><input id="danmakuSearch" placeholder="搜索弹幕内容或用户..." oninput="clearTimeout(_dmSearchTimer);_dmSearchTimer=setTimeout(filterDanmaku,200)"></div>';
-    html += '<div id="rtDanmakuWrap" class="rt-danmaku-wrap" style="flex:1;min-height:200px;display:flex;flex-direction:column;overflow:hidden"><div id="rtDanmakuList" class="rt-danmaku-list" style="flex:1;min-height:200px;overflow-y:auto;overflow-x:hidden">';
+    html += '<div id="rtDanmakuWrap" class="rt-danmaku-wrap" style="flex:1;display:flex;flex-direction:column;overflow:hidden"><div id="rtDanmakuList" class="rt-danmaku-list" style="flex:1;overflow-y:auto;overflow-x:hidden">';
     html += '<div class="empty" style="padding:40px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:180px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32" style="margin-bottom:10px;opacity:0.3"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><div style="color:var(--text-muted);font-size:13px">加载中...</div></div>';
     html += '</div></div></div>';
     html += '</div></div>';

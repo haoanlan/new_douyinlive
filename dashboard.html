@@ -2300,7 +2300,7 @@ function switchTab(tab) {
       if (state._detailData) renderTabPanel(tab, state._detailData);
     }
   }
-  if (tab === 'anon') loadDanmaku();
+  if (tab === 'anon' || tab === 'danmaku') loadDanmaku();
   if (tab === 'danmaku') setTimeout(() => {
     renderWordCloud(state._detailData?.danmakuWords || []);
     const left = document.getElementById('danmakuLeft');

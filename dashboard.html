@@ -253,11 +253,11 @@ thead .session-cb:hover{opacity:1}
 .anon-input-row input{flex:1;padding:10px 14px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:13px}
 .anon-input-row input:focus{outline:none;border-color:var(--accent)}
 .anon-result{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
-.anon-result-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);min-width:0;width:100%}
+.anon-result-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);min-width:0}
 .anon-result-item:last-child{border-bottom:none}
 /* Realtime danmaku */
 .rt-danmaku-wrap{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
-.rt-danmaku-list{padding:8px;min-width:0;width:100%}
+.rt-danmaku-list{padding:8px}
 .rt-danmaku-item{display:flex;align-items:flex-start;gap:8px;padding:6px 8px;border-radius:var(--radius-sm);transition:background .15s}
 .rt-danmaku-item:hover{background:var(--bg-card-hover)}
 .rt-danmaku-item .rt-time{font-size:12px;color:var(--text-muted);flex-shrink:0;min-width:44px}
@@ -2065,9 +2065,9 @@ function renderTabPanel(tab, data) {
     html += '<div id="danmakuRight" style="display:flex;flex-direction:column;min-width:0">';
     html += '<div style="margin-bottom:14px"><div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> 弹幕词云</div>';
     html += '<canvas id="wordcloudCanvas" class="wordcloud-canvas"></canvas></div>';
-    html += '<div style="flex:1;min-height:0;display:flex;flex-direction:column;min-width:0"><div id="dmTotalBadge" style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> 最新弹幕</div>';
+    html += '<div style="flex:1;min-height:0;display:flex;flex-direction:column"><div id="dmTotalBadge" style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> 最新弹幕</div>';
     html += '<div class="search-wrap" style="margin-bottom:8px;flex-shrink:0"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><path d="M11 11l3 3"/></svg><input id="danmakuSearch" placeholder="搜索弹幕内容或用户..." oninput="clearTimeout(_dmSearchTimer);_dmSearchTimer=setTimeout(filterDanmaku,200)"></div>';
-    html += '<div id="rtDanmakuWrap" class="rt-danmaku-wrap" style="flex:1;min-height:200px;display:flex;flex-direction:column;overflow:hidden"><div id="rtDanmakuList" class="rt-danmaku-list" style="flex:1;min-height:200px;overflow-y:auto;overflow-x:hidden">';
+    html += '<div id="rtDanmakuWrap" class="rt-danmaku-wrap" style="flex:1;min-height:200px;display:flex;flex-direction:column"><div id="rtDanmakuList" class="rt-danmaku-list" style="flex:1;min-height:200px;overflow-y:auto">';
     html += '<div class="empty" style="padding:40px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:180px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32" style="margin-bottom:10px;opacity:0.3"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><div style="color:var(--text-muted);font-size:13px">加载中...</div></div>';
     html += '</div></div></div>';
     html += '</div></div>';
@@ -2378,15 +2378,10 @@ function renderDanmakuList(items, isSearch = false) {
   if (!list) return;
   let html = '';
   for (const d of items) {
-    html += `<div class="anon-result-item" style="padding:6px 0">
-      <div style="flex-shrink:0;min-width:0">${avatarHtml(d.avatar_url || d.avatar, d.nickname)}</div>
-      <div style="flex:1;min-width:0;overflow:hidden">
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:1px;min-width:0">
-          <span style="font-size:13px;font-weight:600;color:var(--text);flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100px">${esc(d.nickname || '匿名')}</span>
-          <span style="font-size:11px;padding:1px 6px;border-radius:4px;background:rgba(108,140,255,0.15);color:var(--accent);flex-shrink:0">${fmtTime(d.timestamp)}</span>
-        </div>
-        <div style="font-size:12px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(d.content)}">${esc(d.content)}</div>
-      </div>
+    html += `<div class="rt-danmaku-item">
+      <div class="rt-time">${fmtTime(d.timestamp)}</div>
+      <div class="rt-user">${esc(d.nickname || '匿名')}</div>
+      <div class="rt-text">${esc(d.content)}</div>
     </div>`;
   }
   if (!html) {

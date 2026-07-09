@@ -739,7 +739,8 @@ function goBack() {
   if (_navLock) return;
   _navLock = true;
   history.back();
-  setTimeout(() => { _navLock = false; }, 50);
+  // popstate 会处理渲染，这里只在没有 popstate 触发时才解锁
+  setTimeout(() => { _navLock = false; }, 200);
 }
 
 // ========== BROWSER HISTORY ==========
@@ -752,9 +753,6 @@ function pushNav(view, params = {}) {
 }
 
 window.addEventListener('popstate', e => {
-  if (_navLock) return;
-  _navLock = true;
-  setTimeout(() => { _navLock = false; }, 50);
   const d = e.state;
   if (!d || d.view === 'hosts') {
     viewHosts(true);
@@ -763,6 +761,8 @@ window.addEventListener('popstate', e => {
   }
   else if (d.view === 'sessions' && d.hostId) viewSessions(d.hostId, true);
   else if (d.view === 'detail' && d.sessionId) viewDetail(d.sessionId, true);
+  // popstate 处理完才解锁
+  _navLock = false;
 });
 
 function updateBreadcrumb() {

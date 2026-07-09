@@ -324,6 +324,7 @@ async function handleAPI(req, res) {
         SELECT user_sec_uid, nickname, avatar, session_id, create_time, 'danmaku' as src FROM danmaku WHERE nickname LIKE ? ${sessionFilter}
         UNION ALL
         SELECT user_sec_uid, nickname, avatar, session_id, create_time, 'member' as src FROM members WHERE nickname LIKE ? ${sessionFilter}
+        ORDER BY create_time DESC
         LIMIT 200
       `).all(`%${q}%`, ...sessionParams, `%${q}%`, ...sessionParams, `%${q}%`, ...sessionParams);
       if (!allRows.length) return sendJSON(res, { users: [] });

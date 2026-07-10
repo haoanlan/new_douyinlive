@@ -1422,10 +1422,15 @@ async function handleAPI(req, res) {
 function serveStatic(req, res) {
   const { pathname } = parseQuery(req.url);
   let filePath;
+  const VUE_DIST = path.join(DATA_DIR, 'frontend', 'dist');
   if (pathname === '/' || pathname === '/index.html') {
-    filePath = path.join(DATA_DIR, 'dashboard.html');
+    filePath = path.join(VUE_DIST, 'index.html');
   } else {
-    filePath = path.join(DATA_DIR, pathname);
+    filePath = path.join(VUE_DIST, pathname);
+    // fallback to DATA_DIR for API assets etc
+    if (!fs.existsSync(filePath)) {
+      filePath = path.join(DATA_DIR, pathname);
+    }
   }
 
   // 安全检查：防止目录遍历

@@ -968,6 +968,7 @@ async function confirmDeleteRoom(roomId: string, name: string) {
 // ============================================================
 function switchTopNav(tab: 'rooms' | 'search' | 'profile') {
   stopAutoRefresh()
+  stopDanmakuPoll()
   topNavTab.value = tab
   if (tab === 'rooms') loadRoomsView()
   else if (tab === 'search') loadSearchView()
@@ -1555,6 +1556,8 @@ function switchDetailTab(tab: string) {
   if ((tab === 'danmaku' || tab === 'anon') && (!_danmaku.value || !_danmaku.value.length)) {
     loadDanmakuData()
   }
+  if (tab === 'danmaku') startDanmakuPoll()
+  else stopDanmakuPoll()
 }
 
 async function loadDanmakuData() {
@@ -1620,6 +1623,35 @@ async function manualRefresh() {
 // ============================================================
 let _refreshTimer: ReturnType<typeof setInterval> | null = null
 let _refreshing = false
+
+let _danmakuPollTimer: ReturnType<typeof setInterval> | null = null
+
+function startDanmakuPoll() {
+  stopDanmakuPoll()
+  _danmakuPollTimer = setInterval(async () => {
+    if (viewLevel.value !== 'detail' || detailTab.value !== 'danmaku' || !currentSessionId.value) return
+    try {
+      const dmData = await fetch(`${API}/api/sessions/${currentSessionId.value}/danmaku?limit=50`).then(r => r.json())
+      const raw = (dmData.data || dmData || []).map((d: any) => ({
+        ...d,
+        timestamp: d.timestamp || d.create_time,
+        avatar_url: d.avatar_url || d.avatar
+      }))
+      if (raw.length > 0) {
+        const oldIds = new Set((_danmaku.value || []).map((d: any) => d.timestamp + '_' + d.nickname))
+        const newItems = raw.filter((d: any) => !oldIds.has(d.timestamp + '_' + d.nickname))
+        if (newItems.length > 0) {
+          _danmaku.value = [...newItems, ...(_danmaku.value || [])]
+          filterDanmaku()
+        }
+      }
+    } catch (e) { /* silent */ }
+  }, 3000)
+}
+
+function stopDanmakuPoll() {
+  if (_danmakuPollTimer) { clearInterval(_danmakuPollTimer); _danmakuPollTimer = null }
+}
 
 function startAutoRefresh() {
   stopAutoRefresh()

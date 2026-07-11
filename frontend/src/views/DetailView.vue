@@ -773,8 +773,112 @@ async function manualRefresh() {
   }
 }
 
+function animateNumber(el, newVal) {
+  if (!el) return
+  const oldText = el.textContent.replace(/[^\d]/g, '')
+  const oldVal = parseInt(oldText) || 0
+  if (oldVal === newVal) return
+  const diff = newVal - oldVal
+  const steps = 20
+  const stepTime = 300 / steps
+  let step = 0
+  const tick = () => {
+    step++
+    const progress = step / steps
+    const eased = 1 - Math.pow(1 - progress, 3)
+    const current = Math.round(oldVal + diff * eased)
+    el.textContent = current.toLocaleString()
+    if (step < steps) setTimeout(tick, stepTime)
+    else el.textContent = newVal.toLocaleString()
+  }
+  tick()
+}
+
+let _lastAnchorCount = 0
 function smoothUpdateDetail(newData) {
+  const oldData = data.value
+
+  // Dynamic anchor tab toast
+  const anchorCount = newData.anchorRanking ? newData.anchorRanking.length : 0
+  if (anchorCount > 1 && _lastAnchorCount <= 1) {
+    const toast = document.createElement('div')
+    toast.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--accent-bg);color:var(--accent);padding:8px 16px;border-radius:var(--radius);font-size:13px;z-index:999;animation:flipFadeIn .4s ease'
+    toast.textContent = '🎯 检测到多位主播，已自动添加主播排名tab'
+    document.body.appendChild(toast)
+    setTimeout(() => toast.remove(), 3000)
+  }
+  _lastAnchorCount = anchorCount
+
+  // Save old stat values for animation
+  const statEls = document.querySelectorAll('.stats-row .stat-card .stat-value')
+  const oldStatVals = Array.from(statEls).map(el => {
+    const n = el.textContent.replace(/[^\d]/g, '')
+    return parseInt(n) || 0
+  })
+
+  // Save old ranking positions for FLIP
+  const savePositions = (sel) => {
+    const container = document.querySelector(sel)
+    if (!container) return null
+    const items = container.querySelectorAll('[class*="rank-card"], [class*="user-rank"], [class*="anchor-card"]')
+    const map = new Map()
+    items.forEach(el => {
+      map.set(el.textContent.trim().substring(0, 30), el.getBoundingClientRect())
+    })
+    return map
+  }
+  const oldGiftPos = savePositions('#panel-gifts .gift-rank-grid')
+  const oldDanmakuPos = savePositions('#panel-danmaku .danmaku-user-rank-list')
+  const oldAnchorPos = savePositions('#panel-anchors .anchor-grid')
+
+  // Update data (Vue reactivity re-renders)
   data.value = newData
+
+  // After Vue re-renders, animate numbers and FLIP rankings
+  nextTick(() => {
+    // Animate numbers
+    const newStatEls = document.querySelectorAll('.stats-row .stat-card .stat-value')
+    const newStats = [
+      newData.session.online_peak || 0,
+      newData.summary.total_diamonds,
+      newData.session.stats_like || 0,
+      newData.summary.danmaku_count,
+      newData.summary.user_count,
+      null
+    ]
+    newStatEls.forEach((el, i) => {
+      if (i < newStats.length && newStats[i] != null) {
+        const num = typeof newStats[i] === 'number' ? newStats[i] : parseInt(newStats[i])
+        if (!isNaN(num)) animateNumber(el, num)
+      }
+    })
+
+    // FLIP helper
+    const flipAnimate = (sel, oldMap) => {
+      const container = document.querySelector(sel)
+      if (!container || !oldMap) return
+      const items = container.querySelectorAll('[class*="rank-card"], [class*="user-rank"], [class*="anchor-card"]')
+      items.forEach(el => {
+        const key = el.textContent.trim().substring(0, 30)
+        const oldRect = oldMap.get(key)
+        if (!oldRect) { el.classList.add('flip-new'); return }
+        const newRect = el.getBoundingClientRect()
+        const dy = oldRect.top - newRect.top
+        if (Math.abs(dy) < 1) return
+        el.style.transform = `translateY(${dy}px)`
+        el.style.transition = 'none'
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            el.style.transition = ''
+            el.style.transform = ''
+          })
+        })
+      })
+    }
+    flipAnimate('#panel-gifts .gift-rank-grid', oldGiftPos)
+    flipAnimate('#panel-danmaku .danmaku-user-rank-list', oldDanmakuPos)
+    flipAnimate('#panel-anchors .anchor-grid', oldAnchorPos)
+  })
 }
 
 // FLIP animation

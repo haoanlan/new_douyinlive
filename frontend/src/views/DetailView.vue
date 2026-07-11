@@ -344,7 +344,7 @@
                             <span style="font-size:13px;font-weight:600;color:var(--text);flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px">{{ d.nickname || '匿名' }}</span>
                             <span style="font-size:11px;padding:1px 6px;border-radius:var(--radius-xs);background:rgba(108,140,255,0.15);color:var(--accent);flex-shrink:0">{{ fmtTime(d.timestamp) }}</span>
                           </div>
-                          <div style="font-size:12px;color:var(--text-muted);word-break:break-all;line-height:1.5" :title="d.content">{{ d.content }}</div>
+                          <div style="font-size:12px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" :title="d.content" v-html="replaceDouyinEmoji(esc(d.content))"></div>
                         </div>
                       </div>
                     </template>
@@ -718,6 +718,7 @@ function esc(s) {
   if (!s) return ''
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;')
 }
+import { replaceDouyinEmoji } from '../utils/douyin-emoji'
 
 // Anchor modal
 function openAnchorModal(anchorName) {

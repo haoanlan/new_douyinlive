@@ -244,7 +244,7 @@ thead .session-cb:hover{opacity:1}
 .anon-result{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
 .anon-result-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);min-width:0;width:100%}
 .anon-result-item:last-child{border-bottom:none}
-.rt-danmaku-list .anon-result-item{border-bottom:none}
+.rt-danmaku-list .anon-result-item{border-bottom:none;border-left:3px solid var(--accent);border-radius:0 var(--radius-sm) var(--radius-sm) 0;padding-left:8px}
 /* Realtime danmaku */
 .rt-danmaku-wrap{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column}
 .rt-danmaku-list{padding:8px;min-width:0;width:100%;flex:1;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column-reverse}

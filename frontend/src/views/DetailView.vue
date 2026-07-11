@@ -95,8 +95,8 @@
         <span class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse 2s infinite"></span>
         直播中 · 每15秒自动刷新
       </div>
-      <button class="btn btn-ghost btn-sm" @click="manualRefresh" style="font-size:12px;padding:4px 10px;display:flex;align-items:center;gap:4px;min-width:72px;justify-content:center;transition:opacity .2s" :style="{ opacity: refreshing ? 0.6 : 1, pointerEvents: refreshing ? 'none' : 'auto' }">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" :class="{ spinning: refreshing }">
+      <button ref="refreshBtnEl" class="btn btn-ghost btn-sm" @click="manualRefresh" :disabled="refreshing" style="font-size:12px;padding:4px 10px;display:flex;align-items:center;gap:4px;min-width:72px;justify-content:center">
+        <svg ref="refreshSvgEl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
           <path d="M23 4v6h-6"/>
           <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
         </svg>
@@ -439,6 +439,8 @@ let refreshTimer = null
 const danmakuLeftEl = ref(null)
 const danmakuRightEl = ref(null)
 const anonResultEl = ref(null)
+const refreshBtnEl = ref(null)
+const refreshSvgEl = ref(null)
 
 // Wordcloud
 const wordcloudCanvas = ref(null)
@@ -492,6 +494,13 @@ function switchTab(tab) {
     loadDanmaku()
   }
   if (tab === 'danmaku') {
+    // 进弹幕tab滚到底部看最新
+    nextTick(() => {
+      setTimeout(() => {
+        const el = document.getElementById('rtDanmakuList')
+        if (el) el.scrollTop = el.scrollHeight
+      }, 200)
+    })
     nextTick(() => {
       renderWordCloud()
       // Match left/right height
@@ -750,6 +759,7 @@ async function refreshDetail() {
 
 async function manualRefresh() {
   refreshing.value = true
+  if (refreshSvgEl.value) refreshSvgEl.value.style.animation = 'spin .6s linear infinite'
   try {
     const r = await fetch(`${API}/api/sessions/${props.sessionId}/detail`)
     const newData = await r.json()
@@ -759,6 +769,7 @@ async function manualRefresh() {
     // silent
   } finally {
     refreshing.value = false
+    if (refreshSvgEl.value) refreshSvgEl.value.style.animation = ''
   }
 }
 

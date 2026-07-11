@@ -352,7 +352,7 @@
                         </template>
                         <div v-else class="empty" style="padding:40px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:180px">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32" style="margin-bottom:10px;opacity:0.3"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                          <div style="color:var(--text-muted);font-size:13px">加载中...</div>
+                          <div style="color:var(--text-muted);font-size:13px">{{ danmakuSearchQuery ? '无匹配弹幕' : '暂无弹幕' }}</div>
                         </div>
                       </div>
                     </div>
@@ -1407,7 +1407,7 @@ function filterDanmaku() {
   }
   displayedDanmaku.value = (_danmaku.value || []).filter((d: any) =>
     (d.content || '').toLowerCase().includes(q) || (d.nickname || '').toLowerCase().includes(q)
-  ).reverse()
+  )
 }
 
 const anonQuery = ref('')

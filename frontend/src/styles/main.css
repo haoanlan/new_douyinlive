@@ -297,6 +297,7 @@ thead .session-cb:hover{opacity:1}
 .loading{text-align:center;padding:60px 0;color:var(--text-muted);font-size:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:50vh}
 .loading::before{content:'';display:block;width:28px;height:28px;margin:0 auto 12px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+.spinning{animation:spin .6s linear infinite}
 @keyframes fadeSlideIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 .content-fade-in{animation:fadeSlideIn .3s ease-out}
 .modal-body-fade{animation:fadeSlideIn .25s ease-out}

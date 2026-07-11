@@ -95,7 +95,7 @@
         <span class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse 2s infinite"></span>
         直播中 · 每15秒自动刷新
       </div>
-      <button class="btn btn-ghost btn-sm" @click="manualRefresh" :disabled="refreshing" style="font-size:12px;padding:4px 10px;display:flex;align-items:center;gap:4px;min-width:72px;justify-content:center">
+      <button class="btn btn-ghost btn-sm" @click="manualRefresh" style="font-size:12px;padding:4px 10px;display:flex;align-items:center;gap:4px;min-width:72px;justify-content:center;transition:opacity .2s" :style="{ opacity: refreshing ? 0.6 : 1, pointerEvents: refreshing ? 'none' : 'auto' }">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" :class="{ spinning: refreshing }">
           <path d="M23 4v6h-6"/>
           <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
@@ -449,11 +449,11 @@ const hasMultiAnchor = computed(() => data.value && data.value.anchorRanking && 
 const filteredDanmaku = computed(() => {
   const q = danmakuSearchText.value.toLowerCase()
   const all = danmakuData.value
-  if (!q) return all.slice(0, 80)
-  return all.filter(d =>
+  const items = q ? all.filter(d =>
     (d.content || '').toLowerCase().includes(q) ||
     (d.nickname || '').toLowerCase().includes(q)
-  )
+  ) : all.slice(0, 80)
+  return [...items].reverse()
 })
 
 const danmakuBadge = computed(() => {
@@ -520,6 +520,10 @@ async function loadDanmaku() {
     // silent
   } finally {
     danmakuLoading.value = false
+    setTimeout(() => {
+      const el = document.getElementById('rtDanmakuList')
+      if (el) el.scrollTop = el.scrollHeight
+    }, 100)
   }
 }
 

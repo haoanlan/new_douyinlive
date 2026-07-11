@@ -455,7 +455,7 @@ const filteredDanmaku = computed(() => {
     (d.content || '').toLowerCase().includes(q) ||
     (d.nickname || '').toLowerCase().includes(q)
   ) : all.slice(0, 80)
-  return [...items].reverse()
+  return items
 })
 
 const danmakuBadge = computed(() => {

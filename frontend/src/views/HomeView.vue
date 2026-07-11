@@ -1401,7 +1401,7 @@ const displayedDanmaku = ref<any[]>([])
 function filterDanmaku() {
   const q = danmakuSearchQuery.value.toLowerCase()
   if (!q) {
-    displayedDanmaku.value = (_danmaku.value || []).slice(0, 80).reverse()
+    displayedDanmaku.value = (_danmaku.value || []).slice(0, 80)
     return
   }
   displayedDanmaku.value = (_danmaku.value || []).filter((d: any) =>

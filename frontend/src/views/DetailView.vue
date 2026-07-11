@@ -234,7 +234,7 @@
         <div class="detail-section">
           <div id="danmakuGrid" style="display:grid;grid-template-columns:340px 1fr;gap:14px;align-items:start">
             <!-- Left: rank -->
-            <div id="danmakuLeft" style="min-width:0">
+            <div ref="danmakuLeftEl" style="min-width:0">
               <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
                   <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -278,7 +278,7 @@
             </div>
 
             <!-- Right: wordcloud + danmaku list -->
-            <div id="danmakuRight" style="display:flex;flex-direction:column;min-width:0">
+            <div ref="danmakuRightEl" style="display:flex;flex-direction:column;min-width:0">
               <div style="margin-bottom:14px">
                 <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
@@ -374,7 +374,7 @@
             >
             <button class="btn btn-ghost btn-sm" @click="queryAnonymous" style="border-color:var(--border)">查询</button>
           </div>
-          <div id="anonResult">
+          <div ref="anonResultEl">
             <!-- Anon results rendered here -->
           </div>
         </div>
@@ -433,6 +433,11 @@ const anonQuery = ref('')
 // Auto-refresh
 let refreshTimer = null
 
+// Template refs
+const danmakuLeftEl = ref(null)
+const danmakuRightEl = ref(null)
+const anonResultEl = ref(null)
+
 // Wordcloud
 const wordcloudCanvas = ref(null)
 
@@ -488,10 +493,8 @@ function switchTab(tab) {
     nextTick(() => {
       renderWordCloud()
       // Match left/right height
-      const left = document.getElementById('danmakuLeft')
-      const right = document.getElementById('danmakuRight')
-      if (left && right && window.innerWidth > 768) {
-        right.style.height = left.offsetHeight + 'px'
+      if (danmakuLeftEl.value && danmakuRightEl.value && window.innerWidth > 768) {
+        danmakuRightEl.value.style.height = danmakuLeftEl.value.offsetHeight + 'px'
       }
     })
   }
@@ -624,7 +627,7 @@ function renderWordCloud() {
 // Anon query
 async function queryAnonymous() {
   const q = anonQuery.value.trim()
-  const resultEl = document.getElementById('anonResult')
+  const resultEl = anonResultEl.value
   if (!q || !resultEl) return
 
   const detailData = data.value
@@ -698,9 +701,7 @@ async function queryAnonymous() {
 
 function esc(s) {
   if (!s) return ''
-  const d = document.createElement('div')
-  d.textContent = s
-  return d.innerHTML
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;')
 }
 
 // Anchor modal
@@ -756,52 +757,7 @@ async function manualRefresh() {
 }
 
 function smoothUpdateDetail(newData) {
-  const oldData = data.value
-  if (!oldData) return
-
-  // Update stats in place (animate numbers)
-  const statCards = document.querySelectorAll('.stats-row .stat-card')
-  const newStats = [
-    newData.session.online_peak || 0,
-    newData.summary.total_diamonds,
-    newData.session.stats_like || 0,
-    newData.summary.danmaku_count,
-    newData.summary.user_count,
-    null // duration
-  ]
-  statCards.forEach((card, i) => {
-    if (i < newStats.length && newStats[i] != null) {
-      const valEl = card.querySelector('.stat-value')
-      if (valEl) {
-        const num = typeof newStats[i] === 'number' ? newStats[i] : parseInt(newStats[i])
-        if (!isNaN(num)) animateNumber(valEl, num)
-      }
-    }
-  })
-
-  // Update data (Vue reactivity handles the rest)
   data.value = newData
-}
-
-function animateNumber(el, newVal) {
-  if (!el) return
-  const oldText = el.textContent.replace(/[^\d]/g, '')
-  const oldVal = parseInt(oldText) || 0
-  if (oldVal === newVal) return
-  const diff = newVal - oldVal
-  const steps = 20
-  const stepTime = 300 / steps
-  let step = 0
-  const tick = () => {
-    step++
-    const progress = step / steps
-    const eased = 1 - Math.pow(1 - progress, 3)
-    const current = Math.round(oldVal + diff * eased)
-    el.textContent = current.toLocaleString()
-    if (step < steps) setTimeout(tick, stepTime)
-    else el.textContent = newVal.toLocaleString()
-  }
-  tick()
 }
 
 // FLIP animation

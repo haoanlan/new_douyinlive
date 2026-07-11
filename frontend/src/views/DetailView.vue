@@ -449,12 +449,11 @@ const hasMultiAnchor = computed(() => data.value && data.value.anchorRanking && 
 const filteredDanmaku = computed(() => {
   const q = danmakuSearchText.value.toLowerCase()
   const all = danmakuData.value
-  const items = q ? all.filter(d =>
+  if (!q) return all.slice(0, 80)
+  return all.filter(d =>
     (d.content || '').toLowerCase().includes(q) ||
     (d.nickname || '').toLowerCase().includes(q)
-  ) : all.slice(0, 80)
-  // API最新在前，reverse后最新在DOM最后→视觉最底部
-  return [...items].reverse()
+  )
 })
 
 const danmakuBadge = computed(() => {

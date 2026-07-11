@@ -307,7 +307,7 @@
                   >
                 </div>
                 <div id="rtDanmakuWrap" class="rt-danmaku-wrap" style="flex:1;display:flex;flex-direction:column;overflow:hidden">
-                  <div ref="rtDanmakuListEl" class="rt-danmaku-list" style="flex:1;min-height:315px;overflow-y:auto;overflow-x:hidden">
+                  <div id="rtDanmakuList" class="rt-danmaku-list" style="flex:1;min-height:315px;overflow-y:auto;overflow-x:hidden">
                     <div v-if="danmakuLoading" class="empty" style="padding:40px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:180px">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32" style="margin-bottom:10px;opacity:0.3">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
@@ -427,9 +427,7 @@ const danmakuLoading = ref(false)
 const danmakuSearchText = ref('')
 let danmakuSearchTimer = null
 
-// 弹幕加载完后滚到底部看最新
-watch(danmakuLoading, (v, old) => { if (old === true && v === false) scrollToDanmakuBottom() })
-watch(filteredDanmaku, () => scrollToDanmakuBottom())
+
 
 // Anon query
 const anonQuery = ref('')
@@ -441,16 +439,6 @@ let refreshTimer = null
 const danmakuLeftEl = ref(null)
 const danmakuRightEl = ref(null)
 const anonResultEl = ref(null)
-const rtDanmakuListEl = ref(null)
-
-function scrollToDanmakuBottom() {
-  nextTick(() => {
-    nextTick(() => {
-      const el = rtDanmakuListEl.value
-      if (el) el.scrollTop = el.scrollHeight
-    })
-  })
-}
 
 // Wordcloud
 const wordcloudCanvas = ref(null)

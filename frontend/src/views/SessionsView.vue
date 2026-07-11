@@ -246,13 +246,14 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, inject } from 'vue'
 
 const props = defineProps({
   hostId: { type: String, required: true }
 })
 
 const emit = defineEmits(['viewDetail', 'toast', 'confirm'])
+const showConfirm = inject('showConfirm', async () => true)
 
 const API = ''
 
@@ -437,7 +438,7 @@ function downloadSelectedReports() {
 }
 
 async function deleteSession(sessionId) {
-  const confirmed = await emit('confirm', '🗑️', '确定删除这场直播数据？<br><br>弹幕、礼物、在线记录将一并清除<br>此操作不可恢复！')
+  const confirmed = await showConfirm('🗑️', '确定删除这场直播数据？<br><br>弹幕、礼物、在线记录将一并清除<br>此操作不可恢复！')
   if (!confirmed) return
   try {
     const r = await fetch(`${API}/api/sessions/${sessionId}/delete`, { method: 'POST' }).then(r => r.json())
@@ -454,7 +455,7 @@ async function deleteSelectedSessions() {
     emit('toast', '请先选择场次', 'error')
     return
   }
-  const confirmed = await emit('confirm', '🗑️', `确定删除选中的 <strong>${ids.length}</strong> 场数据？<br><br>弹幕、礼物、在线记录将一并清除<br>此操作不可恢复！`)
+  const confirmed = await showConfirm('🗑️', `确定删除选中的 <strong>${ids.length}</strong> 场数据？<br><br>弹幕、礼物、在线记录将一并清除<br>此操作不可恢复！`)
   if (!confirmed) return
   let ok = 0, fail = 0
   for (const id of ids) {

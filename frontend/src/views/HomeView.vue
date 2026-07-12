@@ -839,6 +839,7 @@ function roomBadgeText(r: Room) {
 }
 
 async function viewHosts(fromPopState = false, replaceCurrent = false) {
+  const gen = ++_viewGen  // 竞态防护
   stopAutoRefresh()
   viewLevel.value = 'hosts'
   currentHostId.value = null
@@ -852,24 +853,26 @@ async function viewHosts(fromPopState = false, replaceCurrent = false) {
     pushNav('hosts')
   }
   updateBreadcrumb()
-  if (topNavTab.value === 'rooms') loadRoomsView()
+  if (topNavTab.value === 'rooms') loadRoomsView(gen)
   else if (topNavTab.value === 'search') loadSearchView()
   else if (topNavTab.value === 'profile') loadProfileView()
 }
 
-async function loadRoomsView() {
+async function loadRoomsView(gen?: number) {
   contentLoading.value = rooms.value.length === 0
   contentFadeIn.value = false
   try {
     const [s, r] = await Promise.all([api('/api/summary'), api('/api/rooms')])
+    if (gen !== undefined && gen !== _viewGen) return  // 过期请求丢弃
     rooms.value = r
     Object.assign(summary, s)
     contentLoading.value = false
   } catch (e: any) {
+    if (gen !== undefined && gen !== _viewGen) return
     contentLoading.value = false
     toast('加载失败: ' + e.message, 'error')
   }
-  startRoomStatusPoll()
+  if (gen === undefined || gen === _viewGen) startRoomStatusPoll()
 }
 
 function sortRooms() {

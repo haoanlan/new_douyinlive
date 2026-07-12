@@ -869,6 +869,34 @@ async function loadRoomsView() {
     contentLoading.value = false
     toast('加载失败: ' + e.message, 'error')
   }
+  startRoomStatusPoll()
+}
+
+let _roomStatusPollTimer: ReturnType<typeof setInterval> | null = null
+
+function startRoomStatusPoll() {
+  stopRoomStatusPoll()
+  _roomStatusPollTimer = setInterval(async () => {
+    if (viewLevel.value !== 'hosts' || topNavTab.value !== 'rooms') return
+    try {
+      const r = await api('/api/rooms')
+      // 按 room_id 匹配更新，保持 TransitionGroup 的 key 稳定
+      for (const newRoom of r) {
+        const old = rooms.value.find(x => x.room_id === newRoom.room_id)
+        if (old) {
+          old.connected = newRoom.connected
+          old.enabled = newRoom.enabled
+          old.recording = newRoom.recording
+          old._connecting = false
+          old.session_count = newRoom.session_count
+        }
+      }
+    } catch {}
+  }, 15000)
+}
+
+function stopRoomStatusPoll() {
+  if (_roomStatusPollTimer) { clearInterval(_roomStatusPollTimer); _roomStatusPollTimer = null }
 }
 
 // ============================================================
@@ -1667,6 +1695,7 @@ function startAutoRefresh() {
 
 function stopAutoRefresh() {
   if (_refreshTimer) { clearInterval(_refreshTimer); _refreshTimer = null }
+  stopRoomStatusPoll()
 }
 
 async function refreshDetail() {

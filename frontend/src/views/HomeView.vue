@@ -1681,13 +1681,16 @@ async function viewDetail(sessionId: number, fromPopState = false) {
 async function manualRefresh() {
   if (!currentSessionId.value) return
   const btn = document.getElementById('refreshBtn') as HTMLButtonElement | null
+  const svg = btn?.querySelector('svg')
   if (btn) { btn.disabled = true }
+  if (svg) svg.classList.add('spin')
   try {
     const data = await fetch(`${API}/api/sessions/${currentSessionId.value}/detail`).then(r => r.json())
     detailData.value = data
     _giftDetails.value = data.giftDetails || []
     if (!data.session.is_live) stopAutoRefresh()
   } catch { /* silent */ }
+  if (svg) svg.classList.remove('spin')
   if (btn) { btn.disabled = false }
 }
 

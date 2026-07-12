@@ -314,7 +314,7 @@
                       </svg>
                       <div style="color:var(--text-muted);font-size:13px">加载中...</div>
                     </div>
-                    <div v-else-if="filteredDanmaku.length === 0" class="empty" style="padding:40px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:180px">
+                    <div v-else-if="filteredDanmaku.length === 0" class="empty" style="padding:40px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;flex:1;min-height:180px">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32" style="margin-bottom:10px;opacity:0.3">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
                       </svg>

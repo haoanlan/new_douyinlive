@@ -874,25 +874,26 @@ async function loadRoomsView() {
 
 let _roomStatusPollTimer: ReturnType<typeof setInterval> | null = null
 
+async function pollRoomStatus() {
+  if (viewLevel.value !== 'hosts' || topNavTab.value !== 'rooms') return
+  try {
+    const r = await api('/api/rooms')
+    for (const newRoom of r) {
+      const old = rooms.value.find(x => x.room_id === newRoom.room_id)
+      if (old) {
+        old.connected = newRoom.connected
+        old.enabled = newRoom.enabled
+        old.recording = newRoom.recording
+        old._connecting = false
+        old.session_count = newRoom.session_count
+      }
+    }
+  } catch {}
+}
+
 function startRoomStatusPoll() {
   stopRoomStatusPoll()
-  _roomStatusPollTimer = setInterval(async () => {
-    if (viewLevel.value !== 'hosts' || topNavTab.value !== 'rooms') return
-    try {
-      const r = await api('/api/rooms')
-      // 按 room_id 匹配更新，保持 TransitionGroup 的 key 稳定
-      for (const newRoom of r) {
-        const old = rooms.value.find(x => x.room_id === newRoom.room_id)
-        if (old) {
-          old.connected = newRoom.connected
-          old.enabled = newRoom.enabled
-          old.recording = newRoom.recording
-          old._connecting = false
-          old.session_count = newRoom.session_count
-        }
-      }
-    } catch {}
-  }, 15000)
+  _roomStatusPollTimer = setInterval(pollRoomStatus, 15000)
 }
 
 function stopRoomStatusPoll() {
@@ -979,6 +980,8 @@ async function resumeRoom(roomId: string) {
     if (r.ok) {
       const room = rooms.value.find(r => r.room_id === roomId)
       if (room) { room.enabled = true; room.connected = false; room._connecting = true }
+      // 立即 poll 一次获取真实 connected 状态
+      setTimeout(pollRoomStatus, 500)
     }
   } catch (e: any) { toast('网络错误: ' + e.message, 'error') }
 }

@@ -943,18 +943,20 @@ async function lookupRoom() {
 async function confirmAddRoom() {
   if (!lookupData.value || !lookupData.value.room_id) { toast('请先查询房间信息', 'error'); return }
   const name = addRoomName.value.trim() || lookupData.value.nickname
+  const room_id = lookupData.value.room_id
+  const avatar = lookupData.value.avatar
   addRoomSubmitting.value = true
   try {
     const r = await fetch(`${API}/api/rooms/add`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ room_id: lookupData.value.room_id, name })
+      body: JSON.stringify({ room_id, name })
     }).then(r => r.json())
-    toast(r.ok ? `已添加 ${name || lookupData.value.room_id}` : (r.error || '添加失败'), r.ok ? 'success' : 'error')
+    toast(r.ok ? `已添加 ${name || room_id}` : (r.error || '添加失败'), r.ok ? 'success' : 'error')
     closeAddRoom()
     if (r.ok) {
-      const newRoom: Room = { room_id: lookupData.value.room_id, name: name || lookupData.value.nickname, avatar: lookupData.value.avatar, enabled: true, connected: false, recording: false, session_count: 0 }
+      const newRoom: Room = { room_id, name: name || '', avatar, enabled: true, connected: false, recording: false, session_count: 0 }
       rooms.value.push(newRoom)
-      setTimeout(() => loadRoomsView(), 2000)
+      setTimeout(pollRoomStatus, 500)
     }
   } catch (e: any) { toast('网络错误: ' + e.message, 'error') }
   finally { addRoomSubmitting.value = false }

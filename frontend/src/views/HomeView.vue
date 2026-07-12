@@ -1946,7 +1946,7 @@ watch(detailTab, (tab) => {
     })
   }
 })
-onMounted(() => {
+onMounted(async () => {
   window.addEventListener('popstate', handlePopState)
   document.addEventListener('click', handleDocClick)
   // 检查URL参数，直接导航到正确页面，避免闪房间管理
@@ -1954,9 +1954,12 @@ onMounted(() => {
   const roomParam = url.searchParams.get('room')
   const sessionParam = url.searchParams.get('session')
   if (sessionParam) {
+    // 先加载rooms数据，面包屑需要host名称
+    try { rooms.value = await api('/api/rooms') } catch { /* ignore */ }
     history.replaceState({ view: 'detail', sessionId: sessionParam }, '', location.href)
     viewDetail(Number(sessionParam), true)
   } else if (roomParam) {
+    try { rooms.value = await api('/api/rooms') } catch { /* ignore */ }
     history.replaceState({ view: 'sessions', hostId: roomParam }, '', location.href)
     viewSessions(roomParam, true)
   } else {

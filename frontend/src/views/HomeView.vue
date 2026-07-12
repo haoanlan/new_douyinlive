@@ -1935,10 +1935,22 @@ watch(detailTab, (tab) => {
   }
 })
 onMounted(() => {
-  history.replaceState({ view: 'hosts' }, '', location.href)
   window.addEventListener('popstate', handlePopState)
   document.addEventListener('click', handleDocClick)
-  viewHosts(true)
+  // 检查URL参数，直接导航到正确页面，避免闪房间管理
+  const url = new URL(location.href)
+  const roomParam = url.searchParams.get('room')
+  const sessionParam = url.searchParams.get('session')
+  if (sessionParam) {
+    history.replaceState({ view: 'detail', sessionId: sessionParam }, '', location.href)
+    viewDetail(Number(sessionParam), true)
+  } else if (roomParam) {
+    history.replaceState({ view: 'sessions', hostId: roomParam }, '', location.href)
+    viewSessions(roomParam, true)
+  } else {
+    history.replaceState({ view: 'hosts' }, '', location.href)
+    viewHosts(true)
+  }
 })
 
 onUnmounted(() => {

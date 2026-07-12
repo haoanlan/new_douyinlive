@@ -305,7 +305,7 @@
                   </div>
                   <div class="danmaku-user-rank-list">
                     <template v-if="detailData.danmakuRanking && detailData.danmakuRanking.length > 0">
-                      <div v-for="(d, idx) in detailData.danmakuRanking.slice(0, 10)" :key="d.nickname || idx" class="danmaku-user-rank">
+                      <div v-for="(d, idx) in detailData.danmakuRanking.slice(0, 10)" :key="d.nickname || idx" class="danmaku-user-rank" :class="{ 'rank-flash': _rankChanged.has(d.nickname) }">
                         <span class="rank-num" :class="{ top3: idx < 3 }">{{ String(idx + 1).padStart(2, '0') }}</span>
                         <div class="user-cell">
                           <div class="avatar" v-html="avatarHtml(d.avatar, d.nickname)"></div>
@@ -338,7 +338,7 @@
                     <div id="rtDanmakuWrap" class="rt-danmaku-wrap" style="flex:1;display:flex;flex-direction:column;overflow:hidden">
                       <div id="rtDanmakuList" class="rt-danmaku-list" style="flex:1;overflow-y:auto;overflow-x:hidden">
                         <template v-if="displayedDanmaku.length > 0">
-                          <div v-for="(d, idx) in displayedDanmaku" :key="idx" class="anon-result-item" style="padding:6px 0;animation:fadeIn .3s ease">
+                          <div v-for="(d, idx) in displayedDanmaku" :key="d.timestamp + '_' + d.nickname" class="anon-result-item" :class="{ 'dm-new': idx >= displayedDanmaku.length - _newDanmakuCount }" style="padding:6px 0">
                             <div style="flex-shrink:0;min-width:0" v-html="avatarHtml(d.avatar_url || d.avatar, d.nickname)"></div>
                             <div style="flex:1;min-width:0;overflow:hidden">
                               <div style="display:flex;align-items:center;gap:6px;margin-bottom:1px;min-width:0">
@@ -1445,6 +1445,26 @@ function onDanmakuSearchInput() {
 }
 
 const displayedDanmaku = ref<any[]>([])
+const _newDanmakuCount = ref(0)
+const _rankChanged = ref(new Set<string>())
+// 排行变动检测：对比前后排名，变动的项加动画
+let _prevRanking: string[] = []
+watch(() => detailData.value?.danmakuRanking, (newRank) => {
+  if (!newRank || !newRank.length) return
+  const newOrder = newRank.slice(0, 10).map((d: any) => d.nickname)
+  const changed = new Set<string>()
+  if (_prevRanking.length > 0) {
+    newOrder.forEach((name: string, idx: number) => {
+      const oldIdx = _prevRanking.indexOf(name)
+      if (oldIdx === -1 || oldIdx !== idx) changed.add(name)
+    })
+  }
+  _prevRanking = newOrder
+  if (changed.size > 0) {
+    _rankChanged.value = changed
+    setTimeout(() => { _rankChanged.value = new Set() }, 600)
+  }
+}, { deep: true })
 
 function filterDanmaku() {
   const q = danmakuSearchQuery.value.toLowerCase()
@@ -1696,6 +1716,10 @@ function startDanmakuPoll() {
         if (newItems.length > 0) {
           _danmaku.value = [...newItems, ...(_danmaku.value || [])]
           filterDanmaku()
+          nextTick(() => {
+            _newDanmakuCount.value = newItems.length
+            setTimeout(() => { _newDanmakuCount.value = 0 }, 400)
+          })
         }
       }
     } catch (e) { /* silent */ }

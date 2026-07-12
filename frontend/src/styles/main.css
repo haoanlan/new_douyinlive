@@ -103,6 +103,9 @@ input,select{font-family:inherit;outline:none}
 .confirm-text strong{color:var(--text);font-weight:600}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+/* 弹幕新消息入场动画：column-reverse下新条目在DOM顶部，从下方滑入 */
+.dm-new{animation:dmSlideIn .35s ease-out}
+@keyframes dmSlideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
 /* ========== SESSION LIST ========== */
 .session-table{width:100%;border-collapse:separate;border-spacing:0;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:24px}
@@ -228,7 +231,10 @@ thead .session-cb:hover{opacity:1}
 
 /* Danmaku user ranking - card style */
 .danmaku-user-rank-list{display:flex;flex-direction:column;gap:8px}
-.danmaku-user-rank{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);transition:border-color .15s}
+.danmaku-user-rank{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);transition:border-color .15s,transform .4s cubic-bezier(.23,1,.32,1),opacity .3s ease}
+/* 排行变动动画 */
+.rank-flash{animation:rankPulse .5s ease}
+@keyframes rankPulse{0%{transform:scale(1)}30%{transform:scale(1.03);box-shadow:0 0 12px rgba(108,140,255,0.3)}100%{transform:scale(1)}}
 .danmaku-user-rank:hover{border-color:var(--border-light)}
 .danmaku-user-rank:nth-child(1){border-color:rgba(255,215,0,0.3);background:linear-gradient(135deg,var(--bg-card) 0%,rgba(255,215,0,0.05) 100%)}
 .danmaku-user-rank:nth-child(2){border-color:rgba(192,192,192,0.3);background:linear-gradient(135deg,var(--bg-card) 0%,rgba(192,192,192,0.05) 100%)}

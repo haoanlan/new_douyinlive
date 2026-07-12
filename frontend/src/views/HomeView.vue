@@ -336,7 +336,7 @@
                       <input id="danmakuSearch" placeholder="搜索弹幕内容或用户..." v-model="danmakuSearchQuery" @input="onDanmakuSearchInput">
                     </div>
                     <div id="rtDanmakuWrap" class="rt-danmaku-wrap" style="flex:1;display:flex;flex-direction:column;overflow:hidden">
-                      <div id="rtDanmakuList" class="rt-danmaku-list" style="flex:1;min-height:315px;overflow-y:auto;overflow-x:hidden">
+                      <div id="rtDanmakuList" class="rt-danmaku-list" style="flex:1;overflow-y:auto;overflow-x:hidden">
                         <template v-if="displayedDanmaku.length > 0">
                           <div v-for="(d, idx) in displayedDanmaku" :key="idx" class="anon-result-item" style="padding:6px 0;animation:fadeIn .3s ease">
                             <div style="flex-shrink:0;min-width:0" v-html="avatarHtml(d.avatar_url || d.avatar, d.nickname)"></div>

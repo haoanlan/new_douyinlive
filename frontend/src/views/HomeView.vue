@@ -872,6 +872,13 @@ async function loadRoomsView() {
   startRoomStatusPoll()
 }
 
+function sortRooms() {
+  rooms.value.sort((a, b) => {
+    if (a.connected !== b.connected) return a.connected ? -1 : 1
+    return a.name.localeCompare(b.name)
+  })
+}
+
 let _roomStatusPollTimer: ReturnType<typeof setInterval> | null = null
 
 async function pollRoomStatus() {
@@ -888,6 +895,7 @@ async function pollRoomStatus() {
         old.session_count = newRoom.session_count
       }
     }
+    sortRooms()
   } catch {}
 }
 
@@ -956,6 +964,7 @@ async function confirmAddRoom() {
     if (r.ok) {
       const newRoom: Room = { room_id, name: name || '', avatar, enabled: true, connected: false, recording: false, session_count: 0 }
       rooms.value.push(newRoom)
+      sortRooms()
       setTimeout(pollRoomStatus, 500)
     }
   } catch (e: any) { toast('网络错误: ' + e.message, 'error') }
@@ -971,6 +980,7 @@ async function pauseRoom(roomId: string) {
     if (r.ok) {
       const room = rooms.value.find(r => r.room_id === roomId)
       if (room) { room.enabled = false; room.connected = false }
+      sortRooms()
     }
   } catch (e: any) { toast('网络错误: ' + e.message, 'error') }
 }

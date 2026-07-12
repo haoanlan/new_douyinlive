@@ -1292,8 +1292,11 @@ async function handleAPI(req, res) {
           recording: daemon?.recording || false
         };
       });
-      // 按名称排序
-      result.sort((a, b) => a.name.localeCompare(b.name));
+      // 监控中的在前，其他按名称
+      result.sort((a, b) => {
+        if (a.connected !== b.connected) return a.connected ? -1 : 1;
+        return a.name.localeCompare(b.name);
+      });
       return sendJSON(res, result);
     }
 

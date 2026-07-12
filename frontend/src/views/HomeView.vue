@@ -1375,6 +1375,7 @@ async function viewSessions(hostId: string, fromPopState = false) {
   currentHostId.value = hostId
   currentSessionId.value = null
   selectedSessionIds.value = []
+  sessions.value = []  // 清空旧数据，防止切换房间时闪现上一个房间的场次
   if (!fromPopState) pushNav('sessions', { hostId })
   updateBreadcrumb()
   contentLoading.value = true
@@ -1661,6 +1662,7 @@ async function viewDetail(sessionId: number, fromPopState = false) {
   viewLevel.value = 'detail'
   currentSessionId.value = sessionId
   detailTab.value = 'gifts'
+  detailData.value = null  // 清空旧数据，防止闪现上一个场次的内容
   _danmaku.value = []
   danmakuSearchQuery.value = ''
   anonQuery.value = ''

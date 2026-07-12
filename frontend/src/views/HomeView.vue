@@ -69,7 +69,7 @@
             <div class="section-title">房间管理</div>
             <button class="btn btn-ghost btn-sm" @click="showAddRoomFn" style="border-color:var(--border-light)">+ 添加房间</button>
           </div>
-          <div class="host-grid" id="roomGrid">
+          <TransitionGroup name="list" tag="div" class="host-grid" id="roomGrid">
             <div v-for="r in rooms" :key="r.room_id" class="room-card" @click="viewSessions(r.room_id)">
               <div class="room-card-top">
                 <div class="host-avatar">
@@ -100,9 +100,8 @@
               </div>
               <div class="room-card-footer">{{ r.room_id }}</div>
             </div>
-          </div>
+          </TransitionGroup>
         </div>
-        <!-- Add Room Modal -->
         <div v-if="showAddRoomModal" class="modal-overlay" @click.self="closeAddRoom">
           <div class="modal">
             <div class="modal-header">
@@ -935,7 +934,7 @@ async function pauseRoom(roomId: string) {
     toast(r.ok ? '已暂停' : (r.error || '操作失败'), r.ok ? 'success' : 'error')
     if (r.ok) {
       const room = rooms.value.find(r => r.room_id === roomId)
-      if (room) { room.enabled = false }
+      if (room) { room.enabled = false; room.connected = false }
     }
   } catch (e: any) { toast('网络错误: ' + e.message, 'error') }
 }
@@ -946,7 +945,7 @@ async function resumeRoom(roomId: string) {
     toast(r.ok ? '已恢复' : (r.error || '操作失败'), r.ok ? 'success' : 'error')
     if (r.ok) {
       const room = rooms.value.find(r => r.room_id === roomId)
-      if (room) { room.enabled = true }
+      if (room) { room.enabled = true; room.connected = false }
     }
   } catch (e: any) { toast('网络错误: ' + e.message, 'error') }
 }

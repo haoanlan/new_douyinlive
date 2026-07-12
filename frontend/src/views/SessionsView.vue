@@ -93,7 +93,8 @@
             </tr>
           </thead>
           <tbody id="sessionTbody">
-            <tr
+            <TransitionGroup name="list" tag="template">
+              <tr
               v-for="s in filteredSessions"
               :key="s.id"
               :data-id="s.id"
@@ -173,6 +174,7 @@
                 </div>
               </td>
             </tr>
+            </TransitionGroup>
           </tbody>
         </table>
       </div>

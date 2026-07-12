@@ -558,3 +558,9 @@ thead .session-cb:hover{opacity:1}
 .top-nav-btn:hover{color:var(--text)}
 .top-nav-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
 .top-nav-btn svg{flex-shrink:0}
+
+/* ========== LIST TRANSITIONS ========== */
+.list-enter-active,.list-leave-active{transition:all .3s ease}
+.list-enter-from{opacity:0;transform:translateY(-10px)}
+.list-leave-to{opacity:0;transform:scale(0.95)}
+.list-move{transition:transform .3s ease}

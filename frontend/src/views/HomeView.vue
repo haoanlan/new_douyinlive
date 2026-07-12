@@ -1448,13 +1448,19 @@ const displayedDanmaku = ref<any[]>([])
 
 function filterDanmaku() {
   const q = danmakuSearchQuery.value.toLowerCase()
+  const list = document.getElementById('rtDanmakuList')
+  // column-reverse下 scrollTop=0 就是最新的位置
+  const wasAtLatest = list ? list.scrollTop < 30 : false
   if (!q) {
     displayedDanmaku.value = (_danmaku.value || []).slice(0, 80)
-    return
+  } else {
+    displayedDanmaku.value = (_danmaku.value || []).filter((d: any) =>
+      (d.content || '').toLowerCase().includes(q) || (d.nickname || '').toLowerCase().includes(q)
+    )
   }
-  displayedDanmaku.value = (_danmaku.value || []).filter((d: any) =>
-    (d.content || '').toLowerCase().includes(q) || (d.nickname || '').toLowerCase().includes(q)
-  )
+  if (wasAtLatest && list) {
+    nextTick(() => { list.scrollTop = 0 })
+  }
 }
 
 const anonQuery = ref('')

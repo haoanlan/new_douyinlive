@@ -632,6 +632,7 @@ interface Room {
   connected: boolean
   recording: boolean
   session_count: number
+  _connecting?: boolean
 }
 
 interface Summary {
@@ -826,11 +827,15 @@ const connectedCount = computed(() => rooms.value.filter(r => r.connected).lengt
 const pausedCount = computed(() => rooms.value.filter(r => !r.enabled).length)
 
 function roomBadgeClass(r: Room) {
-  return r.connected ? 'badge-live' : r.enabled ? 'badge-idle' : 'badge-paused'
+  if (r.connected) return 'badge-live'
+  if (r._connecting) return 'badge-connecting'
+  return r.enabled ? 'badge-idle' : 'badge-paused'
 }
 
 function roomBadgeText(r: Room) {
-  return r.connected ? '监控中' : r.enabled ? '已启用' : '已暂停'
+  if (r.connected) return '监控中'
+  if (r._connecting) return '连接中'
+  return r.enabled ? '已启用' : '已暂停'
 }
 
 async function viewHosts(fromPopState = false, replaceCurrent = false) {
@@ -945,7 +950,7 @@ async function resumeRoom(roomId: string) {
     toast(r.ok ? '已恢复' : (r.error || '操作失败'), r.ok ? 'success' : 'error')
     if (r.ok) {
       const room = rooms.value.find(r => r.room_id === roomId)
-      if (room) { room.enabled = true; room.connected = false }
+      if (room) { room.enabled = true; room.connected = false; room._connecting = true }
     }
   } catch (e: any) { toast('网络错误: ' + e.message, 'error') }
 }

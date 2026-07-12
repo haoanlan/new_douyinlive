@@ -62,10 +62,11 @@ input,select{font-family:inherit;outline:none}
 .host-info{flex:1;min-width:0}
 .host-name{font-size:15px;font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .host-meta{font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:8px}
-.host-badge{font-size:11px;padding:2px 8px;border-radius:var(--radius);font-weight:500}
+.host-badge{font-size:11px;padding:2px 8px;border-radius:var(--radius);font-weight:500;min-width:56px;text-align:center}
 .badge-live{background:var(--green-bg);color:var(--green)}
 .badge-idle{background:rgba(156,160,173,0.1);color:var(--text-muted)}
 .badge-paused{background:var(--orange-bg);color:var(--orange)}
+.badge-connecting{background:rgba(108,140,255,0.12);color:var(--accent);animation:pulse 1.5s infinite}
 
 /* ========== ROOM CARD ========== */
 .room-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);cursor:pointer;transition:all .2s;overflow:hidden}

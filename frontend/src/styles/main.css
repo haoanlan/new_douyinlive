@@ -103,9 +103,13 @@ input,select{font-family:inherit;outline:none}
 .confirm-text strong{color:var(--text);font-weight:600}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-/* 弹幕新消息入场动画：column-reverse下新条目在DOM顶部，从下方滑入 */
-.dm-new{animation:dmSlideIn .35s ease-out}
-@keyframes dmSlideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+/* 弹幕新消息入场动画 */
+.dm-new{animation:dmAppear .45s cubic-bezier(.23,1,.32,1) both}
+@keyframes dmAppear{
+  0%{opacity:0;transform:translateY(6px) scale(.97)}
+  60%{opacity:1;transform:translateY(-1px) scale(1.005)}
+  100%{opacity:1;transform:translateY(0) scale(1)}
+}
 
 /* ========== SESSION LIST ========== */
 .session-table{width:100%;border-collapse:separate;border-spacing:0;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:24px}
@@ -529,8 +533,8 @@ thead .session-cb:hover{opacity:1}
   .anchor-card-stats .stat-val{font-size:11px}
   .wordcloud-canvas{height:200px}
   #danmakuGrid{grid-template-columns:1fr !important}
-  .rt-danmaku-list{max-height:300px}
-  .rt-danmaku-wrap{overflow:hidden;flex:none!important;min-height:315px}
+  .rt-danmaku-list{max-height:315px}
+  .rt-danmaku-wrap{overflow:hidden;flex:none!important;height:315px}
   @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
   .top-nav{overflow-x:auto;-webkit-overflow-scrolling:touch}
   .top-nav-btn{font-size:13px;padding:10px 12px;flex-shrink:1}

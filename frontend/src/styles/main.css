@@ -293,7 +293,7 @@ thead .session-cb:hover{opacity:1}
 .btn-ghost{background:var(--bg-card);color:var(--text-secondary);border:1px solid var(--border)}.btn-ghost:hover{background:var(--bg-card-hover);color:var(--text);border-color:var(--border-light)}
 .btn-sm{padding:5px 12px;font-size:12px}
 .btn:disabled{opacity:0.5;cursor:not-allowed}
-.spin{animation:spin .8s linear infinite}
+.spin{animation:spin .7s cubic-bezier(.4,.0,.2,1) infinite}
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 
 /* ========== PAGINATION ========== */

@@ -1040,6 +1040,13 @@ function startConnection(roomId, config) {
           console.log(`[${getDisplayName(room)}] [live_status] live=${data.live} title=${data.title||''}主播=${data.livename||''}`);
           const isLive = !!data.live;
 
+          // 主播回来时，取消可能残留的下播定时器
+          if (isLive && room.liveStopTimer) {
+            clearTimeout(room.liveStopTimer);
+            room.liveStopTimer = null;
+            console.log(`[${getDisplayName(room)}] 🟢 主播回来了，取消下播确认`);
+          }
+
           if (isLive && !room.isRecording) {
             // 🔴 开播
             console.log(`[${getDisplayName(room)}] 🔴 检测到开播！`);

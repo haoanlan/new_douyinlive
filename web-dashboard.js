@@ -1115,6 +1115,7 @@ async function handleAPI(req, res) {
       return sendJSON(res, {
         session: {
           id: session.id,
+          room_id: session.room_id,
           title: session.room_title || session.streamer_name,
           is_live: session.end_time === null && session.archived === 0,
           start_time: session.start_time,

@@ -1080,10 +1080,20 @@ function startConnection(roomId, config) {
             console.log(`[${getDisplayName(room)}] 开始录制: ${data.title || ''}`);
           } else if (!isLive && room.isRecording) {
             // 🟢 可能下播
-            if (!room.liveStopTimer) {
+            // 如果最近还有数据流入（lastDataTime在60秒内），说明主播只是暂时离开，不启动下播定时器
+            const dataAge = room.lastDataTime ? (Date.now() - room.lastDataTime) / 1000 : Infinity;
+            if (dataAge < 60) {
+              console.log(`[${getDisplayName(room)}] 🟡 live=false 但最近${Math.round(dataAge)}秒有数据流入，跳过下播判定`);
+            } else if (!room.liveStopTimer) {
               room.liveStopTimer = setTimeout(() => {
                 room.liveStopTimer = null;
                 if (!room.isRecording) return;
+                // 定时器触发时再次检查：如果期间有新数据流入，取消下播
+                const lateDataAge = room.lastDataTime ? (Date.now() - room.lastDataTime) / 1000 : Infinity;
+                if (lateDataAge < 60) {
+                  console.log(`[${getDisplayName(room)}] 🟡 下播确认时发现最近${Math.round(lateDataAge)}秒有数据，取消下播`);
+                  return;
+                }
                 console.log(`[${getDisplayName(room)}] 🟢 确认下播！`);
                 room.isRecording = false;
                 finalizeSession(room);

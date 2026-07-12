@@ -784,13 +784,15 @@ function updateBreadcrumb() {
   } else if (viewLevel.value === 'detail') {
     const host = rooms.value.find(h => h.room_id === currentHostId.value)
     const sess = sessions.value.find(s => s.id === currentSessionId.value)
+    // 兼容直接带URL参数进入：sessions可能为空，从detailData中获取标题
+    const sessionTitle = sess?.title || detailData.value?.session?.room_title || '场次详情'
     breadcrumbItems.value = [
       { label: '房间管理', onClick: () => viewHosts() },
       { label: host?.name || '', onClick: () => viewSessions(currentHostId.value!) },
-      { label: sess?.title || '场次详情' }
+      { label: sessionTitle }
     ]
     showBackBtn.value = true
-    pageTitle.value = sess?.title || '场次详情'
+    pageTitle.value = sessionTitle
     showTopNav.value = false
   }
 }
@@ -1678,6 +1680,11 @@ async function viewDetail(sessionId: number, fromPopState = false) {
     if (gen !== _viewGen) return  // 过期请求丢弃
     detailData.value = data
     _giftDetails.value = data.giftDetails || []
+    // 从session数据中提取hostId，用于面包屑导航
+    if (data.session?.room_id && !currentHostId.value) {
+      currentHostId.value = data.session.room_id
+      updateBreadcrumb()
+    }
     // Set initial tab
     const hasMultiAnchor = data.anchorRanking && data.anchorRanking.length > 1
     detailTab.value = hasMultiAnchor ? 'anchors' : 'gifts'

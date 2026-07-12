@@ -1292,11 +1292,8 @@ async function handleAPI(req, res) {
           recording: daemon?.recording || false
         };
       });
-      // 排序：直播中 > 监控中 > 已启用 > 已暂停
-      result.sort((a, b) => {
-        const score = r => r.recording ? 3 : r.connected ? 2 : r.enabled ? 1 : 0;
-        return score(b) - score(a) || a.name.localeCompare(b.name);
-      });
+      // 按名称排序
+      result.sort((a, b) => a.name.localeCompare(b.name));
       return sendJSON(res, result);
     }
 

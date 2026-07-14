@@ -1446,7 +1446,12 @@ function serveStatic(req, res) {
   }
 
   if (!fs.existsSync(filePath)) {
-    res.writeHead(404); res.end('Not Found'); return;
+    // SPA fallback: 非 API 路由返回 index.html
+    if (!pathname.startsWith('/api/')) {
+      filePath = path.join(VUE_DIST, 'index.html');
+    } else {
+      res.writeHead(404); res.end('Not Found'); return;
+    }
   }
 
   const ext = path.extname(filePath).toLowerCase();

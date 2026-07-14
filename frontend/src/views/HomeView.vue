@@ -294,13 +294,7 @@
           </div>
           <!-- Danmaku tab -->
           <div v-if="detailTab === 'danmaku'" class="tab-panel active">
-            <div v-if="anonLoading" class="detail-section" style="display:flex;align-items:center;justify-content:center;min-height:200px">
-              <div style="display:flex;flex-direction:column;align-items:center;gap:10px">
-                <div class="loading-spinner" style="width:28px;height:28px;border-width:2px"></div>
-                <span style="font-size:12px;color:var(--text-muted)">加载弹幕数据中...</span>
-              </div>
-            </div>
-            <div v-else class="detail-section">
+            <div class="detail-section">
               <div id="danmakuGrid" style="display:grid;grid-template-columns:340px 1fr;gap:14px;align-items:start">
                 <!-- Left: rank -->
                 <div ref="danmakuLeftEl" id="danmakuLeft" style="min-width:0">
@@ -350,6 +344,10 @@
                       </div>
                     </div>
                     <div id="rtDanmakuWrap" class="rt-danmaku-wrap" style="flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative">
+                      <!-- 初始加载 & 条数切换 loading -->
+                      <div v-if="anonLoading || dmSwitchLoading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:10">
+                        <div class="loading-spinner" style="width:24px;height:24px;border-width:2px"></div>
+                      </div>
                       <div id="rtDanmakuList" class="rt-danmaku-list" style="flex:1;overflow-y:auto;overflow-x:hidden">
                         <template v-if="displayedDanmaku.length > 0">
                           <div v-for="(d, idx) in displayedDanmaku" :key="d._key" class="anon-result-item dm-item" style="padding:6px 0">

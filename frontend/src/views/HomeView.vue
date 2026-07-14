@@ -366,6 +366,7 @@
                                   <img v-if="d.gift_icon" :src="d.gift_icon" style="width:16px;height:16px;vertical-align:-3px;margin:0 2px;border-radius:var(--radius-xs)">
                                   <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="vertical-align:-2px;margin:0 2px"><rect x="3" y="8" width="18" height="13" rx="1"/><path d="M12 8V6c0-2-1.5-4-4-4S4 4 4 6h2"/><path d="M20 6c0-2-1.5-4-4-4s-4 2-4 4h2"/><line x1="12" y1="8" x2="12" y2="21"/><line x1="3" y1="13" x2="21" y2="13"/></svg>
                                   <span style="font-weight:600">{{ d.gift_name }}</span>
+                                  <span v-if="d.count > 1" style="font-weight:600;margin-left:2px">×{{ d.count }}</span>
                                   <span v-if="d.to_nickname" style="margin-left:4px">→ {{ d.to_nickname }}</span>
                                   <span v-if="d.total_diamonds" style="margin-left:6px;font-weight:600;color:var(--orange)">
                                     <svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:-2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/></svg>
@@ -393,6 +394,7 @@
                                     <img v-if="d.gift_icon" :src="d.gift_icon" style="width:16px;height:16px;vertical-align:-3px;margin:0 2px;border-radius:var(--radius-xs)">
                                     <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="vertical-align:-2px;margin:0 2px"><rect x="3" y="8" width="18" height="13" rx="1"/><path d="M12 8V6c0-2-1.5-4-4-4S4 4 4 6h2"/><path d="M20 6c0-2-1.5-4-4-4s-4 2-4 4h2"/><line x1="12" y1="8" x2="12" y2="21"/><line x1="3" y1="13" x2="21" y2="13"/></svg>
                                     <span style="font-weight:600">{{ d.gift_name }}</span>
+                                    <span v-if="d.count > 1" style="font-weight:600;margin-left:2px">×{{ d.count }}</span>
                                     <span v-if="d.to_nickname" style="margin-left:4px">→ {{ d.to_nickname }}</span>
                                     <span v-if="d.total_diamonds" style="margin-left:6px;font-weight:600;color:var(--orange)">
                                       <svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:-2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/></svg>
@@ -1472,6 +1474,7 @@ function filterDanmaku() {
       nickname: g.nickname,
       avatar_url: g.avatar || g.avatar_url,
       gift_name: g.gift_name || '',
+      count: g.count || 0,
       total_diamonds: g.total_diamonds || 0,
       to_nickname: g.to_nickname || '',
       gift_icon: g.gift_icon || null,

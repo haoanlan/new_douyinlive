@@ -256,8 +256,7 @@
                   <div class="anchor-card-rank">{{ String(idx + 1).padStart(2, '0') }}</div>
                   <div class="anchor-card-header">
                     <div class="anchor-card-avatar">
-                      <img v-if="a.anchor_avatar" :src="a.anchor_avatar" alt="" @error="(e: any) => e.target.parentElement.innerHTML='<svg viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot; width=&quot;18&quot; height=&quot;18&quot;><path d=&quot;M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2&quot;/><circle cx=&quot;9&quot; cy=&quot;7&quot; r=&quot;4&quot;/></svg>'">
-                      <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                      <AvatarFallback :src="a.anchor_avatar" :name="a.anchor_name" size="32" />
                     </div>
                     <div class="anchor-card-name">{{ a.anchor_name }}</div>
                   </div>
@@ -296,7 +295,7 @@
           <!-- Danmaku tab -->
           <div v-if="detailTab === 'danmaku'" class="tab-panel active">
             <div class="detail-section">
-              <div id="danmakuGrid" style="display:grid;grid-template-columns:340px 1fr;gap:14px;align-items:start">
+              <div id="danmakuGrid" style="display:grid;grid-template-columns:340px 1fr;gap:14px;align-items:stretch">
                 <!-- Left: rank -->
                 <div id="danmakuLeft" style="min-width:0">
                   <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px">
@@ -628,6 +627,7 @@ import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
 import { useDatePicker } from '../composables/useDatePicker'
 import { renderWordCloud } from '../utils/wordcloud'
+import AvatarFallback from '../components/AvatarFallback.vue'
 import { useSearch } from '../composables/useSearch'
 import { useProfile } from '../composables/useProfile'
 
@@ -1608,10 +1608,6 @@ watch(detailTab, (tab) => {
   if (tab === "danmaku" && detailData.value) {
     nextTick(() => {
       renderWordCloud(detailData.value?.danmakuWords || [])
-      // Match left/right heights like original
-      const left = document.getElementById("danmakuLeft")
-      const right = document.getElementById("danmakuRight")
-      if (left && right && window.innerWidth > 768) right.style.height = left.offsetHeight + "px"
     })
   }
 })

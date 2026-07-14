@@ -330,7 +330,7 @@ thead .session-cb:hover{opacity:1}
 .search-wrap svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--text-muted)}
 
 /* ========== LOADING ========== */
-.loading{text-align:center;padding:60px 0;color:var(--text-muted);font-size:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:50vh;background:var(--bg-card)}
+.loading{text-align:center;padding:60px 0;color:var(--text-muted);font-size:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:50vh}
 .loading::before{content:'';display:block;width:28px;height:28px;margin:0 auto 12px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .flip-new{animation:flipFadeIn .4s ease both}

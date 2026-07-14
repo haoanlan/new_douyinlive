@@ -345,7 +345,9 @@
                     </div>
                     <div id="rtDanmakuWrap" class="rt-danmaku-wrap" style="flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative">
                       <!-- 初始加载 & 条数切换 loading -->
-                      <div v-if="anonLoading || dmSwitchLoading" class="loading" style="position:absolute;inset:0;z-index:10;min-height:0;padding:0"></div>
+                      <div v-if="anonLoading || dmSwitchLoading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:10">
+                        <div style="width:24px;height:24px;border:2.5px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite"></div>
+                      </div>
                       <div id="rtDanmakuList" class="rt-danmaku-list" style="flex:1;overflow-y:auto;overflow-x:hidden">
                         <template v-if="displayedDanmaku.length > 0">
                           <div v-for="(d, idx) in displayedDanmaku" :key="d._key" class="anon-result-item dm-item" style="padding:6px 0">

@@ -1600,6 +1600,20 @@ watch(detailTab, (tab) => {
     })
   }
 })
+// 监听路由变化（同一组件复用时）
+watch(() => route.params, async (params) => {
+  const sessionId = params.sessionId as string
+  const hostId = params.hostId as string
+  if (sessionId && viewLevel.value !== 'detail') {
+    try { if (!rooms.value.length) rooms.value = await api('/api/rooms') } catch { /* ignore */ }
+    viewDetail(Number(sessionId), true)
+  } else if (hostId && viewLevel.value !== 'sessions') {
+    try { if (!rooms.value.length) rooms.value = await api('/api/rooms') } catch { /* ignore */ }
+    viewSessions(hostId, true)
+  } else if (!sessionId && !hostId && viewLevel.value !== 'hosts') {
+    viewHosts(true)
+  }
+})
 onMounted(async () => {
   document.addEventListener('click', handleDocClick)
   // 根据路由参数导航到正确页面

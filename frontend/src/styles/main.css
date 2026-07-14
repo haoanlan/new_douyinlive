@@ -115,6 +115,7 @@ input,select{font-family:inherit;outline:none}
   position:relative;background:var(--bg-input);border:1px solid var(--border);color:var(--text);
   border-radius:var(--radius-sm);padding:10px 28px 10px 10px;font-size:13px;
   cursor:pointer;display:inline-flex;align-items:center;gap:4px;box-sizing:border-box;
+  flex-shrink:0;
 }
 .dm-limit-select:focus-within{border-color:var(--accent)}
 .dm-limit-select svg{position:absolute;right:8px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none}

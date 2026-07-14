@@ -328,29 +328,42 @@
                   <div style="flex:1;min-height:0;display:flex;flex-direction:column">
                     <div id="dmTotalBadge" style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-                      最新弹幕
+                      最新动态
                     </div>
-                    <div class="search-wrap" style="margin-bottom:8px;flex-shrink:0">
-                      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><path d="M11 11l3 3"/></svg>
-                      <input id="danmakuSearch" placeholder="搜索弹幕内容或用户..." v-model="danmakuSearchQuery" @input="onDanmakuSearchInput">
+                    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-shrink:0">
+                      <div class="search-wrap" style="flex:1;margin-bottom:0">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><path d="M11 11l3 3"/></svg>
+                        <input id="danmakuSearch" placeholder="搜索弹幕或礼物..." v-model="danmakuSearchQuery" @input="onDanmakuSearchInput">
+                      </div>
+                      <select v-model="danmakuDisplayLimit" style="background:var(--bg-card);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);padding:4px 8px;font-size:12px;cursor:pointer;outline:none">
+                        <option :value="50">50条</option>
+                        <option :value="100">100条</option>
+                        <option :value="200">200条</option>
+                        <option :value="0">全部</option>
+                      </select>
                     </div>
                     <div id="rtDanmakuWrap" class="rt-danmaku-wrap" style="flex:1;display:flex;flex-direction:column;overflow:hidden">
                       <div id="rtDanmakuList" class="rt-danmaku-list" style="flex:1;overflow-y:auto;overflow-x:hidden">
                         <template v-if="displayedDanmaku.length > 0">
-                          <div v-for="(d, idx) in displayedDanmaku" :key="d.timestamp + '_' + d.nickname" class="anon-result-item" :class="{ 'dm-new': idx >= displayedDanmaku.length - _newDanmakuCount }" style="padding:6px 0">
+                          <div v-for="(d, idx) in displayedDanmaku" :key="d._key" class="anon-result-item dm-item" :class="{ 'dm-new': d._isNew }" :style="{ animationDelay: d._delay + 'ms' }" style="padding:6px 0">
                             <div style="flex-shrink:0;min-width:0" v-html="avatarHtml(d.avatar_url || d.avatar, d.nickname)"></div>
                             <div style="flex:1;min-width:0;overflow:hidden">
                               <div style="display:flex;align-items:center;gap:6px;margin-bottom:1px;min-width:0">
                                 <span style="font-size:13px;font-weight:600;color:var(--text);flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px">{{ d.nickname || '匿名' }}</span>
+                                <span v-if="d._type === 'gift'" style="font-size:10px;padding:1px 5px;border-radius:var(--radius-xs);background:rgba(255,107,157,0.15);color:#FF6B9D;flex-shrink:0">🎁 礼物</span>
                                 <span style="font-size:11px;padding:1px 6px;border-radius:var(--radius-xs);background:rgba(108,140,255,0.15);color:var(--accent);flex-shrink:0">{{ fmtTime(d.timestamp) }}</span>
                               </div>
-                              <div style="font-size:12px;color:var(--text-muted);word-break:break-all;line-height:1.5" :title="d.content" v-html="replaceDouyinEmoji(esc(d.content))"></div>
+                              <div v-if="d._type === 'gift'" style="font-size:12px;color:#FF6B9D;word-break:break-all;line-height:1.5">
+                                送了 <span style="font-weight:600">{{ d.gift_name }}</span>
+                                <span v-if="d.total_diamonds" style="margin-left:4px;opacity:0.8">💎{{ fmtNum(d.total_diamonds) }}</span>
+                              </div>
+                              <div v-else style="font-size:12px;color:var(--text-muted);word-break:break-all;line-height:1.5" :title="d.content" v-html="replaceDouyinEmoji(esc(d.content))"></div>
                             </div>
                           </div>
                         </template>
                         <div v-else class="empty" style="padding:40px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;flex:1;min-height:180px">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32" style="margin-bottom:10px;opacity:0.3"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                          <div style="color:var(--text-muted);font-size:13px">{{ danmakuSearchQuery ? '无匹配弹幕' : '暂无弹幕' }}</div>
+                          <div style="color:var(--text-muted);font-size:13px">{{ danmakuSearchQuery ? '无匹配结果' : '暂无动态' }}</div>
                         </div>
                       </div>
                     </div>
@@ -710,7 +723,7 @@ const {
   rooms, sessions, currentHostId, currentSessionId,
   pageTitle, showBackBtn, showTopNav, breadcrumbItems,
   detailData, _danmaku, _giftDetails, detailTab,
-  danmakuSearchQuery, displayedDanmaku, _newDanmakuCount,
+  danmakuSearchQuery, displayedDanmaku, _newDanmakuCount, danmakuDisplayLimit,
   anonQuery, anonMatches, anonSearched, anonLoading,
   selectedSessionIds,
   connectedCount, pausedCount,
@@ -1320,6 +1333,9 @@ function onDanmakuSearchInput() {
   _dmSearchTimer = setTimeout(() => filterDanmaku(), 200)
 }
 
+// 监听显示数量变化
+watch(danmakuDisplayLimit, () => { filterDanmaku() })
+
 const _rankChanged = ref(new Set<string>())
 const danmakuLeftEl = ref<HTMLElement | null>(null)
 const danmakuRightEl = ref<HTMLElement | null>(null)
@@ -1345,15 +1361,51 @@ watch(() => detailData.value?.danmakuRanking, (newRank) => {
 function filterDanmaku() {
   const q = danmakuSearchQuery.value.toLowerCase()
   const list = document.getElementById('rtDanmakuList')
-  // column-reverse下 scrollTop=0 就是最新的位置
   const wasAtLatest = list ? list.scrollTop < 30 : false
-  if (!q) {
-    displayedDanmaku.value = (_danmaku.value || []).slice(0, 80)
+
+  // 合并弹幕和礼物，统一格式
+  const allItems: any[] = []
+  ;(_danmaku.value || []).forEach((d: any) => {
+    allItems.push({
+      _type: 'danmaku',
+      _key: 'dm_' + (d.timestamp || d.create_time) + '_' + d.nickname,
+      _ts: Number(d.timestamp || d.create_time) || 0,
+      nickname: d.nickname,
+      avatar_url: d.avatar_url || d.avatar,
+      content: d.content || '',
+      timestamp: d.timestamp || d.create_time,
+    })
+  })
+  ;(_giftDetails.value || []).forEach((g: any) => {
+    allItems.push({
+      _type: 'gift',
+      _key: 'gf_' + (g.create_time || g.timestamp) + '_' + g.nickname + '_' + g.gift_name,
+      _ts: Number(g.create_time || g.timestamp) || 0,
+      nickname: g.nickname,
+      avatar_url: g.avatar || g.avatar_url,
+      gift_name: g.gift_name || '',
+      total_diamonds: g.total_diamonds || 0,
+      timestamp: g.create_time || g.timestamp,
+    })
+  })
+
+  // 按时间倒序
+  allItems.sort((a, b) => b._ts - a._ts)
+
+  let result: any[]
+  if (q) {
+    // 搜索模式：搜索全部数据，不受数量限制
+    result = allItems.filter((d: any) => {
+      const content = d._type === 'gift' ? d.gift_name : (d.content || '')
+      return content.toLowerCase().includes(q) || (d.nickname || '').toLowerCase().includes(q)
+    })
   } else {
-    displayedDanmaku.value = (_danmaku.value || []).filter((d: any) =>
-      (d.content || '').toLowerCase().includes(q) || (d.nickname || '').toLowerCase().includes(q)
-    )
+    // 正常模式：按数量限制
+    const limit = danmakuDisplayLimit.value || Infinity
+    result = allItems.slice(0, limit)
   }
+
+  displayedDanmaku.value = result
   if (wasAtLatest && list) {
     nextTick(() => { list.scrollTop = 0 })
   }
@@ -1508,32 +1560,81 @@ let _refreshTimer: ReturnType<typeof setInterval> | null = null
 const refreshing = ref(false)
 
 let _danmakuPollTimer: ReturnType<typeof setInterval> | null = null
+let _dmLastIds = new Set<string>()
 
 function startDanmakuPoll() {
   stopDanmakuPoll()
+  _dmLastIds = new Set((_danmaku.value || []).map((d: any) => d.timestamp + '_' + d.nickname))
+
   _danmakuPollTimer = setInterval(async () => {
     if (viewLevel.value !== 'detail' || detailTab.value !== 'danmaku' || !currentSessionId.value) return
+    // 搜索模式下暂停实时更新
+    if (danmakuSearchQuery.value) return
     try {
-      const dmData = await fetchDanmaku(String(currentSessionId.value), 50)
+      const limit = Math.max(danmakuDisplayLimit.value || 50, 50)
+      const dmData = await fetchDanmaku(String(currentSessionId.value), limit)
       const raw = (dmData.data || dmData || []).map((d: any) => ({
         ...d,
         timestamp: d.timestamp || d.create_time,
         avatar_url: d.avatar_url || d.avatar
       }))
       if (raw.length > 0) {
-        const oldIds = new Set((_danmaku.value || []).map((d: any) => d.timestamp + '_' + d.nickname))
-        const newItems = raw.filter((d: any) => !oldIds.has(d.timestamp + '_' + d.nickname))
+        const newItems = raw.filter((d: any) => !_dmLastIds.has(d.timestamp + '_' + d.nickname))
         if (newItems.length > 0) {
-          _danmaku.value = [...newItems, ...(_danmaku.value || [])]
-          filterDanmaku()
-          nextTick(() => {
-            _newDanmakuCount.value = newItems.length
-            setTimeout(() => { _newDanmakuCount.value = 0 }, 400)
+          // 更新已知 ID 集合
+          newItems.forEach((d: any) => _dmLastIds.add(d.timestamp + '_' + d.nickname))
+          _danmaku.value = raw  // 用完整列表替换
+          // 标记新条目并添加逐条动画延迟
+          const newSet = new Set(newItems.map((d: any) => d.timestamp + '_' + d.nickname))
+          const limit2 = danmakuDisplayLimit.value || Infinity
+          const allItems = buildAllItems(raw).slice(0, limit2)
+          allItems.forEach((item: any, i: number) => {
+            if (newSet.has(item.timestamp + '_' + item.nickname)) {
+              item._isNew = true
+              // 找到在新条目中的位置来计算延迟
+              const newIdx = newItems.findIndex((n: any) => n.timestamp + '_' + n.nickname === item.timestamp + '_' + item.nickname)
+              item._delay = newIdx * 80  // 每条间隔80ms
+            }
           })
+          displayedDanmaku.value = allItems
         }
       }
     } catch (e) { /* silent */ }
   }, 3000)
+}
+
+// 辅助：将原始数据转为统一格式
+function buildAllItems(rawDanmaku: any[]): any[] {
+  const items: any[] = []
+  ;(rawDanmaku || []).forEach((d: any) => {
+    items.push({
+      _type: 'danmaku',
+      _key: 'dm_' + (d.timestamp || d.create_time) + '_' + d.nickname,
+      _ts: Number(d.timestamp || d.create_time) || 0,
+      nickname: d.nickname,
+      avatar_url: d.avatar_url || d.avatar,
+      content: d.content || '',
+      timestamp: d.timestamp || d.create_time,
+      _isNew: false,
+      _delay: 0,
+    })
+  })
+  ;(_giftDetails.value || []).forEach((g: any) => {
+    items.push({
+      _type: 'gift',
+      _key: 'gf_' + (g.create_time || g.timestamp) + '_' + g.nickname + '_' + g.gift_name,
+      _ts: Number(g.create_time || g.timestamp) || 0,
+      nickname: g.nickname,
+      avatar_url: g.avatar || g.avatar_url,
+      gift_name: g.gift_name || '',
+      total_diamonds: g.total_diamonds || 0,
+      timestamp: g.create_time || g.timestamp,
+      _isNew: false,
+      _delay: 0,
+    })
+  })
+  items.sort((a, b) => b._ts - a._ts)
+  return items
 }
 
 function stopDanmakuPoll() {

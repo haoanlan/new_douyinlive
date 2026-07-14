@@ -115,7 +115,7 @@ input,select{font-family:inherit;outline:none}
   position:relative;background:var(--bg-input);border:1px solid var(--border);color:var(--text);
   border-radius:var(--radius-sm);padding:0 28px 0 10px;font-size:13px;
   cursor:pointer;display:inline-flex;align-items:center;gap:4px;box-sizing:border-box;
-  flex-shrink:0;height:var(--input-h,38px);min-width:72px;
+  flex-shrink:0;height:var(--input-h,38px);width:80px;text-align:center;justify-content:center;
 }
 .dm-limit-select svg{position:absolute;right:8px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none}
 .dm-limit-dropdown{

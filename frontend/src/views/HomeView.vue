@@ -351,7 +351,7 @@
                             <div style="flex:1;min-width:0;overflow:hidden">
                               <div style="display:flex;align-items:center;gap:6px;margin-bottom:1px;min-width:0">
                                 <span style="font-size:13px;font-weight:600;color:var(--text);flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px">{{ d.nickname || '匿名' }}</span>
-                                <span v-if="d._type === 'gift'" style="font-size:10px;padding:1px 5px;border-radius:var(--radius-xs);background:rgba(255,107,157,0.15);color:#FF6B9D;flex-shrink:0">🎁 礼物</span>
+                                <span v-if="d._type === 'gift'" style="font-size:10px;padding:1px 5px;border-radius:var(--radius-xs);background:rgba(255,107,157,0.15);color:#FF6B9D;flex-shrink:0;display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M12 8V6a3 3 0 0 0-3-3H9a3 3 0 0 0 0 6h0a3 3 0 0 0 3-3Zm0 0V6a3 3 0 0 1 3-3h0a3 3 0 0 1 0 6h0a3 3 0 0 1-3-3Z"/><path d="M12 8v13"/></svg>礼物</span>
                                 <span style="font-size:11px;padding:1px 6px;border-radius:var(--radius-xs);background:rgba(108,140,255,0.15);color:var(--accent);flex-shrink:0">{{ fmtTime(d.timestamp) }}</span>
                               </div>
                               <div v-if="d._type === 'gift'" style="font-size:12px;color:#FF6B9D;word-break:break-all;line-height:1.5">

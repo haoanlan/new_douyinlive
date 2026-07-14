@@ -1500,11 +1500,15 @@ function filterDanmaku() {
   displayedDanmaku.value = result
   // 全部模式也滚到底部（最新消息），和50/100/200一致
   if (isVscroll.value) {
-    measureVsContainer()
+    // 同步设置vsScrollTop到底部，确保首次渲染就是底部items
+    const totalH = result.length * VS_ITEM_H
+    vsScrollTop.value = Math.max(0, totalH - vsContainerH.value)
     nextTick(() => {
+      measureVsContainer()
       const list = document.getElementById('rtDanmakuList')
       if (list) {
-        vsScrollTop.value = list.scrollHeight - list.clientHeight
+        // 用实际DOM值重新校准
+        vsScrollTop.value = Math.max(0, list.scrollHeight - list.clientHeight)
         list.scrollTop = list.scrollHeight
       }
     })

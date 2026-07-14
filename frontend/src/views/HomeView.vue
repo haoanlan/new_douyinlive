@@ -1382,10 +1382,11 @@ function filterDanmaku() {
   // 合并弹幕和礼物，统一格式
   const allItems: any[] = []
   ;(_danmaku.value || []).forEach((d: any) => {
+    const ts = Number(d.timestamp || d.create_time) || 0
     allItems.push({
       _type: 'danmaku',
-      _key: 'dm_' + (d.timestamp || d.create_time) + '_' + d.nickname,
-      _ts: Number(d.timestamp || d.create_time) || 0,
+      _key: 'dm_' + ts + '_' + d.nickname,
+      _ts: ts > 1e12 ? ts : ts * 1000,
       nickname: d.nickname,
       avatar_url: d.avatar_url || d.avatar,
       content: d.content || '',
@@ -1393,10 +1394,11 @@ function filterDanmaku() {
     })
   })
   ;(_giftDetails.value || []).forEach((g: any) => {
+    const ts = Number(g.create_time || g.timestamp) || 0
     allItems.push({
       _type: 'gift',
-      _key: 'gf_' + (g.create_time || g.timestamp) + '_' + g.nickname + '_' + g.gift_name,
-      _ts: Number(g.create_time || g.timestamp) || 0,
+      _key: 'gf_' + ts + '_' + g.nickname + '_' + g.gift_name,
+      _ts: ts > 1e12 ? ts : ts * 1000,
       nickname: g.nickname,
       avatar_url: g.avatar || g.avatar_url,
       gift_name: g.gift_name || '',

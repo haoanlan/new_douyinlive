@@ -178,8 +178,8 @@ export interface DanmakuFull {
   messages: Danmaku[]
 }
 
-export function fetchDanmaku(sessionId: string): Promise<DanmakuFull> {
-  return api<DanmakuFull>(`/api/sessions/${sessionId}/danmaku?limit=99999`)
+export function fetchDanmaku(sessionId: string, limit = 99999): Promise<DanmakuFull> {
+  return api<DanmakuFull>(`/api/sessions/${sessionId}/danmaku?limit=${limit}`)
 }
 
 // ===================== Streamers =====================

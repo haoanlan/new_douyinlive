@@ -1,1 +1,0 @@
-import{r as o}from"./index-D64hskrl.js";const r=o(!1),f=o(""),i=o("");let n=null;function t(e,u){return new Promise(l=>{n=l,f.value=e,i.value=u,r.value=!0})}function c(e){r.value=!1,n&&(n(e),n=null)}function m(){return{confirmVisible:r,confirmIcon:f,confirmText:i,showConfirm:t,confirmResolve:c}}export{m as u};

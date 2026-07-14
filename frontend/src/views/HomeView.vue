@@ -87,10 +87,10 @@
                   </div>
                 </div>
                 <div class="room-card-actions">
-                  <button v-if="r.enabled" class="action-btn" @click.stop="pauseRoom(r.room_id)" title="暂停">
+                  <button v-if="r.enabled" class="action-btn" @click.stop="pauseRoomFn(r.room_id)" title="暂停">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
                   </button>
-                  <button v-else class="action-btn action-btn-resume" @click.stop="resumeRoom(r.room_id)" title="恢复">
+                  <button v-else class="action-btn action-btn-resume" @click.stop="resumeRoomFn(r.room_id)" title="恢复">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
                   </button>
                   <button class="action-btn action-btn-del" @click.stop="confirmDeleteRoom(r.room_id, r.name)" title="删除">
@@ -112,8 +112,8 @@
               <div class="modal-field">
                 <label>房间号 / 抖音号</label>
                 <div style="display:flex;gap:8px">
-                  <input v-model="addRoomInput" placeholder="输入房间号或抖音号" @keydown.enter="lookupRoom">
-                  <button class="btn btn-ghost btn-sm" @click="lookupRoom" :disabled="lookupLoading" id="lookupBtn" style="border-color:var(--border-light)">{{ lookupLoading ? '查询中...' : '查询' }}</button>
+                  <input v-model="addRoomInput" placeholder="输入房间号或抖音号" @keydown.enter="lookupRoomFn">
+                  <button class="btn btn-ghost btn-sm" @click="lookupRoomFn" :disabled="lookupLoading" id="lookupBtn" style="border-color:var(--border-light)">{{ lookupLoading ? '查询中...' : '查询' }}</button>
                 </div>
                 <div class="modal-hint">纯数字为房间号，含字母为抖音号</div>
               </div>
@@ -622,6 +622,7 @@
 import { ref, reactive, computed, onMounted, onUnmounted, nextTick, watch, provide } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useAppStore } from '../stores/app'
+import { lookupRoom, addRoom, pauseRoom, resumeRoom, removeRoom, deleteSession, fetchSessionDetail, fetchDanmaku } from '../api'
 import { esc, fmtTime, fmtSessionTime, formatDuration, fmtNum, avatarHtml, avatarHtml52, giftEmoji } from '../utils/format'
 import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
@@ -912,11 +913,11 @@ function closeAddRoom() {
   lookupData.value = null
 }
 
-async function lookupRoom() {
+async function lookupRoomFn() {
   if (!addRoomInput.value.trim()) return
   lookupLoading.value = true
   try {
-    const r = await fetch(`${API}/api/rooms/lookup?q=${encodeURIComponent(addRoomInput.value.trim())}`).then(r => r.json())
+    const r = await lookupRoom(addRoomInput.value.trim())
     if (r.error) { toast(r.error, 'error'); lookupLoading.value = false; return }
     lookupData.value = r
     addRoomName.value = r.nickname || ''
@@ -933,10 +934,7 @@ async function confirmAddRoom() {
   const avatar = lookupData.value.avatar
   addRoomSubmitting.value = true
   try {
-    const r = await fetch(`${API}/api/rooms/add`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ room_id, name })
-    }).then(r => r.json())
+    const r = await addRoom(room_id, name)
     toast(r.ok ? `已添加 ${name || room_id}` : (r.error || '添加失败'), r.ok ? 'success' : 'error')
     closeAddRoom()
     if (r.ok) {
@@ -950,10 +948,10 @@ async function confirmAddRoom() {
 }
 
 // Room actions
-async function pauseRoom(roomId: string) {
+async function pauseRoomFn(roomId: string) {
   if (!await showConfirm('<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>', '确定暂停这个房间的监控？')) return
   try {
-    const r = await fetch(`${API}/api/rooms/pause`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ room_id: roomId }) }).then(r => r.json())
+    const r = await pauseRoom(roomId)
     toast(r.ok ? '已暂停' : (r.error || '操作失败'), r.ok ? 'success' : 'error')
     if (r.ok) {
       const room = rooms.value.find(r => r.room_id === roomId)
@@ -963,9 +961,9 @@ async function pauseRoom(roomId: string) {
   } catch (e: any) { toast('网络错误: ' + e.message, 'error') }
 }
 
-async function resumeRoom(roomId: string) {
+async function resumeRoomFn(roomId: string) {
   try {
-    const r = await fetch(`${API}/api/rooms/resume`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ room_id: roomId }) }).then(r => r.json())
+    const r = await resumeRoom(roomId)
     toast(r.ok ? '已恢复' : (r.error || '操作失败'), r.ok ? 'success' : 'error')
     if (r.ok) {
       const room = rooms.value.find(r => r.room_id === roomId)
@@ -980,7 +978,7 @@ async function confirmDeleteRoom(roomId: string, name: string) {
   const confirmed = await showConfirm('🗑️', `确定删除 <strong>${esc(name || roomId)}</strong>？<br><br>将停止监控并清除所有历史数据<br>（弹幕、礼物、场次记录）<br><br>此操作不可恢复！`)
   if (!confirmed) return
   try {
-    const r = await fetch(`${API}/api/rooms/remove`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ room_id: roomId, delete_data: true }) }).then(r => r.json())
+    const r = await removeRoom(roomId, true)
     toast(r.ok ? '已删除' : (r.error || '删除失败'), r.ok ? 'success' : 'error')
     if (r.ok) {
       rooms.value = rooms.value.filter(r => r.room_id !== roomId)
@@ -1300,7 +1298,7 @@ async function deleteSessionFromList(sessionId: number) {
   const confirmed = await showConfirm('🗑️', '确定删除这场直播数据？<br><br>弹幕、礼物、在线记录将一并清除<br>此操作不可恢复！')
   if (!confirmed) return
   try {
-    const r = await fetch(`${API}/api/sessions/${sessionId}/delete`, { method: 'POST' }).then(r => r.json())
+    const r = await deleteSession(String(sessionId))
     toast(r.ok ? '场次已删除' : (r.error || '删除失败'), r.ok ? 'success' : 'error')
     if (r.ok && currentHostId.value) viewSessions(currentHostId.value)
   } catch (e: any) { toast('网络错误: ' + e.message, 'error') }
@@ -1320,7 +1318,7 @@ async function deleteSelectedSessions() {
   if (!confirmed) return
   let ok = 0, fail = 0
   for (const id of ids) {
-    try { const r = await fetch(`${API}/api/sessions/${id}/delete`, { method: 'POST' }).then(r => r.json()); r.ok ? ok++ : fail++ } catch { fail++ }
+    try { const r = await deleteSession(String(id)); r.ok ? ok++ : fail++ } catch { fail++ }
   }
   toast(`已删除 ${ok} 场${fail ? `，${fail} 场失败` : ''}`, ok > 0 ? 'success' : 'error')
   if (currentHostId.value) viewSessions(currentHostId.value)
@@ -1398,7 +1396,7 @@ async function queryAnonymous() {
   if (!_danmaku.value || !_danmaku.value.length) {
     anonLoading.value = true
     try {
-      const dmData = await fetch(`${API}/api/sessions/${currentSessionId.value}/danmaku?limit=99999`).then(r => r.json())
+      const dmData = await fetchDanmaku(String(currentSessionId.value))
       const raw = dmData.data || dmData || []
       _danmaku.value = raw.map((d: any) => ({
         ...d,
@@ -1456,7 +1454,7 @@ async function loadDanmakuData() {
   if (!currentSessionId.value || (_danmaku.value && _danmaku.value.length)) return
   anonLoading.value = true
   try {
-    const dmData = await fetch(`${API}/api/sessions/${currentSessionId.value}/danmaku?limit=99999`).then(r => r.json())
+    const dmData = await fetchDanmaku(String(currentSessionId.value))
     const raw = dmData.data || dmData || []
     _danmaku.value = raw.map((d: any) => ({
       ...d,
@@ -1485,7 +1483,7 @@ async function viewDetail(sessionId: number, fromPopState = false) {
   updateBreadcrumb()
   contentLoading.value = true
   try {
-    const data = await fetch(`${API}/api/sessions/${sessionId}/detail`).then(r => r.json())
+    const data = await fetchSessionDetail(String(sessionId))
     if (gen !== _viewGen) return  // 过期请求丢弃
     detailData.value = data
     _giftDetails.value = data.giftDetails || []
@@ -1513,7 +1511,7 @@ async function manualRefresh() {
   if (btn) { btn.disabled = true }
   if (svg) svg.classList.add('spin')
   try {
-    const data = await fetch(`${API}/api/sessions/${currentSessionId.value}/detail`).then(r => r.json())
+    const data = await fetchSessionDetail(String(currentSessionId.value))
     detailData.value = data
     _giftDetails.value = data.giftDetails || []
     if (!data.session.is_live) stopAutoRefresh()
@@ -1535,7 +1533,7 @@ function startDanmakuPoll() {
   _danmakuPollTimer = setInterval(async () => {
     if (viewLevel.value !== 'detail' || detailTab.value !== 'danmaku' || !currentSessionId.value) return
     try {
-      const dmData = await fetch(`${API}/api/sessions/${currentSessionId.value}/danmaku?limit=50`).then(r => r.json())
+      const dmData = await fetchDanmaku(String(currentSessionId.value), 50)
       const raw = (dmData.data || dmData || []).map((d: any) => ({
         ...d,
         timestamp: d.timestamp || d.create_time,
@@ -1578,7 +1576,7 @@ async function refreshDetail() {
   if (!currentSessionId.value || _refreshing) return
   _refreshing = true
   try {
-    const data = await fetch(`${API}/api/sessions/${currentSessionId.value}/detail`).then(r => r.json())
+    const data = await fetchSessionDetail(String(currentSessionId.value))
     detailData.value = data
     _giftDetails.value = data.giftDetails || []
     if (!data.session.is_live) stopAutoRefresh()

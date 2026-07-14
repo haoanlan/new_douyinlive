@@ -335,9 +335,12 @@
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><path d="M11 11l3 3"/></svg>
                         <input id="danmakuSearch" placeholder="搜索弹幕或礼物..." v-model="danmakuSearchQuery" @input="onDanmakuSearchInput">
                       </div>
-                      <div style="display:flex;gap:2px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:2px">
-                        <button v-for="opt in [{v:50,l:'50'},{v:100,l:'100'},{v:200,l:'200'},{v:0,l:'全部'}]" :key="opt.v" @click="danmakuDisplayLimit = opt.v" :style="{padding:'3px 8px',fontSize:'11px',border:'none',borderRadius:'4px',cursor:'pointer',transition:'all .15s',background: danmakuDisplayLimit === opt.v ? 'var(--accent)' : 'transparent', color: danmakuDisplayLimit === opt.v ? '#fff' : 'var(--text-muted)', fontWeight: danmakuDisplayLimit === opt.v ? '600' : '400'}">{{ opt.l }}</button>
-                      </div>
+                      <select v-model="danmakuDisplayLimit" class="dm-limit-select">
+                        <option :value="50">50条</option>
+                        <option :value="100">100条</option>
+                        <option :value="200">200条</option>
+                        <option :value="0">全部</option>
+                      </select>
                     </div>
                     <div id="rtDanmakuWrap" class="rt-danmaku-wrap" style="flex:1;display:flex;flex-direction:column;overflow:hidden">
                       <div id="rtDanmakuList" class="rt-danmaku-list" style="flex:1;overflow-y:auto;overflow-x:hidden">

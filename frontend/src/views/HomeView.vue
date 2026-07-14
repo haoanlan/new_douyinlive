@@ -1420,9 +1420,9 @@ function filterDanmaku() {
       return content.toLowerCase().includes(q) || (d.nickname || '').toLowerCase().includes(q)
     })
   } else {
-    // 正常模式：按数量限制
-    const limit = danmakuDisplayLimit.value || Infinity
-    result = allItems.slice(0, limit)
+    // 正常模式：取最新的N条
+    const limit = danmakuDisplayLimit.value
+    result = limit ? allItems.slice(-limit) : allItems
   }
 
   displayedDanmaku.value = result

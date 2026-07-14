@@ -599,3 +599,9 @@ thead .session-cb:hover{opacity:1}
 .list-enter-from{opacity:0;transform:translateY(-10px)}
 .list-leave-to{opacity:0;transform:scale(0.95)}
 .list-move{transition:transform .3s ease}
+
+/* ========== PC端弹幕Tab ========== */
+@media(min-width:769px){
+  #danmakuLeft{min-height:690px}
+  #rtDanmakuWrap{min-height:315px}
+}

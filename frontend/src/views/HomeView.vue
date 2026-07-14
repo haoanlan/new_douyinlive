@@ -791,6 +791,7 @@ function handlePopState(e: PopStateEvent) {
 // ============================================================
 // API
 // ============================================================
+const API = ''
 async function api(path: string) {
   const r = await fetch(API + path)
   if (!r.ok) throw new Error(`${r.status} ${r.statusText}`)

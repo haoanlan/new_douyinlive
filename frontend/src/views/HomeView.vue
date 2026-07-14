@@ -330,17 +330,14 @@
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
                       最新动态
                     </div>
-                    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-shrink:0">
-                      <div class="search-wrap" style="flex:1;margin-bottom:0">
+                    <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-shrink:0;flex-wrap:wrap">
+                      <div class="search-wrap" style="flex:1;min-width:120px;margin-bottom:0">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><path d="M11 11l3 3"/></svg>
                         <input id="danmakuSearch" placeholder="搜索弹幕或礼物..." v-model="danmakuSearchQuery" @input="onDanmakuSearchInput">
                       </div>
-                      <select v-model="danmakuDisplayLimit" style="background:var(--bg-card);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);padding:4px 8px;font-size:12px;cursor:pointer;outline:none">
-                        <option :value="50">50条</option>
-                        <option :value="100">100条</option>
-                        <option :value="200">200条</option>
-                        <option :value="0">全部</option>
-                      </select>
+                      <div style="display:flex;gap:2px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:2px">
+                        <button v-for="opt in [{v:50,l:'50'},{v:100,l:'100'},{v:200,l:'200'},{v:0,l:'全部'}]" :key="opt.v" @click="danmakuDisplayLimit = opt.v" :style="{padding:'3px 8px',fontSize:'11px',border:'none',borderRadius:'4px',cursor:'pointer',transition:'all .15s',background: danmakuDisplayLimit === opt.v ? 'var(--accent)' : 'transparent', color: danmakuDisplayLimit === opt.v ? '#fff' : 'var(--text-muted)', fontWeight: danmakuDisplayLimit === opt.v ? '600' : '400'}">{{ opt.l }}</button>
+                      </div>
                     </div>
                     <div id="rtDanmakuWrap" class="rt-danmaku-wrap" style="flex:1;display:flex;flex-direction:column;overflow:hidden">
                       <div id="rtDanmakuList" class="rt-danmaku-list" style="flex:1;overflow-y:auto;overflow-x:hidden">

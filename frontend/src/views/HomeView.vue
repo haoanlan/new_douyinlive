@@ -349,30 +349,61 @@
                         <div style="width:24px;height:24px;border:2.5px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite"></div>
                         <div style="font-size:12px;color:var(--text-muted)">加载中...</div>
                       </div>
-                      <div id="rtDanmakuList" class="rt-danmaku-list" style="flex:1;overflow-y:auto;overflow-x:hidden">
+                      <div id="rtDanmakuList" class="rt-danmaku-list" style="flex:1;overflow-y:auto;overflow-x:hidden" @scroll="onVsScroll">
                         <template v-if="displayedDanmaku.length > 0">
-                          <div v-for="(d, idx) in displayedDanmaku" :key="d._key" class="anon-result-item dm-item" style="padding:6px 0">
-                            <div style="flex-shrink:0;min-width:0" v-html="avatarHtml(d.avatar_url || d.avatar, d.nickname)"></div>
-                            <div style="flex:1;min-width:0;overflow:hidden">
-                              <div style="display:flex;align-items:center;gap:6px;margin-bottom:1px;min-width:0">
-                                <span style="font-size:13px;font-weight:600;color:var(--text);flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px">{{ d.nickname || '匿名' }}</span>
-                                <span v-if="d._type === 'gift'" style="font-size:10px;padding:1px 5px;border-radius:var(--radius-xs);background:rgba(255,107,157,0.15);color:#FF6B9D;flex-shrink:0">{{ fmtTime(d.timestamp) }}</span>
-                                <span v-else style="font-size:11px;padding:1px 6px;border-radius:var(--radius-xs);background:rgba(108,140,255,0.15);color:var(--accent);flex-shrink:0">{{ fmtTime(d.timestamp) }}</span>
+                          <!-- 50/100/200: 正常列表 -->
+                          <template v-if="!isVscroll">
+                            <div v-for="(d, idx) in displayedDanmaku" :key="d._key" class="anon-result-item dm-item" style="padding:6px 0">
+                              <div style="flex-shrink:0;min-width:0" v-html="avatarHtml(d.avatar_url || d.avatar, d.nickname)"></div>
+                              <div style="flex:1;min-width:0;overflow:hidden">
+                                <div style="display:flex;align-items:center;gap:6px;margin-bottom:1px;min-width:0">
+                                  <span style="font-size:13px;font-weight:600;color:var(--text);flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px">{{ d.nickname || '匿名' }}</span>
+                                  <span v-if="d._type === 'gift'" style="font-size:10px;padding:1px 5px;border-radius:var(--radius-xs);background:rgba(255,107,157,0.15);color:#FF6B9D;flex-shrink:0">{{ fmtTime(d.timestamp) }}</span>
+                                  <span v-else style="font-size:11px;padding:1px 6px;border-radius:var(--radius-xs);background:rgba(108,140,255,0.15);color:var(--accent);flex-shrink:0">{{ fmtTime(d.timestamp) }}</span>
+                                </div>
+                                <div v-if="d._type === 'gift'" style="font-size:12px;color:#FF6B9D;word-break:break-all;line-height:1.5">
+                                  送了
+                                  <img v-if="d.gift_icon" :src="d.gift_icon" style="width:16px;height:16px;vertical-align:-3px;margin:0 2px;border-radius:var(--radius-xs)">
+                                  <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="vertical-align:-2px;margin:0 2px"><rect x="3" y="8" width="18" height="13" rx="1"/><path d="M12 8V6c0-2-1.5-4-4-4S4 4 4 6h2"/><path d="M20 6c0-2-1.5-4-4-4s-4 2-4 4h2"/><line x1="12" y1="8" x2="12" y2="21"/><line x1="3" y1="13" x2="21" y2="13"/></svg>
+                                  <span style="font-weight:600">{{ d.gift_name }}</span>
+                                  <span v-if="d.to_nickname" style="margin-left:4px">→ {{ d.to_nickname }}</span>
+                                  <span v-if="d.total_diamonds" style="margin-left:6px;font-weight:600;color:var(--orange)">
+                                    <svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:-2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/></svg>
+                                    {{ d.total_diamonds.toLocaleString() }}
+                                  </span>
+                                </div>
+                                <div v-else style="font-size:12px;color:var(--text-muted);word-break:break-all;line-height:1.5" :title="d.content" v-html="replaceDouyinEmoji(esc(d.content))"></div>
                               </div>
-                              <div v-if="d._type === 'gift'" style="font-size:12px;color:#FF6B9D;word-break:break-all;line-height:1.5">
-                                送了
-                                <img v-if="d.gift_icon" :src="d.gift_icon" style="width:16px;height:16px;vertical-align:-3px;margin:0 2px;border-radius:var(--radius-xs)">
-                                <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="vertical-align:-2px;margin:0 2px"><rect x="3" y="8" width="18" height="13" rx="1"/><path d="M12 8V6c0-2-1.5-4-4-4S4 4 4 6h2"/><path d="M20 6c0-2-1.5-4-4-4s-4 2-4 4h2"/><line x1="12" y1="8" x2="12" y2="21"/><line x1="3" y1="13" x2="21" y2="13"/></svg>
-                                <span style="font-weight:600">{{ d.gift_name }}</span>
-                                <span v-if="d.to_nickname" style="margin-left:4px">→ {{ d.to_nickname }}</span>
-                                <span v-if="d.total_diamonds" style="margin-left:6px;font-weight:600;color:var(--orange)">
-                                  <svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:-2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/></svg>
-                                  {{ d.total_diamonds.toLocaleString() }}
-                                </span>
-                              </div>
-                              <div v-else style="font-size:12px;color:var(--text-muted);word-break:break-all;line-height:1.5" :title="d.content" v-html="replaceDouyinEmoji(esc(d.content))"></div>
                             </div>
-                          </div>
+                          </template>
+                          <!-- 全部: 虚拟滚动 -->
+                          <template v-else>
+                            <div :style="{ height: vsTotalH + 'px', position: 'relative', minHeight: '100%' }">
+                              <div v-for="d in vsVisible" :key="d._key" class="anon-result-item dm-item"
+                                   :style="{ position: 'absolute', top: d._vTop + 'px', left: '8px', right: '8px', padding: '6px 0' }">
+                                <div style="flex-shrink:0;min-width:0" v-html="avatarHtml(d.avatar_url || d.avatar, d.nickname)"></div>
+                                <div style="flex:1;min-width:0;overflow:hidden">
+                                  <div style="display:flex;align-items:center;gap:6px;margin-bottom:1px;min-width:0">
+                                    <span style="font-size:13px;font-weight:600;color:var(--text);flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px">{{ d.nickname || '匿名' }}</span>
+                                    <span v-if="d._type === 'gift'" style="font-size:10px;padding:1px 5px;border-radius:var(--radius-xs);background:rgba(255,107,157,0.15);color:#FF6B9D;flex-shrink:0">{{ fmtTime(d.timestamp) }}</span>
+                                    <span v-else style="font-size:11px;padding:1px 6px;border-radius:var(--radius-xs);background:rgba(108,140,255,0.15);color:var(--accent);flex-shrink:0">{{ fmtTime(d.timestamp) }}</span>
+                                  </div>
+                                  <div v-if="d._type === 'gift'" style="font-size:12px;color:#FF6B9D;word-break:break-all;line-height:1.5">
+                                    送了
+                                    <img v-if="d.gift_icon" :src="d.gift_icon" style="width:16px;height:16px;vertical-align:-3px;margin:0 2px;border-radius:var(--radius-xs)">
+                                    <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="vertical-align:-2px;margin:0 2px"><rect x="3" y="8" width="18" height="13" rx="1"/><path d="M12 8V6c0-2-1.5-4-4-4S4 4 4 6h2"/><path d="M20 6c0-2-1.5-4-4-4s-4 2-4 4h2"/><line x1="12" y1="8" x2="12" y2="21"/><line x1="3" y1="13" x2="21" y2="13"/></svg>
+                                    <span style="font-weight:600">{{ d.gift_name }}</span>
+                                    <span v-if="d.to_nickname" style="margin-left:4px">→ {{ d.to_nickname }}</span>
+                                    <span v-if="d.total_diamonds" style="margin-left:6px;font-weight:600;color:var(--orange)">
+                                      <svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:-2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/></svg>
+                                      {{ d.total_diamonds.toLocaleString() }}
+                                    </span>
+                                  </div>
+                                  <div v-else style="font-size:12px;color:var(--text-muted);word-break:break-all;line-height:1.5" :title="d.content" v-html="replaceDouyinEmoji(esc(d.content))"></div>
+                                </div>
+                              </div>
+                            </div>
+                          </template>
                         </template>
                         <div v-else-if="!danmakuLoading" class="empty" style="padding:40px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;flex:1;min-height:180px">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32" style="margin-bottom:10px;opacity:0.3"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -1362,7 +1393,36 @@ const dmLimitOpen = ref(false)
 // 点击外部关闭下拉框
 onMounted(() => {
   document.addEventListener('click', () => { dmLimitOpen.value = false })
+  nextTick(() => measureVsContainer())
 })
+
+// ========== Virtual Scroll (仅"全部"模式) ==========
+const isVscroll = computed(() => danmakuDisplayLimit.value === 0)
+const VS_ITEM_H = 52
+const VS_BUFFER = 10
+const vsScrollTop = ref(0)
+const vsContainerH = ref(500)
+const vsTotalH = computed(() => isVscroll.value ? displayedDanmaku.value.length * VS_ITEM_H : 0)
+const vsVisible = computed(() => {
+  if (!isVscroll.value) return []
+  const items = displayedDanmaku.value
+  if (!items.length) return []
+  const start = Math.max(0, Math.floor(vsScrollTop.value / VS_ITEM_H) - VS_BUFFER)
+  const visCount = Math.ceil(vsContainerH.value / VS_ITEM_H)
+  const end = Math.min(items.length, start + visCount + VS_BUFFER * 2)
+  return items.slice(start, end).map((item: any, i: number) => ({
+    ...item,
+    _vTop: (start + i) * VS_ITEM_H
+  }))
+})
+function onVsScroll(e: Event) {
+  if (!isVscroll.value) return
+  vsScrollTop.value = (e.target as HTMLElement).scrollTop
+}
+function measureVsContainer() {
+  const el = document.getElementById('rtDanmakuList')
+  if (el) vsContainerH.value = el.clientHeight
+}
 
 const _rankChanged = ref(new Set<string>())
 const danmakuLeftEl = ref<HTMLElement | null>(null)
@@ -1437,10 +1497,23 @@ function filterDanmaku() {
     result = limit ? allItems.slice(-limit) : allItems
   }
 
+  // 全部模式：反转为最新在前（虚拟滚动 scrollTop=0 看最新）
+  if (!q && !danmakuDisplayLimit.value) {
+    result.reverse()
+  }
+
   displayedDanmaku.value = result
-  // 多条数据时默认在底部（最新消息）
-  if (list) {
-    nextTick(() => { list.scrollTop = list.scrollHeight })
+  // 滚动位置：50/100/200滚到底部，全部模式滚到顶部（最新在前）
+  if (isVscroll.value) {
+    vsScrollTop.value = 0
+    if (list) {
+      list.scrollTop = 0
+      measureVsContainer()
+    }
+  } else {
+    if (list) {
+      nextTick(() => { list.scrollTop = list.scrollHeight })
+    }
   }
 }
 
@@ -1516,8 +1589,10 @@ function switchDetailTab(tab: string) {
   if ((tab === 'danmaku' || tab === 'anon') && (!_danmaku.value || !_danmaku.value.length)) {
     loadDanmakuData()
   }
-  if (tab === 'danmaku') startDanmakuPoll()
-  else stopDanmakuPoll()
+  if (tab === 'danmaku') {
+    startDanmakuPoll()
+    nextTick(() => measureVsContainer())
+  } else stopDanmakuPoll()
 }
 
 async function loadDanmakuData() {

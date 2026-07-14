@@ -1593,8 +1593,7 @@ function startDanmakuPoll() {
     // 搜索模式下暂停实时更新
     if (danmakuSearchQuery.value) return
     try {
-      const limit = Math.max(danmakuDisplayLimit.value || 50, 50)
-      const dmData = await fetchDanmaku(String(currentSessionId.value), limit)
+      const dmData = await fetchDanmaku(String(currentSessionId.value), 99999)
       const raw = (dmData.data || dmData || []).map((d: any) => ({
         ...d,
         timestamp: d.timestamp || d.create_time,
@@ -1606,19 +1605,7 @@ function startDanmakuPoll() {
           // 更新已知 ID 集合
           newItems.forEach((d: any) => _dmLastIds.add(d.timestamp + '_' + d.nickname))
           _danmaku.value = raw  // 用完整列表替换
-          // 标记新条目并添加逐条动画延迟
-          const newSet = new Set(newItems.map((d: any) => d.timestamp + '_' + d.nickname))
-          const limit2 = danmakuDisplayLimit.value || Infinity
-          const allItems = buildAllItems(raw).slice(0, limit2)
-          allItems.forEach((item: any, i: number) => {
-            if (newSet.has(item.timestamp + '_' + item.nickname)) {
-              item._isNew = true
-              // 找到在新条目中的位置来计算延迟
-              const newIdx = newItems.findIndex((n: any) => n.timestamp + '_' + n.nickname === item.timestamp + '_' + item.nickname)
-              item._delay = newIdx * 80  // 每条间隔80ms
-            }
-          })
-          displayedDanmaku.value = allItems
+          filterDanmaku()      // 统一过滤逻辑
         }
       }
     } catch (e) { /* silent */ }

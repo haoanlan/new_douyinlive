@@ -248,15 +248,16 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, inject } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { fmtTime, formatDuration } from '../utils/format'
+import { useConfirm } from '../composables/useConfirm'
 
 const props = defineProps({
   hostId: { type: String, required: true }
 })
 
 const emit = defineEmits(['viewDetail', 'toast', 'confirm'])
-const showConfirm = inject('showConfirm', async () => true)
+const { showConfirm } = useConfirm()
 
 const API = ''
 

@@ -621,6 +621,8 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, onUnmounted, nextTick, watch, provide } from 'vue'
 import { esc, fmtTime, fmtSessionTime, formatDuration, fmtNum, avatarHtml, avatarHtml52, giftEmoji } from '../utils/format'
+import { useToast } from '../composables/useToast'
+import { useConfirm } from '../composables/useConfirm'
 
 // ============================================================
 // TYPES
@@ -724,39 +726,10 @@ const filteredSessions = computed(() => {
   })
 })
 
-// Toast
-const toastMsg = ref('')
-const toastType = ref('')
-const toastClasses = computed(() => ({ show: toastMsg.value !== '', success: toastType.value === 'success', error: toastType.value === 'error' }))
-let _toastTimer: ReturnType<typeof setTimeout> | null = null
+// Toast & Confirm (from composables — singleton, shared across all components)
+const { toastMsg, toastType, toastClasses, toast } = useToast()
+const { confirmVisible, confirmIcon, confirmText, showConfirm, confirmResolve } = useConfirm()
 
-function toast(msg: string, type = '') {
-  toastMsg.value = msg
-  toastType.value = type
-  if (_toastTimer) clearTimeout(_toastTimer)
-  _toastTimer = setTimeout(() => { toastMsg.value = ''; toastType.value = '' }, 3000)
-}
-
-// Confirm modal
-const confirmVisible = ref(false)
-const confirmIcon = ref('')
-const confirmText = ref('')
-let _confirmCb: ((val: boolean) => void) | null = null
-
-function showConfirm(icon: string, html: string): Promise<boolean> {
-  return new Promise(resolve => {
-    _confirmCb = resolve
-    confirmIcon.value = icon
-    confirmText.value = html
-    confirmVisible.value = true
-  })
-}
-provide('showConfirm', showConfirm)
-
-function confirmResolve(val: boolean) {
-  confirmVisible.value = false
-  if (_confirmCb) { _confirmCb(val); _confirmCb = null }
-}
 
 // Navigation
 let _lastBackTime = 0

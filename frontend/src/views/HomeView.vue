@@ -345,9 +345,7 @@
                     </div>
                     <div id="rtDanmakuWrap" class="rt-danmaku-wrap" style="flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative">
                       <!-- 初始加载 & 条数切换 loading -->
-                      <div v-if="anonLoading || dmSwitchLoading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:10">
-                        <div class="loading-spinner" style="width:24px;height:24px;border-width:2px"></div>
-                      </div>
+                      <div v-if="anonLoading || dmSwitchLoading" class="loading" style="position:absolute;inset:0;z-index:10;min-height:0;padding:0"></div>
                       <div id="rtDanmakuList" class="rt-danmaku-list" style="flex:1;overflow-y:auto;overflow-x:hidden">
                         <template v-if="displayedDanmaku.length > 0">
                           <div v-for="(d, idx) in displayedDanmaku" :key="d._key" class="anon-result-item dm-item" style="padding:6px 0">
@@ -398,10 +396,7 @@
               </div>
               <div id="anonResult" class="anon-result" style="display:none" :style="anonMatches.length > 0 || anonSearched ? {display:'block'} : {}">
                 <div v-if="anonMatches.length === 0 && anonSearched" class="empty" style="padding:20px">未找到匹配 "{{ anonQuery }}" 的记录</div>
-                <div v-if="anonLoading" class="empty" style="padding:20px;display:flex;flex-direction:column;align-items:center;gap:10px">
-                  <div class="loading-spinner" style="width:24px;height:24px;border-width:2px"></div>
-                  <span style="font-size:12px;color:var(--text-muted)">加载弹幕数据中...</span>
-                </div>
+                <div v-if="anonLoading" class="loading" style="padding:20px;min-height:0"></div>
                 <div v-if="anonMatches.length > 0" style="font-size:12px;color:var(--text-muted);margin-bottom:10px">找到 <strong style="color:var(--text)">{{ anonMatches.length }}</strong> 条匹配记录</div>
                 <div v-for="(m, idx) in anonMatches" :key="idx" class="anon-result-item" style="animation:fadeIn .3s ease">
                   <div style="flex-shrink:0">

@@ -293,7 +293,7 @@
             <div v-else class="empty" style="padding:40px"><div class="empty-icon">—</div>暂无礼物数据</div>
           </div>
           <!-- Danmaku tab -->
-          <div v-if="detailTab === 'danmaku'" class="tab-panel active">
+          <div v-show="detailTab === 'danmaku'" class="tab-panel active">
             <div class="detail-section">
               <div id="danmakuGrid" style="display:grid;grid-template-columns:340px 1fr;gap:14px;align-items:start">
                 <!-- Left: rank -->
@@ -1592,12 +1592,9 @@ function switchDetailTab(tab: string) {
   detailTab.value = tab
   if ((tab === 'danmaku' || tab === 'anon') && (!_danmaku.value || !_danmaku.value.length)) {
     loadDanmakuData()
-  } else if (tab === 'danmaku' && displayedDanmaku.value.length === 0) {
-    filterDanmaku()  // 数据已有但列表被清空时重新过滤
   }
   if (tab === 'danmaku') {
     startDanmakuPoll()
-    nextTick(() => measureVsContainer())
   } else stopDanmakuPoll()
 }
 

@@ -1347,12 +1347,13 @@ function onDanmakuSearchInput() {
 }
 
 // 监听显示数量变化
-watch(danmakuDisplayLimit, async () => {
+watch(danmakuDisplayLimit, () => {
   displayedDanmaku.value = []  // 清空列表
-  danmakuLoading.value = true
-  await nextTick()
-  filterDanmaku()
-  setTimeout(() => { danmakuLoading.value = false }, 200)
+  danmakuLoading.value = true  // 显示loading
+  setTimeout(() => {
+    filterDanmaku()            // 加载新数据
+    danmakuLoading.value = false  // 同时隐藏loading，Vue批量渲染无重叠
+  }, 200)
 })
 
 // 下拉框开关

@@ -298497,5 +298497,1802 @@
       "disableWishList",
       "webpImage"
     ]
+  },
+  {
+    "time": "2026-07-14T20:34:15.119+08:00",
+    "giftId": "685",
+    "giftName": "粉丝团灯牌",
+    "baseName": "粉丝团灯牌",
+    "displayName": "粉丝团灯牌",
+    "diamondCount": 1,
+    "diamondPerUnit": 1,
+    "count": 1,
+    "totalDiamonds": 1,
+    "icon": [
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+    ],
+    "iconType": null,
+    "image": [
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+    ],
+    "webpImage": [
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp",
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp"
+    ],
+    "uid": "3246227810947680",
+    "nickname": "远山黛",
+    "avatar": "https://p26.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_35671d8534f67c51ef2b7be520d5f6d1.jpeg?from=3067671334",
+    "user_display_id": "26729020773",
+    "user_sec_uid": "MS4wLjABAAAA087ccatlese5zRvs62JcfjadZTJtBJjLMsq3m2miMwA_hUyMLn5vDJx40HZZU_gW",
+    "to_nickname": "西柠🦋¹²²⁰林语巷",
+    "to_avatar": "",
+    "to_user_display_id": "5757xixi",
+    "to_user_sec_uid": "MS4wLjABAAAAZW11nrW0dxDViQMqTyKIclrxqrLU2zwLfHl6rY2bW4M",
+    "traceId": "3da09463ba3535df466396b505cb3fb0",
+    "comboCount": 1,
+    "repeatEnd": null,
+    "groupCount": 1,
+    "sendType": 1,
+    "giftRaw": {
+      "image": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#405237"
+      },
+      "describe": "送出粉丝团灯牌",
+      "duration": "3200",
+      "id": "685",
+      "fansclubInfo": {
+        "minLevel": 1,
+        "insertPos": 3
+      },
+      "forLinkmic": true,
+      "forFansclub": true,
+      "type": 4,
+      "diamondCount": 1,
+      "primaryEffectId": "1768",
+      "giftLabelIcon": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png"
+        ],
+        "uri": "webcast/31e32238eaa8fcc28efd7374099dca76.png",
+        "avgColor": "#E0C8BC"
+      },
+      "name": "粉丝团灯牌",
+      "icon": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#7A536D"
+      },
+      "itemType": 1,
+      "appId": "1128",
+      "giftScene": "753",
+      "triggerWords": [
+        "粉丝"
+      ],
+      "afterSendAction": 3,
+      "bannerSchemeUrl": "https://lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/mono/lynx/revenue_gift_panel_douyin/pages/banner/progress/template.js",
+      "reqExtraType": "1",
+      "assetIds": [
+        "1768"
+      ],
+      "giftPreviewInfo": {
+        "clientCheckLeftDiamond": true
+      },
+      "giftTip": {
+        "displayText": {},
+        "backgroundColor": "#CC595C66"
+      },
+      "disableWishList": true,
+      "webpImage": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp",
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#D8EBCE"
+      }
+    },
+    "giftKeys": [
+      "image",
+      "describe",
+      "duration",
+      "id",
+      "fansclubInfo",
+      "forLinkmic",
+      "forFansclub",
+      "type",
+      "diamondCount",
+      "primaryEffectId",
+      "giftLabelIcon",
+      "name",
+      "icon",
+      "itemType",
+      "appId",
+      "giftScene",
+      "triggerWords",
+      "afterSendAction",
+      "bannerSchemeUrl",
+      "reqExtraType",
+      "assetIds",
+      "giftPreviewInfo",
+      "giftTip",
+      "disableWishList",
+      "webpImage"
+    ]
+  },
+  {
+    "time": "2026-07-14T20:34:15.323+08:00",
+    "giftId": "11045",
+    "giftName": "手打柠檬茶",
+    "baseName": "手打柠檬茶",
+    "displayName": "手打柠檬茶",
+    "diamondCount": 99,
+    "diamondPerUnit": 99,
+    "count": 1,
+    "totalDiamonds": 99,
+    "icon": [
+      "https://p3-webcast.douyinpic.com/img/webcast/182d91049bed397130374386927de468.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/182d91049bed397130374386927de468.png~tplv-obj.png"
+    ],
+    "iconType": null,
+    "image": [
+      "https://p3-webcast.douyinpic.com/img/webcast/182d91049bed397130374386927de468.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/182d91049bed397130374386927de468.png~tplv-obj.png"
+    ],
+    "webpImage": [
+      "https://p3-webcast.douyinpic.com/img/webcast/182d91049bed397130374386927de468.png~tplv-obj.webp",
+      "https://p11-webcast.douyinpic.com/img/webcast/182d91049bed397130374386927de468.png~tplv-obj.webp"
+    ],
+    "uid": "3027381479811547",
+    "nickname": "烟花♡雨泪¹²²⁰",
+    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-i-0813_oIiFDAeAEAAfzIAcA1AglAomNCimZMDBhuUYj6.jpeg?from=3067671334",
+    "user_display_id": "5209426.5209426",
+    "user_sec_uid": "MS4wLjABAAAAeSUPlI6Wlz2cJQI0QBtuoqfc1H0lYniCb6T851PFjOMStM3zGYV915q2l2iPRxM8",
+    "to_nickname": "西柠🦋¹²²⁰林语巷",
+    "to_avatar": "",
+    "to_user_display_id": "5757xixi",
+    "to_user_sec_uid": "MS4wLjABAAAAZW11nrW0dxDViQMqTyKIclrxqrLU2zwLfHl6rY2bW4M",
+    "traceId": "6df2fd47f384bfc18cb0d055b752085a",
+    "comboCount": 1,
+    "repeatEnd": null,
+    "groupCount": 1,
+    "sendType": 5,
+    "giftRaw": {
+      "image": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/182d91049bed397130374386927de468.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/182d91049bed397130374386927de468.png~tplv-obj.png"
+        ],
+        "uri": "webcast/182d91049bed397130374386927de468.png",
+        "avgColor": "#7A6053"
+      },
+      "describe": "送出手打柠檬茶",
+      "duration": "3000",
+      "id": "11045",
+      "forLinkmic": true,
+      "type": 4,
+      "diamondCount": 99,
+      "isDisplayedOnPanel": true,
+      "primaryEffectId": "1000687",
+      "name": "手打柠檬茶",
+      "icon": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/182d91049bed397130374386927de468.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/182d91049bed397130374386927de468.png~tplv-obj.png"
+        ],
+        "uri": "webcast/182d91049bed397130374386927de468.png",
+        "avgColor": "#7A5353"
+      },
+      "itemType": 1,
+      "giftScene": "1541",
+      "afterSendAction": 2,
+      "bannerSchemeUrl": "https://lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/mono/lynx/revenue_gift_panel_douyin/pages/banner/progress/template.js",
+      "reqExtraType": "2",
+      "assetIds": [
+        "1000687"
+      ],
+      "giftPreviewInfo": {
+        "clientCheckLeftDiamond": true
+      },
+      "giftTip": {
+        "displayText": {},
+        "backgroundColor": "#CC595C66"
+      },
+      "groupInfo": [
+        {
+          "groupCount": 10,
+          "groupText": "完美"
+        },
+        {
+          "groupCount": 66,
+          "groupText": "6的飞起"
+        }
+      ],
+      "webpImage": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/182d91049bed397130374386927de468.png~tplv-obj.webp",
+          "https://p11-webcast.douyinpic.com/img/webcast/182d91049bed397130374386927de468.png~tplv-obj.webp"
+        ],
+        "uri": "webcast/182d91049bed397130374386927de468.png",
+        "avgColor": "#E0BCD4"
+      },
+      "giftSource": 1
+    },
+    "giftKeys": [
+      "image",
+      "describe",
+      "duration",
+      "id",
+      "forLinkmic",
+      "type",
+      "diamondCount",
+      "isDisplayedOnPanel",
+      "primaryEffectId",
+      "name",
+      "icon",
+      "itemType",
+      "giftScene",
+      "afterSendAction",
+      "bannerSchemeUrl",
+      "reqExtraType",
+      "assetIds",
+      "giftPreviewInfo",
+      "giftTip",
+      "groupInfo",
+      "webpImage",
+      "giftSource"
+    ]
+  },
+  {
+    "time": "2026-07-14T20:34:38.847+08:00",
+    "giftId": "15903",
+    "giftName": "帽子戏法",
+    "baseName": "帽子戏法",
+    "displayName": "帽子戏法",
+    "diamondCount": 99,
+    "diamondPerUnit": 99,
+    "count": 1,
+    "totalDiamonds": 99,
+    "icon": [
+      "https://p3-webcast.douyinpic.com/img/webcast/0cfe68e3c433481085f139905f4c411f.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/0cfe68e3c433481085f139905f4c411f.png~tplv-obj.png"
+    ],
+    "iconType": null,
+    "image": [
+      "https://p3-webcast.douyinpic.com/img/webcast/0cfe68e3c433481085f139905f4c411f.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/0cfe68e3c433481085f139905f4c411f.png~tplv-obj.png"
+    ],
+    "webpImage": [
+      "https://p3-webcast.douyinpic.com/img/webcast/0cfe68e3c433481085f139905f4c411f.png~tplv-obj.webp",
+      "https://p11-webcast.douyinpic.com/img/webcast/0cfe68e3c433481085f139905f4c411f.png~tplv-obj.webp"
+    ],
+    "uid": "1382524492457700",
+    "nickname": "⭐⭐漂泊（休养身心）",
+    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-i-0813_ooAIgE3A9TSEqAVfQAwEAFNBZexDACFTDQPATy.jpeg?from=3067671334",
+    "user_display_id": "71706527504",
+    "user_sec_uid": "MS4wLjABAAAAvA2Sa97PhMoLXYXISEGRWx6TiBhhO4NkGPZuoFBHlpspg4RePkKHQHfbgoW1XC3W",
+    "to_nickname": "萱萱🍋🍋‍🟩🍒🧸🛌林语巷",
+    "to_avatar": "",
+    "to_user_display_id": "57644688826",
+    "to_user_sec_uid": "MS4wLjABAAAADIfsDB7U0DIiWMgxvb4R-9XKulWeO0wrc71WQ1olSLyiBhoaxT_OrXy9cRpIZiN7",
+    "traceId": "9ea470de7c35712072dedb7ce8a7897d",
+    "comboCount": 1,
+    "repeatEnd": null,
+    "groupCount": 1,
+    "sendType": 5,
+    "giftRaw": {
+      "image": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/0cfe68e3c433481085f139905f4c411f.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/0cfe68e3c433481085f139905f4c411f.png~tplv-obj.png"
+        ],
+        "uri": "webcast/0cfe68e3c433481085f139905f4c411f.png",
+        "avgColor": "#524937"
+      },
+      "describe": "送出帽子戏法",
+      "duration": "1000",
+      "id": "15903",
+      "forLinkmic": true,
+      "type": 2,
+      "diamondCount": 99,
+      "isDisplayedOnPanel": true,
+      "primaryEffectId": "8827",
+      "giftLabelIcon": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/347def1f8182797a829fe7b35be2c74f.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/347def1f8182797a829fe7b35be2c74f.png~tplv-obj.png"
+        ],
+        "uri": "webcast/347def1f8182797a829fe7b35be2c74f.png",
+        "avgColor": "#8F8F8F"
+      },
+      "name": "帽子戏法",
+      "icon": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/0cfe68e3c433481085f139905f4c411f.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/0cfe68e3c433481085f139905f4c411f.png~tplv-obj.png"
+        ],
+        "uri": "webcast/0cfe68e3c433481085f139905f4c411f.png",
+        "avgColor": "#373752"
+      },
+      "itemType": 1,
+      "appId": "1128",
+      "giftScene": "517",
+      "afterSendAction": 2,
+      "bannerSchemeUrl": "https://lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/mono/lynx/revenue_gift_panel_douyin/pages/banner/progress/template.js",
+      "reqExtraType": "1",
+      "assetIds": [
+        "8827"
+      ],
+      "giftPreviewInfo": {
+        "clientCheckLeftDiamond": true
+      },
+      "giftTip": {
+        "displayText": {},
+        "backgroundColor": "#CC595C66"
+      },
+      "groupInfo": [
+        {
+          "groupCount": 10,
+          "groupText": "完美"
+        },
+        {
+          "groupCount": 20,
+          "groupText": "情有独钟"
+        },
+        {
+          "groupCount": 66,
+          "groupText": "6的飞起"
+        }
+      ],
+      "disableWishList": true,
+      "webpImage": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/0cfe68e3c433481085f139905f4c411f.png~tplv-obj.webp",
+          "https://p11-webcast.douyinpic.com/img/webcast/0cfe68e3c433481085f139905f4c411f.png~tplv-obj.webp"
+        ],
+        "uri": "webcast/0cfe68e3c433481085f139905f4c411f.png",
+        "avgColor": "#EBEBFF"
+      }
+    },
+    "giftKeys": [
+      "image",
+      "describe",
+      "duration",
+      "id",
+      "forLinkmic",
+      "type",
+      "diamondCount",
+      "isDisplayedOnPanel",
+      "primaryEffectId",
+      "giftLabelIcon",
+      "name",
+      "icon",
+      "itemType",
+      "appId",
+      "giftScene",
+      "afterSendAction",
+      "bannerSchemeUrl",
+      "reqExtraType",
+      "assetIds",
+      "giftPreviewInfo",
+      "giftTip",
+      "groupInfo",
+      "disableWishList",
+      "webpImage"
+    ]
+  },
+  {
+    "time": "2026-07-14T20:34:48.658+08:00",
+    "giftId": "463",
+    "giftName": "小心心",
+    "baseName": "小心心",
+    "displayName": "小心心",
+    "diamondCount": 1,
+    "diamondPerUnit": 1,
+    "count": 1,
+    "totalDiamonds": 1,
+    "icon": [
+      "https://p11-webcast.douyinpic.com/img/webcast/7ef47758a435313180e6b78b056dda4e.png~tplv-obj.png",
+      "https://p3-webcast.douyinpic.com/img/webcast/7ef47758a435313180e6b78b056dda4e.png~tplv-obj.png"
+    ],
+    "iconType": null,
+    "image": [
+      "https://p11-webcast.douyinpic.com/img/webcast/7ef47758a435313180e6b78b056dda4e.png~tplv-obj.png",
+      "https://p3-webcast.douyinpic.com/img/webcast/7ef47758a435313180e6b78b056dda4e.png~tplv-obj.png"
+    ],
+    "webpImage": [
+      "https://p11-webcast.douyinpic.com/img/webcast/7ef47758a435313180e6b78b056dda4e.png~tplv-obj.webp",
+      "https://p3-webcast.douyinpic.com/img/webcast/7ef47758a435313180e6b78b056dda4e.png~tplv-obj.webp"
+    ],
+    "uid": "440253858456862",
+    "nickname": "用户6111975039010",
+    "avatar": "https://p26.douyinpic.com/aweme/100x100/aweme-avatar/mosaic-legacy_3792_5112637127.jpeg?from=3067671334",
+    "user_display_id": "58769265587",
+    "user_sec_uid": "MS4wLjABAAAAy1nKULL1PEJ6OG5fjPuqfRtyH2FH9QEeb9RyHe2QBwk",
+    "to_nickname": "",
+    "to_avatar": "",
+    "to_user_display_id": "",
+    "to_user_sec_uid": "",
+    "traceId": "30bdec76cfe0a0388def2a94a6d6d16e",
+    "comboCount": 1,
+    "repeatEnd": null,
+    "groupCount": 1,
+    "sendType": 4,
+    "giftRaw": {
+      "image": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/7ef47758a435313180e6b78b056dda4e.png~tplv-obj.png",
+          "https://p3-webcast.douyinpic.com/img/webcast/7ef47758a435313180e6b78b056dda4e.png~tplv-obj.png"
+        ],
+        "uri": "webcast/7ef47758a435313180e6b78b056dda4e.png",
+        "avgColor": "#A3897C"
+      },
+      "describe": "送出小心心",
+      "id": "463",
+      "forLinkmic": true,
+      "combo": true,
+      "type": 1,
+      "diamondCount": 1,
+      "isDisplayedOnPanel": true,
+      "name": "小心心",
+      "specialEffects": {
+        "66": "918",
+        "520": "915",
+        "1314": "887"
+      },
+      "icon": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/7ef47758a435313180e6b78b056dda4e.png~tplv-obj.png",
+          "https://p3-webcast.douyinpic.com/img/webcast/7ef47758a435313180e6b78b056dda4e.png~tplv-obj.png"
+        ],
+        "uri": "webcast/7ef47758a435313180e6b78b056dda4e.png",
+        "avgColor": "#CCBEA3"
+      },
+      "itemType": 1,
+      "appId": "1128",
+      "giftScene": "1653",
+      "triggerWords": [
+        "小心心",
+        "送心",
+        "喜欢",
+        "心动",
+        "感谢",
+        "感恩",
+        "支持",
+        "鼓掌",
+        "挺你",
+        "辛苦",
+        "欢迎",
+        "爱心",
+        "喜欢你"
+      ],
+      "reqExtraType": "3",
+      "giftPreviewInfo": {
+        "clientCheckLeftDiamond": true
+      },
+      "giftTip": {
+        "displayText": {},
+        "backgroundColor": "#CC595C66"
+      },
+      "groupInfo": [
+        {
+          "groupCount": 10,
+          "groupText": "完美"
+        },
+        {
+          "groupCount": 66,
+          "groupText": "6的飞起"
+        },
+        {
+          "groupCount": 188,
+          "groupText": "要抱抱"
+        },
+        {
+          "groupCount": 520,
+          "groupText": "为爱应援"
+        },
+        {
+          "groupCount": 999,
+          "groupText": "钟爱于你"
+        },
+        {
+          "groupCount": 1314,
+          "groupText": "Dou是你"
+        }
+      ],
+      "webpImage": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/7ef47758a435313180e6b78b056dda4e.png~tplv-obj.webp",
+          "https://p3-webcast.douyinpic.com/img/webcast/7ef47758a435313180e6b78b056dda4e.png~tplv-obj.webp"
+        ],
+        "uri": "webcast/7ef47758a435313180e6b78b056dda4e.png",
+        "avgColor": "#EBCECE"
+      }
+    },
+    "giftKeys": [
+      "image",
+      "describe",
+      "id",
+      "forLinkmic",
+      "combo",
+      "type",
+      "diamondCount",
+      "isDisplayedOnPanel",
+      "name",
+      "specialEffects",
+      "icon",
+      "itemType",
+      "appId",
+      "giftScene",
+      "triggerWords",
+      "reqExtraType",
+      "giftPreviewInfo",
+      "giftTip",
+      "groupInfo",
+      "webpImage"
+    ]
+  },
+  {
+    "time": "2026-07-14T20:34:51.374+08:00",
+    "giftId": "463",
+    "giftName": "小心心",
+    "baseName": "小心心",
+    "displayName": "小心心",
+    "diamondCount": 1,
+    "diamondPerUnit": 1,
+    "count": 1,
+    "totalDiamonds": 1,
+    "icon": [
+      "https://p11-webcast.douyinpic.com/img/webcast/7ef47758a435313180e6b78b056dda4e.png~tplv-obj.png",
+      "https://p3-webcast.douyinpic.com/img/webcast/7ef47758a435313180e6b78b056dda4e.png~tplv-obj.png"
+    ],
+    "iconType": null,
+    "image": [
+      "https://p11-webcast.douyinpic.com/img/webcast/7ef47758a435313180e6b78b056dda4e.png~tplv-obj.png",
+      "https://p3-webcast.douyinpic.com/img/webcast/7ef47758a435313180e6b78b056dda4e.png~tplv-obj.png"
+    ],
+    "webpImage": [
+      "https://p11-webcast.douyinpic.com/img/webcast/7ef47758a435313180e6b78b056dda4e.png~tplv-obj.webp",
+      "https://p3-webcast.douyinpic.com/img/webcast/7ef47758a435313180e6b78b056dda4e.png~tplv-obj.webp"
+    ],
+    "uid": "440253858456862",
+    "nickname": "用户6111975039010",
+    "avatar": "https://p26.douyinpic.com/aweme/100x100/aweme-avatar/mosaic-legacy_3792_5112637127.jpeg?from=3067671334",
+    "user_display_id": "58769265587",
+    "user_sec_uid": "MS4wLjABAAAAy1nKULL1PEJ6OG5fjPuqfRtyH2FH9QEeb9RyHe2QBwk",
+    "to_nickname": "",
+    "to_avatar": "",
+    "to_user_display_id": "",
+    "to_user_sec_uid": "",
+    "traceId": "30bdec76cfe0a0388def2a94a6d6d16e",
+    "comboCount": 1,
+    "repeatEnd": 1,
+    "groupCount": 1,
+    "sendType": 4,
+    "giftRaw": {
+      "image": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/7ef47758a435313180e6b78b056dda4e.png~tplv-obj.png",
+          "https://p3-webcast.douyinpic.com/img/webcast/7ef47758a435313180e6b78b056dda4e.png~tplv-obj.png"
+        ],
+        "uri": "webcast/7ef47758a435313180e6b78b056dda4e.png",
+        "avgColor": "#A3897C"
+      },
+      "describe": "送出小心心",
+      "id": "463",
+      "forLinkmic": true,
+      "combo": true,
+      "type": 1,
+      "diamondCount": 1,
+      "isDisplayedOnPanel": true,
+      "name": "小心心",
+      "specialEffects": {
+        "66": "918",
+        "520": "915",
+        "1314": "887"
+      },
+      "icon": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/7ef47758a435313180e6b78b056dda4e.png~tplv-obj.png",
+          "https://p3-webcast.douyinpic.com/img/webcast/7ef47758a435313180e6b78b056dda4e.png~tplv-obj.png"
+        ],
+        "uri": "webcast/7ef47758a435313180e6b78b056dda4e.png",
+        "avgColor": "#CCBEA3"
+      },
+      "itemType": 1,
+      "appId": "1128",
+      "giftScene": "1653",
+      "triggerWords": [
+        "小心心",
+        "送心",
+        "喜欢",
+        "心动",
+        "感谢",
+        "感恩",
+        "支持",
+        "鼓掌",
+        "挺你",
+        "辛苦",
+        "欢迎",
+        "爱心",
+        "喜欢你"
+      ],
+      "reqExtraType": "3",
+      "giftPreviewInfo": {
+        "clientCheckLeftDiamond": true
+      },
+      "giftTip": {
+        "displayText": {},
+        "backgroundColor": "#CC595C66"
+      },
+      "groupInfo": [
+        {
+          "groupCount": 10,
+          "groupText": "完美"
+        },
+        {
+          "groupCount": 66,
+          "groupText": "6的飞起"
+        },
+        {
+          "groupCount": 188,
+          "groupText": "要抱抱"
+        },
+        {
+          "groupCount": 520,
+          "groupText": "为爱应援"
+        },
+        {
+          "groupCount": 999,
+          "groupText": "钟爱于你"
+        },
+        {
+          "groupCount": 1314,
+          "groupText": "Dou是你"
+        }
+      ],
+      "webpImage": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/7ef47758a435313180e6b78b056dda4e.png~tplv-obj.webp",
+          "https://p3-webcast.douyinpic.com/img/webcast/7ef47758a435313180e6b78b056dda4e.png~tplv-obj.webp"
+        ],
+        "uri": "webcast/7ef47758a435313180e6b78b056dda4e.png",
+        "avgColor": "#EBCECE"
+      }
+    },
+    "giftKeys": [
+      "image",
+      "describe",
+      "id",
+      "forLinkmic",
+      "combo",
+      "type",
+      "diamondCount",
+      "isDisplayedOnPanel",
+      "name",
+      "specialEffects",
+      "icon",
+      "itemType",
+      "appId",
+      "giftScene",
+      "triggerWords",
+      "reqExtraType",
+      "giftPreviewInfo",
+      "giftTip",
+      "groupInfo",
+      "webpImage"
+    ]
+  },
+  {
+    "time": "2026-07-14T20:34:53.985+08:00",
+    "giftId": "3481",
+    "giftName": "你最好看",
+    "baseName": "你最好看",
+    "displayName": "你最好看",
+    "diamondCount": 2,
+    "diamondPerUnit": 2,
+    "count": 1,
+    "totalDiamonds": 2,
+    "icon": [
+      "https://p3-webcast.douyinpic.com/img/webcast/4960c39f645d524beda5d50dc372510e.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/4960c39f645d524beda5d50dc372510e.png~tplv-obj.png"
+    ],
+    "iconType": null,
+    "image": [
+      "https://p3-webcast.douyinpic.com/img/webcast/4960c39f645d524beda5d50dc372510e.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/4960c39f645d524beda5d50dc372510e.png~tplv-obj.png"
+    ],
+    "webpImage": [
+      "https://p3-webcast.douyinpic.com/img/webcast/4960c39f645d524beda5d50dc372510e.png~tplv-obj.webp",
+      "https://p11-webcast.douyinpic.com/img/webcast/4960c39f645d524beda5d50dc372510e.png~tplv-obj.webp"
+    ],
+    "uid": "440253858456862",
+    "nickname": "用户6111975039010",
+    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/mosaic-legacy_3792_5112637127.jpeg?from=3067671334",
+    "user_display_id": "58769265587",
+    "user_sec_uid": "MS4wLjABAAAAy1nKULL1PEJ6OG5fjPuqfRtyH2FH9QEeb9RyHe2QBwk",
+    "to_nickname": "",
+    "to_avatar": "",
+    "to_user_display_id": "",
+    "to_user_sec_uid": "",
+    "traceId": "d3eee1d555aa7267d92f547406ae8be4",
+    "comboCount": 1,
+    "repeatEnd": null,
+    "groupCount": 1,
+    "sendType": null,
+    "giftRaw": {
+      "image": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/4960c39f645d524beda5d50dc372510e.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/4960c39f645d524beda5d50dc372510e.png~tplv-obj.png"
+        ],
+        "uri": "webcast/4960c39f645d524beda5d50dc372510e.png",
+        "avgColor": "#7A5353"
+      },
+      "describe": "送出你最好看",
+      "id": "3481",
+      "forLinkmic": true,
+      "combo": true,
+      "type": 1,
+      "diamondCount": 2,
+      "isDisplayedOnPanel": true,
+      "name": "你最好看",
+      "icon": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/4960c39f645d524beda5d50dc372510e.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/4960c39f645d524beda5d50dc372510e.png~tplv-obj.png"
+        ],
+        "uri": "webcast/4960c39f645d524beda5d50dc372510e.png",
+        "avgColor": "#B1CCA3"
+      },
+      "itemType": 1,
+      "appId": "1128",
+      "giftScene": "1653",
+      "triggerWords": [
+        "好看",
+        "好美",
+        "漂亮",
+        "很美",
+        "太好看了",
+        "太美了",
+        "太漂亮了",
+        "最美",
+        "你最美",
+        "最帅",
+        "你最帅",
+        "男神"
+      ],
+      "reqExtraType": "3",
+      "giftPreviewInfo": {
+        "clientCheckLeftDiamond": true
+      },
+      "giftTip": {
+        "displayText": {},
+        "backgroundColor": "#CC595C66"
+      },
+      "groupInfo": [
+        {
+          "groupCount": 10,
+          "groupText": "完美"
+        },
+        {
+          "groupCount": 66,
+          "groupText": "6的飞起"
+        },
+        {
+          "groupCount": 188,
+          "groupText": "要抱抱"
+        },
+        {
+          "groupCount": 520,
+          "groupText": "为爱应援"
+        },
+        {
+          "groupCount": 999,
+          "groupText": "钟爱于你"
+        },
+        {
+          "groupCount": 1314,
+          "groupText": "Dou是你"
+        }
+      ],
+      "webpImage": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/4960c39f645d524beda5d50dc372510e.png~tplv-obj.webp",
+          "https://p11-webcast.douyinpic.com/img/webcast/4960c39f645d524beda5d50dc372510e.png~tplv-obj.webp"
+        ],
+        "uri": "webcast/4960c39f645d524beda5d50dc372510e.png",
+        "avgColor": "#E0BCBC"
+      }
+    },
+    "giftKeys": [
+      "image",
+      "describe",
+      "id",
+      "forLinkmic",
+      "combo",
+      "type",
+      "diamondCount",
+      "isDisplayedOnPanel",
+      "name",
+      "icon",
+      "itemType",
+      "appId",
+      "giftScene",
+      "triggerWords",
+      "reqExtraType",
+      "giftPreviewInfo",
+      "giftTip",
+      "groupInfo",
+      "webpImage"
+    ]
+  },
+  {
+    "time": "2026-07-14T20:34:57.133+08:00",
+    "giftId": "3481",
+    "giftName": "你最好看",
+    "baseName": "你最好看",
+    "displayName": "你最好看",
+    "diamondCount": 2,
+    "diamondPerUnit": 2,
+    "count": 1,
+    "totalDiamonds": 2,
+    "icon": [
+      "https://p3-webcast.douyinpic.com/img/webcast/4960c39f645d524beda5d50dc372510e.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/4960c39f645d524beda5d50dc372510e.png~tplv-obj.png"
+    ],
+    "iconType": null,
+    "image": [
+      "https://p3-webcast.douyinpic.com/img/webcast/4960c39f645d524beda5d50dc372510e.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/4960c39f645d524beda5d50dc372510e.png~tplv-obj.png"
+    ],
+    "webpImage": [
+      "https://p3-webcast.douyinpic.com/img/webcast/4960c39f645d524beda5d50dc372510e.png~tplv-obj.webp",
+      "https://p11-webcast.douyinpic.com/img/webcast/4960c39f645d524beda5d50dc372510e.png~tplv-obj.webp"
+    ],
+    "uid": "440253858456862",
+    "nickname": "用户6111975039010",
+    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/mosaic-legacy_3792_5112637127.jpeg?from=3067671334",
+    "user_display_id": "58769265587",
+    "user_sec_uid": "MS4wLjABAAAAy1nKULL1PEJ6OG5fjPuqfRtyH2FH9QEeb9RyHe2QBwk",
+    "to_nickname": "",
+    "to_avatar": "",
+    "to_user_display_id": "",
+    "to_user_sec_uid": "",
+    "traceId": "d3eee1d555aa7267d92f547406ae8be4",
+    "comboCount": 1,
+    "repeatEnd": 1,
+    "groupCount": 1,
+    "sendType": null,
+    "giftRaw": {
+      "image": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/4960c39f645d524beda5d50dc372510e.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/4960c39f645d524beda5d50dc372510e.png~tplv-obj.png"
+        ],
+        "uri": "webcast/4960c39f645d524beda5d50dc372510e.png",
+        "avgColor": "#7A5353"
+      },
+      "describe": "送出你最好看",
+      "id": "3481",
+      "forLinkmic": true,
+      "combo": true,
+      "type": 1,
+      "diamondCount": 2,
+      "isDisplayedOnPanel": true,
+      "name": "你最好看",
+      "icon": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/4960c39f645d524beda5d50dc372510e.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/4960c39f645d524beda5d50dc372510e.png~tplv-obj.png"
+        ],
+        "uri": "webcast/4960c39f645d524beda5d50dc372510e.png",
+        "avgColor": "#B1CCA3"
+      },
+      "itemType": 1,
+      "appId": "1128",
+      "giftScene": "1653",
+      "triggerWords": [
+        "好看",
+        "好美",
+        "漂亮",
+        "很美",
+        "太好看了",
+        "太美了",
+        "太漂亮了",
+        "最美",
+        "你最美",
+        "最帅",
+        "你最帅",
+        "男神"
+      ],
+      "reqExtraType": "3",
+      "giftPreviewInfo": {
+        "clientCheckLeftDiamond": true
+      },
+      "giftTip": {
+        "displayText": {},
+        "backgroundColor": "#CC595C66"
+      },
+      "groupInfo": [
+        {
+          "groupCount": 10,
+          "groupText": "完美"
+        },
+        {
+          "groupCount": 66,
+          "groupText": "6的飞起"
+        },
+        {
+          "groupCount": 188,
+          "groupText": "要抱抱"
+        },
+        {
+          "groupCount": 520,
+          "groupText": "为爱应援"
+        },
+        {
+          "groupCount": 999,
+          "groupText": "钟爱于你"
+        },
+        {
+          "groupCount": 1314,
+          "groupText": "Dou是你"
+        }
+      ],
+      "webpImage": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/4960c39f645d524beda5d50dc372510e.png~tplv-obj.webp",
+          "https://p11-webcast.douyinpic.com/img/webcast/4960c39f645d524beda5d50dc372510e.png~tplv-obj.webp"
+        ],
+        "uri": "webcast/4960c39f645d524beda5d50dc372510e.png",
+        "avgColor": "#E0BCBC"
+      }
+    },
+    "giftKeys": [
+      "image",
+      "describe",
+      "id",
+      "forLinkmic",
+      "combo",
+      "type",
+      "diamondCount",
+      "isDisplayedOnPanel",
+      "name",
+      "icon",
+      "itemType",
+      "appId",
+      "giftScene",
+      "triggerWords",
+      "reqExtraType",
+      "giftPreviewInfo",
+      "giftTip",
+      "groupInfo",
+      "webpImage"
+    ]
+  },
+  {
+    "time": "2026-07-14T20:34:59.957+08:00",
+    "giftId": "685",
+    "giftName": "粉丝团灯牌",
+    "baseName": "粉丝团灯牌",
+    "displayName": "粉丝团灯牌",
+    "diamondCount": 1,
+    "diamondPerUnit": 1,
+    "count": 1,
+    "totalDiamonds": 1,
+    "icon": [
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+    ],
+    "iconType": null,
+    "image": [
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+    ],
+    "webpImage": [
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp",
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp"
+    ],
+    "uid": "86598700400",
+    "nickname": "泡泡🫧（静等爱播回归版🦋）",
+    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_ff0f9b12177776eaeed06b29f1c9ca0e.jpeg?from=3067671334",
+    "user_display_id": "272249557",
+    "user_sec_uid": "MS4wLjABAAAAPG1PbdYB0BBm8UxkVl7LgY4pH4e-xFwPQT_Zrs1xvyo",
+    "to_nickname": "萱萱🍋🍋‍🟩🍒🧸🛌林语巷",
+    "to_avatar": "",
+    "to_user_display_id": "57644688826",
+    "to_user_sec_uid": "MS4wLjABAAAADIfsDB7U0DIiWMgxvb4R-9XKulWeO0wrc71WQ1olSLyiBhoaxT_OrXy9cRpIZiN7",
+    "traceId": "47e610f92c12a8b1d6bac40a42782cab",
+    "comboCount": 1,
+    "repeatEnd": null,
+    "groupCount": 1,
+    "sendType": 1,
+    "giftRaw": {
+      "image": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#7A5353"
+      },
+      "describe": "送出粉丝团灯牌",
+      "duration": "3200",
+      "id": "685",
+      "fansclubInfo": {
+        "minLevel": 1,
+        "insertPos": 3
+      },
+      "forLinkmic": true,
+      "forFansclub": true,
+      "type": 4,
+      "diamondCount": 1,
+      "primaryEffectId": "1768",
+      "giftLabelIcon": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png",
+          "https://p3-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png"
+        ],
+        "uri": "webcast/31e32238eaa8fcc28efd7374099dca76.png",
+        "avgColor": "#A37C7C"
+      },
+      "name": "粉丝团灯牌",
+      "icon": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#8F8F8F"
+      },
+      "itemType": 1,
+      "appId": "1128",
+      "giftScene": "753",
+      "triggerWords": [
+        "粉丝"
+      ],
+      "afterSendAction": 3,
+      "bannerSchemeUrl": "https://lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/mono/lynx/revenue_gift_panel_douyin/pages/banner/progress/template.js",
+      "reqExtraType": "1",
+      "assetIds": [
+        "1768"
+      ],
+      "giftPreviewInfo": {
+        "clientCheckLeftDiamond": true
+      },
+      "giftTip": {
+        "displayText": {},
+        "backgroundColor": "#CC595C66"
+      },
+      "disableWishList": true,
+      "webpImage": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp",
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#523737"
+      }
+    },
+    "giftKeys": [
+      "image",
+      "describe",
+      "duration",
+      "id",
+      "fansclubInfo",
+      "forLinkmic",
+      "forFansclub",
+      "type",
+      "diamondCount",
+      "primaryEffectId",
+      "giftLabelIcon",
+      "name",
+      "icon",
+      "itemType",
+      "appId",
+      "giftScene",
+      "triggerWords",
+      "afterSendAction",
+      "bannerSchemeUrl",
+      "reqExtraType",
+      "assetIds",
+      "giftPreviewInfo",
+      "giftTip",
+      "disableWishList",
+      "webpImage"
+    ]
+  },
+  {
+    "time": "2026-07-14T20:36:58.707+08:00",
+    "giftId": "3992",
+    "giftName": "人气票",
+    "baseName": "人气票",
+    "displayName": "人气票",
+    "diamondCount": 1,
+    "diamondPerUnit": 1,
+    "count": 1,
+    "totalDiamonds": 1,
+    "icon": [
+      "https://p3-webcast.douyinpic.com/img/webcast/e9b7db267d0501b8963d8000c091e123.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/e9b7db267d0501b8963d8000c091e123.png~tplv-obj.png"
+    ],
+    "iconType": null,
+    "image": [
+      "https://p3-webcast.douyinpic.com/img/webcast/e9b7db267d0501b8963d8000c091e123.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/e9b7db267d0501b8963d8000c091e123.png~tplv-obj.png"
+    ],
+    "webpImage": [
+      "https://p3-webcast.douyinpic.com/img/webcast/e9b7db267d0501b8963d8000c091e123.png~tplv-obj.webp",
+      "https://p11-webcast.douyinpic.com/img/webcast/e9b7db267d0501b8963d8000c091e123.png~tplv-obj.webp"
+    ],
+    "uid": "3027381479811547",
+    "nickname": "烟花♡雨泪¹²²⁰",
+    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-i-0813_oIiFDAeAEAAfzIAcA1AglAomNCimZMDBhuUYj6.jpeg?from=3067671334",
+    "user_display_id": "5209426.5209426",
+    "user_sec_uid": "MS4wLjABAAAAeSUPlI6Wlz2cJQI0QBtuoqfc1H0lYniCb6T851PFjOMStM3zGYV915q2l2iPRxM8",
+    "to_nickname": "西柠🦋¹²²⁰林语巷",
+    "to_avatar": "",
+    "to_user_display_id": "5757xixi",
+    "to_user_sec_uid": "MS4wLjABAAAAZW11nrW0dxDViQMqTyKIclrxqrLU2zwLfHl6rY2bW4M",
+    "traceId": "c24df10f65ec19ac7dc3813bba5e7781",
+    "comboCount": 1,
+    "repeatEnd": null,
+    "groupCount": 1,
+    "sendType": 4,
+    "giftRaw": {
+      "image": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/e9b7db267d0501b8963d8000c091e123.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/e9b7db267d0501b8963d8000c091e123.png~tplv-obj.png"
+        ],
+        "uri": "webcast/e9b7db267d0501b8963d8000c091e123.png",
+        "avgColor": "#B1CCA3"
+      },
+      "describe": "送出人气票",
+      "id": "3992",
+      "forLinkmic": true,
+      "combo": true,
+      "type": 1,
+      "diamondCount": 1,
+      "isDisplayedOnPanel": true,
+      "giftLabelIcon": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/6218e1b5a8c9b0d1d34bf9d1f2230a73.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/6218e1b5a8c9b0d1d34bf9d1f2230a73.png~tplv-obj.png"
+        ],
+        "uri": "webcast/6218e1b5a8c9b0d1d34bf9d1f2230a73.png",
+        "avgColor": "#FAFAFA"
+      },
+      "name": "人气票",
+      "icon": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/e9b7db267d0501b8963d8000c091e123.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/e9b7db267d0501b8963d8000c091e123.png~tplv-obj.png"
+        ],
+        "uri": "webcast/e9b7db267d0501b8963d8000c091e123.png",
+        "avgColor": "#FAE6DC"
+      },
+      "itemType": 1,
+      "appId": "1128",
+      "giftScene": "629",
+      "reqExtraType": "4",
+      "giftPreviewInfo": {
+        "clientCheckLeftDiamond": true
+      },
+      "giftTip": {
+        "displayText": {},
+        "backgroundColor": "#CC595C66"
+      },
+      "groupInfo": [
+        {
+          "groupCount": 10,
+          "groupText": "完美"
+        },
+        {
+          "groupCount": 66,
+          "groupText": "6的飞起"
+        },
+        {
+          "groupCount": 188,
+          "groupText": "要抱抱"
+        },
+        {
+          "groupCount": 520,
+          "groupText": "为爱应援"
+        },
+        {
+          "groupCount": 999,
+          "groupText": "钟爱于你"
+        },
+        {
+          "groupCount": 1314,
+          "groupText": "Dou是你"
+        }
+      ],
+      "webpImage": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/e9b7db267d0501b8963d8000c091e123.png~tplv-obj.webp",
+          "https://p11-webcast.douyinpic.com/img/webcast/e9b7db267d0501b8963d8000c091e123.png~tplv-obj.webp"
+        ],
+        "uri": "webcast/e9b7db267d0501b8963d8000c091e123.png",
+        "avgColor": "#7C9BA3"
+      }
+    },
+    "giftKeys": [
+      "image",
+      "describe",
+      "id",
+      "forLinkmic",
+      "combo",
+      "type",
+      "diamondCount",
+      "isDisplayedOnPanel",
+      "giftLabelIcon",
+      "name",
+      "icon",
+      "itemType",
+      "appId",
+      "giftScene",
+      "reqExtraType",
+      "giftPreviewInfo",
+      "giftTip",
+      "groupInfo",
+      "webpImage"
+    ]
+  },
+  {
+    "time": "2026-07-14T20:36:58.917+08:00",
+    "giftId": "3992",
+    "giftName": "人气票",
+    "baseName": "人气票",
+    "displayName": "人气票",
+    "diamondCount": 1,
+    "diamondPerUnit": 1,
+    "count": 2,
+    "totalDiamonds": 2,
+    "icon": [
+      "https://p11-webcast.douyinpic.com/img/webcast/e9b7db267d0501b8963d8000c091e123.png~tplv-obj.png",
+      "https://p3-webcast.douyinpic.com/img/webcast/e9b7db267d0501b8963d8000c091e123.png~tplv-obj.png"
+    ],
+    "iconType": null,
+    "image": [
+      "https://p11-webcast.douyinpic.com/img/webcast/e9b7db267d0501b8963d8000c091e123.png~tplv-obj.png",
+      "https://p3-webcast.douyinpic.com/img/webcast/e9b7db267d0501b8963d8000c091e123.png~tplv-obj.png"
+    ],
+    "webpImage": [
+      "https://p11-webcast.douyinpic.com/img/webcast/e9b7db267d0501b8963d8000c091e123.png~tplv-obj.webp",
+      "https://p3-webcast.douyinpic.com/img/webcast/e9b7db267d0501b8963d8000c091e123.png~tplv-obj.webp"
+    ],
+    "uid": "3027381479811547",
+    "nickname": "烟花♡雨泪¹²²⁰",
+    "avatar": "https://p26.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-i-0813_oIiFDAeAEAAfzIAcA1AglAomNCimZMDBhuUYj6.jpeg?from=3067671334",
+    "user_display_id": "5209426.5209426",
+    "user_sec_uid": "MS4wLjABAAAAeSUPlI6Wlz2cJQI0QBtuoqfc1H0lYniCb6T851PFjOMStM3zGYV915q2l2iPRxM8",
+    "to_nickname": "西柠🦋¹²²⁰林语巷",
+    "to_avatar": "",
+    "to_user_display_id": "5757xixi",
+    "to_user_sec_uid": "MS4wLjABAAAAZW11nrW0dxDViQMqTyKIclrxqrLU2zwLfHl6rY2bW4M",
+    "traceId": "240bfe14b44f7864a78cfd27e8164bdc",
+    "comboCount": 2,
+    "repeatEnd": null,
+    "groupCount": 1,
+    "sendType": 4,
+    "giftRaw": {
+      "image": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/e9b7db267d0501b8963d8000c091e123.png~tplv-obj.png",
+          "https://p3-webcast.douyinpic.com/img/webcast/e9b7db267d0501b8963d8000c091e123.png~tplv-obj.png"
+        ],
+        "uri": "webcast/e9b7db267d0501b8963d8000c091e123.png",
+        "avgColor": "#523749"
+      },
+      "describe": "送出人气票",
+      "id": "3992",
+      "forLinkmic": true,
+      "combo": true,
+      "type": 1,
+      "diamondCount": 1,
+      "isDisplayedOnPanel": true,
+      "giftLabelIcon": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/6218e1b5a8c9b0d1d34bf9d1f2230a73.png~tplv-obj.png",
+          "https://p3-webcast.douyinpic.com/img/webcast/6218e1b5a8c9b0d1d34bf9d1f2230a73.png~tplv-obj.png"
+        ],
+        "uri": "webcast/6218e1b5a8c9b0d1d34bf9d1f2230a73.png",
+        "avgColor": "#F0F0F0"
+      },
+      "name": "人气票",
+      "icon": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/e9b7db267d0501b8963d8000c091e123.png~tplv-obj.png",
+          "https://p3-webcast.douyinpic.com/img/webcast/e9b7db267d0501b8963d8000c091e123.png~tplv-obj.png"
+        ],
+        "uri": "webcast/e9b7db267d0501b8963d8000c091e123.png",
+        "avgColor": "#DCDCFA"
+      },
+      "itemType": 1,
+      "appId": "1128",
+      "giftScene": "629",
+      "reqExtraType": "4",
+      "giftPreviewInfo": {
+        "clientCheckLeftDiamond": true
+      },
+      "giftTip": {
+        "displayText": {},
+        "backgroundColor": "#CC595C66"
+      },
+      "groupInfo": [
+        {
+          "groupCount": 10,
+          "groupText": "完美"
+        },
+        {
+          "groupCount": 66,
+          "groupText": "6的飞起"
+        },
+        {
+          "groupCount": 188,
+          "groupText": "要抱抱"
+        },
+        {
+          "groupCount": 520,
+          "groupText": "为爱应援"
+        },
+        {
+          "groupCount": 999,
+          "groupText": "钟爱于你"
+        },
+        {
+          "groupCount": 1314,
+          "groupText": "Dou是你"
+        }
+      ],
+      "webpImage": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/e9b7db267d0501b8963d8000c091e123.png~tplv-obj.webp",
+          "https://p3-webcast.douyinpic.com/img/webcast/e9b7db267d0501b8963d8000c091e123.png~tplv-obj.webp"
+        ],
+        "uri": "webcast/e9b7db267d0501b8963d8000c091e123.png",
+        "avgColor": "#523749"
+      }
+    },
+    "giftKeys": [
+      "image",
+      "describe",
+      "id",
+      "forLinkmic",
+      "combo",
+      "type",
+      "diamondCount",
+      "isDisplayedOnPanel",
+      "giftLabelIcon",
+      "name",
+      "icon",
+      "itemType",
+      "appId",
+      "giftScene",
+      "reqExtraType",
+      "giftPreviewInfo",
+      "giftTip",
+      "groupInfo",
+      "webpImage"
+    ]
+  },
+  {
+    "time": "2026-07-14T20:37:01.893+08:00",
+    "giftId": "3992",
+    "giftName": "人气票",
+    "baseName": "人气票",
+    "displayName": "人气票",
+    "diamondCount": 1,
+    "diamondPerUnit": 1,
+    "count": 2,
+    "totalDiamonds": 2,
+    "icon": [
+      "https://p11-webcast.douyinpic.com/img/webcast/e9b7db267d0501b8963d8000c091e123.png~tplv-obj.png",
+      "https://p3-webcast.douyinpic.com/img/webcast/e9b7db267d0501b8963d8000c091e123.png~tplv-obj.png"
+    ],
+    "iconType": null,
+    "image": [
+      "https://p11-webcast.douyinpic.com/img/webcast/e9b7db267d0501b8963d8000c091e123.png~tplv-obj.png",
+      "https://p3-webcast.douyinpic.com/img/webcast/e9b7db267d0501b8963d8000c091e123.png~tplv-obj.png"
+    ],
+    "webpImage": [
+      "https://p11-webcast.douyinpic.com/img/webcast/e9b7db267d0501b8963d8000c091e123.png~tplv-obj.webp",
+      "https://p3-webcast.douyinpic.com/img/webcast/e9b7db267d0501b8963d8000c091e123.png~tplv-obj.webp"
+    ],
+    "uid": "3027381479811547",
+    "nickname": "烟花♡雨泪¹²²⁰",
+    "avatar": "https://p26.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-i-0813_oIiFDAeAEAAfzIAcA1AglAomNCimZMDBhuUYj6.jpeg?from=3067671334",
+    "user_display_id": "5209426.5209426",
+    "user_sec_uid": "MS4wLjABAAAAeSUPlI6Wlz2cJQI0QBtuoqfc1H0lYniCb6T851PFjOMStM3zGYV915q2l2iPRxM8",
+    "to_nickname": "西柠🦋¹²²⁰林语巷",
+    "to_avatar": "",
+    "to_user_display_id": "5757xixi",
+    "to_user_sec_uid": "MS4wLjABAAAAZW11nrW0dxDViQMqTyKIclrxqrLU2zwLfHl6rY2bW4M",
+    "traceId": "240bfe14b44f7864a78cfd27e8164bdc",
+    "comboCount": 2,
+    "repeatEnd": 1,
+    "groupCount": 1,
+    "sendType": 4,
+    "giftRaw": {
+      "image": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/e9b7db267d0501b8963d8000c091e123.png~tplv-obj.png",
+          "https://p3-webcast.douyinpic.com/img/webcast/e9b7db267d0501b8963d8000c091e123.png~tplv-obj.png"
+        ],
+        "uri": "webcast/e9b7db267d0501b8963d8000c091e123.png",
+        "avgColor": "#523749"
+      },
+      "describe": "送出人气票",
+      "id": "3992",
+      "forLinkmic": true,
+      "combo": true,
+      "type": 1,
+      "diamondCount": 1,
+      "isDisplayedOnPanel": true,
+      "giftLabelIcon": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/6218e1b5a8c9b0d1d34bf9d1f2230a73.png~tplv-obj.png",
+          "https://p3-webcast.douyinpic.com/img/webcast/6218e1b5a8c9b0d1d34bf9d1f2230a73.png~tplv-obj.png"
+        ],
+        "uri": "webcast/6218e1b5a8c9b0d1d34bf9d1f2230a73.png",
+        "avgColor": "#F0F0F0"
+      },
+      "name": "人气票",
+      "icon": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/e9b7db267d0501b8963d8000c091e123.png~tplv-obj.png",
+          "https://p3-webcast.douyinpic.com/img/webcast/e9b7db267d0501b8963d8000c091e123.png~tplv-obj.png"
+        ],
+        "uri": "webcast/e9b7db267d0501b8963d8000c091e123.png",
+        "avgColor": "#DCDCFA"
+      },
+      "itemType": 1,
+      "appId": "1128",
+      "giftScene": "629",
+      "reqExtraType": "4",
+      "giftPreviewInfo": {
+        "clientCheckLeftDiamond": true
+      },
+      "giftTip": {
+        "displayText": {},
+        "backgroundColor": "#CC595C66"
+      },
+      "groupInfo": [
+        {
+          "groupCount": 10,
+          "groupText": "完美"
+        },
+        {
+          "groupCount": 66,
+          "groupText": "6的飞起"
+        },
+        {
+          "groupCount": 188,
+          "groupText": "要抱抱"
+        },
+        {
+          "groupCount": 520,
+          "groupText": "为爱应援"
+        },
+        {
+          "groupCount": 999,
+          "groupText": "钟爱于你"
+        },
+        {
+          "groupCount": 1314,
+          "groupText": "Dou是你"
+        }
+      ],
+      "webpImage": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/e9b7db267d0501b8963d8000c091e123.png~tplv-obj.webp",
+          "https://p3-webcast.douyinpic.com/img/webcast/e9b7db267d0501b8963d8000c091e123.png~tplv-obj.webp"
+        ],
+        "uri": "webcast/e9b7db267d0501b8963d8000c091e123.png",
+        "avgColor": "#523749"
+      }
+    },
+    "giftKeys": [
+      "image",
+      "describe",
+      "id",
+      "forLinkmic",
+      "combo",
+      "type",
+      "diamondCount",
+      "isDisplayedOnPanel",
+      "giftLabelIcon",
+      "name",
+      "icon",
+      "itemType",
+      "appId",
+      "giftScene",
+      "reqExtraType",
+      "giftPreviewInfo",
+      "giftTip",
+      "groupInfo",
+      "webpImage"
+    ]
+  },
+  {
+    "time": "2026-07-14T20:37:09.322+08:00",
+    "giftId": "15867",
+    "giftName": "送你珍珠",
+    "baseName": "送你珍珠",
+    "displayName": "送你珍珠",
+    "diamondCount": 9,
+    "diamondPerUnit": 9,
+    "count": 1,
+    "totalDiamonds": 9,
+    "icon": [
+      "https://p3-webcast.douyinpic.com/img/webcast/adf53ee752d23d9c906efb1ea959b50f.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/adf53ee752d23d9c906efb1ea959b50f.png~tplv-obj.png"
+    ],
+    "iconType": null,
+    "image": [
+      "https://p3-webcast.douyinpic.com/img/webcast/adf53ee752d23d9c906efb1ea959b50f.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/adf53ee752d23d9c906efb1ea959b50f.png~tplv-obj.png"
+    ],
+    "webpImage": [
+      "https://p3-webcast.douyinpic.com/img/webcast/adf53ee752d23d9c906efb1ea959b50f.png~tplv-obj.webp",
+      "https://p11-webcast.douyinpic.com/img/webcast/adf53ee752d23d9c906efb1ea959b50f.png~tplv-obj.webp"
+    ],
+    "uid": "52121158915",
+    "nickname": "回忆每好的童年👹👹👹👹",
+    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/c640445597eacd604bc271dfd052e66b.jpeg?from=3067671334",
+    "user_display_id": "dy8xyqv2utbo",
+    "user_sec_uid": "MS4wLjABAAAANb0OUW9o_twJDTVPLHKNR7vLqCvEpKoSPiZy1ROw6uE",
+    "to_nickname": "萱萱🍋🍋‍🟩🍒🧸🛌林语巷",
+    "to_avatar": "",
+    "to_user_display_id": "57644688826",
+    "to_user_sec_uid": "MS4wLjABAAAADIfsDB7U0DIiWMgxvb4R-9XKulWeO0wrc71WQ1olSLyiBhoaxT_OrXy9cRpIZiN7",
+    "traceId": "28dd906dcb20f4d1e6007aae57e9bebe",
+    "comboCount": 1,
+    "repeatEnd": null,
+    "groupCount": 1,
+    "sendType": 4,
+    "giftRaw": {
+      "image": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/adf53ee752d23d9c906efb1ea959b50f.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/adf53ee752d23d9c906efb1ea959b50f.png~tplv-obj.png"
+        ],
+        "uri": "webcast/adf53ee752d23d9c906efb1ea959b50f.png",
+        "avgColor": "#607A53"
+      },
+      "describe": "送出送你珍珠",
+      "id": "15867",
+      "forLinkmic": true,
+      "combo": true,
+      "type": 1,
+      "diamondCount": 9,
+      "isDisplayedOnPanel": true,
+      "giftLabelIcon": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/30d467838c506971d53a2cf68dab8d1b.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/30d467838c506971d53a2cf68dab8d1b.png~tplv-obj.png"
+        ],
+        "uri": "webcast/30d467838c506971d53a2cf68dab8d1b.png",
+        "avgColor": "#E6FADC"
+      },
+      "name": "送你珍珠",
+      "icon": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/adf53ee752d23d9c906efb1ea959b50f.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/adf53ee752d23d9c906efb1ea959b50f.png~tplv-obj.png"
+        ],
+        "uri": "webcast/adf53ee752d23d9c906efb1ea959b50f.png",
+        "avgColor": "#F0F0F0"
+      },
+      "itemType": 1,
+      "appId": "1128",
+      "giftScene": "517",
+      "bannerSchemeUrl": "https://lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/mono/lynx/revenue_gift_panel_douyin/pages/banner/progress/template.js",
+      "reqExtraType": "2",
+      "giftPreviewInfo": {
+        "clientCheckLeftDiamond": true
+      },
+      "giftTip": {
+        "displayText": {},
+        "backgroundColor": "#CC595C66"
+      },
+      "groupInfo": [
+        {
+          "groupCount": 10,
+          "groupText": "完美"
+        },
+        {
+          "groupCount": 66,
+          "groupText": "6的飞起"
+        },
+        {
+          "groupCount": 188,
+          "groupText": "要抱抱"
+        },
+        {
+          "groupCount": 520,
+          "groupText": "为爱应援"
+        }
+      ],
+      "disableWishList": true,
+      "webpImage": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/adf53ee752d23d9c906efb1ea959b50f.png~tplv-obj.webp",
+          "https://p11-webcast.douyinpic.com/img/webcast/adf53ee752d23d9c906efb1ea959b50f.png~tplv-obj.webp"
+        ],
+        "uri": "webcast/adf53ee752d23d9c906efb1ea959b50f.png",
+        "avgColor": "#7C7CA3"
+      }
+    },
+    "giftKeys": [
+      "image",
+      "describe",
+      "id",
+      "forLinkmic",
+      "combo",
+      "type",
+      "diamondCount",
+      "isDisplayedOnPanel",
+      "giftLabelIcon",
+      "name",
+      "icon",
+      "itemType",
+      "appId",
+      "giftScene",
+      "bannerSchemeUrl",
+      "reqExtraType",
+      "giftPreviewInfo",
+      "giftTip",
+      "groupInfo",
+      "disableWishList",
+      "webpImage"
+    ]
+  },
+  {
+    "time": "2026-07-14T20:37:12.486+08:00",
+    "giftId": "15867",
+    "giftName": "送你珍珠",
+    "baseName": "送你珍珠",
+    "displayName": "送你珍珠",
+    "diamondCount": 9,
+    "diamondPerUnit": 9,
+    "count": 1,
+    "totalDiamonds": 9,
+    "icon": [
+      "https://p3-webcast.douyinpic.com/img/webcast/adf53ee752d23d9c906efb1ea959b50f.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/adf53ee752d23d9c906efb1ea959b50f.png~tplv-obj.png"
+    ],
+    "iconType": null,
+    "image": [
+      "https://p3-webcast.douyinpic.com/img/webcast/adf53ee752d23d9c906efb1ea959b50f.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/adf53ee752d23d9c906efb1ea959b50f.png~tplv-obj.png"
+    ],
+    "webpImage": [
+      "https://p3-webcast.douyinpic.com/img/webcast/adf53ee752d23d9c906efb1ea959b50f.png~tplv-obj.webp",
+      "https://p11-webcast.douyinpic.com/img/webcast/adf53ee752d23d9c906efb1ea959b50f.png~tplv-obj.webp"
+    ],
+    "uid": "52121158915",
+    "nickname": "回忆每好的童年👹👹👹👹",
+    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/c640445597eacd604bc271dfd052e66b.jpeg?from=3067671334",
+    "user_display_id": "dy8xyqv2utbo",
+    "user_sec_uid": "MS4wLjABAAAANb0OUW9o_twJDTVPLHKNR7vLqCvEpKoSPiZy1ROw6uE",
+    "to_nickname": "萱萱🍋🍋‍🟩🍒🧸🛌林语巷",
+    "to_avatar": "",
+    "to_user_display_id": "57644688826",
+    "to_user_sec_uid": "MS4wLjABAAAADIfsDB7U0DIiWMgxvb4R-9XKulWeO0wrc71WQ1olSLyiBhoaxT_OrXy9cRpIZiN7",
+    "traceId": "28dd906dcb20f4d1e6007aae57e9bebe",
+    "comboCount": 1,
+    "repeatEnd": 1,
+    "groupCount": 1,
+    "sendType": 4,
+    "giftRaw": {
+      "image": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/adf53ee752d23d9c906efb1ea959b50f.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/adf53ee752d23d9c906efb1ea959b50f.png~tplv-obj.png"
+        ],
+        "uri": "webcast/adf53ee752d23d9c906efb1ea959b50f.png",
+        "avgColor": "#607A53"
+      },
+      "describe": "送出送你珍珠",
+      "id": "15867",
+      "forLinkmic": true,
+      "combo": true,
+      "type": 1,
+      "diamondCount": 9,
+      "isDisplayedOnPanel": true,
+      "giftLabelIcon": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/30d467838c506971d53a2cf68dab8d1b.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/30d467838c506971d53a2cf68dab8d1b.png~tplv-obj.png"
+        ],
+        "uri": "webcast/30d467838c506971d53a2cf68dab8d1b.png",
+        "avgColor": "#E6FADC"
+      },
+      "name": "送你珍珠",
+      "icon": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/adf53ee752d23d9c906efb1ea959b50f.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/adf53ee752d23d9c906efb1ea959b50f.png~tplv-obj.png"
+        ],
+        "uri": "webcast/adf53ee752d23d9c906efb1ea959b50f.png",
+        "avgColor": "#F0F0F0"
+      },
+      "itemType": 1,
+      "appId": "1128",
+      "giftScene": "517",
+      "bannerSchemeUrl": "https://lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/mono/lynx/revenue_gift_panel_douyin/pages/banner/progress/template.js",
+      "reqExtraType": "2",
+      "giftPreviewInfo": {
+        "clientCheckLeftDiamond": true
+      },
+      "giftTip": {
+        "displayText": {},
+        "backgroundColor": "#CC595C66"
+      },
+      "groupInfo": [
+        {
+          "groupCount": 10,
+          "groupText": "完美"
+        },
+        {
+          "groupCount": 66,
+          "groupText": "6的飞起"
+        },
+        {
+          "groupCount": 188,
+          "groupText": "要抱抱"
+        },
+        {
+          "groupCount": 520,
+          "groupText": "为爱应援"
+        }
+      ],
+      "disableWishList": true,
+      "webpImage": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/adf53ee752d23d9c906efb1ea959b50f.png~tplv-obj.webp",
+          "https://p11-webcast.douyinpic.com/img/webcast/adf53ee752d23d9c906efb1ea959b50f.png~tplv-obj.webp"
+        ],
+        "uri": "webcast/adf53ee752d23d9c906efb1ea959b50f.png",
+        "avgColor": "#7C7CA3"
+      }
+    },
+    "giftKeys": [
+      "image",
+      "describe",
+      "id",
+      "forLinkmic",
+      "combo",
+      "type",
+      "diamondCount",
+      "isDisplayedOnPanel",
+      "giftLabelIcon",
+      "name",
+      "icon",
+      "itemType",
+      "appId",
+      "giftScene",
+      "bannerSchemeUrl",
+      "reqExtraType",
+      "giftPreviewInfo",
+      "giftTip",
+      "groupInfo",
+      "disableWishList",
+      "webpImage"
+    ]
   }
 ]

@@ -344,14 +344,10 @@
                       </div>
                     </div>
                     <div id="rtDanmakuWrap" class="rt-danmaku-wrap" style="flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative">
-                      <!-- 初始加载 loading（全屏遮罩，替换空状态） -->
+                      <!-- loading（初始加载 & 条数切换） -->
                       <div v-if="danmakuLoading" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;gap:8px;background:var(--bg-body)">
                         <div style="width:24px;height:24px;border:2.5px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite"></div>
                         <div style="font-size:12px;color:var(--text-muted)">加载中...</div>
-                      </div>
-                      <!-- 条数切换 loading（小spinner，不遮挡列表） -->
-                      <div v-if="dmSwitchLoading" style="position:absolute;top:6px;right:6px;z-index:10">
-                        <div style="width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite"></div>
                       </div>
                       <div id="rtDanmakuList" class="rt-danmaku-list" style="flex:1;overflow-y:auto;overflow-x:hidden">
                         <template v-if="displayedDanmaku.length > 0">
@@ -740,7 +736,7 @@ const {
   rooms, sessions, currentHostId, currentSessionId,
   pageTitle, showBackBtn, showTopNav, breadcrumbItems,
   detailData, _danmaku, _giftDetails, detailTab,
-  danmakuSearchQuery, displayedDanmaku, _newDanmakuCount, danmakuDisplayLimit, dmSwitchLoading, danmakuLoading,
+  danmakuSearchQuery, displayedDanmaku, _newDanmakuCount, danmakuDisplayLimit, danmakuLoading,
   anonQuery, anonMatches, anonSearched, anonLoading,
   selectedSessionIds,
   connectedCount, pausedCount,
@@ -1352,10 +1348,10 @@ function onDanmakuSearchInput() {
 
 // 监听显示数量变化
 watch(danmakuDisplayLimit, async () => {
-  dmSwitchLoading.value = true
+  danmakuLoading.value = true
   await nextTick()
   filterDanmaku()
-  setTimeout(() => { dmSwitchLoading.value = false }, 200)
+  setTimeout(() => { danmakuLoading.value = false }, 200)
 })
 
 // 下拉框开关

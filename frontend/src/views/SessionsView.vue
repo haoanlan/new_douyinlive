@@ -165,7 +165,7 @@
                       <line x1="12" y1="15" x2="12" y2="3"/>
                     </svg>
                   </button>
-                  <button class="action-btn action-btn-del" title="删除" @click="deleteSession(s.id)">
+                  <button class="action-btn action-btn-del" title="删除" @click="deleteSessionFromList(s.id)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                       <line x1="18" y1="6" x2="6" y2="18"/>
                       <line x1="6" y1="6" x2="18" y2="18"/>
@@ -251,6 +251,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { fmtTime, formatDuration } from '../utils/format'
 import { useConfirm } from '../composables/useConfirm'
+import { fetchSessions, deleteSession } from '../api'
 
 const props = defineProps({
   hostId: { type: String, required: true }
@@ -423,13 +424,13 @@ function downloadSelectedReports() {
   emit('toast', `正在生成 ${ids.length} 份报告...`, 'success')
 }
 
-async function deleteSession(sessionId) {
+async function deleteSessionFromList(sessionId) {
   const confirmed = await showConfirm('🗑️', '确定删除这场直播数据？<br><br>弹幕、礼物、在线记录将一并清除<br>此操作不可恢复！')
   if (!confirmed) return
   try {
-    const r = await fetch(`${API}/api/sessions/${sessionId}/delete`, { method: 'POST' }).then(r => r.json())
+    const r = await deleteSession(String(sessionId))
     emit('toast', r.ok ? '场次已删除' : (r.error || '删除失败'), r.ok ? 'success' : 'error')
-    if (r.ok) fetchSessions()
+    if (r.ok) fetchSessionsList()
   } catch(e) {
     emit('toast', '网络错误: ' + e.message, 'error')
   }
@@ -446,22 +447,20 @@ async function deleteSelectedSessions() {
   let ok = 0, fail = 0
   for (const id of ids) {
     try {
-      const r = await fetch(`${API}/api/sessions/${id}/delete`, { method: 'POST' }).then(r => r.json())
+      const r = await deleteSession(String(id))
       r.ok ? ok++ : fail++
     } catch(e) { fail++ }
   }
   emit('toast', `已删除 ${ok} 场${fail ? `，${fail} 场失败` : ''}`, ok > 0 ? 'success' : 'error')
-  fetchSessions()
+  fetchSessionsList()
 }
 
 // Data fetching
-async function fetchSessions() {
+async function fetchSessionsList() {
   loading.value = true
   error.value = ''
   try {
-    const r = await fetch(`${API}/api/hosts/${props.hostId}/sessions`)
-    const data = await r.json()
-    sessions.value = data
+    sessions.value = await fetchSessions(props.hostId)
   } catch(e) {
     error.value = e.message
   } finally {
@@ -470,6 +469,6 @@ async function fetchSessions() {
 }
 
 onMounted(() => {
-  fetchSessions()
+  fetchSessionsList()
 })
 </script>

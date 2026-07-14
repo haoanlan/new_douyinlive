@@ -407,6 +407,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { esc, fmtTime, formatDuration } from '../utils/format'
 import { replaceDouyinEmoji } from '../utils/douyin-emoji'
+import { fetchSessionDetail, fetchDanmaku } from '../api'
 
 const props = defineProps({
   sessionId: { type: String, required: true }
@@ -502,8 +503,7 @@ async function loadDanmaku() {
   if (danmakuLoading.value) return
   danmakuLoading.value = true
   try {
-    const resp = await fetch(`${API}/api/sessions/${props.sessionId}/danmaku?limit=99999`)
-    const raw = await resp.json()
+    const raw = await fetchDanmaku(props.sessionId)
     const items = raw.data || raw.danmaku || []
     danmakuData.value = items.map(d => ({
       ...d,
@@ -726,8 +726,8 @@ async function refreshDetail() {
   if (refreshing.value) return
   refreshing.value = true
   try {
-    const r = await fetch(`${API}/api/sessions/${props.sessionId}/detail`)
-    const newData = await r.json()
+    const r = await fetchSessionDetail(props.sessionId)
+    const newData = r
     smoothUpdateDetail(newData)
     if (!newData.session.is_live) stopAutoRefresh()
   } catch(e) {
@@ -741,8 +741,8 @@ async function manualRefresh() {
   refreshing.value = true
   if (refreshSvgEl.value) refreshSvgEl.value.style.animation = 'spin .6s linear infinite'
   try {
-    const r = await fetch(`${API}/api/sessions/${props.sessionId}/detail`)
-    const newData = await r.json()
+    const r = await fetchSessionDetail(props.sessionId)
+    const newData = r
     smoothUpdateDetail(newData)
     if (!newData.session.is_live) stopAutoRefresh()
   } catch(e) {
@@ -902,9 +902,8 @@ async function fetchDetail() {
   loading.value = true
   error.value = ''
   try {
-    const r = await fetch(`${API}/api/sessions/${props.sessionId}/detail`)
-    const result = await r.json()
-    data.value = result
+    const r = await fetchSessionDetail(props.sessionId)
+    data.value = r
     // Set default active tab
     activeTab.value = hasMultiAnchor.value ? 'anchors' : 'gifts'
     // Pre-render anon tab

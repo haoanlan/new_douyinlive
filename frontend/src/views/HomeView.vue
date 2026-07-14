@@ -335,12 +335,13 @@
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><path d="M11 11l3 3"/></svg>
                         <input id="danmakuSearch" placeholder="搜索弹幕或礼物..." v-model="danmakuSearchQuery" @input="onDanmakuSearchInput">
                       </div>
-                      <select v-model="danmakuDisplayLimit" class="dm-limit-select">
-                        <option :value="50">50条</option>
-                        <option :value="100">100条</option>
-                        <option :value="200">200条</option>
-                        <option :value="0">全部</option>
-                      </select>
+                      <div class="dm-limit-select" @click.stop="dmLimitOpen = !dmLimitOpen">
+                        <span>{{ danmakuDisplayLimit === 0 ? '全部' : danmakuDisplayLimit + '条' }}</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M6 9l6 6 6-6"/></svg>
+                        <div v-if="dmLimitOpen" class="dm-limit-dropdown">
+                          <div v-for="opt in [{v:50,l:'50条'},{v:100,l:'100条'},{v:200,l:'200条'},{v:0,l:'全部'}]" :key="opt.v" class="dm-limit-option" :class="{ active: danmakuDisplayLimit === opt.v }" @click.stop="danmakuDisplayLimit = opt.v; dmLimitOpen = false">{{ opt.l }}</div>
+                        </div>
+                      </div>
                     </div>
                     <div id="rtDanmakuWrap" class="rt-danmaku-wrap" style="flex:1;display:flex;flex-direction:column;overflow:hidden">
                       <div id="rtDanmakuList" class="rt-danmaku-list" style="flex:1;overflow-y:auto;overflow-x:hidden">
@@ -1335,6 +1336,14 @@ function onDanmakuSearchInput() {
 
 // 监听显示数量变化
 watch(danmakuDisplayLimit, () => { filterDanmaku() })
+
+// 下拉框开关
+const dmLimitOpen = ref(false)
+
+// 点击外部关闭下拉框
+onMounted(() => {
+  document.addEventListener('click', () => { dmLimitOpen.value = false })
+})
 
 const _rankChanged = ref(new Set<string>())
 const danmakuLeftEl = ref<HTMLElement | null>(null)

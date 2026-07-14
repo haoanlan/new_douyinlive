@@ -356,7 +356,11 @@
                               </div>
                               <div v-if="d._type === 'gift'" style="font-size:12px;color:#FF6B9D;word-break:break-all;line-height:1.5">
                                 送了 <span style="font-weight:600">{{ d.gift_name }}</span>
-                                <span v-if="d.total_diamonds" style="margin-left:4px;opacity:0.8;display:inline-flex;align-items:center;gap:2px"><svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12" style="color:#00d4ff"><path d="M2.5 9.5L12 2l9.5 7.5L12 22 2.5 9.5Zm0 0h19M12 2v20"/></svg>{{ fmtNum(d.total_diamonds) }}</span>
+                                <span v-if="d.to_nickname" style="margin-left:4px">→ {{ d.to_nickname }}</span>
+                                <span v-if="d.total_diamonds" style="margin-left:6px;font-weight:600;color:var(--orange)">
+                                  <svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:-2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/></svg>
+                                  {{ d.total_diamonds.toLocaleString() }}
+                                </span>
                               </div>
                               <div v-else style="font-size:12px;color:var(--text-muted);word-break:break-all;line-height:1.5" :title="d.content" v-html="replaceDouyinEmoji(esc(d.content))"></div>
                             </div>
@@ -1637,6 +1641,7 @@ function buildAllItems(rawDanmaku: any[]): any[] {
       avatar_url: g.avatar || g.avatar_url,
       gift_name: g.gift_name || '',
       total_diamonds: g.total_diamonds || 0,
+      to_nickname: g.to_nickname || '',
       timestamp: g.create_time || g.timestamp,
       _isNew: false,
       _delay: 0,

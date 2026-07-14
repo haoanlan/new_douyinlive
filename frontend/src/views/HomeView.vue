@@ -345,7 +345,7 @@
                     </div>
                     <div id="rtDanmakuWrap" class="rt-danmaku-wrap" style="flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative">
                       <!-- loading（初始加载 & 条数切换） -->
-                      <div v-if="danmakuLoading" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;gap:8px;background:var(--bg-body)">
+                      <div v-if="danmakuLoading" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;gap:8px;background:var(--bg)">
                         <div style="width:24px;height:24px;border:2.5px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite"></div>
                         <div style="font-size:12px;color:var(--text-muted)">加载中...</div>
                       </div>

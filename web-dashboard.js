@@ -965,7 +965,7 @@ async function handleAPI(req, res) {
         if (!giftDetailMap[key]) {
           giftDetailMap[key] = {
             nickname: g.nickname, user_sec_uid: g.user_sec_uid, gift_name: g.gift_name, to_nickname: g.to_nickname,
-            total_diamonds: 0, count: 0, avatar_url: g.avatar_url, gift_icon: null
+            total_diamonds: 0, count: 0, avatar_url: g.avatar_url, gift_icon: null, create_time: g.create_time || 0
           };
         }
         if (g.nickname && !g.nickname.startsWith('神秘人')) {
@@ -974,6 +974,8 @@ async function handleAPI(req, res) {
         }
         giftDetailMap[key].total_diamonds += g.total_diamonds || 0;
         giftDetailMap[key].count += g.repeat_count || 1;
+        // 保留最新时间
+        if ((g.create_time || 0) > giftDetailMap[key].create_time) giftDetailMap[key].create_time = g.create_time;
       }
       // 补充 avatar 和 icon
       for (const d of Object.values(giftDetailMap)) {

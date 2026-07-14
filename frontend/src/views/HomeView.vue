@@ -353,7 +353,7 @@
                         <template v-if="displayedDanmaku.length > 0">
                           <!-- 50/100/200: 正常列表 -->
                           <template v-if="!isVscroll">
-                            <div v-for="(d, idx) in displayedDanmaku" :key="d._key" class="anon-result-item dm-item" style="padding:8px 0">
+                            <div v-for="(d, idx) in displayedDanmaku" :key="d._key" class="anon-result-item dm-item" style="padding:6px 0">
                               <div style="flex-shrink:0;min-width:0" v-html="avatarHtml(d.avatar_url || d.avatar, d.nickname)"></div>
                               <div style="flex:1;min-width:0;overflow:hidden">
                                 <div style="display:flex;align-items:center;gap:6px;margin-bottom:1px;min-width:0">
@@ -380,7 +380,7 @@
                           <template v-else>
                             <div :style="{ height: vsTotalH + 'px', position: 'relative', minHeight: '100%' }">
                               <div v-for="d in vsVisible" :key="d._key" class="anon-result-item dm-item"
-                                   :style="{ position: 'absolute', top: d._vTop + 'px', left: '8px', right: '8px', padding: '8px 0' }">
+                                   :style="{ position: 'absolute', top: d._vTop + 'px', left: '8px', right: '8px', padding: '6px 0' }">
                                 <div style="flex-shrink:0;min-width:0" v-html="avatarHtml(d.avatar_url || d.avatar, d.nickname)"></div>
                                 <div style="flex:1;min-width:0;overflow:hidden">
                                   <div style="display:flex;align-items:center;gap:6px;margin-bottom:1px;min-width:0">
@@ -1398,7 +1398,7 @@ onMounted(() => {
 
 // ========== Virtual Scroll (仅"全部"模式) ==========
 const isVscroll = computed(() => danmakuDisplayLimit.value === 0)
-const VS_ITEM_H = 56
+const VS_ITEM_H = 52
 const VS_BUFFER = 10
 const vsScrollTop = ref(0)
 const vsContainerH = ref(500)
@@ -1515,7 +1515,8 @@ function filterDanmaku() {
   } else {
     const list = document.getElementById('rtDanmakuList')
     if (list) {
-      nextTick(() => { list.scrollTop = list.scrollHeight })
+      // 用requestAnimationFrame确保DOM渲染完成再滚到底部
+      requestAnimationFrame(() => { list.scrollTop = list.scrollHeight })
     }
   }
 }

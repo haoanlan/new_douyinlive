@@ -1520,6 +1520,7 @@ function switchDetailTab(tab: string) {
 
 async function loadDanmakuData() {
   if (!currentSessionId.value) return
+  displayedDanmaku.value = []  // 清空列表，让loading遮罩正确显示在空区域
   danmakuLoading.value = true
   try {
     const dmData = await fetchDanmaku(String(currentSessionId.value))

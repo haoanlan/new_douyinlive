@@ -1348,6 +1348,7 @@ function onDanmakuSearchInput() {
 
 // 监听显示数量变化
 watch(danmakuDisplayLimit, async () => {
+  displayedDanmaku.value = []  // 清空列表
   danmakuLoading.value = true
   await nextTick()
   filterDanmaku()

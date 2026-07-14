@@ -113,11 +113,10 @@ input,select{font-family:inherit;outline:none}
 /* 弹幕数量选择器 — 自定义下拉框 */
 .dm-limit-select{
   position:relative;background:var(--bg-input);border:1px solid var(--border);color:var(--text);
-  border-radius:var(--radius-sm);padding:10px 28px 10px 10px;font-size:13px;
+  border-radius:var(--radius-sm);padding:0 28px 0 10px;font-size:13px;
   cursor:pointer;display:inline-flex;align-items:center;gap:4px;box-sizing:border-box;
-  flex-shrink:0;
+  flex-shrink:0;height:var(--input-h,38px);
 }
-.dm-limit-select:focus-within{border-color:var(--accent)}
 .dm-limit-select svg{position:absolute;right:8px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none}
 .dm-limit-dropdown{
   position:absolute;top:calc(100% + 4px);right:0;min-width:100%;z-index:100;
@@ -325,7 +324,7 @@ thead .session-cb:hover{opacity:1}
 
 /* ========== SEARCH ========== */
 .search-wrap{position:relative;margin-bottom:16px}
-.search-wrap input{width:100%;padding:10px 14px 10px 38px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:13px;transition:border-color .15s}
+.search-wrap input{width:100%;padding:10px 14px 10px 38px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:13px;transition:border-color .15s;height:var(--input-h,38px);box-sizing:border-box}
 .search-wrap input:focus{border-color:var(--accent)}
 .search-wrap input::placeholder{color:var(--text-muted)}
 .search-wrap svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--text-muted)}

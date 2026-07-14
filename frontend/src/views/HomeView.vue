@@ -1409,8 +1409,8 @@ function filterDanmaku() {
     })
   })
 
-  // 按时间倒序
-  allItems.sort((a, b) => b._ts - a._ts)
+  // 按时间正序（最早在上）
+  allItems.sort((a, b) => a._ts - b._ts)
 
   let result: any[]
   if (q) {

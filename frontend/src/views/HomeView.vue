@@ -1625,7 +1625,9 @@ async function viewDetail(sessionId: number, fromPopState = false) {
   detailTab.value = 'gifts'
   detailData.value = null  // 清空旧数据，防止闪现上一个场次的内容
   _danmaku.value = []
+  displayedDanmaku.value = []
   danmakuSearchQuery.value = ''
+  danmakuDisplayLimit.value = 50  // 每个房间默认50条
   anonQuery.value = ''
   anonMatches.value = []; anonSearched.value = false; anonLoading.value = false; danmakuLoading.value = false
   if (!fromPopState) router.push({ name: 'detail', params: { sessionId: String(sessionId) } })

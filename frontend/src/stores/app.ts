@@ -53,6 +53,7 @@ export const useAppStore = defineStore('app', () => {
   const displayedDanmaku = ref<any[]>([])
   const _newDanmakuCount = ref(0)
   const danmakuDisplayLimit = ref(50)
+  const dmSwitchLoading = ref(false)
 
   // ===================== Anonymous Query =====================
   const anonQuery = ref('')
@@ -77,7 +78,7 @@ export const useAppStore = defineStore('app', () => {
     // Detail
     detailData, _danmaku, _giftDetails, detailTab,
     // Danmaku
-    danmakuSearchQuery, displayedDanmaku, _newDanmakuCount, danmakuDisplayLimit,
+    danmakuSearchQuery, displayedDanmaku, _newDanmakuCount, danmakuDisplayLimit, dmSwitchLoading,
     // Anonymous
     anonQuery, anonMatches, anonSearched, anonLoading,
     // Selection

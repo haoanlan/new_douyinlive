@@ -343,7 +343,10 @@
                         </div>
                       </div>
                     </div>
-                    <div id="rtDanmakuWrap" class="rt-danmaku-wrap" style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+                    <div id="rtDanmakuWrap" class="rt-danmaku-wrap" style="flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative">
+                      <div v-if="dmSwitchLoading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.3);z-index:10;border-radius:var(--radius)">
+                        <div class="loading-spinner" style="width:20px;height:20px;border-width:2px"></div>
+                      </div>
                       <div id="rtDanmakuList" class="rt-danmaku-list" style="flex:1;overflow-y:auto;overflow-x:hidden">
                         <template v-if="displayedDanmaku.length > 0">
                           <div v-for="(d, idx) in displayedDanmaku" :key="d._key" class="anon-result-item dm-item" :class="{ 'dm-new': d._isNew }" :style="{ animationDelay: d._delay + 'ms' }" style="padding:6px 0">
@@ -394,7 +397,10 @@
               </div>
               <div id="anonResult" class="anon-result" style="display:none" :style="anonMatches.length > 0 || anonSearched ? {display:'block'} : {}">
                 <div v-if="anonMatches.length === 0 && anonSearched" class="empty" style="padding:20px">未找到匹配 "{{ anonQuery }}" 的记录</div>
-                <div v-if="anonLoading" class="empty" style="padding:20px">加载弹幕数据中...</div>
+                <div v-if="anonLoading" class="empty" style="padding:20px;display:flex;flex-direction:column;align-items:center;gap:10px">
+                  <div class="loading-spinner" style="width:24px;height:24px;border-width:2px"></div>
+                  <span style="font-size:12px;color:var(--text-muted)">加载弹幕数据中...</span>
+                </div>
                 <div v-if="anonMatches.length > 0" style="font-size:12px;color:var(--text-muted);margin-bottom:10px">找到 <strong style="color:var(--text)">{{ anonMatches.length }}</strong> 条匹配记录</div>
                 <div v-for="(m, idx) in anonMatches" :key="idx" class="anon-result-item" style="animation:fadeIn .3s ease">
                   <div style="flex-shrink:0">
@@ -731,7 +737,7 @@ const {
   rooms, sessions, currentHostId, currentSessionId,
   pageTitle, showBackBtn, showTopNav, breadcrumbItems,
   detailData, _danmaku, _giftDetails, detailTab,
-  danmakuSearchQuery, displayedDanmaku, _newDanmakuCount, danmakuDisplayLimit,
+  danmakuSearchQuery, displayedDanmaku, _newDanmakuCount, danmakuDisplayLimit, dmSwitchLoading,
   anonQuery, anonMatches, anonSearched, anonLoading,
   selectedSessionIds,
   connectedCount, pausedCount,
@@ -1342,7 +1348,12 @@ function onDanmakuSearchInput() {
 }
 
 // 监听显示数量变化
-watch(danmakuDisplayLimit, () => { filterDanmaku() })
+watch(danmakuDisplayLimit, async () => {
+  dmSwitchLoading.value = true
+  await nextTick()
+  filterDanmaku()
+  setTimeout(() => { dmSwitchLoading.value = false }, 200)
+})
 
 // 下拉框开关
 const dmLimitOpen = ref(false)
@@ -1607,6 +1618,15 @@ function startDanmakuPoll() {
           newItems.forEach((d: any) => _dmLastIds.add(d.timestamp + '_' + d.nickname))
           _danmaku.value = raw  // 用完整列表替换
           filterDanmaku()      // 统一过滤逻辑
+          // filterDanmaku 之后标记新条目动画
+          const newSet = new Set(newItems.map((d: any) => d.timestamp + '_' + d.nickname))
+          displayedDanmaku.value = displayedDanmaku.value.map((item: any, i: number) => {
+            if (newSet.has(item.timestamp + '_' + item.nickname)) {
+              const newIdx = newItems.findIndex((n: any) => n.timestamp + '_' + n.nickname === item.timestamp + '_' + item.nickname)
+              return { ...item, _isNew: true, _delay: newIdx * 80 }
+            }
+            return item
+          })
         }
       }
     } catch (e) { /* silent */ }

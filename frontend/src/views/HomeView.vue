@@ -1378,9 +1378,7 @@ function onDanmakuSearchInput() {
 }
 
 // 监听显示数量变化
-let _skipLimitWatch = false
 watch(danmakuDisplayLimit, () => {
-  if (_skipLimitWatch) return  // 进房间初始化时跳过
   displayedDanmaku.value = []  // 清空列表
   danmakuLoading.value = true  // 显示loading
   setTimeout(() => {
@@ -1629,7 +1627,7 @@ async function viewDetail(sessionId: number, fromPopState = false) {
   _danmaku.value = []
   displayedDanmaku.value = []
   danmakuSearchQuery.value = ''
-  _skipLimitWatch = true; danmakuDisplayLimit.value = 50; _skipLimitWatch = false  // 进房间默认50条，不触发watcher
+  danmakuDisplayLimit.value = 50  // 每个房间默认50条
   anonQuery.value = ''
   anonMatches.value = []; anonSearched.value = false; anonLoading.value = false; danmakuLoading.value = false
   if (!fromPopState) router.push({ name: 'detail', params: { sessionId: String(sessionId) } })

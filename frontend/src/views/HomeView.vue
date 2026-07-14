@@ -622,7 +622,7 @@ import { ref, reactive, computed, onMounted, onUnmounted, nextTick, watch, provi
 import { useRouter, useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useAppStore } from '../stores/app'
-import { lookupRoom, addRoom, pauseRoom, resumeRoom, removeRoom, deleteSession, fetchSessionDetail, fetchDanmaku } from '../api'
+import { lookupRoom, addRoom, pauseRoom, resumeRoom, removeRoom, deleteSession, fetchSessionDetail, fetchDanmaku, fetchRooms, fetchSessions, fetchUser } from '../api'
 import { esc, fmtTime, fmtSessionTime, formatDuration, fmtNum, avatarHtml, avatarHtml52, giftEmoji } from '../utils/format'
 import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
@@ -846,7 +846,7 @@ let _roomStatusPollTimer: ReturnType<typeof setInterval> | null = null
 async function pollRoomStatus() {
   if (viewLevel.value !== 'hosts' || topNavTab.value !== 'rooms') return
   try {
-    const r = await api('/api/rooms')
+    const r = await fetchRooms()
     for (const newRoom of r) {
       const old = rooms.value.find(x => x.room_id === newRoom.room_id)
       if (old) {
@@ -1016,7 +1016,7 @@ async function showAnonymousDetail(idx: number) {
   anonDetailBody.value = '<div class="loading">加载中...</div>'
   anonDetailTitle.value = u.db_nicknames?.[0] || u.nickname || '用户详情'
   try {
-    const profile = await api(`/api/users/${u.sec_uid}`).catch(() => null)
+    const profile = await fetchUser(u.sec_uid).catch(() => null)
     const p = profile || {} as any
     let html = ''
     // Avatar + basic info
@@ -1082,7 +1082,7 @@ async function showUserProfile(secUid: string) {
   profileModalVisible.value = true
   profileModalBody.value = '<div class="loading">加载用户画像...</div>'
   try {
-    const p = await api(`/api/users/${secUid}`) as any
+    const p = await fetchUser(secUid) as any
     profileModalTitle.value = p.nickname || '用户画像'
     let html = ''
     html += `<div style="display:flex;align-items:center;gap:14px;padding:16px 0;border-bottom:1px solid var(--border);margin-bottom:14px">`
@@ -1255,7 +1255,7 @@ async function viewSessions(hostId: string, fromPopState = false) {
   updateBreadcrumb()
   contentLoading.value = true
   try {
-    const data = await api(`/api/hosts/${hostId}/sessions`) as Session[]
+    const data = await fetchSessions(hostId)
     if (gen !== _viewGen) return  // 过期请求丢弃
     sessions.value = data
     contentLoading.value = false
@@ -1605,10 +1605,10 @@ watch(() => route.params, async (params) => {
   const sessionId = params.sessionId as string
   const hostId = params.hostId as string
   if (sessionId && viewLevel.value !== 'detail') {
-    try { if (!rooms.value.length) rooms.value = await api('/api/rooms') } catch { /* ignore */ }
+    try { if (!rooms.value.length) rooms.value = await fetchRooms() } catch { /* ignore */ }
     viewDetail(Number(sessionId), true)
   } else if (hostId && viewLevel.value !== 'sessions') {
-    try { if (!rooms.value.length) rooms.value = await api('/api/rooms') } catch { /* ignore */ }
+    try { if (!rooms.value.length) rooms.value = await fetchRooms() } catch { /* ignore */ }
     viewSessions(hostId, true)
   } else if (!sessionId && !hostId && viewLevel.value !== 'hosts') {
     viewHosts(true)
@@ -1620,10 +1620,10 @@ onMounted(async () => {
   const sessionId = route.params.sessionId as string
   const hostId = route.params.hostId as string
   if (sessionId) {
-    try { rooms.value = await api('/api/rooms') } catch { /* ignore */ }
+    try { rooms.value = await fetchRooms() } catch { /* ignore */ }
     viewDetail(Number(sessionId), true)
   } else if (hostId) {
-    try { rooms.value = await api('/api/rooms') } catch { /* ignore */ }
+    try { rooms.value = await fetchRooms() } catch { /* ignore */ }
     viewSessions(hostId, true)
   } else {
     viewHosts(true)

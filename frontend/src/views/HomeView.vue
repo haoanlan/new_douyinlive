@@ -294,7 +294,13 @@
           </div>
           <!-- Danmaku tab -->
           <div v-if="detailTab === 'danmaku'" class="tab-panel active">
-            <div class="detail-section">
+            <div v-if="anonLoading" class="detail-section" style="display:flex;align-items:center;justify-content:center;min-height:200px">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:10px">
+                <div class="loading-spinner" style="width:28px;height:28px;border-width:2px"></div>
+                <span style="font-size:12px;color:var(--text-muted)">加载弹幕数据中...</span>
+              </div>
+            </div>
+            <div v-else class="detail-section">
               <div id="danmakuGrid" style="display:grid;grid-template-columns:340px 1fr;gap:14px;align-items:start">
                 <!-- Left: rank -->
                 <div ref="danmakuLeftEl" id="danmakuLeft" style="min-width:0">
@@ -344,12 +350,9 @@
                       </div>
                     </div>
                     <div id="rtDanmakuWrap" class="rt-danmaku-wrap" style="flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative">
-                      <div v-if="dmSwitchLoading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.3);z-index:10;border-radius:var(--radius)">
-                        <div class="loading-spinner" style="width:20px;height:20px;border-width:2px"></div>
-                      </div>
                       <div id="rtDanmakuList" class="rt-danmaku-list" style="flex:1;overflow-y:auto;overflow-x:hidden">
                         <template v-if="displayedDanmaku.length > 0">
-                          <div v-for="(d, idx) in displayedDanmaku" :key="d._key" class="anon-result-item dm-item" :class="{ 'dm-new': d._isNew }" :style="{ animationDelay: d._delay + 'ms' }" style="padding:6px 0">
+                          <div v-for="(d, idx) in displayedDanmaku" :key="d._key" class="anon-result-item dm-item" style="padding:6px 0">
                             <div style="flex-shrink:0;min-width:0" v-html="avatarHtml(d.avatar_url || d.avatar, d.nickname)"></div>
                             <div style="flex:1;min-width:0;overflow:hidden">
                               <div style="display:flex;align-items:center;gap:6px;margin-bottom:1px;min-width:0">
@@ -1618,15 +1621,6 @@ function startDanmakuPoll() {
           newItems.forEach((d: any) => _dmLastIds.add(d.timestamp + '_' + d.nickname))
           _danmaku.value = raw  // 用完整列表替换
           filterDanmaku()      // 统一过滤逻辑
-          // filterDanmaku 之后标记新条目动画
-          const newSet = new Set(newItems.map((d: any) => d.timestamp + '_' + d.nickname))
-          displayedDanmaku.value = displayedDanmaku.value.map((item: any, i: number) => {
-            if (newSet.has(item.timestamp + '_' + item.nickname)) {
-              const newIdx = newItems.findIndex((n: any) => n.timestamp + '_' + n.nickname === item.timestamp + '_' + item.nickname)
-              return { ...item, _isNew: true, _delay: newIdx * 80 }
-            }
-            return item
-          })
         }
       }
     } catch (e) { /* silent */ }

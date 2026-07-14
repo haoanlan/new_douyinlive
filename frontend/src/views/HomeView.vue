@@ -442,7 +442,7 @@
                   <div style="flex:1;min-width:0">
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
                       <span style="font-size:13px;font-weight:600;color:var(--text)">{{ m.nickname || '匿名' }}</span>
-                      <span style="font-size:11px;padding:1px 6px;border-radius:var(--radius-xs)" :style="{ background: m.type === '礼物' ? 'rgba(251,146,60,0.15)' : 'rgba(108,140,255,0.15)', color: m.type === '礼物' ? 'var(--orange)' : 'var(--accent)' }">{{ m.type }}</span>
+                      <span style="font-size:11px;padding:1px 6px;border-radius:var(--radius-xs)" :style="{ background: m.type.includes('礼物') ? 'rgba(251,146,60,0.15)' : 'rgba(108,140,255,0.15)', color: m.type.includes('礼物') ? 'var(--orange)' : 'var(--accent)' }">{{ m.type }}</span>
                     </div>
                     <div style="font-size:12px;color:var(--text-muted);line-height:1.6" :title="m.content || ''">
                       <template v-if="m.type === '礼物'">
@@ -1557,17 +1557,25 @@ async function queryAnonymous() {
     anonLoading.value = false
   }
   const qLower = q.toLowerCase()
-  const matches: any[] = []
+  // 按 user_sec_uid 聚合（同昵称不同人不合并）
+  const userMap: Record<string, any> = {}
+  function getOrCreate(uid: string, nickname: string) {
+    const key = uid || `_noname_${nickname}`
+    if (!userMap[key]) {
+      userMap[key] = { nickname, types: [], content: '', avatar: null, diamonds: 0, giftIcon: null, to_nickname: '', time: null }
+    }
+    return userMap[key]
+  }
   // Search danmaku
   ;(_danmaku.value || []).forEach((d: any) => {
     const name = (d.nickname || '').toLowerCase()
     const content = (d.content || '').toLowerCase()
     if (name.includes(qLower) || content.includes(qLower)) {
-      matches.push({
-        type: '弹幕', nickname: d.nickname, content: d.content,
-        time: d.timestamp, avatar: d.avatar_url,
-        diamonds: 0, giftIcon: null, to_nickname: '', displayText: (d.content || '').substring(0, 60)
-      })
+      const entry = getOrCreate(d.user_sec_uid || d.sec_uid, d.nickname)
+      entry.types.push('弹幕')
+      if (!entry.content) entry.content = (d.content || '').substring(0, 60)
+      if (!entry.avatar && d.avatar_url) entry.avatar = d.avatar_url
+      if (!entry.time || (d.timestamp && d.timestamp > entry.time)) entry.time = d.timestamp
     }
   })
   // Search gifts
@@ -1575,17 +1583,28 @@ async function queryAnonymous() {
     const nameLower = (g.nickname || '').toLowerCase()
     const giftLower = (g.gift_name || '').toLowerCase()
     if (nameLower.includes(qLower) || giftLower.includes(qLower)) {
-      matches.push({
-        type: '礼物', nickname: g.nickname,
-        content: (g.gift_name || '礼物') + ' ×' + g.count,
-        time: null, avatar: g.avatar_url,
-        diamonds: g.total_diamonds || 0,
-        giftIcon: g.gift_icon || null,
-        to_nickname: g.to_nickname || '',
-        displayText: (g.gift_name || '礼物') + ' ×' + g.count
-      })
+      const entry = getOrCreate(g.user_sec_uid, g.nickname)
+      entry.types.push('礼物')
+      if (!entry.content) entry.content = (g.gift_name || '礼物') + ' ×' + g.count
+      else entry.content += ' | ' + (g.gift_name || '礼物') + ' ×' + g.count
+      if (!entry.avatar && g.avatar_url) entry.avatar = g.avatar_url
+      entry.diamonds += g.total_diamonds || 0
+      if (!entry.giftIcon) entry.giftIcon = g.gift_icon || null
+      if (g.to_nickname) entry.to_nickname = g.to_nickname
     }
   })
+  // 转为数组，类型合并显示
+  const matches = Object.values(userMap).map((u: any) => ({
+    type: u.types.join('+'),
+    nickname: u.nickname,
+    content: u.content,
+    time: u.time,
+    avatar: u.avatar,
+    diamonds: u.diamonds,
+    giftIcon: u.giftIcon,
+    to_nickname: u.to_nickname,
+    displayText: u.content,
+  }))
   anonSearched.value = true
   anonMatches.value = matches
 }

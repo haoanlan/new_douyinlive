@@ -1647,6 +1647,7 @@ onUnmounted(() => {
   window.removeEventListener('popstate', handlePopState)
   document.removeEventListener('click', handleDocClick)
   stopAutoRefresh()
+  stopDanmakuPoll()
 })
 
 // Expose methods for child components

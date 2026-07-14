@@ -1,155 +1,87 @@
+/**
+ * App Store — 核心状态集中管理
+ * HomeView 通过 storeToRefs 访问响应式状态
+ */
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
-import type {
-  Room,
-  Session,
-  SessionDetail,
-  Summary,
-  AnonymousLookup,
-  Danmaku,
-  GiftDetail,
-} from '@/api'
-import {
-  fetchSummary,
-  fetchRooms,
-  fetchSessions,
-  fetchSessionDetail,
-  fetchDanmaku,
-} from '@/api'
+import { ref, reactive, computed } from 'vue'
 
 export const useAppStore = defineStore('app', () => {
-  // ===================== Core State =====================
-  const view = ref<string>('hosts')
-  const hostId = ref<string | null>(null)
-  const sessionId = ref<string | null>(null)
-  const topNavTab = ref<string>('rooms')
-  const tab = ref<string>('gifts')
-  const _gen = ref<number>(0)
-
-  // ===================== Data Cache =====================
-  const rooms = ref<Room[]>([])
-  const sessions = ref<Session[]>([])
-  const summary = ref<Summary>({})
-  const detailData = ref<SessionDetail | null>(null)
-  const danmakuData = ref<Danmaku[]>([])
-
-  // ===================== Breadcrumbs =====================
-  interface Breadcrumb {
-    label: string
-    action?: () => void
-  }
-
-  const breadcrumbs = computed<Breadcrumb[]>(() => {
-    const crumbs: Breadcrumb[] = []
-    if (view.value === 'sessions' || view.value === 'detail') {
-      crumbs.push({
-        label: '房间管理',
-        action: () => {
-          view.value = 'hosts'
-          hostId.value = null
-          sessionId.value = null
-        },
-      })
-    }
-    if (view.value === 'detail') {
-      crumbs.push({
-        label: '场次列表',
-        action: () => {
-          view.value = 'sessions'
-          sessionId.value = null
-        },
-      })
-    }
-    return crumbs
-  })
-
-  // ===================== Batch Selection =====================
-  const batchSelected = ref<string[]>([])
-
-  function toggleBatchSelect(sessionIdStr: string) {
-    const idx = batchSelected.value.indexOf(sessionIdStr)
-    if (idx >= 0) {
-      batchSelected.value.splice(idx, 1)
-    } else {
-      batchSelected.value.push(sessionIdStr)
-    }
-  }
-
-  function clearBatchSelection() {
-    batchSelected.value = []
-  }
-
-  // ===================== Actions =====================
-  async function loadSummary() {
-    summary.value = await fetchSummary()
-  }
-
-  async function loadRooms() {
-    rooms.value = await fetchRooms()
-  }
-
-  async function loadSessions(hostIdStr: string) {
-    sessions.value = await fetchSessions(hostIdStr)
-  }
-
-  async function loadDetail(sessionIdStr: string) {
-    detailData.value = await fetchSessionDetail(sessionIdStr)
-  }
-
-  async function loadDanmaku(sessionIdStr: string) {
-    const result = await fetchDanmaku(sessionIdStr)
-    danmakuData.value = result.messages || []
-  }
+  // ===================== View State =====================
+  const contentLoading = ref(true)
+  const contentFadeIn = ref(false)
+  const topNavTab = ref<'rooms' | 'search' | 'profile'>('rooms')
+  const viewLevel = ref<'hosts' | 'sessions' | 'detail'>('hosts')
 
   // ===================== Navigation =====================
-  function navigateToHosts() {
-    view.value = 'hosts'
-    hostId.value = null
-    sessionId.value = null
-    topNavTab.value = 'rooms'
-    tab.value = 'gifts'
+  const currentHostId = ref<string | null>(null)
+  const currentSessionId = ref<number | null>(null)
+  const pageTitle = ref('直播监控')
+  const showBackBtn = ref(false)
+  const showTopNav = ref(true)
+  const breadcrumbItems = ref<{ label: string; onClick?: () => void }[]>([])
+
+  // ===================== Data =====================
+  interface Room {
+    room_id: string; name: string; avatar: string; enabled: boolean
+    connected: boolean; recording: boolean; session_count: number; _connecting?: boolean
+  }
+  interface Summary {
+    total_sessions: number; total_gifts: number; total_diamonds: number
+    total_danmaku: number; unique_users: number
+  }
+  interface Session {
+    id: number; title: string; is_live: boolean; started_at: string; ended_at: string
+    duration_min: number; gift_count: number; total_diamonds: number
+    danmaku_count: number; user_count: number; stats_like: number
   }
 
-  function navigateToSessions(newHostId: string) {
-    view.value = 'sessions'
-    hostId.value = newHostId
-    sessionId.value = null
-    tab.value = 'gifts'
-  }
+  const rooms = ref<Room[]>([])
+  const summary = reactive<Summary>({
+    total_sessions: 0, total_gifts: 0, total_diamonds: 0,
+    total_danmaku: 0, unique_users: 0
+  })
+  const sessions = ref<Session[]>([])
 
-  function navigateToDetail(newSessionId: string) {
-    view.value = 'detail'
-    sessionId.value = newSessionId
-    tab.value = 'gifts'
-  }
+  // ===================== Detail =====================
+  const detailData = ref<any>(null)
+  const _danmaku = ref<any[]>([])
+  const _giftDetails = ref<any[]>([])
+  const detailTab = ref('gifts')
+
+  // ===================== Danmaku =====================
+  const danmakuSearchQuery = ref('')
+  const displayedDanmaku = ref<any[]>([])
+  const _newDanmakuCount = ref(0)
+
+  // ===================== Anonymous Query =====================
+  const anonQuery = ref('')
+  const anonMatches = ref<any[]>([])
+  const anonSearched = ref(false)
+  const anonLoading = ref(false)
+
+  // ===================== Batch Selection =====================
+  const selectedSessionIds = ref<number[]>([])
+
+  // ===================== Computed =====================
+  const connectedCount = computed(() => rooms.value.filter(r => r.connected).length)
+  const pausedCount = computed(() => rooms.value.filter(r => !r.enabled).length)
 
   return {
-    // State
-    view,
-    hostId,
-    sessionId,
-    topNavTab,
-    tab,
-    _gen,
+    // View
+    contentLoading, contentFadeIn, topNavTab, viewLevel,
+    // Navigation
+    currentHostId, currentSessionId, pageTitle, showBackBtn, showTopNav, breadcrumbItems,
     // Data
-    rooms,
-    sessions,
-    summary,
-    detailData,
-    danmakuData,
+    rooms, summary, sessions,
+    // Detail
+    detailData, _danmaku, _giftDetails, detailTab,
+    // Danmaku
+    danmakuSearchQuery, displayedDanmaku, _newDanmakuCount,
+    // Anonymous
+    anonQuery, anonMatches, anonSearched, anonLoading,
+    // Selection
+    selectedSessionIds,
     // Computed
-    breadcrumbs,
-    batchSelected,
-    // Actions
-    toggleBatchSelect,
-    clearBatchSelection,
-    loadSummary,
-    loadRooms,
-    loadSessions,
-    loadDetail,
-    loadDanmaku,
-    navigateToHosts,
-    navigateToSessions,
-    navigateToDetail,
+    connectedCount, pausedCount,
   }
 })

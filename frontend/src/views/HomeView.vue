@@ -620,6 +620,8 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, onUnmounted, nextTick, watch, provide } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useAppStore } from '../stores/app'
 import { esc, fmtTime, fmtSessionTime, formatDuration, fmtNum, avatarHtml, avatarHtml52, giftEmoji } from '../utils/format'
 import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
@@ -696,27 +698,22 @@ interface LookupData {
 }
 
 // ============================================================
-// STATE
+// STATE (from Pinia store)
 // ============================================================
-const API = ''
-const contentLoading = ref(true)
-const contentFadeIn = ref(false)
-const topNavTab = ref<'rooms' | 'search' | 'profile'>('rooms')
-const viewLevel = ref<'hosts' | 'sessions' | 'detail'>('hosts')
+const store = useAppStore()
+const {
+  contentLoading, contentFadeIn, topNavTab, viewLevel,
+  rooms, sessions, currentHostId, currentSessionId,
+  pageTitle, showBackBtn, showTopNav, breadcrumbItems,
+  detailData, _danmaku, _giftDetails, detailTab,
+  danmakuSearchQuery, displayedDanmaku, _newDanmakuCount,
+  anonQuery, anonMatches, anonSearched, anonLoading,
+  selectedSessionIds,
+  connectedCount, pausedCount,
+} = storeToRefs(store)
+const summary = store.summary  // reactive object, not ref
 
-const rooms = ref<Room[]>([])
-const summary = reactive<Summary>({ total_sessions: 0, total_gifts: 0, total_diamonds: 0, total_danmaku: 0, unique_users: 0 })
-
-const pageTitle = ref('直播监控')
-const showBackBtn = ref(false)
-const showTopNav = ref(true)
-const breadcrumbItems = ref<{ label: string; onClick?: () => void }[]>([])
-
-// Sessions
-const currentHostId = ref<string | null>(null)
-const currentSessionId = ref<number | null>(null)
-const sessions = ref<Session[]>([])
-
+// filteredSessions depends on dpData (from useDatePicker), so compute locally
 const filteredSessions = computed(() => {
   const from = dpData.from
   const to = dpData.to
@@ -803,9 +800,6 @@ async function api(path: string) {
 // ============================================================
 // ROOMS VIEW
 // ============================================================
-const connectedCount = computed(() => rooms.value.filter(r => r.connected).length)
-const pausedCount = computed(() => rooms.value.filter(r => !r.enabled).length)
-
 function roomBadgeClass(r: Room) {
   if (r.connected) return 'badge-live'
   if (r._connecting) return 'badge-connecting'
@@ -1225,7 +1219,6 @@ function openAnchorModal(anchorName: string, sessionId: number) {
 const giftDetailModalVisible = ref(false)
 const giftDetailTitle = ref('礼物明细')
 const giftDetailBody = ref('')
-const _giftDetails = ref<any[]>([])
 
 function closeGiftDetailModal() { giftDetailModalVisible.value = false }
 
@@ -1249,7 +1242,6 @@ function showGiftDetail(nickname: string, secUid: string) {
 // ============================================================
 // SESSIONS VIEW
 // ============================================================
-const selectedSessionIds = ref<number[]>([])
 
 function toggleSelectAll(e: Event) {
   const checked = (e.target as HTMLInputElement).checked
@@ -1337,12 +1329,8 @@ async function deleteSelectedSessions() {
 // DETAIL VIEW
 // ============================================================
 let _viewGen = 0  // SPA竞态防护：取消pending请求
-const detailData = ref<any>(null)
-const _danmaku = ref<any[]>([])
-const detailTab = ref('gifts')
 
 // Danmaku search
-const danmakuSearchQuery = ref('')
 let _dmSearchTimer: ReturnType<typeof setTimeout> | null = null
 
 function onDanmakuSearchInput() {
@@ -1350,8 +1338,6 @@ function onDanmakuSearchInput() {
   _dmSearchTimer = setTimeout(() => filterDanmaku(), 200)
 }
 
-const displayedDanmaku = ref<any[]>([])
-const _newDanmakuCount = ref(0)
 const _rankChanged = ref(new Set<string>())
 // 排行变动检测：对比前后排名，变动的项加动画
 let _prevRanking: string[] = []
@@ -1388,11 +1374,6 @@ function filterDanmaku() {
     nextTick(() => { list.scrollTop = 0 })
   }
 }
-
-const anonQuery = ref('')
-const anonMatches = ref<any[]>([])
-const anonSearched = ref(false)
-const anonLoading = ref(false)
 
 function replaceDouyinEmoji(s: string) {
   if (!s) return ''

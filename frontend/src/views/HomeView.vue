@@ -1680,6 +1680,21 @@ const refreshing = ref(false)
 
 let _danmakuPollTimer: ReturnType<typeof setInterval> | null = null
 let _dmLastIds = new Set<string>()
+let _dmNewQueue: any[] = []  // 待逐条显示的新弹幕队列
+let _dmFlushTimer: ReturnType<typeof setInterval> | null = null
+
+// 逐条追加弹幕到列表（每200ms一条）
+function _flushDanmakuQueue() {
+  if (!_dmNewQueue.length) { if (_dmFlushTimer) { clearInterval(_dmFlushTimer); _dmFlushTimer = null }; return }
+  const item = _dmNewQueue.shift()!
+  displayedDanmaku.value = [...displayedDanmaku.value, item]
+  // 滚到底部（如果用户已经在底部附近）
+  const list = document.getElementById('rtDanmakuList')
+  if (list) {
+    const atBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 100
+    if (atBottom) requestAnimationFrame(() => { list.scrollTop = list.scrollHeight })
+  }
+}
 
 function startDanmakuPoll() {
   stopDanmakuPoll()
@@ -1689,6 +1704,8 @@ function startDanmakuPoll() {
     if (viewLevel.value !== 'detail' || detailTab.value !== 'danmaku' || !currentSessionId.value) return
     // 搜索模式下暂停实时更新
     if (danmakuSearchQuery.value) return
+    // 队列未消费完时跳过本轮
+    if (_dmNewQueue.length > 0) return
     try {
       const dmData = await fetchDanmaku(String(currentSessionId.value), 99999)
       const raw = (dmData.data || dmData || []).map((d: any) => ({
@@ -1701,8 +1718,10 @@ function startDanmakuPoll() {
         if (newItems.length > 0) {
           // 更新已知 ID 集合
           newItems.forEach((d: any) => _dmLastIds.add(d.timestamp + '_' + d.nickname))
-          _danmaku.value = raw  // 用完整列表替换
-          filterDanmaku()      // 统一过滤逻辑
+          _danmaku.value = raw  // 更新原始数据
+          // 新弹幕逐条入队
+          _dmNewQueue.push(...newItems)
+          if (!_dmFlushTimer) _dmFlushTimer = setInterval(_flushDanmakuQueue, 200)
         }
       }
     } catch (e) { /* silent */ }
@@ -1747,6 +1766,8 @@ function buildAllItems(rawDanmaku: any[]): any[] {
 
 function stopDanmakuPoll() {
   if (_danmakuPollTimer) { clearInterval(_danmakuPollTimer); _danmakuPollTimer = null }
+  if (_dmFlushTimer) { clearInterval(_dmFlushTimer); _dmFlushTimer = null }
+  _dmNewQueue = []
 }
 
 function startAutoRefresh() {

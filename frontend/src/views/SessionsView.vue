@@ -249,6 +249,7 @@
 
 <script setup>
 import { ref, computed, onMounted, inject } from 'vue'
+import { fmtTime, formatDuration } from '../utils/format'
 
 const props = defineProps({
   hostId: { type: String, required: true }
@@ -336,25 +337,7 @@ const dpDays = computed(() => {
   return days
 })
 
-// Helpers
-function fmtTime(ts) {
-  if (!ts) return '-'
-  let d
-  if (typeof ts === 'number' || (typeof ts === 'string' && /^\d+$/.test(ts.trim()))) {
-    const n = Number(ts)
-    d = new Date(n > 1e12 ? n : n * 1000)
-  } else {
-    d = new Date(ts)
-  }
-  return d.toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
-}
-
-function formatDuration(min) {
-  if (min < 60) return min + '分钟'
-  const h = Math.floor(min / 60)
-  const m = min % 60
-  return m > 0 ? `${h}h ${m}m` : `${h}h`
-}
+// Helpers (imported from utils/format)
 
 // Selection
 function toggleSelectAll(e) {

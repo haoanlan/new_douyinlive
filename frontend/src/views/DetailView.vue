@@ -405,6 +405,8 @@
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+import { esc, fmtTime, formatDuration } from '../utils/format'
+import { replaceDouyinEmoji } from '../utils/douyin-emoji'
 
 const props = defineProps({
   sessionId: { type: String, required: true }
@@ -467,25 +469,8 @@ const danmakuBadge = computed(() => {
   return total > 80 ? `显示前 80 / 共 ${total.toLocaleString()} 条` : ''
 })
 
-// Helpers
-function formatDuration(min) {
-  if (min < 60) return min + '分钟'
-  const h = Math.floor(min / 60)
-  const m = min % 60
-  return m > 0 ? `${h}h ${m}m` : `${h}h`
-}
+// Helpers (imported from utils/format)
 
-function fmtTime(ts) {
-  if (!ts) return '-'
-  let d
-  if (typeof ts === 'number' || (typeof ts === 'string' && /^\d+$/.test(ts.trim()))) {
-    const n = Number(ts)
-    d = new Date(n > 1e12 ? n : n * 1000)
-  } else {
-    d = new Date(ts)
-  }
-  return d.toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
-}
 
 // Tab switch
 function switchTab(tab) {
@@ -713,12 +698,6 @@ async function queryAnonymous() {
   html += '</div>'
   resultEl.innerHTML = html
 }
-
-function esc(s) {
-  if (!s) return ''
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;')
-}
-import { replaceDouyinEmoji } from '../utils/douyin-emoji'
 
 // Anchor modal
 function openAnchorModal(anchorName) {

@@ -112,7 +112,7 @@
               <div class="modal-field">
                 <label>房间号 / 抖音号</label>
                 <div style="display:flex;gap:8px">
-                  <input v-model="addRoomInput" placeholder="输入房间号或抖音号" @keydown.enter="lookupRoomFn">
+                  <input ref="addRoomInputEl" v-model="addRoomInput" placeholder="输入房间号或抖音号" @keydown.enter="lookupRoomFn">
                   <button class="btn btn-ghost btn-sm" @click="lookupRoomFn" :disabled="lookupLoading" id="lookupBtn" style="border-color:var(--border-light)">{{ lookupLoading ? '查询中...' : '查询' }}</button>
                 </div>
                 <div class="modal-hint">纯数字为房间号，含字母为抖音号</div>
@@ -239,8 +239,8 @@
           <!-- Live refresh bar -->
           <div v-if="detailData.session?.is_live" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
             <div style="font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:4px"><span class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse 2s infinite"></span> 直播中 · 每15秒自动刷新</div>
-            <button class="btn btn-ghost btn-sm" @click="manualRefresh" id="refreshBtn" style="font-size:12px;padding:4px 10px;display:flex;align-items:center;gap:4px;min-width:72px;justify-content:center">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            <button class="btn btn-ghost btn-sm" @click="manualRefresh" :disabled="refreshing" style="font-size:12px;padding:4px 10px;display:flex;align-items:center;gap:4px;min-width:72px;justify-content:center">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" :class="{ spin: refreshing }"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
               刷新
             </button>
           </div>
@@ -892,6 +892,7 @@ function stopRoomStatusPoll() {
 // ============================================================
 const showAddRoomModal = ref(false)
 const addRoomInput = ref('')
+const addRoomInputEl = ref<HTMLInputElement | null>(null)
 const lookupData = ref<LookupData | null>(null)
 const addRoomName = ref('')
 const lookupLoading = ref(false)
@@ -903,8 +904,7 @@ function showAddRoomFn() {
   addRoomName.value = ''
   showAddRoomModal.value = true
   nextTick(() => {
-    const input = document.getElementById('addRoomInput') as HTMLInputElement | null
-    if (input) input.focus()
+    if (addRoomInputEl.value) addRoomInputEl.value.focus()
   })
 }
 
@@ -1505,26 +1505,22 @@ async function viewDetail(sessionId: number, fromPopState = false) {
 }
 
 async function manualRefresh() {
-  if (!currentSessionId.value) return
-  const btn = document.getElementById('refreshBtn') as HTMLButtonElement | null
-  const svg = btn?.querySelector('svg')
-  if (btn) { btn.disabled = true }
-  if (svg) svg.classList.add('spin')
+  if (!currentSessionId.value || refreshing.value) return
+  refreshing.value = true
   try {
     const data = await fetchSessionDetail(String(currentSessionId.value))
     detailData.value = data
     _giftDetails.value = data.giftDetails || []
     if (!data.session.is_live) stopAutoRefresh()
   } catch { /* silent */ }
-  if (svg) svg.classList.remove('spin')
-  if (btn) { btn.disabled = false }
+  refreshing.value = false
 }
 
 // ============================================================
 // AUTO-REFRESH (live sessions)
 // ============================================================
 let _refreshTimer: ReturnType<typeof setInterval> | null = null
-let _refreshing = false
+const refreshing = ref(false)
 
 let _danmakuPollTimer: ReturnType<typeof setInterval> | null = null
 
@@ -1562,7 +1558,7 @@ function stopDanmakuPoll() {
 function startAutoRefresh() {
   stopAutoRefresh()
   _refreshTimer = setInterval(async () => {
-    if (viewLevel.value !== 'detail' || !currentSessionId.value || _refreshing) return
+    if (viewLevel.value !== 'detail' || !currentSessionId.value || refreshing.value) return
     await refreshDetail()
   }, 15000)
 }
@@ -1573,15 +1569,15 @@ function stopAutoRefresh() {
 }
 
 async function refreshDetail() {
-  if (!currentSessionId.value || _refreshing) return
-  _refreshing = true
+  if (!currentSessionId.value || refreshing.value) return
+  refreshing.value = true
   try {
     const data = await fetchSessionDetail(String(currentSessionId.value))
     detailData.value = data
     _giftDetails.value = data.giftDetails || []
     if (!data.session.is_live) stopAutoRefresh()
   } catch { /* silent */ }
-  _refreshing = false
+  refreshing.value = false
 }
 
 // ============================================================

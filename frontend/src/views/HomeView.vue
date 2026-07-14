@@ -295,9 +295,9 @@
           <!-- Danmaku tab -->
           <div v-if="detailTab === 'danmaku'" class="tab-panel active">
             <div class="detail-section">
-              <div id="danmakuGrid" style="display:grid;grid-template-columns:340px 1fr;gap:14px;align-items:stretch">
+              <div id="danmakuGrid" style="display:grid;grid-template-columns:340px 1fr;gap:14px;align-items:start">
                 <!-- Left: rank -->
-                <div id="danmakuLeft" style="min-width:0">
+                <div ref="danmakuLeftEl" id="danmakuLeft" style="min-width:0">
                   <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                     弹幕排行
@@ -317,7 +317,7 @@
                   </div>
                 </div>
                 <!-- Right: wordcloud + danmaku list -->
-                <div id="danmakuRight" style="display:flex;flex-direction:column;min-width:0">
+                <div ref="danmakuRightEl" id="danmakuRight" style="display:flex;flex-direction:column;min-width:0">
                   <div style="margin-bottom:14px">
                     <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
@@ -1338,6 +1338,8 @@ function onDanmakuSearchInput() {
 }
 
 const _rankChanged = ref(new Set<string>())
+const danmakuLeftEl = ref<HTMLElement | null>(null)
+const danmakuRightEl = ref<HTMLElement | null>(null)
 // 排行变动检测：对比前后排名，变动的项加动画
 let _prevRanking: string[] = []
 watch(() => detailData.value?.danmakuRanking, (newRank) => {
@@ -1608,6 +1610,10 @@ watch(detailTab, (tab) => {
   if (tab === "danmaku" && detailData.value) {
     nextTick(() => {
       renderWordCloud(detailData.value?.danmakuWords || [])
+      // 以左侧高度为基准，右侧设置等高
+      if (danmakuLeftEl.value && danmakuRightEl.value && window.innerWidth > 768) {
+        danmakuRightEl.value.style.height = danmakuLeftEl.value.offsetHeight + 'px'
+      }
     })
   }
 })

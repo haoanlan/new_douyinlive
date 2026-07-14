@@ -355,9 +355,10 @@
                                 <span v-else style="font-size:11px;padding:1px 6px;border-radius:var(--radius-xs);background:rgba(108,140,255,0.15);color:var(--accent);flex-shrink:0">{{ fmtTime(d.timestamp) }}</span>
                               </div>
                               <div v-if="d._type === 'gift'" style="font-size:12px;color:#FF6B9D;word-break:break-all;line-height:1.5">
-                                <img v-if="d.gift_icon" :src="d.gift_icon" style="width:16px;height:16px;vertical-align:-3px;margin-right:2px;border-radius:var(--radius-xs)">
-                                <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="vertical-align:-2px;margin-right:2px"><rect x="3" y="8" width="18" height="13" rx="1"/><path d="M12 8V6c0-2-1.5-4-4-4S4 4 4 6h2"/><path d="M20 6c0-2-1.5-4-4-4s-4 2-4 4h2"/><line x1="12" y1="8" x2="12" y2="21"/><line x1="3" y1="13" x2="21" y2="13"/></svg>
-                                送了 <span style="font-weight:600">{{ d.gift_name }}</span>
+                                送了
+                                <img v-if="d.gift_icon" :src="d.gift_icon" style="width:16px;height:16px;vertical-align:-3px;margin:0 2px;border-radius:var(--radius-xs)">
+                                <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="vertical-align:-2px;margin:0 2px"><rect x="3" y="8" width="18" height="13" rx="1"/><path d="M12 8V6c0-2-1.5-4-4-4S4 4 4 6h2"/><path d="M20 6c0-2-1.5-4-4-4s-4 2-4 4h2"/><line x1="12" y1="8" x2="12" y2="21"/><line x1="3" y1="13" x2="21" y2="13"/></svg>
+                                <span style="font-weight:600">{{ d.gift_name }}</span>
                                 <span v-if="d.to_nickname" style="margin-left:4px">→ {{ d.to_nickname }}</span>
                                 <span v-if="d.total_diamonds" style="margin-left:6px;font-weight:600;color:var(--orange)">
                                   <svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:-2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/></svg>
@@ -1541,6 +1542,7 @@ async function viewDetail(sessionId: number, fromPopState = false) {
     if (gen !== _viewGen) return  // 过期请求丢弃
     detailData.value = data
     _giftDetails.value = data.giftDetails || []
+    filterDanmaku()  // 数据就绪后刷新列表
     // 从session数据中提取hostId，用于面包屑导航
     if (data.session?.room_id && !currentHostId.value) {
       currentHostId.value = data.session.room_id
@@ -1565,6 +1567,7 @@ async function manualRefresh() {
     const data = await fetchSessionDetail(String(currentSessionId.value))
     detailData.value = data
     _giftDetails.value = data.giftDetails || []
+    filterDanmaku()
     if (!data.session.is_live) stopAutoRefresh()
   } catch { /* silent */ }
   refreshing.value = false
@@ -1680,6 +1683,7 @@ async function refreshDetail() {
     const data = await fetchSessionDetail(String(currentSessionId.value))
     detailData.value = data
     _giftDetails.value = data.giftDetails || []
+    filterDanmaku()
     if (!data.session.is_live) stopAutoRefresh()
   } catch { /* silent */ }
   refreshing.value = false

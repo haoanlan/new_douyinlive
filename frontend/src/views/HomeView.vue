@@ -1426,8 +1426,9 @@ function filterDanmaku() {
   }
 
   displayedDanmaku.value = result
-  if (wasAtLatest && list) {
-    nextTick(() => { list.scrollTop = 0 })
+  // 多条数据时默认在底部（最新消息）
+  if (list) {
+    nextTick(() => { list.scrollTop = list.scrollHeight })
   }
 }
 

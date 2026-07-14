@@ -619,6 +619,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, onUnmounted, nextTick, watch, provide } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useAppStore } from '../stores/app'
 import { lookupRoom, addRoom, pauseRoom, resumeRoom, removeRoom, deleteSession, fetchSessionDetail, fetchDanmaku } from '../api'
@@ -702,6 +703,8 @@ interface LookupData {
 // STATE (from Pinia store)
 // ============================================================
 const store = useAppStore()
+const router = useRouter()
+const route = useRoute()
 const {
   contentLoading, contentFadeIn, topNavTab, viewLevel,
   rooms, sessions, currentHostId, currentSessionId,
@@ -773,21 +776,6 @@ function updateBreadcrumb() {
   }
 }
 
-function pushNav(view: string, params: Record<string, string> = {}) {
-  const url = new URL(location.href)
-  if (view === 'sessions') url.searchParams.set('room', params.hostId || '')
-  else if (view === 'detail') url.searchParams.set('session', params.sessionId || '')
-  else { url.searchParams.delete('room'); url.searchParams.delete('session') }
-  history.pushState({ view, ...params }, '', url.toString())
-}
-
-function handlePopState(e: PopStateEvent) {
-  const d = e.state
-  if (!d || d.view === 'hosts') {
-    viewHosts(true)
-  } else if (d.view === 'sessions' && d.hostId) viewSessions(d.hostId, true)
-  else if (d.view === 'detail' && d.sessionId) viewDetail(d.sessionId, true)
-}
 
 // ============================================================
 // API
@@ -820,13 +808,8 @@ async function viewHosts(fromPopState = false, replaceCurrent = false) {
   viewLevel.value = 'hosts'
   currentHostId.value = null
   currentSessionId.value = null
-  if (replaceCurrent) {
-    const url = new URL(location.href)
-    url.searchParams.delete('room')
-    url.searchParams.delete('session')
-    history.replaceState({ view: 'hosts' }, '', url.toString())
-  } else if (!fromPopState) {
-    pushNav('hosts')
+  if (!fromPopState) {
+    router.push({ name: 'hosts' })
   }
   updateBreadcrumb()
   if (topNavTab.value === 'rooms') loadRoomsView(gen)
@@ -1268,7 +1251,7 @@ async function viewSessions(hostId: string, fromPopState = false) {
   currentSessionId.value = null
   selectedSessionIds.value = []
   sessions.value = []  // 清空旧数据，防止切换房间时闪现上一个房间的场次
-  if (!fromPopState) pushNav('sessions', { hostId })
+  if (!fromPopState) router.push({ name: 'sessions', params: { hostId } })
   updateBreadcrumb()
   contentLoading.value = true
   try {
@@ -1481,7 +1464,7 @@ async function viewDetail(sessionId: number, fromPopState = false) {
   danmakuSearchQuery.value = ''
   anonQuery.value = ''
   anonMatches.value = []; anonSearched.value = false; anonLoading.value = false
-  if (!fromPopState) pushNav('detail', { sessionId: String(sessionId) })
+  if (!fromPopState) router.push({ name: 'detail', params: { sessionId: String(sessionId) } })
   updateBreadcrumb()
   contentLoading.value = true
   try {
@@ -1618,29 +1601,22 @@ watch(detailTab, (tab) => {
   }
 })
 onMounted(async () => {
-  window.addEventListener('popstate', handlePopState)
   document.addEventListener('click', handleDocClick)
-  // 检查URL参数，直接导航到正确页面，避免闪房间管理
-  const url = new URL(location.href)
-  const roomParam = url.searchParams.get('room')
-  const sessionParam = url.searchParams.get('session')
-  if (sessionParam) {
-    // 先加载rooms数据，面包屑需要host名称
+  // 根据路由参数导航到正确页面
+  const sessionId = route.params.sessionId as string
+  const hostId = route.params.hostId as string
+  if (sessionId) {
     try { rooms.value = await api('/api/rooms') } catch { /* ignore */ }
-    history.replaceState({ view: 'detail', sessionId: sessionParam }, '', location.href)
-    viewDetail(Number(sessionParam), true)
-  } else if (roomParam) {
+    viewDetail(Number(sessionId), true)
+  } else if (hostId) {
     try { rooms.value = await api('/api/rooms') } catch { /* ignore */ }
-    history.replaceState({ view: 'sessions', hostId: roomParam }, '', location.href)
-    viewSessions(roomParam, true)
+    viewSessions(hostId, true)
   } else {
-    history.replaceState({ view: 'hosts' }, '', location.href)
     viewHosts(true)
   }
 })
 
 onUnmounted(() => {
-  window.removeEventListener('popstate', handlePopState)
   document.removeEventListener('click', handleDocClick)
   stopAutoRefresh()
   stopDanmakuPoll()

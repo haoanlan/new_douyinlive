@@ -1448,8 +1448,6 @@ watch(() => detailData.value?.danmakuRanking, (newRank) => {
 
 function filterDanmaku() {
   const q = danmakuSearchQuery.value.toLowerCase()
-  const list = document.getElementById('rtDanmakuList')
-  const wasAtLatest = list ? list.scrollTop < 30 : false
 
   // 合并弹幕和礼物，统一格式
   const allItems: any[] = []
@@ -1497,20 +1495,21 @@ function filterDanmaku() {
     result = limit ? allItems.slice(-limit) : allItems
   }
 
-  // 全部模式：反转为最新在前（虚拟滚动 scrollTop=0 看最新）
-  if (!q && !danmakuDisplayLimit.value) {
-    result.reverse()
-  }
+  // 全部模式不需要反转，保持最早在前（和50/100/200一致）
 
   displayedDanmaku.value = result
-  // 滚动位置：50/100/200滚到底部，全部模式滚到顶部（最新在前）
+  // 全部模式也滚到底部（最新消息），和50/100/200一致
   if (isVscroll.value) {
-    vsScrollTop.value = 0
-    if (list) {
-      list.scrollTop = 0
-      measureVsContainer()
-    }
+    measureVsContainer()
+    nextTick(() => {
+      const list = document.getElementById('rtDanmakuList')
+      if (list) {
+        vsScrollTop.value = list.scrollHeight - list.clientHeight
+        list.scrollTop = list.scrollHeight
+      }
+    })
   } else {
+    const list = document.getElementById('rtDanmakuList')
     if (list) {
       nextTick(() => { list.scrollTop = list.scrollHeight })
     }

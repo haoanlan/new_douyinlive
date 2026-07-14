@@ -1449,6 +1449,9 @@ watch(() => detailData.value?.danmakuRanking, (newRank) => {
 }, { deep: true })
 
 function filterDanmaku() {
+  // 清掉实时逐条队列，切模式/初始加载一次性显示
+  _dmNewQueue = []
+  if (_dmFlushTimer) { clearInterval(_dmFlushTimer); _dmFlushTimer = null }
   const q = danmakuSearchQuery.value.toLowerCase()
 
   // 合并弹幕和礼物，统一格式

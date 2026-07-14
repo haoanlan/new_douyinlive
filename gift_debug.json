@@ -291335,5 +291335,2644 @@
       "groupInfo",
       "webpImage"
     ]
+  },
+  {
+    "time": "2026-07-14T20:15:12.502+08:00",
+    "giftId": "685",
+    "giftName": "粉丝团灯牌",
+    "baseName": "粉丝团灯牌",
+    "displayName": "粉丝团灯牌",
+    "diamondCount": 1,
+    "diamondPerUnit": 1,
+    "count": 1,
+    "totalDiamonds": 1,
+    "icon": [
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+    ],
+    "iconType": null,
+    "image": [
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+    ],
+    "webpImage": [
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp",
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp"
+    ],
+    "uid": "1119744505428378",
+    "nickname": "几欲逢花.",
+    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_225c1120967d2359a47c6f4272c7fef0.jpeg?from=3067671334",
+    "user_display_id": "618xiao790zhou",
+    "user_sec_uid": "MS4wLjABAAAAps8M7OCoqegHQlK1GXYyUpnKbbJg7JxJsuzfv1joZSrIIWcn3A9EgXSJZoHy5zh3",
+    "to_nickname": "晓晓🎀",
+    "to_avatar": "",
+    "to_user_display_id": "93777302610",
+    "to_user_sec_uid": "MS4wLjABAAAAOb_7pTBp1tbPgYnS1JMsgWynckPFSYrL3R6dsZUbcz4TjWOUAQkbchvIe-X91Gzc",
+    "traceId": "fe2c04ceac83ee9b9ff6807501657ab9",
+    "comboCount": 1,
+    "repeatEnd": null,
+    "groupCount": 1,
+    "sendType": 1,
+    "giftRaw": {
+      "image": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#E0D4BC"
+      },
+      "describe": "送出粉丝团灯牌",
+      "duration": "3200",
+      "id": "685",
+      "fansclubInfo": {
+        "minLevel": 1,
+        "insertPos": 3
+      },
+      "forLinkmic": true,
+      "forFansclub": true,
+      "type": 4,
+      "diamondCount": 1,
+      "primaryEffectId": "1768",
+      "giftLabelIcon": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png"
+        ],
+        "uri": "webcast/31e32238eaa8fcc28efd7374099dca76.png",
+        "avgColor": "#FADCF0"
+      },
+      "name": "粉丝团灯牌",
+      "icon": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#FAE6DC"
+      },
+      "itemType": 1,
+      "appId": "1128",
+      "giftScene": "753",
+      "triggerWords": [
+        "粉丝"
+      ],
+      "afterSendAction": 3,
+      "bannerSchemeUrl": "https://lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/mono/lynx/revenue_gift_panel_douyin/pages/banner/progress/template.js",
+      "reqExtraType": "1",
+      "assetIds": [
+        "1768"
+      ],
+      "giftPreviewInfo": {
+        "clientCheckLeftDiamond": true
+      },
+      "giftTip": {
+        "displayText": {},
+        "backgroundColor": "#CC595C66"
+      },
+      "disableWishList": true,
+      "webpImage": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp",
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#FFF8EB"
+      }
+    },
+    "giftKeys": [
+      "image",
+      "describe",
+      "duration",
+      "id",
+      "fansclubInfo",
+      "forLinkmic",
+      "forFansclub",
+      "type",
+      "diamondCount",
+      "primaryEffectId",
+      "giftLabelIcon",
+      "name",
+      "icon",
+      "itemType",
+      "appId",
+      "giftScene",
+      "triggerWords",
+      "afterSendAction",
+      "bannerSchemeUrl",
+      "reqExtraType",
+      "assetIds",
+      "giftPreviewInfo",
+      "giftTip",
+      "disableWishList",
+      "webpImage"
+    ]
+  },
+  {
+    "time": "2026-07-14T20:15:23.002+08:00",
+    "giftId": "685",
+    "giftName": "粉丝团灯牌",
+    "baseName": "粉丝团灯牌",
+    "displayName": "粉丝团灯牌",
+    "diamondCount": 1,
+    "diamondPerUnit": 1,
+    "count": 1,
+    "totalDiamonds": 1,
+    "icon": [
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+    ],
+    "iconType": null,
+    "image": [
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+    ],
+    "webpImage": [
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp",
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp"
+    ],
+    "uid": "69422737258",
+    "nickname": "沉入海底（闭关版）",
+    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_20fc36164185695a459b88c86652379e.jpeg?from=3067671334",
+    "user_display_id": "75737619",
+    "user_sec_uid": "MS4wLjABAAAAHLwn5ccdcUc9BxBsYAHtZkJEcY6Buv8SjMlVzDNgY6U",
+    "to_nickname": "曦禾🦦林语巷",
+    "to_avatar": "",
+    "to_user_display_id": "55467024378",
+    "to_user_sec_uid": "MS4wLjABAAAAVWlO3gyNWvjr7mCCwAXHBJpJIbrOCb-5w3ic-DOwBGfTEV35cNeTrwAcIVA7vQlL",
+    "traceId": "a7235fbbb3962c7c13cb243639687369",
+    "comboCount": 1,
+    "repeatEnd": null,
+    "groupCount": 1,
+    "sendType": 1,
+    "giftRaw": {
+      "image": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#CEE5EB"
+      },
+      "describe": "送出粉丝团灯牌",
+      "duration": "3200",
+      "id": "685",
+      "fansclubInfo": {
+        "minLevel": 1,
+        "insertPos": 3
+      },
+      "forLinkmic": true,
+      "forFansclub": true,
+      "type": 4,
+      "diamondCount": 1,
+      "primaryEffectId": "1768",
+      "giftLabelIcon": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png",
+          "https://p3-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png"
+        ],
+        "uri": "webcast/31e32238eaa8fcc28efd7374099dca76.png",
+        "avgColor": "#FFF1EB"
+      },
+      "name": "粉丝团灯牌",
+      "icon": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#DCDCFA"
+      },
+      "itemType": 1,
+      "appId": "1128",
+      "giftScene": "753",
+      "triggerWords": [
+        "粉丝"
+      ],
+      "afterSendAction": 3,
+      "bannerSchemeUrl": "https://lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/mono/lynx/revenue_gift_panel_douyin/pages/banner/progress/template.js",
+      "reqExtraType": "1",
+      "assetIds": [
+        "1768"
+      ],
+      "giftPreviewInfo": {
+        "clientCheckLeftDiamond": true
+      },
+      "giftTip": {
+        "displayText": {},
+        "backgroundColor": "#CC595C66"
+      },
+      "disableWishList": true,
+      "webpImage": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp",
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#CECEEB"
+      }
+    },
+    "giftKeys": [
+      "image",
+      "describe",
+      "duration",
+      "id",
+      "fansclubInfo",
+      "forLinkmic",
+      "forFansclub",
+      "type",
+      "diamondCount",
+      "primaryEffectId",
+      "giftLabelIcon",
+      "name",
+      "icon",
+      "itemType",
+      "appId",
+      "giftScene",
+      "triggerWords",
+      "afterSendAction",
+      "bannerSchemeUrl",
+      "reqExtraType",
+      "assetIds",
+      "giftPreviewInfo",
+      "giftTip",
+      "disableWishList",
+      "webpImage"
+    ]
+  },
+  {
+    "time": "2026-07-14T20:15:36.111+08:00",
+    "giftId": "685",
+    "giftName": "粉丝团灯牌",
+    "baseName": "粉丝团灯牌",
+    "displayName": "粉丝团灯牌",
+    "diamondCount": 1,
+    "diamondPerUnit": 1,
+    "count": 1,
+    "totalDiamonds": 1,
+    "icon": [
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+    ],
+    "iconType": null,
+    "image": [
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+    ],
+    "webpImage": [
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp",
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp"
+    ],
+    "uid": "64872844946",
+    "nickname": "淡忘c丶",
+    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-i-0813c000-ce_oAmg9AdIunAesEQpCXFfECwjA2UA0oIX9ADrAH.jpeg?from=3067671334",
+    "user_display_id": "325921286",
+    "user_sec_uid": "MS4wLjABAAAAHJHpasoD0A4NJDTruIdfOPJF4ttkTH-tAQ2Ko8rk9Zk",
+    "to_nickname": "曦禾🦦林语巷",
+    "to_avatar": "",
+    "to_user_display_id": "55467024378",
+    "to_user_sec_uid": "MS4wLjABAAAAVWlO3gyNWvjr7mCCwAXHBJpJIbrOCb-5w3ic-DOwBGfTEV35cNeTrwAcIVA7vQlL",
+    "traceId": "bb1656d0b65508d3d39c5b977e84c213",
+    "comboCount": 1,
+    "repeatEnd": null,
+    "groupCount": 1,
+    "sendType": 1,
+    "giftRaw": {
+      "image": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#CCA3BE"
+      },
+      "describe": "送出粉丝团灯牌",
+      "duration": "3200",
+      "id": "685",
+      "fansclubInfo": {
+        "minLevel": 1,
+        "insertPos": 3
+      },
+      "forLinkmic": true,
+      "forFansclub": true,
+      "type": 4,
+      "diamondCount": 1,
+      "primaryEffectId": "1768",
+      "giftLabelIcon": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png"
+        ],
+        "uri": "webcast/31e32238eaa8fcc28efd7374099dca76.png",
+        "avgColor": "#B1CCA3"
+      },
+      "name": "粉丝团灯牌",
+      "icon": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#3D3D3D"
+      },
+      "itemType": 1,
+      "appId": "1128",
+      "giftScene": "753",
+      "triggerWords": [
+        "粉丝"
+      ],
+      "afterSendAction": 3,
+      "bannerSchemeUrl": "https://lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/mono/lynx/revenue_gift_panel_douyin/pages/banner/progress/template.js",
+      "reqExtraType": "1",
+      "assetIds": [
+        "1768"
+      ],
+      "giftPreviewInfo": {
+        "clientCheckLeftDiamond": true
+      },
+      "giftTip": {
+        "displayText": {},
+        "backgroundColor": "#CC595C66"
+      },
+      "disableWishList": true,
+      "webpImage": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp",
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#EBD8CE"
+      }
+    },
+    "giftKeys": [
+      "image",
+      "describe",
+      "duration",
+      "id",
+      "fansclubInfo",
+      "forLinkmic",
+      "forFansclub",
+      "type",
+      "diamondCount",
+      "primaryEffectId",
+      "giftLabelIcon",
+      "name",
+      "icon",
+      "itemType",
+      "appId",
+      "giftScene",
+      "triggerWords",
+      "afterSendAction",
+      "bannerSchemeUrl",
+      "reqExtraType",
+      "assetIds",
+      "giftPreviewInfo",
+      "giftTip",
+      "disableWishList",
+      "webpImage"
+    ]
+  },
+  {
+    "time": "2026-07-14T20:15:40.153+08:00",
+    "giftId": "685",
+    "giftName": "粉丝团灯牌",
+    "baseName": "粉丝团灯牌",
+    "displayName": "粉丝团灯牌",
+    "diamondCount": 1,
+    "diamondPerUnit": 1,
+    "count": 1,
+    "totalDiamonds": 1,
+    "icon": [
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+    ],
+    "iconType": null,
+    "image": [
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+    ],
+    "webpImage": [
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp",
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp"
+    ],
+    "uid": "64872844946",
+    "nickname": "淡忘c丶",
+    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-i-0813c000-ce_oAmg9AdIunAesEQpCXFfECwjA2UA0oIX9ADrAH.jpeg?from=3067671334",
+    "user_display_id": "325921286",
+    "user_sec_uid": "MS4wLjABAAAAHJHpasoD0A4NJDTruIdfOPJF4ttkTH-tAQ2Ko8rk9Zk",
+    "to_nickname": "萱萱🍋🍋‍🟩🍒🧸🛌林语巷",
+    "to_avatar": "",
+    "to_user_display_id": "57644688826",
+    "to_user_sec_uid": "MS4wLjABAAAADIfsDB7U0DIiWMgxvb4R-9XKulWeO0wrc71WQ1olSLyiBhoaxT_OrXy9cRpIZiN7",
+    "traceId": "9cde47ffd3bce2ca4d44c87cf8731e3e",
+    "comboCount": 1,
+    "repeatEnd": null,
+    "groupCount": 1,
+    "sendType": 1,
+    "giftRaw": {
+      "image": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#A37C96"
+      },
+      "describe": "送出粉丝团灯牌",
+      "duration": "3200",
+      "id": "685",
+      "fansclubInfo": {
+        "minLevel": 1,
+        "insertPos": 3
+      },
+      "forLinkmic": true,
+      "forFansclub": true,
+      "type": 4,
+      "diamondCount": 1,
+      "primaryEffectId": "1768",
+      "giftLabelIcon": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png",
+          "https://p3-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png"
+        ],
+        "uri": "webcast/31e32238eaa8fcc28efd7374099dca76.png",
+        "avgColor": "#523749"
+      },
+      "name": "粉丝团灯牌",
+      "icon": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#CEE5EB"
+      },
+      "itemType": 1,
+      "appId": "1128",
+      "giftScene": "753",
+      "triggerWords": [
+        "粉丝"
+      ],
+      "afterSendAction": 3,
+      "bannerSchemeUrl": "https://lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/mono/lynx/revenue_gift_panel_douyin/pages/banner/progress/template.js",
+      "reqExtraType": "1",
+      "assetIds": [
+        "1768"
+      ],
+      "giftPreviewInfo": {
+        "clientCheckLeftDiamond": true
+      },
+      "giftTip": {
+        "displayText": {},
+        "backgroundColor": "#CC595C66"
+      },
+      "disableWishList": true,
+      "webpImage": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp",
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#FFF8EB"
+      }
+    },
+    "giftKeys": [
+      "image",
+      "describe",
+      "duration",
+      "id",
+      "fansclubInfo",
+      "forLinkmic",
+      "forFansclub",
+      "type",
+      "diamondCount",
+      "primaryEffectId",
+      "giftLabelIcon",
+      "name",
+      "icon",
+      "itemType",
+      "appId",
+      "giftScene",
+      "triggerWords",
+      "afterSendAction",
+      "bannerSchemeUrl",
+      "reqExtraType",
+      "assetIds",
+      "giftPreviewInfo",
+      "giftTip",
+      "disableWishList",
+      "webpImage"
+    ]
+  },
+  {
+    "time": "2026-07-14T20:16:23.061+08:00",
+    "giftId": "685",
+    "giftName": "粉丝团灯牌",
+    "baseName": "粉丝团灯牌",
+    "displayName": "粉丝团灯牌",
+    "diamondCount": 1,
+    "diamondPerUnit": 1,
+    "count": 1,
+    "totalDiamonds": 1,
+    "icon": [
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+    ],
+    "iconType": null,
+    "image": [
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+    ],
+    "webpImage": [
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp",
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp"
+    ],
+    "uid": "7585895816607876153",
+    "nickname": "我主果冻(无后缀版）",
+    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-i-0813c000-ce_oYUAQ1UjzFJEKAL7TJfIeNkAAKBggkeA1mVGIx.jpeg?from=3067671334",
+    "user_display_id": "56812071108",
+    "user_sec_uid": "MS4wLjABAAAA5zuGL4hZYXQ1Pwqrwlm9WFzw9-ZLWKmgcQhO8kWa1snYlyvxqw9tH_6mDyNAjb2x",
+    "to_nickname": "晓晓🎀",
+    "to_avatar": "",
+    "to_user_display_id": "93777302610",
+    "to_user_sec_uid": "MS4wLjABAAAAOb_7pTBp1tbPgYnS1JMsgWynckPFSYrL3R6dsZUbcz4TjWOUAQkbchvIe-X91Gzc",
+    "traceId": "73d3eb583633c646e39b484657824b25",
+    "comboCount": 1,
+    "repeatEnd": null,
+    "groupCount": 1,
+    "sendType": 1,
+    "giftRaw": {
+      "image": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#FAF0DC"
+      },
+      "describe": "送出粉丝团灯牌",
+      "duration": "3200",
+      "id": "685",
+      "fansclubInfo": {
+        "minLevel": 1,
+        "insertPos": 3
+      },
+      "forLinkmic": true,
+      "forFansclub": true,
+      "type": 4,
+      "diamondCount": 1,
+      "primaryEffectId": "1768",
+      "giftLabelIcon": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png"
+        ],
+        "uri": "webcast/31e32238eaa8fcc28efd7374099dca76.png",
+        "avgColor": "#53537A"
+      },
+      "name": "粉丝团灯牌",
+      "icon": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#E0C8BC"
+      },
+      "itemType": 1,
+      "appId": "1128",
+      "giftScene": "753",
+      "triggerWords": [
+        "粉丝"
+      ],
+      "afterSendAction": 3,
+      "bannerSchemeUrl": "https://lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/mono/lynx/revenue_gift_panel_douyin/pages/banner/progress/template.js",
+      "reqExtraType": "1",
+      "assetIds": [
+        "1768"
+      ],
+      "giftPreviewInfo": {
+        "clientCheckLeftDiamond": true
+      },
+      "giftTip": {
+        "displayText": {},
+        "backgroundColor": "#CC595C66"
+      },
+      "disableWishList": true,
+      "webpImage": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp",
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#B1CCA3"
+      }
+    },
+    "giftKeys": [
+      "image",
+      "describe",
+      "duration",
+      "id",
+      "fansclubInfo",
+      "forLinkmic",
+      "forFansclub",
+      "type",
+      "diamondCount",
+      "primaryEffectId",
+      "giftLabelIcon",
+      "name",
+      "icon",
+      "itemType",
+      "appId",
+      "giftScene",
+      "triggerWords",
+      "afterSendAction",
+      "bannerSchemeUrl",
+      "reqExtraType",
+      "assetIds",
+      "giftPreviewInfo",
+      "giftTip",
+      "disableWishList",
+      "webpImage"
+    ]
+  },
+  {
+    "time": "2026-07-14T20:16:28.321+08:00",
+    "giftId": "685",
+    "giftName": "粉丝团灯牌",
+    "baseName": "粉丝团灯牌",
+    "displayName": "粉丝团灯牌",
+    "diamondCount": 1,
+    "diamondPerUnit": 1,
+    "count": 1,
+    "totalDiamonds": 1,
+    "icon": [
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+    ],
+    "iconType": null,
+    "image": [
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+    ],
+    "webpImage": [
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp",
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp"
+    ],
+    "uid": "1745652400259539",
+    "nickname": "库库林•白夜🍡⁹⁵⁶🌙🏂🐰²²³",
+    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-i-0813c000-ce_oMAEAOrIfXpQfEJA5ADBII3ueBL9EZFwAToAQV.jpeg?from=3067671334",
+    "user_display_id": "wuchenluanxi",
+    "user_sec_uid": "MS4wLjABAAAATSXAt9l9t0YHD8oSJ5kzI-r8Mv0D3kk9agziqVVT-dPCSrDmXcwPa7JMhSjUPzfT",
+    "to_nickname": "西柠🦋¹²²⁰林语巷",
+    "to_avatar": "",
+    "to_user_display_id": "5757xixi",
+    "to_user_sec_uid": "MS4wLjABAAAAZW11nrW0dxDViQMqTyKIclrxqrLU2zwLfHl6rY2bW4M",
+    "traceId": "00c894bcd247c3fb7c05a363184edbb5",
+    "comboCount": 1,
+    "repeatEnd": null,
+    "groupCount": 1,
+    "sendType": 1,
+    "giftRaw": {
+      "image": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#666666"
+      },
+      "describe": "送出粉丝团灯牌",
+      "duration": "3200",
+      "id": "685",
+      "fansclubInfo": {
+        "minLevel": 1,
+        "insertPos": 3
+      },
+      "forLinkmic": true,
+      "forFansclub": true,
+      "type": 4,
+      "diamondCount": 1,
+      "primaryEffectId": "1768",
+      "giftLabelIcon": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png"
+        ],
+        "uri": "webcast/31e32238eaa8fcc28efd7374099dca76.png",
+        "avgColor": "#B8B8B8"
+      },
+      "name": "粉丝团灯牌",
+      "icon": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#A37C7C"
+      },
+      "itemType": 1,
+      "appId": "1128",
+      "giftScene": "753",
+      "triggerWords": [
+        "粉丝"
+      ],
+      "afterSendAction": 3,
+      "bannerSchemeUrl": "https://lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/mono/lynx/revenue_gift_panel_douyin/pages/banner/progress/template.js",
+      "reqExtraType": "1",
+      "assetIds": [
+        "1768"
+      ],
+      "giftPreviewInfo": {
+        "clientCheckLeftDiamond": true
+      },
+      "giftTip": {
+        "displayText": {},
+        "backgroundColor": "#CC595C66"
+      },
+      "disableWishList": true,
+      "webpImage": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp",
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#7A6D53"
+      }
+    },
+    "giftKeys": [
+      "image",
+      "describe",
+      "duration",
+      "id",
+      "fansclubInfo",
+      "forLinkmic",
+      "forFansclub",
+      "type",
+      "diamondCount",
+      "primaryEffectId",
+      "giftLabelIcon",
+      "name",
+      "icon",
+      "itemType",
+      "appId",
+      "giftScene",
+      "triggerWords",
+      "afterSendAction",
+      "bannerSchemeUrl",
+      "reqExtraType",
+      "assetIds",
+      "giftPreviewInfo",
+      "giftTip",
+      "disableWishList",
+      "webpImage"
+    ]
+  },
+  {
+    "time": "2026-07-14T20:16:52.022+08:00",
+    "giftId": "685",
+    "giftName": "粉丝团灯牌",
+    "baseName": "粉丝团灯牌",
+    "displayName": "粉丝团灯牌",
+    "diamondCount": 1,
+    "diamondPerUnit": 1,
+    "count": 1,
+    "totalDiamonds": 1,
+    "icon": [
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+    ],
+    "iconType": null,
+    "image": [
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+    ],
+    "webpImage": [
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp",
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp"
+    ],
+    "uid": "1614542558734126",
+    "nickname": "佳木斯第一风情🪽🍵",
+    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-i-0813c000-ce_owDHhvBpExI2Bi6BAM8PkAAiAaakjXIbIyvAA.jpeg?from=3067671334",
+    "user_display_id": "98394858824",
+    "user_sec_uid": "MS4wLjABAAAACyi9MsvCZZQtLJDce-BkNpDh-M3xRiO-EigJjKHtaokC-cIn_reHy1rzIUg11wJH",
+    "to_nickname": "西柠🦋¹²²⁰林语巷",
+    "to_avatar": "",
+    "to_user_display_id": "5757xixi",
+    "to_user_sec_uid": "MS4wLjABAAAAZW11nrW0dxDViQMqTyKIclrxqrLU2zwLfHl6rY2bW4M",
+    "traceId": "46559d1d5b71abaf3427692d4cc7cdba",
+    "comboCount": 1,
+    "repeatEnd": null,
+    "groupCount": 1,
+    "sendType": 1,
+    "giftRaw": {
+      "image": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#FFF1EB"
+      },
+      "describe": "送出粉丝团灯牌",
+      "duration": "3200",
+      "id": "685",
+      "fansclubInfo": {
+        "minLevel": 1,
+        "insertPos": 3
+      },
+      "forLinkmic": true,
+      "forFansclub": true,
+      "type": 4,
+      "diamondCount": 1,
+      "primaryEffectId": "1768",
+      "giftLabelIcon": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png"
+        ],
+        "uri": "webcast/31e32238eaa8fcc28efd7374099dca76.png",
+        "avgColor": "#CECEEB"
+      },
+      "name": "粉丝团灯牌",
+      "icon": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#FAFAFA"
+      },
+      "itemType": 1,
+      "appId": "1128",
+      "giftScene": "753",
+      "triggerWords": [
+        "粉丝"
+      ],
+      "afterSendAction": 3,
+      "bannerSchemeUrl": "https://lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/mono/lynx/revenue_gift_panel_douyin/pages/banner/progress/template.js",
+      "reqExtraType": "1",
+      "assetIds": [
+        "1768"
+      ],
+      "giftPreviewInfo": {
+        "clientCheckLeftDiamond": true
+      },
+      "giftTip": {
+        "displayText": {},
+        "backgroundColor": "#CC595C66"
+      },
+      "disableWishList": true,
+      "webpImage": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp",
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#523737"
+      }
+    },
+    "giftKeys": [
+      "image",
+      "describe",
+      "duration",
+      "id",
+      "fansclubInfo",
+      "forLinkmic",
+      "forFansclub",
+      "type",
+      "diamondCount",
+      "primaryEffectId",
+      "giftLabelIcon",
+      "name",
+      "icon",
+      "itemType",
+      "appId",
+      "giftScene",
+      "triggerWords",
+      "afterSendAction",
+      "bannerSchemeUrl",
+      "reqExtraType",
+      "assetIds",
+      "giftPreviewInfo",
+      "giftTip",
+      "disableWishList",
+      "webpImage"
+    ]
+  },
+  {
+    "time": "2026-07-14T20:17:56.111+08:00",
+    "giftId": "15876",
+    "giftName": "人鱼兔兔",
+    "baseName": "人鱼兔兔",
+    "displayName": "人鱼兔兔",
+    "diamondCount": 299,
+    "diamondPerUnit": 299,
+    "count": 1,
+    "totalDiamonds": 299,
+    "icon": [
+      "https://p3-webcast.douyinpic.com/img/webcast/e1bb515bcc43c181243ad8172c2a1dd9.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/e1bb515bcc43c181243ad8172c2a1dd9.png~tplv-obj.png"
+    ],
+    "iconType": null,
+    "image": [
+      "https://p3-webcast.douyinpic.com/img/webcast/e1bb515bcc43c181243ad8172c2a1dd9.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/e1bb515bcc43c181243ad8172c2a1dd9.png~tplv-obj.png"
+    ],
+    "webpImage": [
+      "https://p3-webcast.douyinpic.com/img/webcast/e1bb515bcc43c181243ad8172c2a1dd9.png~tplv-obj.webp",
+      "https://p11-webcast.douyinpic.com/img/webcast/e1bb515bcc43c181243ad8172c2a1dd9.png~tplv-obj.webp"
+    ],
+    "uid": "3027381479811547",
+    "nickname": "烟花♡雨泪¹²²⁰",
+    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-i-0813_oIiFDAeAEAAfzIAcA1AglAomNCimZMDBhuUYj6.jpeg?from=3067671334",
+    "user_display_id": "5209426.5209426",
+    "user_sec_uid": "MS4wLjABAAAAeSUPlI6Wlz2cJQI0QBtuoqfc1H0lYniCb6T851PFjOMStM3zGYV915q2l2iPRxM8",
+    "to_nickname": "晓晓🎀",
+    "to_avatar": "",
+    "to_user_display_id": "93777302610",
+    "to_user_sec_uid": "MS4wLjABAAAAOb_7pTBp1tbPgYnS1JMsgWynckPFSYrL3R6dsZUbcz4TjWOUAQkbchvIe-X91Gzc",
+    "traceId": "0b69fff4532aaa6425fdb9857bae9b0b",
+    "comboCount": 1,
+    "repeatEnd": null,
+    "groupCount": 1,
+    "sendType": 5,
+    "giftRaw": {
+      "image": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/e1bb515bcc43c181243ad8172c2a1dd9.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/e1bb515bcc43c181243ad8172c2a1dd9.png~tplv-obj.png"
+        ],
+        "uri": "webcast/e1bb515bcc43c181243ad8172c2a1dd9.png",
+        "avgColor": "#53537A"
+      },
+      "describe": "送出人鱼兔兔",
+      "duration": "1000",
+      "id": "15876",
+      "forLinkmic": true,
+      "type": 2,
+      "diamondCount": 299,
+      "isDisplayedOnPanel": true,
+      "primaryEffectId": "8808",
+      "giftLabelIcon": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/30d467838c506971d53a2cf68dab8d1b.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/30d467838c506971d53a2cf68dab8d1b.png~tplv-obj.png"
+        ],
+        "uri": "webcast/30d467838c506971d53a2cf68dab8d1b.png",
+        "avgColor": "#CEE5EB"
+      },
+      "name": "人鱼兔兔",
+      "icon": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/e1bb515bcc43c181243ad8172c2a1dd9.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/e1bb515bcc43c181243ad8172c2a1dd9.png~tplv-obj.png"
+        ],
+        "uri": "webcast/e1bb515bcc43c181243ad8172c2a1dd9.png",
+        "avgColor": "#523737"
+      },
+      "itemType": 1,
+      "appId": "1128",
+      "giftScene": "645",
+      "afterSendAction": 2,
+      "bannerSchemeUrl": "https://lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/mono/lynx/revenue_gift_panel_douyin/pages/banner/progress/template.js",
+      "reqExtraType": "2",
+      "assetIds": [
+        "8808"
+      ],
+      "giftPreviewInfo": {
+        "clientCheckLeftDiamond": true
+      },
+      "giftTip": {
+        "displayText": {},
+        "backgroundColor": "#CC595C66"
+      },
+      "groupInfo": [
+        {
+          "groupCount": 10,
+          "groupText": "完美"
+        },
+        {
+          "groupCount": 20,
+          "groupText": "情有独钟"
+        },
+        {
+          "groupCount": 66,
+          "groupText": "6的飞起"
+        }
+      ],
+      "disableWishList": true,
+      "webpImage": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/e1bb515bcc43c181243ad8172c2a1dd9.png~tplv-obj.webp",
+          "https://p11-webcast.douyinpic.com/img/webcast/e1bb515bcc43c181243ad8172c2a1dd9.png~tplv-obj.webp"
+        ],
+        "uri": "webcast/e1bb515bcc43c181243ad8172c2a1dd9.png",
+        "avgColor": "#607A53"
+      }
+    },
+    "giftKeys": [
+      "image",
+      "describe",
+      "duration",
+      "id",
+      "forLinkmic",
+      "type",
+      "diamondCount",
+      "isDisplayedOnPanel",
+      "primaryEffectId",
+      "giftLabelIcon",
+      "name",
+      "icon",
+      "itemType",
+      "appId",
+      "giftScene",
+      "afterSendAction",
+      "bannerSchemeUrl",
+      "reqExtraType",
+      "assetIds",
+      "giftPreviewInfo",
+      "giftTip",
+      "groupInfo",
+      "disableWishList",
+      "webpImage"
+    ]
+  },
+  {
+    "time": "2026-07-14T20:18:19.191+08:00",
+    "giftId": "685",
+    "giftName": "粉丝团灯牌",
+    "baseName": "粉丝团灯牌",
+    "displayName": "粉丝团灯牌",
+    "diamondCount": 1,
+    "diamondPerUnit": 1,
+    "count": 1,
+    "totalDiamonds": 1,
+    "icon": [
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+    ],
+    "iconType": null,
+    "image": [
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+    ],
+    "webpImage": [
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp",
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp"
+    ],
+    "uid": "1643134278980042",
+    "nickname": "暴躁土豆",
+    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-i-0813c000-ce_oIfBKFLosQGNhbAA3oAgeSITSAgH7xOJQAeBOF.jpeg?from=3067671334",
+    "user_display_id": "26782839909",
+    "user_sec_uid": "MS4wLjABAAAAJ4uR5txG2Jbe0zeq-qfLF43_osyZErYOtw2fvtlBGR1JJAWf4ekUtu5eOq78QmeZ",
+    "to_nickname": "一颗假头👽林语巷",
+    "to_avatar": "",
+    "to_user_display_id": "ljx000627",
+    "to_user_sec_uid": "MS4wLjABAAAAMvzi-rTSDY_DAQFDl6rl5N__LSdVBa6RByUAefRm_zFJTla8rQZKHWFq5qmNd9qV",
+    "traceId": "ea1b57071ca54d23f003610c4ec81886",
+    "comboCount": 1,
+    "repeatEnd": null,
+    "groupCount": 1,
+    "sendType": 1,
+    "giftRaw": {
+      "image": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#405237"
+      },
+      "describe": "送出粉丝团灯牌",
+      "duration": "3200",
+      "id": "685",
+      "fansclubInfo": {
+        "minLevel": 1,
+        "insertPos": 3
+      },
+      "forLinkmic": true,
+      "forFansclub": true,
+      "type": 4,
+      "diamondCount": 1,
+      "primaryEffectId": "1768",
+      "giftLabelIcon": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png",
+          "https://p3-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png"
+        ],
+        "uri": "webcast/31e32238eaa8fcc28efd7374099dca76.png",
+        "avgColor": "#A3897C"
+      },
+      "name": "粉丝团灯牌",
+      "icon": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#E6FADC"
+      },
+      "itemType": 1,
+      "appId": "1128",
+      "giftScene": "753",
+      "triggerWords": [
+        "粉丝"
+      ],
+      "afterSendAction": 3,
+      "bannerSchemeUrl": "https://lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/mono/lynx/revenue_gift_panel_douyin/pages/banner/progress/template.js",
+      "reqExtraType": "1",
+      "assetIds": [
+        "1768"
+      ],
+      "giftPreviewInfo": {
+        "clientCheckLeftDiamond": true
+      },
+      "giftTip": {
+        "displayText": {},
+        "backgroundColor": "#CC595C66"
+      },
+      "disableWishList": true,
+      "webpImage": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp",
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#CECEEB"
+      }
+    },
+    "giftKeys": [
+      "image",
+      "describe",
+      "duration",
+      "id",
+      "fansclubInfo",
+      "forLinkmic",
+      "forFansclub",
+      "type",
+      "diamondCount",
+      "primaryEffectId",
+      "giftLabelIcon",
+      "name",
+      "icon",
+      "itemType",
+      "appId",
+      "giftScene",
+      "triggerWords",
+      "afterSendAction",
+      "bannerSchemeUrl",
+      "reqExtraType",
+      "assetIds",
+      "giftPreviewInfo",
+      "giftTip",
+      "disableWishList",
+      "webpImage"
+    ]
+  },
+  {
+    "time": "2026-07-14T20:18:42.373+08:00",
+    "giftId": "685",
+    "giftName": "粉丝团灯牌",
+    "baseName": "粉丝团灯牌",
+    "displayName": "粉丝团灯牌",
+    "diamondCount": 1,
+    "diamondPerUnit": 1,
+    "count": 1,
+    "totalDiamonds": 1,
+    "icon": [
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+    ],
+    "iconType": null,
+    "image": [
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+    ],
+    "webpImage": [
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp",
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp"
+    ],
+    "uid": "1587338752309437",
+    "nickname": "不吃葡萄倒吐葡萄皮",
+    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-i-0813c000-ce_o8pqJAD7EECEAAeDfAAwIBAFYzng5NkACM89nM.jpeg?from=3067671334",
+    "user_display_id": "fengguotianq99",
+    "user_sec_uid": "MS4wLjABAAAAv84bHugHKSg6sxm-j-WMcrvaUW8JSCxf3BjP7lBX6xxJ7T2HkBxI1x5IQAdDjrvP",
+    "to_nickname": "",
+    "to_avatar": "",
+    "to_user_display_id": "",
+    "to_user_sec_uid": "",
+    "traceId": "d0d69e30372e4fbff43db254f55339f0",
+    "comboCount": 1,
+    "repeatEnd": null,
+    "groupCount": 1,
+    "sendType": 1,
+    "giftRaw": {
+      "image": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#FAE6DC"
+      },
+      "describe": "送出粉丝团灯牌",
+      "duration": "3200",
+      "id": "685",
+      "fansclubInfo": {
+        "minLevel": 1,
+        "insertPos": 3
+      },
+      "forLinkmic": true,
+      "forFansclub": true,
+      "type": 4,
+      "diamondCount": 1,
+      "primaryEffectId": "1768",
+      "giftLabelIcon": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png"
+        ],
+        "uri": "webcast/31e32238eaa8fcc28efd7374099dca76.png",
+        "avgColor": "#53537A"
+      },
+      "name": "粉丝团灯牌",
+      "icon": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#7A6D53"
+      },
+      "itemType": 1,
+      "appId": "1128",
+      "giftScene": "753",
+      "triggerWords": [
+        "粉丝"
+      ],
+      "afterSendAction": 3,
+      "bannerSchemeUrl": "https://lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/mono/lynx/revenue_gift_panel_douyin/pages/banner/progress/template.js",
+      "reqExtraType": "1",
+      "assetIds": [
+        "1768"
+      ],
+      "giftPreviewInfo": {
+        "clientCheckLeftDiamond": true
+      },
+      "giftTip": {
+        "displayText": {},
+        "backgroundColor": "#CC595C66"
+      },
+      "disableWishList": true,
+      "webpImage": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp",
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#B8B8B8"
+      }
+    },
+    "giftKeys": [
+      "image",
+      "describe",
+      "duration",
+      "id",
+      "fansclubInfo",
+      "forLinkmic",
+      "forFansclub",
+      "type",
+      "diamondCount",
+      "primaryEffectId",
+      "giftLabelIcon",
+      "name",
+      "icon",
+      "itemType",
+      "appId",
+      "giftScene",
+      "triggerWords",
+      "afterSendAction",
+      "bannerSchemeUrl",
+      "reqExtraType",
+      "assetIds",
+      "giftPreviewInfo",
+      "giftTip",
+      "disableWishList",
+      "webpImage"
+    ]
+  },
+  {
+    "time": "2026-07-14T20:18:54.904+08:00",
+    "giftId": "685",
+    "giftName": "闪烁星河",
+    "baseName": "闪烁星河",
+    "displayName": "闪烁星河",
+    "diamondCount": 1,
+    "diamondPerUnit": 99,
+    "count": 1,
+    "totalDiamonds": 99,
+    "icon": [
+      "https://p11-webcast.douyinpic.com/img/webcast/2e39e9fb493b86c38d3763dd2a7352e2.png~tplv-obj.png",
+      "https://p3-webcast.douyinpic.com/img/webcast/2e39e9fb493b86c38d3763dd2a7352e2.png~tplv-obj.png"
+    ],
+    "iconType": null,
+    "image": [
+      "https://p11-webcast.douyinpic.com/img/webcast/2e39e9fb493b86c38d3763dd2a7352e2.png~tplv-obj.png",
+      "https://p3-webcast.douyinpic.com/img/webcast/2e39e9fb493b86c38d3763dd2a7352e2.png~tplv-obj.png"
+    ],
+    "webpImage": [
+      "https://p11-webcast.douyinpic.com/img/webcast/2e39e9fb493b86c38d3763dd2a7352e2.png~tplv-obj.webp",
+      "https://p3-webcast.douyinpic.com/img/webcast/2e39e9fb493b86c38d3763dd2a7352e2.png~tplv-obj.webp"
+    ],
+    "uid": "3941122241727283",
+    "nickname": "毅",
+    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-i-0813c000-ce_ooi4FACpeAOzEruAi6cuD93Ee31fIzvAApxwEB.jpeg?from=3067671334",
+    "user_display_id": "52498834776",
+    "user_sec_uid": "MS4wLjABAAAAYBbE3w0rhDyfibhJh4iWsX8bPAL_yu7Sra_QW8dnurOMCindJuSijKXrCmUZrU9Z",
+    "to_nickname": "萱萱🍋🍋‍🟩🍒🧸🛌林语巷",
+    "to_avatar": "",
+    "to_user_display_id": "57644688826",
+    "to_user_sec_uid": "MS4wLjABAAAADIfsDB7U0DIiWMgxvb4R-9XKulWeO0wrc71WQ1olSLyiBhoaxT_OrXy9cRpIZiN7",
+    "traceId": "8cf74b30966ee94854a5616951aba3fc",
+    "comboCount": 1,
+    "repeatEnd": null,
+    "groupCount": 1,
+    "sendType": 1,
+    "giftRaw": {
+      "image": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/2e39e9fb493b86c38d3763dd2a7352e2.png~tplv-obj.png",
+          "https://p3-webcast.douyinpic.com/img/webcast/2e39e9fb493b86c38d3763dd2a7352e2.png~tplv-obj.png"
+        ],
+        "uri": "webcast/2e39e9fb493b86c38d3763dd2a7352e2.png",
+        "avgColor": "#FADCF0"
+      },
+      "describe": "送出粉丝团灯牌",
+      "duration": "3200",
+      "id": "685",
+      "fansclubInfo": {
+        "minLevel": 1,
+        "insertPos": 3
+      },
+      "forLinkmic": true,
+      "forFansclub": true,
+      "type": 4,
+      "diamondCount": 1,
+      "primaryEffectId": "5753",
+      "giftLabelIcon": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png",
+          "https://p3-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png"
+        ],
+        "uri": "webcast/31e32238eaa8fcc28efd7374099dca76.png",
+        "avgColor": "#CCA3A3"
+      },
+      "name": "闪烁星河",
+      "icon": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/2e39e9fb493b86c38d3763dd2a7352e2.png~tplv-obj.png",
+          "https://p3-webcast.douyinpic.com/img/webcast/2e39e9fb493b86c38d3763dd2a7352e2.png~tplv-obj.png"
+        ],
+        "uri": "webcast/2e39e9fb493b86c38d3763dd2a7352e2.png",
+        "avgColor": "#A3967C"
+      },
+      "itemType": 1,
+      "appId": "1128",
+      "giftScene": "753",
+      "triggerWords": [
+        "粉丝"
+      ],
+      "afterSendAction": 3,
+      "bannerSchemeUrl": "https://lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/mono/lynx/revenue_gift_panel_douyin/pages/banner/progress/template.js",
+      "reqExtraType": "1",
+      "assetIds": [
+        "1768",
+        "5753"
+      ],
+      "giftPreviewInfo": {
+        "clientCheckLeftDiamond": true
+      },
+      "giftTip": {
+        "displayText": {},
+        "backgroundColor": "#CC595C66"
+      },
+      "disableWishList": true,
+      "webpImage": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/2e39e9fb493b86c38d3763dd2a7352e2.png~tplv-obj.webp",
+          "https://p3-webcast.douyinpic.com/img/webcast/2e39e9fb493b86c38d3763dd2a7352e2.png~tplv-obj.webp"
+        ],
+        "uri": "webcast/2e39e9fb493b86c38d3763dd2a7352e2.png",
+        "avgColor": "#FFF8EB"
+      }
+    },
+    "giftKeys": [
+      "image",
+      "describe",
+      "duration",
+      "id",
+      "fansclubInfo",
+      "forLinkmic",
+      "forFansclub",
+      "type",
+      "diamondCount",
+      "primaryEffectId",
+      "giftLabelIcon",
+      "name",
+      "icon",
+      "itemType",
+      "appId",
+      "giftScene",
+      "triggerWords",
+      "afterSendAction",
+      "bannerSchemeUrl",
+      "reqExtraType",
+      "assetIds",
+      "giftPreviewInfo",
+      "giftTip",
+      "disableWishList",
+      "webpImage"
+    ]
+  },
+  {
+    "time": "2026-07-14T20:19:20.554+08:00",
+    "giftId": "685",
+    "giftName": "粉丝团灯牌",
+    "baseName": "粉丝团灯牌",
+    "displayName": "粉丝团灯牌",
+    "diamondCount": 1,
+    "diamondPerUnit": 1,
+    "count": 1,
+    "totalDiamonds": 1,
+    "icon": [
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+    ],
+    "iconType": null,
+    "image": [
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+    ],
+    "webpImage": [
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp",
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp"
+    ],
+    "uid": "98259039875",
+    "nickname": "呦吼～",
+    "avatar": "https://p26.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-i-0813c000-ce_oEBZeEsIDRWAmEYmwEfCAyAAUFn2ApEAlf69bm.jpeg?from=3067671334",
+    "user_display_id": "923721501",
+    "user_sec_uid": "MS4wLjABAAAAv1Sr4u1EXuzx1EsD3nEo8KUXeoqpMrSKLtFvc_4pq94",
+    "to_nickname": "西柠🦋¹²²⁰林语巷",
+    "to_avatar": "",
+    "to_user_display_id": "5757xixi",
+    "to_user_sec_uid": "MS4wLjABAAAAZW11nrW0dxDViQMqTyKIclrxqrLU2zwLfHl6rY2bW4M",
+    "traceId": "7ed952fd7fa7ee519580525c64d6eddd",
+    "comboCount": 1,
+    "repeatEnd": null,
+    "groupCount": 1,
+    "sendType": 1,
+    "giftRaw": {
+      "image": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#E0BCBC"
+      },
+      "describe": "送出粉丝团灯牌",
+      "duration": "3200",
+      "id": "685",
+      "fansclubInfo": {
+        "minLevel": 1,
+        "insertPos": 3
+      },
+      "forLinkmic": true,
+      "forFansclub": true,
+      "type": 4,
+      "diamondCount": 1,
+      "primaryEffectId": "1768",
+      "giftLabelIcon": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png"
+        ],
+        "uri": "webcast/31e32238eaa8fcc28efd7374099dca76.png",
+        "avgColor": "#7C7CA3"
+      },
+      "name": "粉丝团灯牌",
+      "icon": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#CCA3BE"
+      },
+      "itemType": 1,
+      "appId": "1128",
+      "giftScene": "753",
+      "triggerWords": [
+        "粉丝"
+      ],
+      "afterSendAction": 3,
+      "bannerSchemeUrl": "https://lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/mono/lynx/revenue_gift_panel_douyin/pages/banner/progress/template.js",
+      "reqExtraType": "1",
+      "assetIds": [
+        "1768"
+      ],
+      "giftPreviewInfo": {
+        "clientCheckLeftDiamond": true
+      },
+      "giftTip": {
+        "displayText": {},
+        "backgroundColor": "#CC595C66"
+      },
+      "disableWishList": true,
+      "webpImage": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp",
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#E0D4BC"
+      }
+    },
+    "giftKeys": [
+      "image",
+      "describe",
+      "duration",
+      "id",
+      "fansclubInfo",
+      "forLinkmic",
+      "forFansclub",
+      "type",
+      "diamondCount",
+      "primaryEffectId",
+      "giftLabelIcon",
+      "name",
+      "icon",
+      "itemType",
+      "appId",
+      "giftScene",
+      "triggerWords",
+      "afterSendAction",
+      "bannerSchemeUrl",
+      "reqExtraType",
+      "assetIds",
+      "giftPreviewInfo",
+      "giftTip",
+      "disableWishList",
+      "webpImage"
+    ]
+  },
+  {
+    "time": "2026-07-14T20:21:34.760+08:00",
+    "giftId": "685",
+    "giftName": "粉丝团灯牌",
+    "baseName": "粉丝团灯牌",
+    "displayName": "粉丝团灯牌",
+    "diamondCount": 1,
+    "diamondPerUnit": 1,
+    "count": 1,
+    "totalDiamonds": 1,
+    "icon": [
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+    ],
+    "iconType": null,
+    "image": [
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+    ],
+    "webpImage": [
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp",
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp"
+    ],
+    "uid": "68859697074",
+    "nickname": "幸运星期二🦋",
+    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-i-0813_oYAAqMEQIBATzbPfA6FGfOEg4joyABARDEe7Az.jpeg?from=3067671334",
+    "user_display_id": "172774037",
+    "user_sec_uid": "MS4wLjABAAAA353acUbhk_Y_7FMDZlTuSGPe-bfuJ1UCpiRd1JwsJQs",
+    "to_nickname": "西柠🦋¹²²⁰林语巷",
+    "to_avatar": "",
+    "to_user_display_id": "5757xixi",
+    "to_user_sec_uid": "MS4wLjABAAAAZW11nrW0dxDViQMqTyKIclrxqrLU2zwLfHl6rY2bW4M",
+    "traceId": "35624aca536acfc0f3b0644ec45c82b9",
+    "comboCount": 1,
+    "repeatEnd": null,
+    "groupCount": 1,
+    "sendType": 1,
+    "giftRaw": {
+      "image": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#523737"
+      },
+      "describe": "送出粉丝团灯牌",
+      "duration": "3200",
+      "id": "685",
+      "fansclubInfo": {
+        "minLevel": 1,
+        "insertPos": 3
+      },
+      "forLinkmic": true,
+      "forFansclub": true,
+      "type": 4,
+      "diamondCount": 1,
+      "primaryEffectId": "1768",
+      "giftLabelIcon": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png"
+        ],
+        "uri": "webcast/31e32238eaa8fcc28efd7374099dca76.png",
+        "avgColor": "#523749"
+      },
+      "name": "粉丝团灯牌",
+      "icon": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#DCDCFA"
+      },
+      "itemType": 1,
+      "appId": "1128",
+      "giftScene": "753",
+      "triggerWords": [
+        "粉丝"
+      ],
+      "afterSendAction": 3,
+      "bannerSchemeUrl": "https://lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/mono/lynx/revenue_gift_panel_douyin/pages/banner/progress/template.js",
+      "reqExtraType": "1",
+      "assetIds": [
+        "1768"
+      ],
+      "giftPreviewInfo": {
+        "clientCheckLeftDiamond": true
+      },
+      "giftTip": {
+        "displayText": {},
+        "backgroundColor": "#CC595C66"
+      },
+      "disableWishList": true,
+      "webpImage": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp",
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#D6D6D6"
+      }
+    },
+    "giftKeys": [
+      "image",
+      "describe",
+      "duration",
+      "id",
+      "fansclubInfo",
+      "forLinkmic",
+      "forFansclub",
+      "type",
+      "diamondCount",
+      "primaryEffectId",
+      "giftLabelIcon",
+      "name",
+      "icon",
+      "itemType",
+      "appId",
+      "giftScene",
+      "triggerWords",
+      "afterSendAction",
+      "bannerSchemeUrl",
+      "reqExtraType",
+      "assetIds",
+      "giftPreviewInfo",
+      "giftTip",
+      "disableWishList",
+      "webpImage"
+    ]
+  },
+  {
+    "time": "2026-07-14T20:22:06.965+08:00",
+    "giftId": "685",
+    "giftName": "粉丝团灯牌",
+    "baseName": "粉丝团灯牌",
+    "displayName": "粉丝团灯牌",
+    "diamondCount": 1,
+    "diamondPerUnit": 1,
+    "count": 1,
+    "totalDiamonds": 1,
+    "icon": [
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+    ],
+    "iconType": null,
+    "image": [
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+    ],
+    "webpImage": [
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp",
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp"
+    ],
+    "uid": "99864867029",
+    "nickname": "龙涵🧸🪐",
+    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-i-0813_osE2IAAA927eArzksfD8NyO9p3NAVhAgDd26Co.jpeg?from=3067671334",
+    "user_display_id": "lqi03200512",
+    "user_sec_uid": "MS4wLjABAAAApRFC22a6nGJ5VkAncQXWzajuGm93vTD3mCizlPDmFa0",
+    "to_nickname": "晓晓🎀",
+    "to_avatar": "",
+    "to_user_display_id": "93777302610",
+    "to_user_sec_uid": "MS4wLjABAAAAOb_7pTBp1tbPgYnS1JMsgWynckPFSYrL3R6dsZUbcz4TjWOUAQkbchvIe-X91Gzc",
+    "traceId": "7dd598a0fc4b930d9a05feb437ed431f",
+    "comboCount": 1,
+    "repeatEnd": null,
+    "groupCount": 1,
+    "sendType": 1,
+    "giftRaw": {
+      "image": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#A3C4CC"
+      },
+      "describe": "送出粉丝团灯牌",
+      "duration": "3200",
+      "id": "685",
+      "fansclubInfo": {
+        "minLevel": 1,
+        "insertPos": 3
+      },
+      "forLinkmic": true,
+      "forFansclub": true,
+      "type": 4,
+      "diamondCount": 1,
+      "primaryEffectId": "1768",
+      "giftLabelIcon": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png"
+        ],
+        "uri": "webcast/31e32238eaa8fcc28efd7374099dca76.png",
+        "avgColor": "#524937"
+      },
+      "name": "粉丝团灯牌",
+      "icon": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#EBD8CE"
+      },
+      "itemType": 1,
+      "appId": "1128",
+      "giftScene": "753",
+      "triggerWords": [
+        "粉丝"
+      ],
+      "afterSendAction": 3,
+      "bannerSchemeUrl": "https://lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/mono/lynx/revenue_gift_panel_douyin/pages/banner/progress/template.js",
+      "reqExtraType": "1",
+      "assetIds": [
+        "1768"
+      ],
+      "giftPreviewInfo": {
+        "clientCheckLeftDiamond": true
+      },
+      "giftTip": {
+        "displayText": {},
+        "backgroundColor": "#CC595C66"
+      },
+      "disableWishList": true,
+      "webpImage": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp",
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#FFF1EB"
+      }
+    },
+    "giftKeys": [
+      "image",
+      "describe",
+      "duration",
+      "id",
+      "fansclubInfo",
+      "forLinkmic",
+      "forFansclub",
+      "type",
+      "diamondCount",
+      "primaryEffectId",
+      "giftLabelIcon",
+      "name",
+      "icon",
+      "itemType",
+      "appId",
+      "giftScene",
+      "triggerWords",
+      "afterSendAction",
+      "bannerSchemeUrl",
+      "reqExtraType",
+      "assetIds",
+      "giftPreviewInfo",
+      "giftTip",
+      "disableWishList",
+      "webpImage"
+    ]
+  },
+  {
+    "time": "2026-07-14T20:22:10.878+08:00",
+    "giftId": "685",
+    "giftName": "粉丝团灯牌",
+    "baseName": "粉丝团灯牌",
+    "displayName": "粉丝团灯牌",
+    "diamondCount": 1,
+    "diamondPerUnit": 1,
+    "count": 1,
+    "totalDiamonds": 1,
+    "icon": [
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+    ],
+    "iconType": null,
+    "image": [
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+    ],
+    "webpImage": [
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp",
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp"
+    ],
+    "uid": "99864867029",
+    "nickname": "龙涵🧸🪐",
+    "avatar": "https://p26.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-i-0813_osE2IAAA927eArzksfD8NyO9p3NAVhAgDd26Co.jpeg?from=3067671334",
+    "user_display_id": "lqi03200512",
+    "user_sec_uid": "MS4wLjABAAAApRFC22a6nGJ5VkAncQXWzajuGm93vTD3mCizlPDmFa0",
+    "to_nickname": "曦禾🦦林语巷",
+    "to_avatar": "",
+    "to_user_display_id": "55467024378",
+    "to_user_sec_uid": "MS4wLjABAAAAVWlO3gyNWvjr7mCCwAXHBJpJIbrOCb-5w3ic-DOwBGfTEV35cNeTrwAcIVA7vQlL",
+    "traceId": "dc2c99a0d56aec0995aacf39534daf4a",
+    "comboCount": 1,
+    "repeatEnd": null,
+    "groupCount": 1,
+    "sendType": 1,
+    "giftRaw": {
+      "image": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#FFFFFF"
+      },
+      "describe": "送出粉丝团灯牌",
+      "duration": "3200",
+      "id": "685",
+      "fansclubInfo": {
+        "minLevel": 1,
+        "insertPos": 3
+      },
+      "forLinkmic": true,
+      "forFansclub": true,
+      "type": 4,
+      "diamondCount": 1,
+      "primaryEffectId": "1768",
+      "giftLabelIcon": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png",
+          "https://p3-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png"
+        ],
+        "uri": "webcast/31e32238eaa8fcc28efd7374099dca76.png",
+        "avgColor": "#7C9BA3"
+      },
+      "name": "粉丝团灯牌",
+      "icon": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#7A6053"
+      },
+      "itemType": 1,
+      "appId": "1128",
+      "giftScene": "753",
+      "triggerWords": [
+        "粉丝"
+      ],
+      "afterSendAction": 3,
+      "bannerSchemeUrl": "https://lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/mono/lynx/revenue_gift_panel_douyin/pages/banner/progress/template.js",
+      "reqExtraType": "1",
+      "assetIds": [
+        "1768"
+      ],
+      "giftPreviewInfo": {
+        "clientCheckLeftDiamond": true
+      },
+      "giftTip": {
+        "displayText": {},
+        "backgroundColor": "#CC595C66"
+      },
+      "disableWishList": true,
+      "webpImage": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp",
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#A3897C"
+      }
+    },
+    "giftKeys": [
+      "image",
+      "describe",
+      "duration",
+      "id",
+      "fansclubInfo",
+      "forLinkmic",
+      "forFansclub",
+      "type",
+      "diamondCount",
+      "primaryEffectId",
+      "giftLabelIcon",
+      "name",
+      "icon",
+      "itemType",
+      "appId",
+      "giftScene",
+      "triggerWords",
+      "afterSendAction",
+      "bannerSchemeUrl",
+      "reqExtraType",
+      "assetIds",
+      "giftPreviewInfo",
+      "giftTip",
+      "disableWishList",
+      "webpImage"
+    ]
+  },
+  {
+    "time": "2026-07-14T20:22:14.280+08:00",
+    "giftId": "685",
+    "giftName": "粉丝团灯牌",
+    "baseName": "粉丝团灯牌",
+    "displayName": "粉丝团灯牌",
+    "diamondCount": 1,
+    "diamondPerUnit": 1,
+    "count": 1,
+    "totalDiamonds": 1,
+    "icon": [
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+    ],
+    "iconType": null,
+    "image": [
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+    ],
+    "webpImage": [
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp",
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp"
+    ],
+    "uid": "99864867029",
+    "nickname": "龙涵🧸🪐",
+    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-i-0813_osE2IAAA927eArzksfD8NyO9p3NAVhAgDd26Co.jpeg?from=3067671334",
+    "user_display_id": "lqi03200512",
+    "user_sec_uid": "MS4wLjABAAAApRFC22a6nGJ5VkAncQXWzajuGm93vTD3mCizlPDmFa0",
+    "to_nickname": "西柠🦋¹²²⁰林语巷",
+    "to_avatar": "",
+    "to_user_display_id": "5757xixi",
+    "to_user_sec_uid": "MS4wLjABAAAAZW11nrW0dxDViQMqTyKIclrxqrLU2zwLfHl6rY2bW4M",
+    "traceId": "19d38e8b0f6b3b46de14012909502339",
+    "comboCount": 1,
+    "repeatEnd": null,
+    "groupCount": 1,
+    "sendType": 1,
+    "giftRaw": {
+      "image": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#374C52"
+      },
+      "describe": "送出粉丝团灯牌",
+      "duration": "3200",
+      "id": "685",
+      "fansclubInfo": {
+        "minLevel": 1,
+        "insertPos": 3
+      },
+      "forLinkmic": true,
+      "forFansclub": true,
+      "type": 4,
+      "diamondCount": 1,
+      "primaryEffectId": "1768",
+      "giftLabelIcon": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png",
+          "https://p3-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png"
+        ],
+        "uri": "webcast/31e32238eaa8fcc28efd7374099dca76.png",
+        "avgColor": "#89A37C"
+      },
+      "name": "粉丝团灯牌",
+      "icon": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#DCDCFA"
+      },
+      "itemType": 1,
+      "appId": "1128",
+      "giftScene": "753",
+      "triggerWords": [
+        "粉丝"
+      ],
+      "afterSendAction": 3,
+      "bannerSchemeUrl": "https://lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/mono/lynx/revenue_gift_panel_douyin/pages/banner/progress/template.js",
+      "reqExtraType": "1",
+      "assetIds": [
+        "1768"
+      ],
+      "giftPreviewInfo": {
+        "clientCheckLeftDiamond": true
+      },
+      "giftTip": {
+        "displayText": {},
+        "backgroundColor": "#CC595C66"
+      },
+      "disableWishList": true,
+      "webpImage": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp",
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#FAFAFA"
+      }
+    },
+    "giftKeys": [
+      "image",
+      "describe",
+      "duration",
+      "id",
+      "fansclubInfo",
+      "forLinkmic",
+      "forFansclub",
+      "type",
+      "diamondCount",
+      "primaryEffectId",
+      "giftLabelIcon",
+      "name",
+      "icon",
+      "itemType",
+      "appId",
+      "giftScene",
+      "triggerWords",
+      "afterSendAction",
+      "bannerSchemeUrl",
+      "reqExtraType",
+      "assetIds",
+      "giftPreviewInfo",
+      "giftTip",
+      "disableWishList",
+      "webpImage"
+    ]
+  },
+  {
+    "time": "2026-07-14T20:22:18.779+08:00",
+    "giftId": "685",
+    "giftName": "粉丝团灯牌",
+    "baseName": "粉丝团灯牌",
+    "displayName": "粉丝团灯牌",
+    "diamondCount": 1,
+    "diamondPerUnit": 1,
+    "count": 1,
+    "totalDiamonds": 1,
+    "icon": [
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+    ],
+    "iconType": null,
+    "image": [
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+    ],
+    "webpImage": [
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp",
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp"
+    ],
+    "uid": "99864867029",
+    "nickname": "龙涵🧸🪐",
+    "avatar": "https://p26.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-i-0813_osE2IAAA927eArzksfD8NyO9p3NAVhAgDd26Co.jpeg?from=3067671334",
+    "user_display_id": "lqi03200512",
+    "user_sec_uid": "MS4wLjABAAAApRFC22a6nGJ5VkAncQXWzajuGm93vTD3mCizlPDmFa0",
+    "to_nickname": "萱萱🍋🍋‍🟩🍒🧸🛌林语巷",
+    "to_avatar": "",
+    "to_user_display_id": "57644688826",
+    "to_user_sec_uid": "MS4wLjABAAAADIfsDB7U0DIiWMgxvb4R-9XKulWeO0wrc71WQ1olSLyiBhoaxT_OrXy9cRpIZiN7",
+    "traceId": "95e0e2807e83dae0f39af7ed170bf900",
+    "comboCount": 1,
+    "repeatEnd": null,
+    "groupCount": 1,
+    "sendType": 1,
+    "giftRaw": {
+      "image": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#CECEEB"
+      },
+      "describe": "送出粉丝团灯牌",
+      "duration": "3200",
+      "id": "685",
+      "fansclubInfo": {
+        "minLevel": 1,
+        "insertPos": 3
+      },
+      "forLinkmic": true,
+      "forFansclub": true,
+      "type": 4,
+      "diamondCount": 1,
+      "primaryEffectId": "1768",
+      "giftLabelIcon": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png"
+        ],
+        "uri": "webcast/31e32238eaa8fcc28efd7374099dca76.png",
+        "avgColor": "#FFEBF8"
+      },
+      "name": "粉丝团灯牌",
+      "icon": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#7C7CA3"
+      },
+      "itemType": 1,
+      "appId": "1128",
+      "giftScene": "753",
+      "triggerWords": [
+        "粉丝"
+      ],
+      "afterSendAction": 3,
+      "bannerSchemeUrl": "https://lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/mono/lynx/revenue_gift_panel_douyin/pages/banner/progress/template.js",
+      "reqExtraType": "1",
+      "assetIds": [
+        "1768"
+      ],
+      "giftPreviewInfo": {
+        "clientCheckLeftDiamond": true
+      },
+      "giftTip": {
+        "displayText": {},
+        "backgroundColor": "#CC595C66"
+      },
+      "disableWishList": true,
+      "webpImage": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp",
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#FAFAFA"
+      }
+    },
+    "giftKeys": [
+      "image",
+      "describe",
+      "duration",
+      "id",
+      "fansclubInfo",
+      "forLinkmic",
+      "forFansclub",
+      "type",
+      "diamondCount",
+      "primaryEffectId",
+      "giftLabelIcon",
+      "name",
+      "icon",
+      "itemType",
+      "appId",
+      "giftScene",
+      "triggerWords",
+      "afterSendAction",
+      "bannerSchemeUrl",
+      "reqExtraType",
+      "assetIds",
+      "giftPreviewInfo",
+      "giftTip",
+      "disableWishList",
+      "webpImage"
+    ]
+  },
+  {
+    "time": "2026-07-14T20:22:25.517+08:00",
+    "giftId": "685",
+    "giftName": "粉丝团灯牌",
+    "baseName": "粉丝团灯牌",
+    "displayName": "粉丝团灯牌",
+    "diamondCount": 1,
+    "diamondPerUnit": 1,
+    "count": 1,
+    "totalDiamonds": 1,
+    "icon": [
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+    ],
+    "iconType": null,
+    "image": [
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+    ],
+    "webpImage": [
+      "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp",
+      "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp"
+    ],
+    "uid": "1899563757084540",
+    "nickname": "夏音:)",
+    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-i-0813_ogfHJAAYqAA98pztC7FEgyDZALA9TnAIEAfdNR.jpeg?from=3067671334",
+    "user_display_id": "enna0607",
+    "user_sec_uid": "MS4wLjABAAAA6lXrKCbWX80DhM8UT7mMnIaGc9UTOlCtBTtds-pKI0iHUuiCTJDwn2N9DNOqrpJw",
+    "to_nickname": "西柠🦋¹²²⁰林语巷",
+    "to_avatar": "",
+    "to_user_display_id": "5757xixi",
+    "to_user_sec_uid": "MS4wLjABAAAAZW11nrW0dxDViQMqTyKIclrxqrLU2zwLfHl6rY2bW4M",
+    "traceId": "bf817cf5bac9f534e184853373377779",
+    "comboCount": 1,
+    "repeatEnd": null,
+    "groupCount": 1,
+    "sendType": 1,
+    "giftRaw": {
+      "image": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#FADCDC"
+      },
+      "describe": "送出粉丝团灯牌",
+      "duration": "3200",
+      "id": "685",
+      "fansclubInfo": {
+        "minLevel": 1,
+        "insertPos": 3
+      },
+      "forLinkmic": true,
+      "forFansclub": true,
+      "type": 4,
+      "diamondCount": 1,
+      "primaryEffectId": "1768",
+      "giftLabelIcon": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png"
+        ],
+        "uri": "webcast/31e32238eaa8fcc28efd7374099dca76.png",
+        "avgColor": "#524037"
+      },
+      "name": "粉丝团灯牌",
+      "icon": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png",
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.png"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#7A536D"
+      },
+      "itemType": 1,
+      "appId": "1128",
+      "giftScene": "753",
+      "triggerWords": [
+        "粉丝"
+      ],
+      "afterSendAction": 3,
+      "bannerSchemeUrl": "https://lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/mono/lynx/revenue_gift_panel_douyin/pages/banner/progress/template.js",
+      "reqExtraType": "1",
+      "assetIds": [
+        "1768"
+      ],
+      "giftPreviewInfo": {
+        "clientCheckLeftDiamond": true
+      },
+      "giftTip": {
+        "displayText": {},
+        "backgroundColor": "#CC595C66"
+      },
+      "disableWishList": true,
+      "webpImage": {
+        "urlList": [
+          "https://p3-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp",
+          "https://p11-webcast.douyinpic.com/img/webcast/722e56b42551d6490e5ebd9521287c67.png~tplv-obj.webp"
+        ],
+        "uri": "webcast/722e56b42551d6490e5ebd9521287c67.png",
+        "avgColor": "#8F8F8F"
+      }
+    },
+    "giftKeys": [
+      "image",
+      "describe",
+      "duration",
+      "id",
+      "fansclubInfo",
+      "forLinkmic",
+      "forFansclub",
+      "type",
+      "diamondCount",
+      "primaryEffectId",
+      "giftLabelIcon",
+      "name",
+      "icon",
+      "itemType",
+      "appId",
+      "giftScene",
+      "triggerWords",
+      "afterSendAction",
+      "bannerSchemeUrl",
+      "reqExtraType",
+      "assetIds",
+      "giftPreviewInfo",
+      "giftTip",
+      "disableWishList",
+      "webpImage"
+    ]
+  },
+  {
+    "time": "2026-07-14T20:22:38.015+08:00",
+    "giftId": "685",
+    "giftName": "闪烁星河",
+    "baseName": "闪烁星河",
+    "displayName": "闪烁星河",
+    "diamondCount": 1,
+    "diamondPerUnit": 99,
+    "count": 1,
+    "totalDiamonds": 99,
+    "icon": [
+      "https://p11-webcast.douyinpic.com/img/webcast/2e39e9fb493b86c38d3763dd2a7352e2.png~tplv-obj.png",
+      "https://p3-webcast.douyinpic.com/img/webcast/2e39e9fb493b86c38d3763dd2a7352e2.png~tplv-obj.png"
+    ],
+    "iconType": null,
+    "image": [
+      "https://p11-webcast.douyinpic.com/img/webcast/2e39e9fb493b86c38d3763dd2a7352e2.png~tplv-obj.png",
+      "https://p3-webcast.douyinpic.com/img/webcast/2e39e9fb493b86c38d3763dd2a7352e2.png~tplv-obj.png"
+    ],
+    "webpImage": [
+      "https://p11-webcast.douyinpic.com/img/webcast/2e39e9fb493b86c38d3763dd2a7352e2.png~tplv-obj.webp",
+      "https://p3-webcast.douyinpic.com/img/webcast/2e39e9fb493b86c38d3763dd2a7352e2.png~tplv-obj.webp"
+    ],
+    "uid": "4322871945738728",
+    "nickname": "别装熟jwlwukqnal",
+    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_2f65bc8dd0c48c86d42c45d73336fd50.jpeg?from=3067671334",
+    "user_display_id": "i_rene",
+    "user_sec_uid": "MS4wLjABAAAA2c1fqkhiMj2nDZHkYmUCIoyLmQpkmyNZIq8UvLbncKQIsEurlyt3AwHwdvfWIe3f",
+    "to_nickname": "一颗假头👽林语巷",
+    "to_avatar": "",
+    "to_user_display_id": "ljx000627",
+    "to_user_sec_uid": "MS4wLjABAAAAMvzi-rTSDY_DAQFDl6rl5N__LSdVBa6RByUAefRm_zFJTla8rQZKHWFq5qmNd9qV",
+    "traceId": "acc343245e468a444290bef10b3bc558",
+    "comboCount": 1,
+    "repeatEnd": null,
+    "groupCount": 1,
+    "sendType": 1,
+    "giftRaw": {
+      "image": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/2e39e9fb493b86c38d3763dd2a7352e2.png~tplv-obj.png",
+          "https://p3-webcast.douyinpic.com/img/webcast/2e39e9fb493b86c38d3763dd2a7352e2.png~tplv-obj.png"
+        ],
+        "uri": "webcast/2e39e9fb493b86c38d3763dd2a7352e2.png",
+        "avgColor": "#F0F0F0"
+      },
+      "describe": "送出粉丝团灯牌",
+      "duration": "3200",
+      "id": "685",
+      "fansclubInfo": {
+        "minLevel": 1,
+        "insertPos": 3
+      },
+      "forLinkmic": true,
+      "forFansclub": true,
+      "type": 4,
+      "diamondCount": 1,
+      "primaryEffectId": "5753",
+      "giftLabelIcon": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png",
+          "https://p3-webcast.douyinpic.com/img/webcast/31e32238eaa8fcc28efd7374099dca76.png~tplv-obj.png"
+        ],
+        "uri": "webcast/31e32238eaa8fcc28efd7374099dca76.png",
+        "avgColor": "#A37C7C"
+      },
+      "name": "闪烁星河",
+      "icon": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/2e39e9fb493b86c38d3763dd2a7352e2.png~tplv-obj.png",
+          "https://p3-webcast.douyinpic.com/img/webcast/2e39e9fb493b86c38d3763dd2a7352e2.png~tplv-obj.png"
+        ],
+        "uri": "webcast/2e39e9fb493b86c38d3763dd2a7352e2.png",
+        "avgColor": "#A37C7C"
+      },
+      "itemType": 1,
+      "appId": "1128",
+      "giftScene": "753",
+      "triggerWords": [
+        "粉丝"
+      ],
+      "afterSendAction": 3,
+      "bannerSchemeUrl": "https://lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/mono/lynx/revenue_gift_panel_douyin/pages/banner/progress/template.js",
+      "reqExtraType": "1",
+      "assetIds": [
+        "1768",
+        "5753"
+      ],
+      "giftPreviewInfo": {
+        "clientCheckLeftDiamond": true
+      },
+      "giftTip": {
+        "displayText": {},
+        "backgroundColor": "#CC595C66"
+      },
+      "disableWishList": true,
+      "webpImage": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/2e39e9fb493b86c38d3763dd2a7352e2.png~tplv-obj.webp",
+          "https://p3-webcast.douyinpic.com/img/webcast/2e39e9fb493b86c38d3763dd2a7352e2.png~tplv-obj.webp"
+        ],
+        "uri": "webcast/2e39e9fb493b86c38d3763dd2a7352e2.png",
+        "avgColor": "#7A6053"
+      }
+    },
+    "giftKeys": [
+      "image",
+      "describe",
+      "duration",
+      "id",
+      "fansclubInfo",
+      "forLinkmic",
+      "forFansclub",
+      "type",
+      "diamondCount",
+      "primaryEffectId",
+      "giftLabelIcon",
+      "name",
+      "icon",
+      "itemType",
+      "appId",
+      "giftScene",
+      "triggerWords",
+      "afterSendAction",
+      "bannerSchemeUrl",
+      "reqExtraType",
+      "assetIds",
+      "giftPreviewInfo",
+      "giftTip",
+      "disableWishList",
+      "webpImage"
+    ]
+  },
+  {
+    "time": "2026-07-14T20:23:13.612+08:00",
+    "giftId": "15878",
+    "giftName": "星辰大海",
+    "baseName": "星辰大海",
+    "displayName": "星辰大海",
+    "diamondCount": 8500,
+    "diamondPerUnit": 8500,
+    "count": 1,
+    "totalDiamonds": 8500,
+    "icon": [
+      "https://p11-webcast.douyinpic.com/img/webcast/50c8390febc56cef8893295b6e71ee23.png~tplv-obj.png",
+      "https://p3-webcast.douyinpic.com/img/webcast/50c8390febc56cef8893295b6e71ee23.png~tplv-obj.png"
+    ],
+    "iconType": null,
+    "image": [
+      "https://p11-webcast.douyinpic.com/img/webcast/50c8390febc56cef8893295b6e71ee23.png~tplv-obj.png",
+      "https://p3-webcast.douyinpic.com/img/webcast/50c8390febc56cef8893295b6e71ee23.png~tplv-obj.png"
+    ],
+    "webpImage": [
+      "https://p11-webcast.douyinpic.com/img/webcast/50c8390febc56cef8893295b6e71ee23.png~tplv-obj.webp",
+      "https://p3-webcast.douyinpic.com/img/webcast/50c8390febc56cef8893295b6e71ee23.png~tplv-obj.webp"
+    ],
+    "uid": "4322871945738728",
+    "nickname": "别装熟jwlwukqnal",
+    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_2f65bc8dd0c48c86d42c45d73336fd50.jpeg?from=3067671334",
+    "user_display_id": "i_rene",
+    "user_sec_uid": "MS4wLjABAAAA2c1fqkhiMj2nDZHkYmUCIoyLmQpkmyNZIq8UvLbncKQIsEurlyt3AwHwdvfWIe3f",
+    "to_nickname": "一颗假头👽林语巷",
+    "to_avatar": "",
+    "to_user_display_id": "ljx000627",
+    "to_user_sec_uid": "MS4wLjABAAAAMvzi-rTSDY_DAQFDl6rl5N__LSdVBa6RByUAefRm_zFJTla8rQZKHWFq5qmNd9qV",
+    "traceId": "af1c39c94f49a43b080930798c76dd70",
+    "comboCount": 1,
+    "repeatEnd": null,
+    "groupCount": 1,
+    "sendType": null,
+    "giftRaw": {
+      "image": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/50c8390febc56cef8893295b6e71ee23.png~tplv-obj.png",
+          "https://p3-webcast.douyinpic.com/img/webcast/50c8390febc56cef8893295b6e71ee23.png~tplv-obj.png"
+        ],
+        "uri": "webcast/50c8390febc56cef8893295b6e71ee23.png",
+        "avgColor": "#E6FADC"
+      },
+      "describe": "送出星辰大海",
+      "duration": "1000",
+      "id": "15878",
+      "forLinkmic": true,
+      "type": 2,
+      "diamondCount": 8500,
+      "isDisplayedOnPanel": true,
+      "primaryEffectId": "8810",
+      "giftLabelIcon": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/30d467838c506971d53a2cf68dab8d1b.png~tplv-obj.png",
+          "https://p3-webcast.douyinpic.com/img/webcast/30d467838c506971d53a2cf68dab8d1b.png~tplv-obj.png"
+        ],
+        "uri": "webcast/30d467838c506971d53a2cf68dab8d1b.png",
+        "avgColor": "#EBD8CE"
+      },
+      "name": "星辰大海",
+      "icon": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/50c8390febc56cef8893295b6e71ee23.png~tplv-obj.png",
+          "https://p3-webcast.douyinpic.com/img/webcast/50c8390febc56cef8893295b6e71ee23.png~tplv-obj.png"
+        ],
+        "uri": "webcast/50c8390febc56cef8893295b6e71ee23.png",
+        "avgColor": "#EBEBFF"
+      },
+      "itemType": 1,
+      "appId": "1128",
+      "giftScene": "133",
+      "afterSendAction": 2,
+      "bannerSchemeUrl": "https://lf-webcast-gr-sourcecdn.bytegecko.com/obj/byte-gurd-source-gr/webcast/mono/lynx/revenue_gift_panel_douyin/pages/banner/progress/template.js",
+      "reqExtraType": "2",
+      "assetIds": [
+        "8810"
+      ],
+      "giftPreviewInfo": {
+        "clientCheckLeftDiamond": true
+      },
+      "giftTip": {
+        "displayText": {},
+        "backgroundColor": "#CC595C66"
+      },
+      "disableWishList": true,
+      "webpImage": {
+        "urlList": [
+          "https://p11-webcast.douyinpic.com/img/webcast/50c8390febc56cef8893295b6e71ee23.png~tplv-obj.webp",
+          "https://p3-webcast.douyinpic.com/img/webcast/50c8390febc56cef8893295b6e71ee23.png~tplv-obj.webp"
+        ],
+        "uri": "webcast/50c8390febc56cef8893295b6e71ee23.png",
+        "avgColor": "#3D3D3D"
+      }
+    },
+    "giftKeys": [
+      "image",
+      "describe",
+      "duration",
+      "id",
+      "forLinkmic",
+      "type",
+      "diamondCount",
+      "isDisplayedOnPanel",
+      "primaryEffectId",
+      "giftLabelIcon",
+      "name",
+      "icon",
+      "itemType",
+      "appId",
+      "giftScene",
+      "afterSendAction",
+      "bannerSchemeUrl",
+      "reqExtraType",
+      "assetIds",
+      "giftPreviewInfo",
+      "giftTip",
+      "disableWishList",
+      "webpImage"
+    ]
   }
 ]

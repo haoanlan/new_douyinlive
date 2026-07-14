@@ -344,10 +344,14 @@
                       </div>
                     </div>
                     <div id="rtDanmakuWrap" class="rt-danmaku-wrap" style="flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative">
-                      <!-- 初始加载 & 条数切换 loading -->
-                      <div v-if="danmakuLoading || dmSwitchLoading" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;gap:8px">
+                      <!-- 初始加载 loading（全屏遮罩，替换空状态） -->
+                      <div v-if="danmakuLoading" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;gap:8px;background:var(--bg-body)">
                         <div style="width:24px;height:24px;border:2.5px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite"></div>
                         <div style="font-size:12px;color:var(--text-muted)">加载中...</div>
+                      </div>
+                      <!-- 条数切换 loading（小spinner，不遮挡列表） -->
+                      <div v-if="dmSwitchLoading" style="position:absolute;top:6px;right:6px;z-index:10">
+                        <div style="width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite"></div>
                       </div>
                       <div id="rtDanmakuList" class="rt-danmaku-list" style="flex:1;overflow-y:auto;overflow-x:hidden">
                         <template v-if="displayedDanmaku.length > 0">
@@ -374,7 +378,7 @@
                             </div>
                           </div>
                         </template>
-                        <div v-else class="empty" style="padding:40px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;flex:1;min-height:180px">
+                        <div v-else-if="!danmakuLoading" class="empty" style="padding:40px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;flex:1;min-height:180px">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32" style="margin-bottom:10px;opacity:0.3"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                           <div style="color:var(--text-muted);font-size:13px">{{ danmakuSearchQuery ? '无匹配结果' : '暂无动态' }}</div>
                         </div>

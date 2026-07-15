@@ -1616,9 +1616,10 @@ async function queryAnonymous() {
 function switchDetailTab(tab: string) {
   detailTab.value = tab
   if ((tab === 'danmaku' || tab === 'anon') && (!_danmaku.value || !_danmaku.value.length)) {
-    loadDanmakuData()
-  }
-  if (tab === 'danmaku') {
+    loadDanmakuData().then(() => {
+      if (tab === 'danmaku') startDanmakuPoll()
+    })
+  } else if (tab === 'danmaku') {
     startDanmakuPoll()
   } else stopDanmakuPoll()
 }

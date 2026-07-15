@@ -1868,6 +1868,23 @@ watch(displayedDanmaku, () => {
   }
 })
 
+// ResizeObserver实时监听左栏高度变化，自动同步右栏
+let _resizeObs: ResizeObserver | null = null
+watch(detailTab, (tab) => {
+  if (tab === 'danmaku' && window.innerWidth > 768) {
+    nextTick(() => {
+      if (_resizeObs) _resizeObs.disconnect()
+      if (danmakuLeftEl.value) {
+        _resizeObs = new ResizeObserver(() => syncDanmakuHeight())
+        _resizeObs.observe(danmakuLeftEl.value)
+      }
+    })
+  } else if (_resizeObs) {
+    _resizeObs.disconnect()
+    _resizeObs = null
+  }
+}, { immediate: true })
+
 function syncDanmakuHeight() {
   if (danmakuLeftEl.value && danmakuRightEl.value && window.innerWidth > 768) {
     danmakuRightEl.value.style.height = danmakuLeftEl.value.offsetHeight + 'px'

@@ -1886,12 +1886,13 @@ onMounted(async () => {
   const sessionId = route.params.sessionId as string
   const hostId = route.params.hostId as string
   if (sessionId) {
+    // 先调viewDetail立即设contentLoading=true，再加载数据
+    viewDetail(Number(sessionId), true)
     try {
       const [roomsData, summaryData] = await Promise.all([fetchRooms(), api('/api/summary')])
       rooms.value = roomsData
       Object.assign(summary, summaryData)
     } catch { /* ignore */ }
-    viewDetail(Number(sessionId), true)
   } else if (hostId) {
     try { rooms.value = await fetchRooms() } catch { /* ignore */ }
     viewSessions(hostId, true)

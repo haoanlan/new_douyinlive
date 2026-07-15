@@ -1856,13 +1856,23 @@ watch(detailTab, (tab) => {
   if (tab === "danmaku" && detailData.value) {
     nextTick(() => {
       renderWordCloud(detailData.value?.danmakuWords || [])
-      // 以左侧高度为基准，右侧设置等高
-      if (danmakuLeftEl.value && danmakuRightEl.value && window.innerWidth > 768) {
-        danmakuRightEl.value.style.height = danmakuLeftEl.value.offsetHeight + 'px'
-      }
+      syncDanmakuHeight()
     })
   }
 })
+
+// 数据变化时重新同步左右高度
+watch(displayedDanmaku, () => {
+  if (detailTab.value === 'danmaku' && window.innerWidth > 768) {
+    nextTick(syncDanmakuHeight)
+  }
+})
+
+function syncDanmakuHeight() {
+  if (danmakuLeftEl.value && danmakuRightEl.value && window.innerWidth > 768) {
+    danmakuRightEl.value.style.height = danmakuLeftEl.value.offsetHeight + 'px'
+  }
+}
 // 监听路由变化（同一组件复用时）
 let _routeReady = false
 

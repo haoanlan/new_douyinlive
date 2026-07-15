@@ -911,7 +911,7 @@ async function handleAPI(req, res) {
         const st = sessionStats[r.id] || { total_diamonds: 0, gift_count: 0, user_set: new Set() };
         return {
           id: r.id,
-          title: r.room_title || `场次 #${r.id}`,
+          title: `场次 #${r.id}`,
           is_live: r.end_time === null && r.archived === 0,
           started_at: r.start_time,
           ended_at: r.end_time,

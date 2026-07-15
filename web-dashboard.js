@@ -329,13 +329,21 @@ async function handleAPI(req, res) {
       `).all(`%${q}%`, ...sessionParams, `%${q}%`, ...sessionParams, `%${q}%`, ...sessionParams);
       if (!allRows.length) return sendJSON(res, { users: [] });
 
+      // 预建 nickname → sec_uid 映射（从gifts和danmaku中取有sec_uid的记录）
+      const nickToUid = {};
+      for (const r of allRows) {
+        if (r.user_sec_uid && r.nickname) nickToUid[r.nickname] = r.user_sec_uid;
+      }
+
       // 按 sec_uid 去重聚合
       const userMap = {};
       for (const r of allRows) {
-        const key = r.user_sec_uid || `_noname_${r.nickname}`;
+        // members表sec_uid为null时，用nickname从gifts/danmaku中补全
+        const uid = r.user_sec_uid || nickToUid[r.nickname] || '';
+        const key = uid || `_noname_${r.nickname}`;
         if (!userMap[key]) {
           userMap[key] = {
-            sec_uid: r.user_sec_uid,
+            sec_uid: uid,
             db_nicknames: new Set(),
             db_avatar: r.avatar,
             session_ids: new Set(),

@@ -962,7 +962,11 @@ function startBinary() {
   const binaryPath = __dirname + '/douyinLive-linux-amd64';
   console.log('[binary] 启动 douyinLive 代理...');
   try {
-    binaryProcess = spawn(binaryPath, ['--unknown', '--log-level', 'debug'], { cwd: __dirname, stdio: ['ignore', 'inherit', 'inherit'] });
+    binaryProcess = spawn(binaryPath, ['--unknown', '--log-level', 'debug'], { cwd: __dirname, stdio: ['ignore', 'pipe', 'pipe'] });
+    const binaryLogFile = path.join(logsDir, 'binary_output.log');
+    const binaryLogStream = fs.createWriteStream(binaryLogFile, { flags: 'a' });
+    binaryProcess.stdout.pipe(binaryLogStream);
+    binaryProcess.stderr.pipe(binaryLogStream);
     binaryProcess.on('exit', (code, sig) => {
       const reason = sig ? `信号 ${sig}` : `退出码 ${code}`;
       console.log(`[binary] 进程退出 (${reason})`);

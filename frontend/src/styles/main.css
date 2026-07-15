@@ -602,6 +602,5 @@ thead .session-cb:hover{opacity:1}
 
 /* ========== PC端弹幕Tab ========== */
 @media(min-width:769px){
-  #danmakuLeft{min-height:690px}
-  #rtDanmakuWrap{min-height:315px}
+  #rtDanmakuWrap{min-height:200px}
 }

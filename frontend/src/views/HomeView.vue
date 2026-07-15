@@ -823,7 +823,7 @@ function updateBreadcrumb() {
     const host = rooms.value.find(h => h.room_id === currentHostId.value)
     const sess = sessions.value.find(s => s.id === currentSessionId.value)
     // 兼容直接带URL参数进入：sessions可能为空，从detailData中获取标题
-    const sessionTitle = sess?.title || detailData.value?.session?.room_title || '场次详情'
+    const sessionTitle = sess?.title || detailData.value?.session?.room_title || (currentSessionId.value ? `场次 ${currentSessionId.value}` : '场次详情')
     breadcrumbItems.value = [
       { label: '房间管理', onClick: () => viewHosts() },
       { label: host?.name || '', onClick: () => viewSessions(currentHostId.value!) },
@@ -1874,7 +1874,11 @@ onMounted(async () => {
   const sessionId = route.params.sessionId as string
   const hostId = route.params.hostId as string
   if (sessionId) {
-    try { rooms.value = await fetchRooms() } catch { /* ignore */ }
+    try {
+      const [roomsData, summaryData] = await Promise.all([fetchRooms(), api('/api/summary')])
+      rooms.value = roomsData
+      Object.assign(summary, summaryData)
+    } catch { /* ignore */ }
     viewDetail(Number(sessionId), true)
   } else if (hostId) {
     try { rooms.value = await fetchRooms() } catch { /* ignore */ }

@@ -1864,7 +1864,10 @@ watch(detailTab, (tab) => {
   }
 })
 // 监听路由变化（同一组件复用时）
+let _routeReady = false
+
 watch(() => route.params, async (params) => {
+  if (!_routeReady) return  // 首次由onMounted处理，跳过
   const sessionId = params.sessionId as string
   const hostId = params.hostId as string
   if (sessionId && viewLevel.value !== 'detail') {
@@ -1895,6 +1898,7 @@ onMounted(async () => {
   } else {
     viewHosts(true)
   }
+  _routeReady = true  // onMounted处理完毕，后续路由变化由watcher接管
 })
 
 onUnmounted(() => {

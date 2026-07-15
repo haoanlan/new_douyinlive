@@ -200,7 +200,11 @@ async function createSession(streamerId, roomTitle, roomId) {
   const info = d.prepare(
     'INSERT INTO sessions (streamer_id, room_title, room_id, start_time) VALUES (?, ?, ?, datetime(\'now\',\'localtime\'))'
   ).run(streamerId, roomTitle || null, roomId || null);
-  return info.lastInsertRowid;
+  const sessionId = info.lastInsertRowid;
+  // 写入"场次 #id"格式
+  const formatted = `场次 #${sessionId}`;
+  d.prepare('UPDATE sessions SET room_title = ? WHERE id = ?').run(formatted, sessionId);
+  return sessionId;
 }
 
 /** 获取当前直播 session */

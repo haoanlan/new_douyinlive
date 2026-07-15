@@ -776,6 +776,15 @@ const {
 } = storeToRefs(store)
 const summary = store.summary  // reactive object, not ref
 
+// 同步根据路由设置viewLevel，避免刷新时闪现hosts页面
+if (route.params.sessionId) {
+  viewLevel.value = 'detail'
+  currentSessionId.value = Number(route.params.sessionId)
+} else if (route.params.hostId) {
+  viewLevel.value = 'sessions'
+  currentHostId.value = route.params.hostId as string
+}
+
 // filteredSessions depends on dpData (from useDatePicker), so compute locally
 const filteredSessions = computed(() => {
   const from = dpData.from

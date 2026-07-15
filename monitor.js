@@ -774,7 +774,7 @@ function handleMessage(room, data) {
       const user = extractUser(data);
       const rawUser = data.user || data.userValue?.user || {};
       const userDispId = rawUser.displayId || rawUser.id || user.id || '';
-      const userSec = rawUser.secUid || '';
+      const userSec = rawUser.secUid || rawUser.sec_uid || data.user?.secUid || data.user?.sec_uid || '';
       const userAvatar = rawUser.avatarThumb?.urlList?.[0] || user.avatar || '';
       const key = user.nickname;
       if (key && !session._seenMembers.has(key)) {

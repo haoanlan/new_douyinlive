@@ -642,20 +642,18 @@ async function queryAnonymous() {
   const matches = []
   const qLower = q.toLowerCase()
 
-  // Search danmaku
+  // Search danmaku - 只搜昵称
   danmakuData.value.forEach(d => {
     const name = (d.nickname || '').toLowerCase()
-    const content = (d.content || '').toLowerCase()
-    if (name.includes(qLower) || content.includes(qLower)) {
+    if (name.includes(qLower)) {
       matches.push({ type: '弹幕', nickname: d.nickname, content: d.content, time: d.timestamp, avatar: d.avatar_url })
     }
   })
 
-  // Search gifts
+  // Search gifts - 只搜昵称
   ;(detailData.giftDetails || []).forEach(g => {
     const nameLower = (g.nickname || '').toLowerCase()
-    const giftLower = (g.gift_name || '').toLowerCase()
-    if (nameLower.includes(qLower) || giftLower.includes(qLower)) {
+    if (nameLower.includes(qLower)) {
       matches.push({
         type: '礼物',
         nickname: g.nickname,

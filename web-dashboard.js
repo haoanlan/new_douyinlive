@@ -331,11 +331,18 @@ async function handleAPI(req, res) {
 
       // 按 sec_uid 去重聚合
       const userMap = {};
+      // 先建 nickname → sec_uid 映射（从有sec_uid的记录中提取）
+      const nickToUid = {};
       for (const r of allRows) {
-        const key = r.user_sec_uid || `_noname_${r.nickname}`;
+        if (r.user_sec_uid && r.nickname) nickToUid[r.nickname] = r.user_sec_uid;
+      }
+      for (const r of allRows) {
+        // gift的sec_uid为null时，用nickname从members/danmaku中补全
+        const uid = r.user_sec_uid || nickToUid[r.nickname] || '';
+        const key = uid || `_noname_${r.nickname}`;
         if (!userMap[key]) {
           userMap[key] = {
-            sec_uid: r.user_sec_uid,
+            sec_uid: uid,
             db_nicknames: new Set(),
             db_avatar: r.avatar,
             session_ids: new Set(),
@@ -357,7 +364,9 @@ async function handleAPI(req, res) {
         const t = r.create_time || 0;
         if (r.src === 'gift' && t > u.gift_latest) {
           u.gift_latest = t;
-          const g = dbInstance.prepare('SELECT gift_name, repeat_count, to_nickname FROM gifts WHERE user_sec_uid = ? AND session_id = ? AND create_time = ? LIMIT 1').get(r.user_sec_uid, r.session_id, r.create_time);
+          const g = uid
+            ? dbInstance.prepare('SELECT gift_name, repeat_count, to_nickname FROM gifts WHERE user_sec_uid = ? AND session_id = ? AND create_time = ? LIMIT 1').get(uid, r.session_id, r.create_time)
+            : dbInstance.prepare('SELECT gift_name, repeat_count, to_nickname FROM gifts WHERE nickname = ? AND session_id = ? AND create_time = ? LIMIT 1').get(r.nickname, r.session_id, r.create_time);
           let detail = g ? `送了${g.to_nickname ? ' ' + g.to_nickname : ''} ${g.gift_name}${g.repeat_count > 1 ? ' ×' + g.repeat_count : ''}` : '送了礼物';
           u.gift_action = { type: 'gift', time: t, detail, session_id: r.session_id };
         } else if (r.src === 'danmaku' && t > u.danmaku_latest) {

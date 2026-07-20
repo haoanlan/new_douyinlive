@@ -57,7 +57,7 @@ export function fmtNum(n: number): string {
 /** 生成头像 HTML（用于 v-html） */
 export function avatarHtml(url: string, name: string, size?: number): string {
   const s = size ? `width:${size}px;height:${size}px` : ''
-  if (url) return `<div class="avatar" style="${s}"><img src="${url}" alt="" onerror="this.parentElement.innerHTML='${name?.[0] || '?'}'"></div>`
+  if (url) return `<div class="avatar" style="${s}"><img src="${url}" alt="" loading="eager" onerror="this.parentElement.innerHTML='${name?.[0] || '?'}'"></div>`
   return `<div class="avatar" style="${s};display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--text-muted)">${name?.[0] || '?'}</div>`
 }
 

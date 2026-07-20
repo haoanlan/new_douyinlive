@@ -126,6 +126,7 @@
             <div
               v-for="(a, i) in data.anchorRanking"
               :key="i"
+              v-memo="[a.anchor_avatar]"
               class="anchor-card"
               @click="openAnchorModal(a.anchor_name)"
             >
@@ -197,6 +198,7 @@
             <div
               v-for="(g, i) in data.gifts"
               :key="i"
+              v-memo="[g.avatar_url]"
               class="gift-rank-card"
               @click="showGiftDetail(g.nickname, g.user_sec_uid)"
             >
@@ -251,6 +253,7 @@
                 <div
                   v-for="(d, i) in (data.danmakuRanking || []).slice(0, 10)"
                   :key="i"
+                  v-memo="[d.avatar]"
                   class="danmaku-user-rank"
                 >
                   <span class="rank-num" :class="{ top3: i < 3 }">{{ String(i + 1).padStart(2, '0') }}</span>

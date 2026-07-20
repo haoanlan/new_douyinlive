@@ -1653,6 +1653,17 @@ async function viewDetail(sessionId: number, fromPopState = false) {
   try {
     const data = await fetchSessionDetail(String(sessionId))
     if (gen !== _viewGen) return  // 过期请求丢弃
+    // 预加载所有头像，避免渲染时闪烁
+    const avatars: string[] = []
+    if (data.anchorRanking) data.anchorRanking.forEach((a: any) => { if (a.anchor_avatar) avatars.push(a.anchor_avatar) })
+    if (data.gifts) data.gifts.forEach((g: any) => { if (g.avatar_url) avatars.push(g.avatar_url) })
+    if (data.danmakuRanking) data.danmakuRanking.forEach((d: any) => { if (d.avatar) avatars.push(d.avatar) })
+    await Promise.all(avatars.map(url => new Promise<void>(resolve => {
+      const img = new Image()
+      img.onload = img.onerror = () => resolve()
+      img.src = url
+    })))
+    if (gen !== _viewGen) return  // 预加载期间可能已过期
     detailData.value = data
     _giftDetails.value = data.giftDetails || []
     filterDanmaku()  // 数据就绪后刷新列表
@@ -1678,6 +1689,16 @@ async function manualRefresh() {
   refreshing.value = true
   try {
     const data = await fetchSessionDetail(String(currentSessionId.value))
+    // 预加载所有头像，避免刷新时闪烁
+    const avatars: string[] = []
+    if (data.anchorRanking) data.anchorRanking.forEach((a: any) => { if (a.anchor_avatar) avatars.push(a.anchor_avatar) })
+    if (data.gifts) data.gifts.forEach((g: any) => { if (g.avatar_url) avatars.push(g.avatar_url) })
+    if (data.danmakuRanking) data.danmakuRanking.forEach((d: any) => { if (d.avatar) avatars.push(d.avatar) })
+    await Promise.all(avatars.map(url => new Promise<void>(resolve => {
+      const img = new Image()
+      img.onload = img.onerror = () => resolve()
+      img.src = url
+    })))
     detailData.value = data
     _giftDetails.value = data.giftDetails || []
     filterDanmaku()

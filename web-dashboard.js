@@ -1304,8 +1304,9 @@ async function handleAPI(req, res) {
           recording: daemon?.recording || false
         };
       });
-      // 监控中的在前，其他按名称
+      // 启用的在前，监控中的在前，其他按名称
       result.sort((a, b) => {
+        if (a.enabled !== b.enabled) return a.enabled ? -1 : 1;
         if (a.connected !== b.connected) return a.connected ? -1 : 1;
         return a.name.localeCompare(b.name);
       });

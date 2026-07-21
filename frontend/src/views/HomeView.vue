@@ -456,7 +456,7 @@
                         <span v-if="m.to_nickname" style="margin-left:6px;color:var(--accent)">→ {{ m.to_nickname }}</span>
                       </template>
                       <template v-else>
-                        <span>{{ m.displayText }}</span>
+                        <span v-html="replaceDouyinEmoji(esc(m.displayText))"></span>
                       </template>
                     </div>
                   </div>
@@ -683,6 +683,7 @@ import { storeToRefs } from 'pinia'
 import { useAppStore } from '../stores/app'
 import { lookupRoom, addRoom, pauseRoom, resumeRoom, removeRoom, deleteSession, fetchSessionDetail, fetchDanmaku, fetchRooms, fetchSessions, fetchUser } from '../api'
 import { esc, fmtTime, fmtSessionTime, formatDuration, fmtNum, avatarHtml, avatarHtml52, giftEmoji } from '../utils/format'
+import { replaceDouyinEmoji } from '../utils/douyin-emoji'
 import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
 import { useDatePicker } from '../composables/useDatePicker'

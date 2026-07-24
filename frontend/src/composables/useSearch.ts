@@ -8,6 +8,7 @@ interface Session { id: number; title: string; started_at: string }
 interface AnonUser {
   user_sec_uid: string; nickname: string; db_nicknames: string[]
   latest_gift: any; latest_danmaku: any; total_diamonds: number
+  api_avatar?: string; avatar?: string
 }
 
 export function useSearch(api: (path: string) => Promise<any>, toast: (msg: string, type?: string) => void) {
@@ -70,6 +71,11 @@ export function useSearch(api: (path: string) => Promise<any>, toast: (msg: stri
       const data = await api(url)
       searchResults.value = data.users || []
       _anonResults.value = data.users || []
+      // 预加载头像
+      for (const u of searchResults.value) {
+        const url = u.api_avatar || u.avatar
+        if (url) { const img = new Image(); img.src = url.startsWith('//') ? 'https:' + url : url }
+      }
     } catch (e: any) {
       toast('查询失败: ' + e.message, 'error')
       searchResults.value = []

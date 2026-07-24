@@ -25,6 +25,10 @@ export function useProfile(api: (path: string) => Promise<any>, toast: (msg: str
     try {
       const users = await api(`/api/users/search?q=${encodeURIComponent(q)}`)
       profileUsers.value = users
+      // 预加载头像
+      for (const u of users) {
+        if (u.avatar) { const img = new Image(); img.src = u.avatar.startsWith('//') ? 'https:' + u.avatar : u.avatar }
+      }
     } catch (e: any) {
       toast('搜索失败: ' + e.message, 'error')
       profileUsers.value = []

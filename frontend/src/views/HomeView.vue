@@ -1083,60 +1083,55 @@ async function showAnonymousDetail(idx: number) {
   const u = _anonResults.value[idx] || searchResults.value[idx]
   if (!u) return
   anonDetailModalVisible.value = true
-  anonDetailBody.value = '<div class="loading">加载中...</div>'
   anonDetailTitle.value = u.db_nicknames?.[0] || u.nickname || '用户详情'
-  try {
-    const profile = await fetchUser(u.sec_uid).catch(() => null)
-    const p = profile || {} as any
-    let html = ''
-    // Avatar + basic info
-    html += `<div style="display:flex;align-items:center;gap:14px;padding:16px 0;border-bottom:1px solid var(--border);margin-bottom:14px">`
-    html += avatarHtml52(u.api_avatar || u.avatar, u.nickname)
-    html += `<div style="flex:1;min-width:0">`
-    html += `<div style="font-size:16px;font-weight:600;color:var(--text)">${esc(u.nickname || '未知')}</div>`
-    if (u.db_nicknames?.length > 1) html += `<div style="font-size:12px;color:var(--text-muted);margin-top:3px">库中昵称: ${u.db_nicknames.map((n: string) => esc(n)).join('、')}</div>`
-    if (u.signature) html += `<div style="font-size:12px;color:var(--text-muted);margin-top:4px;font-style:italic">${esc(u.signature)}</div>`
-    if (u.user_age || u.user_gender) html += `<div style="font-size:11px;color:var(--text-muted);margin-top:3px">${u.user_gender ? (u.user_gender === 1 ? '♂ 男' : u.user_gender === 2 ? '♀ 女' : '') : ''}${u.user_age ? ' · ' + u.user_age + '岁' : ''}</div>`
-    if (u.unique_id) html += `<div style="font-size:11px;color:var(--text-muted);margin-top:2px">抖音号: ${esc(u.unique_id)}</div>`
-    if (u.is_private) html += `<div style="display:inline-block;font-size:10px;color:var(--orange);background:rgba(255,152,0,0.1);padding:2px 6px;border-radius:var(--radius-xs);margin-top:4px">私密账号</div>`
-    html += `</div></div>`
-    // Stats
-    if (u.follower_count || u.following_count || u.ip_location) {
-      html += `<div style="display:flex;gap:12px;margin-bottom:14px">`
-      html += `<div style="text-align:center;flex:1"><div style="font-size:16px;font-weight:700;color:var(--text)">${fmtNum(u.follower_count)}</div><div style="font-size:11px;color:var(--text-muted)">粉丝</div></div>`
-      html += `<div style="text-align:center;flex:1"><div style="font-size:16px;font-weight:700;color:var(--text)">${fmtNum(u.following_count)}</div><div style="font-size:11px;color:var(--text-muted)">关注</div></div>`
-      html += `<div style="text-align:center;flex:1"><div style="font-size:14px;font-weight:600;color:var(--accent)">${esc((u.ip_location || '未知').replace(/^IP属地[：:]\s*/, ''))}</div><div style="font-size:11px;color:var(--text-muted)">IP属地</div></div>`
-      html += `</div>`
+  // 直接用搜索结果渲染完整卡片
+  let html = ''
+  html += `<div style="display:flex;align-items:center;gap:14px;padding:16px 0;border-bottom:1px solid var(--border);margin-bottom:14px">`
+  html += avatarHtml52(u.api_avatar || u.avatar, u.nickname)
+  html += `<div style="flex:1;min-width:0">`
+  html += `<div style="font-size:16px;font-weight:600;color:var(--text)">${esc(u.nickname || '未知')}</div>`
+  if (u.db_nicknames?.length > 1) html += `<div style="font-size:12px;color:var(--text-muted);margin-top:3px">库中昵称: ${u.db_nicknames.map((n: string) => esc(n)).join('、')}</div>`
+  html += `</div></div>`
+  // 最近动作
+  if (u.latest_danmaku || u.latest_gift) {
+    const giftSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="vertical-align:middle"><rect x="3" y="8" width="18" height="13" rx="1"/><path d="M12 8V6c0-2-1.5-4-4-4S4 4 4 6h2"/><path d="M20 6c0-2-1.5-4-4-4s-4 2-4 4h2"/><line x1="12" y1="8" x2="12" y2="21"/><line x1="3" y1="13" x2="21" y2="13"/></svg>'
+    const danmakuSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="vertical-align:middle"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'
+    const actions: any[] = []
+    if (u.latest_danmaku) actions.push({ type: 'danmaku', svg: danmakuSvg, color: 'var(--accent)', bg: 'rgba(108,140,255,0.15)', label: '弹幕', ...u.latest_danmaku })
+    if (u.latest_gift) actions.push({ type: 'gift', svg: giftSvg, color: 'var(--orange)', bg: 'rgba(251,146,60,0.15)', label: '送礼', ...u.latest_gift })
+    actions.sort((a: any, b: any) => (b.time || 0) - (a.time || 0))
+    html += `<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:14px"><div style="font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:8px">最近动作</div>`
+    for (const a of actions) {
+      let detail = a.detail || (a.type === 'danmaku' ? '发了弹幕' : '送了礼物')
+      if (detail.length > 40) detail = detail.slice(0, 40) + '…'
+      html += `<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px"><div style="margin-top:2px;color:${a.color}">${a.svg}</div><div style="flex:1;min-width:0"><div style="font-size:13px;color:var(--text);line-height:1.4">${replaceDouyinEmoji(esc(detail))}</div><div style="font-size:11px;color:var(--text-muted);margin-top:4px">${a.streamer_name ? esc(a.streamer_name) : ''} ${a.time ? '· ' + fmtTime(a.time) : ''}</div></div><div style="font-size:11px;color:${a.color};flex-shrink:0;padding:2px 8px;background:${a.bg};border-radius:var(--radius-xs)">${a.label}</div></div>`
     }
-    // Latest actions
-    if (u.latest_danmaku || u.latest_gift) {
-      const giftSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="vertical-align:middle"><rect x="3" y="8" width="18" height="13" rx="1"/><path d="M12 8V6c0-2-1.5-4-4-4S4 4 4 6h2"/><path d="M20 6c0-2-1.5-4-4-4s-4 2-4 4h2"/><line x1="12" y1="8" x2="12" y2="21"/><line x1="3" y1="13" x2="21" y2="13"/></svg>'
-      const danmakuSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="vertical-align:middle"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'
-      const actions: any[] = []
-      if (u.latest_danmaku) actions.push({ type: 'danmaku', svg: danmakuSvg, color: 'var(--accent)', bg: 'rgba(108,140,255,0.15)', label: '弹幕', ...u.latest_danmaku })
-      if (u.latest_gift) actions.push({ type: 'gift', svg: giftSvg, color: 'var(--orange)', bg: 'rgba(251,146,60,0.15)', label: '送礼', ...u.latest_gift })
-      actions.sort((a: any, b: any) => (b.time || 0) - (a.time || 0))
-      html += `<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:14px"><div style="font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:8px">最近动作</div>`
-      for (const a of actions) {
-        let detail = a.detail || (a.type === 'danmaku' ? '发了弹幕' : '送了礼物')
-        if (detail.length > 40) detail = detail.slice(0, 40) + '…'
-        html += `<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px"><div style="margin-top:2px;color:${a.color}">${a.svg}</div><div style="flex:1;min-width:0"><div style="font-size:13px;color:var(--text);line-height:1.4">${replaceDouyinEmoji(esc(detail))}</div><div style="font-size:11px;color:var(--text-muted);margin-top:4px">${a.streamer_name ? esc(a.streamer_name) : ''} ${a.time ? '· ' + fmtTime(a.time) : ''}</div></div><div style="font-size:11px;color:${a.color};flex-shrink:0;padding:2px 8px;background:${a.bg};border-radius:var(--radius-xs)">${a.label}</div></div>`
-      }
-      html += `</div>`
+    html += `</div>`
+  }
+  // 活跃场次
+  const sessionsList = u.sessions || []
+  if (sessionsList.length) {
+    html += `<div style="font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:8px">活跃场次 (${sessionsList.length})</div><div style="display:flex;flex-direction:column;gap:4px">`
+    sessionsList.slice(0, 5).forEach((s: any) => {
+      const d = s.diamonds || 0
+      html += `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm)"><span style="font-size:12px;color:var(--text-muted);width:72px;flex-shrink:0;font-variant-numeric:tabular-nums">${fmtSessionTime(s.start_time)}</span><span style="font-size:12px;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.streamer_name || '未知')}</span><span style="font-size:12px;color:${d > 0 ? 'var(--orange)' : 'var(--text-muted)'};flex-shrink:0;font-weight:600;font-variant-numeric:tabular-nums;display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" width="12" height="12" style="margin-left:2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg>${d.toLocaleString()}</span></div>`
+    })
+    if (sessionsList.length > 5) html += `<div style="text-align:center;font-size:11px;color:var(--text-muted);padding:4px">还有 ${sessionsList.length - 5} 场</div>`
+    html += `</div>`
+  }
+  anonDetailBody.value = html
+  // 异步补全详细资料（不阻塞显示）
+  fetchUser(u.sec_uid).then(p => {
+    if (!p) return
+    let extra = ''
+    if (p.signature) extra += `<div style="font-size:12px;color:var(--text-muted);margin-top:4px;font-style:italic">${esc(p.signature)}</div>`
+    if (p.user_age || p.user_gender) extra += `<div style="font-size:11px;color:var(--text-muted);margin-top:3px">${p.user_gender ? (p.user_gender === 1 ? '♂ 男' : p.user_gender === 2 ? '♀ 女' : '') : ''}${p.user_age ? ' · ' + p.user_age + '岁' : ''}</div>`
+    if (p.unique_id) extra += `<div style="font-size:11px;color:var(--text-muted);margin-top:2px">抖音号: ${esc(p.unique_id)}</div>`
+    if (extra) {
+      const body = document.getElementById('anonDetailBody')
+      if (body) body.insertAdjacentHTML('afterbegin', extra)
     }
-    // Active sessions
-    const sessionsList = u.sessions?.length ? u.sessions : p.activeSessions?.map((s: any) => ({ streamer_name: s.streamer_name, start_time: s.start_time, diamonds: s.session_diamonds || 0 })) || []
-    if (sessionsList.length) {
-      html += `<div style="font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:8px">活跃场次 (${sessionsList.length})</div><div style="display:flex;flex-direction:column;gap:4px">`
-      sessionsList.slice(0, 5).forEach((s: any) => {
-        const d = s.diamonds || 0
-        html += `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm)"><span style="font-size:12px;color:var(--text-muted);width:72px;flex-shrink:0;font-variant-numeric:tabular-nums">${fmtSessionTime(s.start_time)}</span><span style="font-size:12px;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.streamer_name || '未知')}</span><span style="font-size:12px;color:${d > 0 ? 'var(--orange)' : 'var(--text-muted)'};flex-shrink:0;font-weight:600;font-variant-numeric:tabular-nums;display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" width="12" height="12" style="margin-left:2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg>${d.toLocaleString()}</span></div>`
-      })
-      if (sessionsList.length > 5) html += `<div style="text-align:center;font-size:11px;color:var(--text-muted);padding:4px">还有 ${sessionsList.length - 5} 场</div>`
-      html += `</div>`
-    }
-    anonDetailBody.value = html
-  } catch { anonDetailBody.value = '<div class="empty" style="padding:20px">加载失败</div>' }
+  }).catch(() => {})
 }
 
 // ============================================================
@@ -1150,7 +1145,15 @@ function closeProfileModal() { profileModalVisible.value = false }
 
 async function showUserProfile(secUid: string) {
   profileModalVisible.value = true
-  profileModalBody.value = '<div class="loading">加载用户画像...</div>'
+  // 先从搜索结果找头像
+  const found = profileUsers.value.find(u => u.user_sec_uid === secUid)
+  const avatarUrl = found?.avatar || ''
+  const nickname = found?.nickname || '用户画像'
+  profileModalTitle.value = nickname
+  let preHtml = `<div style="display:flex;align-items:center;gap:14px;padding:16px 0;border-bottom:1px solid var(--border);margin-bottom:14px">`
+  preHtml += avatarHtml52(avatarUrl, nickname)
+  preHtml += `<div><div style="font-size:16px;font-weight:600;color:var(--text)">${esc(nickname)}</div></div></div><div class="loading">加载画像...</div>`
+  profileModalBody.value = preHtml
   try {
     const p = await fetchUser(secUid) as any
     profileModalTitle.value = p.nickname || '用户画像'

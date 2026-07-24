@@ -1272,7 +1272,7 @@ async function handleControlCommand(req) {
 
     case 'add': {
       if (!roomId) return { ok: false, error: '缺少 roomId' };
-      if (!/^\d{5,15}$/.test(roomId)) return { ok: false, error: `roomId 格式无效: ${roomId}（应为5-15位纯数字）` };
+      if (!/^[A-Za-z0-9]{5,30}$/.test(roomId)) return { ok: false, error: `roomId 格式无效: ${roomId}（应为5-30位字母数字）` };
       if (rooms.has(roomId)) return { ok: false, error: `房间 ${roomId} 已在监控` };
       // 写入配置
       if (!config.rooms) config.rooms = [];

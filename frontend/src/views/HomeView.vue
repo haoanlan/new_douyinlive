@@ -907,7 +907,7 @@ function sortRooms() {
   rooms.value.sort((a, b) => {
     if (a.enabled !== b.enabled) return a.enabled ? -1 : 1
     if (a.connected !== b.connected) return a.connected ? -1 : 1
-    return a.name.localeCompare(b.name)
+    return a.name.localeCompare(b.name) || a.room_id.localeCompare(b.room_id)
   })
 }
 

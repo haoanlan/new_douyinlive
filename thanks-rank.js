@@ -93,7 +93,7 @@ const THEMES = {
 };
 const activeTheme = THEMES.blue;
 
-async function getData(){const pool=db.getPool();const[raw]=await pool.query('SELECT * FROM gifts WHERE session_id IN (?) AND to_nickname=? ORDER BY create_time ASC',[sessionIds,target]);pool.end();const groups={};for(const g of raw){const k=(g.user_display_id||g.nickname)+'|'+g.gift_name+'|'+(g.to_nickname||'');if(!groups[k])groups[k]=[];groups[k].push(g);}const deduped=[];for(const items of Object.values(groups)){items.sort((a,b)=>a.create_time-b.create_time);const combos=[];let cur=[items[0]];for(let i=1;i<items.length;i++){const p=items[i-1],c=items[i];const same=(c.combo_count===p.combo_count+1)||(c.combo_count===p.combo_count&&c.repeat_end===1);if(same)cur.push(c);else{combos.push(cur);cur=[c];}}combos.push(cur);for(const combo of combos){let best=combo[0];for(const item of combo){if(item.combo_count>best.combo_count||(item.combo_count===best.combo_count&&item.repeat_end===1&&best.repeat_end!==1))best=item;}deduped.push(best);}}const userMap={};for(const g of deduped){const k=g.user_display_id||g.nickname;if(!userMap[k])userMap[k]={nickname:g.nickname,displayId:g.user_display_id||'',avatar:g.avatar||'',diamonds:0};userMap[k].diamonds+=g.total_diamonds;if(g.nickname)userMap[k].nickname=g.nickname;if(g.avatar)userMap[k].avatar=g.avatar;}return Object.values(userMap).sort((a,b)=>b.diamonds-a.diamonds).slice(0,100);}
+async function getData(){const database=db.getDb();const ph=sessionIds.map(()=>'?').join(',');const raw=database.prepare(`SELECT * FROM gifts WHERE session_id IN (${ph}) AND to_nickname LIKE ? ORDER BY create_time ASC`).all(...sessionIds,'%'+target+'%');const groups={};for(const g of raw){const k=(g.user_display_id||g.nickname)+'|'+g.gift_name+'|'+(g.to_nickname||'');if(!groups[k])groups[k]=[];groups[k].push(g);}const deduped=[];for(const items of Object.values(groups)){items.sort((a,b)=>a.create_time-b.create_time);const combos=[];let cur=[items[0]];for(let i=1;i<items.length;i++){const p=items[i-1],c=items[i];const same=(c.combo_count===p.combo_count+1)||(c.combo_count===p.combo_count&&c.repeat_end===1);if(same)cur.push(c);else{combos.push(cur);cur=[c];}}combos.push(cur);for(const combo of combos){let best=combo[0];for(const item of combo){if(item.combo_count>best.combo_count||(item.combo_count===best.combo_count&&item.repeat_end===1&&best.repeat_end!==1))best=item;}deduped.push(best);}}const userMap={};for(const g of deduped){const k=g.user_display_id||g.nickname;if(!userMap[k])userMap[k]={nickname:g.nickname,displayId:g.user_display_id||'',avatar:g.avatar||'',diamonds:0};userMap[k].diamonds+=g.total_diamonds;if(g.nickname)userMap[k].nickname=g.nickname;if(g.avatar)userMap[k].avatar=g.avatar;}return Object.values(userMap).sort((a,b)=>b.diamonds-a.diamonds).slice(0,100);}
 function cleanDisplayName(name){if(!name)return name;const r=[];let i=0;while(i<name.length){const c=name.codePointAt(i);const l=c>0xFFFF?2:1;if(c>=0x1D400&&c<=0x1D7FF){const b=c-0x1D400;const idx=b%52;if(idx<26)r.push(String.fromCharCode(65+idx));else r.push(String.fromCharCode(97+idx-26));}else if((c>=0x13000&&c<=0x1342F)||(c>=0x1F000&&c<=0x1FFFF)){}else{r.push(String.fromCodePoint(c));}i+=l;}const s=r.join('');return s||name;}
 function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function rankBadge(i){const t=activeTheme;if(i===0)return`<svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:middle"><circle cx="12" cy="12" r="11" fill="#FFD700"/><text x="12" y="17" text-anchor="middle" font-size="14" font-weight="bold" fill="${t.badgeText}">1</text></svg>`;if(i===1)return`<svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:middle"><circle cx="12" cy="12" r="11" fill="#C0C0C0"/><text x="12" y="17" text-anchor="middle" font-size="14" font-weight="bold" fill="${t.badgeText}">2</text></svg>`;if(i===2)return`<svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:middle"><circle cx="12" cy="12" r="11" fill="#CD7F32"/><text x="12" y="17" text-anchor="middle" font-size="14" font-weight="bold" fill="#fff">3</text></svg>`;const n=i+1;return`<svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:middle"><circle cx="12" cy="12" r="10" fill="${t.badgeFill}" stroke="${t.badgeStroke}" stroke-width="1"/><text x="12" y="16" text-anchor="middle" font-size="12" font-weight="bold" fill="${t.badgeTextMuted}">${n}</text></svg>`;}
@@ -112,12 +112,11 @@ async function resolveAvatar(targetNickname) {
   // 已有 --avatar 则不查
   if (TARGET_AVATAR) return TARGET_AVATAR;
   try {
-    const pool = db.getPool();
+    const database = db.getDb();
     // 从 members 表找目标用户的头像（按 nickname 模糊匹配）
-    const [memRows] = await pool.query(
-      "SELECT user_sec_uid, avatar FROM members WHERE nickname LIKE ? AND user_sec_uid IS NOT NULL AND user_sec_uid != '' ORDER BY id DESC LIMIT 1",
-      [targetNickname.substring(0, 4) + '%']
-    );
+    const memRows = database.prepare(
+      "SELECT user_sec_uid, avatar FROM members WHERE nickname LIKE ? AND user_sec_uid IS NOT NULL AND user_sec_uid != '' ORDER BY id DESC LIMIT 1"
+    ).all(targetNickname.substring(0, 4) + '%');
     if (memRows.length && memRows[0].avatar) {
       console.log('[avatar] 从 DB 成员表获取到头像');
       return memRows[0].avatar;
@@ -135,9 +134,9 @@ async function main(){
   // 自动获取头像
   TARGET_AVATAR = await resolveAvatar(target);
   // 计算日期范围
-  const pool = db.getPool();
-  const [dateRows] = await pool.query('SELECT MIN(create_time) as start_time, MAX(create_time) as end_time FROM gifts WHERE session_id IN (?)', [sessionIds]);
-  const d = dateRows[0];
+  const database = db.getDb();
+  const ph = sessionIds.map(()=>'?').join(',');
+  const d = database.prepare(`SELECT MIN(create_time) as start_time, MAX(create_time) as end_time FROM gifts WHERE session_id IN (${ph})`).get(...sessionIds);
   const startDate = new Date(d.start_time).toLocaleDateString('zh-CN', {timeZone:'Asia/Shanghai', month:'numeric', day:'numeric'}).replace('/', '月') + '日';
   const endDate = new Date(d.end_time).toLocaleDateString('zh-CN', {timeZone:'Asia/Shanghai', month:'numeric', day:'numeric'}).replace('/', '月') + '日';
   const dateStr = startDate === endDate ? startDate : startDate.replace('日','') + '-' + endDate;

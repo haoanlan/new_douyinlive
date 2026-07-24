@@ -1211,7 +1211,7 @@ async function handleAPI(req, res) {
       if (!input) return sendError(res, '请输入房间号或抖音号', 400);
 
       try {
-        if (/^\d{5,15}$/.test(input)) {
+        if (/^[A-Za-z0-9]{5,30}$/.test(input)) {
           // 房间号 → 直接调 douyin-api（getLiveInfo + getUserInfo）
           const api = require('./lib/douyin-api.js');
           const liveInfo = await api.getLiveInfo(input);
@@ -1361,7 +1361,7 @@ async function handleAPI(req, res) {
       const body = await bodyParse(req);
       const { room_id, name } = body;
       if (!room_id) return sendError(res, '缺少 room_id', 400);
-      if (!/^\d{5,15}$/.test(room_id)) return sendError(res, 'room_id 格式无效（5-15位纯数字）', 400);
+      if (!/^[A-Za-z0-9]{5,30}$/.test(room_id)) return sendError(res, 'room_id 格式无效（5-30位字母数字）', 400);
       const net = require('net');
       const result = await new Promise((resolve, reject) => {
         const socketPath = path.join(DATA_DIR, 'monitor.sock');

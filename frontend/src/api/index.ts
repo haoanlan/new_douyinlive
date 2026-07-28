@@ -1,15 +1,54 @@
 const API_PREFIX = ''
 
+/** 获取认证 token（从 URL 参数或 localStorage） */
+function getAuthToken(): string | null {
+  // 优先从 URL ?token=xxx 读取（首次访问）
+  try {
+    const params = new URLSearchParams(window.location.search)
+    const urlToken = params.get('token')
+    if (urlToken) {
+      localStorage.setItem('dashboard_token', urlToken)
+      // 清除 URL 中的 token 参数，避免泄露
+      params.delete('token')
+      const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '') + window.location.hash
+      window.history.replaceState({}, '', newUrl)
+      return urlToken
+    }
+  } catch {}
+  // 从 localStorage 读取
+  return localStorage.getItem('dashboard_token')
+}
+
+/** 构建带认证的 headers */
+function authHeaders(): Record<string, string> {
+  const token = getAuthToken()
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  }
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+  return headers
+}
+
 /**
  * Generic API fetch wrapper
  */
 async function api<T = any>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${API_PREFIX}${url}`, {
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: authHeaders(),
     ...options,
   })
+  if (response.status === 401) {
+    // 认证失败，提示用户输入 token
+    const token = prompt('请输入仪表盘访问令牌 (Token)：')
+    if (token) {
+      localStorage.setItem('dashboard_token', token)
+      // 重试请求
+      return api(url, options)
+    }
+    throw new Error('认证失败，请提供有效的 Token')
+  }
   if (!response.ok) {
     throw new Error(`API Error: ${response.status} ${response.statusText}`)
   }
@@ -116,7 +155,9 @@ export function deleteSession(sessionId: string): Promise<any> {
 }
 
 export function getReportUrl(sessionId: string): string {
-  return `${API_PREFIX}/api/sessions/${sessionId}/report`
+  const token = getAuthToken()
+  const query = token ? `?token=${encodeURIComponent(token)}` : ''
+  return `${API_PREFIX}/api/sessions/${sessionId}/report${query}`
 }
 
 // ===================== Detail =====================

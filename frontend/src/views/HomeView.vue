@@ -80,7 +80,8 @@
                   <div v-if="r.recording" class="live-dot"></div>
                 </div>
                 <div class="host-info">
-                  <div class="host-name" v-html="r.name || '<span style=&quot;color:var(--text-muted);font-style:italic&quot;>解析中...</span>'"></div>
+                  <div class="host-name" v-if="r.name">{{ r.name }}</div>
+                  <div class="host-name" v-else style="color:var(--text-muted);font-style:italic">解析中...</div>
                   <div class="host-meta">
                     <span class="host-badge" :class="roomBadgeClass(r)">{{ roomBadgeText(r) }}</span>
                     <span>{{ r.session_count }} 场</span>
@@ -125,7 +126,8 @@
                 <div class="modal-preview" id="addRoomPreview">
                   <img v-if="lookupData.avatar" :src="lookupData.avatar" style="width:40px;height:40px;border-radius:50%;object-fit:cover">
                   <div>
-                    <div style="font-weight:500;font-size:13px" v-html="lookupData.nickname ? esc(lookupData.nickname) : '<span style=&quot;color:var(--text-muted);font-style:italic&quot;>待解析</span>'"></div>
+                    <div style="font-weight:500;font-size:13px" v-if="lookupData.nickname">{{ lookupData.nickname }}</div>
+                    <div style="font-weight:500;font-size:13px;color:var(--text-muted);font-style:italic" v-else>待解析</div>
                     <div style="font-size:11px;color:var(--text-muted)">房间号: {{ lookupData.room_id || '未开播' }}<template v-if="lookupData.is_live"> · <span style="color:var(--green)">直播中</span></template></div>
                   </div>
                 </div>

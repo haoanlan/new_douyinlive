@@ -1,8 +1,10 @@
 /**
  * 词云绘制 — 纯 canvas 逻辑，无 Vue 依赖
+ * @param words 词频数据
+ * @param canvasEl 可选 canvas 元素，不传则用 getElementById
  */
-export function renderWordCloud(words: any[]) {
-  const canvas = document.getElementById("wordcloudCanvas")
+export function renderWordCloud(words: any[], canvasEl?: HTMLCanvasElement | null) {
+  const canvas = canvasEl || document.getElementById("wordcloudCanvas") as HTMLCanvasElement
   if (!canvas || !words.length) return
   const ctx = canvas.getContext("2d")
   if (!ctx) return

@@ -15,7 +15,7 @@ const FEISHU_HOST = 'open.feishu.cn';
  * 从 .env 读取 feishu 凭证
  */
 function getFeishuCredentials() {
-  const envPath = path.join(__dirname, '..', '.env');
+  const envPath = path.join(__dirname, '.env');
   if (!fs.existsSync(envPath)) {
     feishuLog('[ERROR] .env not found at', envPath);
     return null;

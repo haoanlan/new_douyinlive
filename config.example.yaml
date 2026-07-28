@@ -38,3 +38,15 @@ cookie:
   rooms:
     # "516466932480": "ttwid=...; sessionid=..."
     # "123456789": "ttwid=...; sessionid=..."
+
+# Web 仪表盘配置
+dashboard:
+  # 访问令牌（留空则无认证，强烈建议设置）
+  # 设置后，访问仪表盘需在 URL 中携带 ?token=xxx
+  # 也可通过环境变量 DASHBOARD_TOKEN 设置
+  token: ""
+  # 绑定地址（默认 127.0.0.1 仅本机访问，设为 0.0.0.0 允许外部访问）
+  # 也可通过环境变量 DASHBOARD_HOST 设置
+  host: "127.0.0.1"
+  # 端口（也可通过环境变量 DASHBOARD_PORT 设置）
+  port: "9871"

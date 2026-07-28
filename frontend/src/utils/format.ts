@@ -54,11 +54,21 @@ export function fmtNum(n: number): string {
   return n.toLocaleString()
 }
 
+/** 转义属性值（用于 HTML 属性内部） */
+function escAttr(s: string | null | undefined): string {
+  if (!s) return ''
+  return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
 /** 生成头像 HTML（用于 v-html） */
 export function avatarHtml(url: string, name: string, size?: number): string {
   const s = size ? `width:${size}px;height:${size}px` : ''
-  if (url) return `<div class="avatar" style="${s}"><img src="${url}" alt="" loading="eager" style="opacity:0;transition:opacity 0.2s" onload="this.style.opacity=1" onerror="this.style.opacity=0;this.parentElement.innerHTML='${name?.[0] || '?'}'"></div>`
-  return `<div class="avatar" style="${s};display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--text-muted)">${name?.[0] || '?'}</div>`
+  const safeName = escAttr(name?.[0] || '?')
+  if (url) {
+    const safeUrl = escAttr(url)
+    return `<div class="avatar" style="${s}"><img src="${safeUrl}" alt="" loading="eager" style="opacity:0;transition:opacity 0.2s" onload="this.style.opacity=1" onerror="this.style.opacity=0;this.parentElement.textContent='${safeName}'"></div>`
+  }
+  return `<div class="avatar" style="${s};display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--text-muted)">${safeName}</div>`
 }
 
 /** 52px 头像 */

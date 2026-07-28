@@ -386,7 +386,7 @@
       <!-- Report Panel -->
       <div v-if="data.has_report" class="tab-panel" :class="{ active: activeTab === 'report' }" id="panel-report">
         <div style="text-align:center;padding:20px">
-          <img :src="`/api/sessions/${data.session.id}/report`" style="max-width:100%;border-radius:var(--radius);box-shadow:var(--shadow-lg)">
+          <img :src="getReportUrl(data.session.id)" style="max-width:100%;border-radius:var(--radius);box-shadow:var(--shadow-lg)">
         </div>
       </div>
     </template>
@@ -410,7 +410,8 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { esc, fmtTime, formatDuration } from '../utils/format'
 import { replaceDouyinEmoji } from '../utils/douyin-emoji'
-import { fetchSessionDetail, fetchDanmaku } from '../api'
+import { renderWordCloud as drawWordCloud } from '../utils/wordcloud'
+import { fetchSessionDetail, fetchDanmaku, getReportUrl } from '../api'
 
 const props = defineProps({
   sessionId: { type: String, required: true }
@@ -533,98 +534,12 @@ function onDanmakuSearch() {
   }, 200)
 }
 
-// Word cloud
+// Word cloud — 使用共享工具函数
 function renderWordCloud() {
   const canvas = wordcloudCanvas.value
   if (!canvas) return
   const words = data.value?.danmakuWords || []
-  if (!words.length) return
-
-  const ctx = canvas.getContext('2d')
-  const dpr = window.devicePixelRatio || 1
-  const rect = canvas.getBoundingClientRect()
-  canvas.width = rect.width * dpr
-  canvas.height = rect.height * dpr
-  ctx.scale(dpr, dpr)
-  const W = rect.width, H = rect.height
-  ctx.clearRect(0, 0, W, H)
-
-  // Build word frequency
-  const wordFreq = {}
-  words.forEach(w => {
-    const text = w.content?.trim()
-    if (!text || text.length < 2 || text.length > 12) return
-    if (!/[\u4e00-\u9fa5a-zA-Z0-9]/.test(text)) return
-    const clean = text.replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '')
-    if (clean.length >= 2 && clean.length <= 10) {
-      wordFreq[clean] = (wordFreq[clean] || 0) + w.cnt
-    }
-    if (text.length <= 8 && text !== clean) {
-      wordFreq[text] = (wordFreq[text] || 0) + w.cnt
-    }
-  })
-
-  const sorted = Object.entries(wordFreq).sort((a, b) => b[1] - a[1])
-  const finalWords = []
-  const used = new Set()
-  for (const [word, freq] of sorted) {
-    if (finalWords.length >= 40) break
-    if (used.has(word)) continue
-    let isSubstring = false
-    for (const usedWord of used) {
-      if (usedWord.includes(word) && usedWord.length > word.length) { isSubstring = true; break }
-    }
-    if (isSubstring) continue
-    finalWords.push([word, freq])
-    used.add(word)
-  }
-
-  if (!finalWords.length) {
-    ctx.fillStyle = '#6b7084'
-    ctx.font = '14px sans-serif'
-    ctx.textAlign = 'center'
-    ctx.fillText('暂无词频数据', W / 2, H / 2)
-    return
-  }
-
-  const maxFreq = finalWords[0][1]
-  const minFreq = finalWords[finalWords.length - 1][1]
-  const colors = ['#6c8cff', '#a78bfa', '#fb923c', '#4ade80', '#f87171', '#facc15', '#f472b6', '#38bdf8', '#c084fc', '#34d399']
-
-  const placed = []
-  const padding = 4
-  const cx = W / 2, cy = H / 2
-
-  finalWords.forEach(([word, freq], idx) => {
-    const ratio = maxFreq > minFreq ? (freq - minFreq) / (maxFreq - minFreq) : 0.5
-    const fontSize = 13 + ratio * 24
-    ctx.font = `bold ${fontSize}px "PingFang SC", "Microsoft YaHei", sans-serif`
-    const metrics = ctx.measureText(word)
-    const tw = metrics.width + padding * 2
-    const th = fontSize + padding * 2
-
-    for (let t = 0; t < 800; t++) {
-      const angle = t * 0.3
-      const radius = t * 0.8
-      const x = cx + radius * Math.cos(angle) - tw / 2
-      const y = cy + radius * Math.sin(angle) - th / 2
-      if (x < -10 || x + tw > W + 10 || y < -10 || y + th > H + 10) continue
-      let collision = false
-      for (const p of placed) {
-        if (x < p.x + p.w + padding && x + tw + padding > p.x && y < p.y + p.h + padding && y + th + padding > p.y) {
-          collision = true; break
-        }
-      }
-      if (!collision) {
-        ctx.fillStyle = colors[idx % colors.length]
-        ctx.globalAlpha = 0.55 + ratio * 0.45
-        ctx.fillText(word, x + padding, y + th - fontSize * 0.3)
-        ctx.globalAlpha = 1
-        placed.push({ x, y, w: tw, h: th })
-        break
-      }
-    }
-  })
+  drawWordCloud(words, canvas)
 }
 
 // Anon query
@@ -671,16 +586,18 @@ async function queryAnonymous() {
   })
 
   if (matches.length === 0) {
-    resultEl.innerHTML = `<div class="anon-result"><div class="empty" style="padding:20px">未找到匹配 "${q}" 的记录</div></div>`
+    resultEl.innerHTML = `<div class="anon-result"><div class="empty" style="padding:20px">未找到匹配 "${esc(q)}" 的记录</div></div>`
     return
   }
 
   let html = '<div class="anon-result">'
   html += `<div style="font-size:13px;color:var(--text-muted);margin-bottom:12px">找到 ${matches.length} 条匹配记录</div>`
   matches.forEach(m => {
-    const avatarHtml = m.avatar
-      ? `<div class="avatar"><img src="${m.avatar}" alt="" onerror="this.parentElement.innerHTML='${(m.nickname||'?')[0]}'"></div>`
-      : `<div class="avatar" style="display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--text-muted)">${(m.nickname||'?')[0]}</div>`
+    const safeAvatar = m.avatar ? esc(m.avatar) : ''
+    const fallbackChar = esc((m.nickname||'?')[0] || '?')
+    const avatarHtml = safeAvatar
+      ? `<div class="avatar"><img src="${safeAvatar}" alt="" onerror="this.style.display='none';this.parentElement.textContent='${fallbackChar}'"></div>`
+      : `<div class="avatar" style="display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--text-muted)">${fallbackChar}</div>`
 
     html += `<div class="anon-result-item">
       <div style="flex-shrink:0">${avatarHtml}</div>
@@ -909,7 +826,7 @@ async function fetchDetail() {
     activeTab.value = hasMultiAnchor.value ? 'anchors' : 'gifts'
     // Pre-render anon tab
     // Start auto-refresh if live
-    if (result.session.is_live) startAutoRefresh()
+    if (r.session.is_live) startAutoRefresh()
   } catch(e) {
     error.value = e.message
   } finally {

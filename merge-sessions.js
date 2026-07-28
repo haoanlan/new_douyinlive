@@ -1,5 +1,6 @@
 const db = require('./db-sqlite.js');
 const fs = require('fs');
+const { comboDedupGifts } = require('./lib/gift-utils.js');
 
 async function main() {
   const sessionIds = [31, 32, 33];
@@ -110,56 +111,7 @@ async function main() {
 
   const outPath = '/tmp/merged_sessions_' + sessionIds.join('_') + '.json';
   // Add the dedup result count for reference
-  const { comboDedupGifts: dedup } = (() => {
-    // inline the dedup function
-    function comboDedupGifts(gifts) {
-      const rawGroups = {};
-      for (const g of gifts) {
-        const uid = g.user_display_id || g.nickname;
-        const toKey = g.to_user_sec_uid || g.to_user_display_id || g.to_nickname || '';
-        const key = uid + '\x00' + g.gift_name + '\x00' + toKey;
-        if (!rawGroups[key]) rawGroups[key] = [];
-        rawGroups[key].push(g);
-      }
-      const deduped = [];
-      for (const [, items] of Object.entries(rawGroups)) {
-        if (items.length === 1) { deduped.push(items[0]); continue; }
-        items.sort((a, b) => a.id - b.id);
-        let seq = [items[0]];
-        const sequences = [];
-        for (let i = 1; i < items.length; i++) {
-          const prev = seq[seq.length - 1];
-          const curr = items[i];
-          const pc = parseInt(String(prev.combo_count || 1), 10);
-          const cc = parseInt(String(curr.combo_count || 1), 10);
-          if (cc === pc + 1 || (cc === pc && curr.repeat_end === 1)) {
-            seq.push(curr);
-          } else {
-            sequences.push(seq);
-            seq = [curr];
-          }
-        }
-        sequences.push(seq);
-        for (const s of sequences) {
-          if (s.length === 1) {
-            deduped.push(s[0]);
-          } else {
-            const best = s.reduce((a, b) => {
-              const ac = parseInt(String(a.combo_count || 1), 10);
-              const bc = parseInt(String(b.combo_count || 1), 10);
-              if (bc !== ac) return bc > ac ? b : a;
-              return b.repeat_end === 1 ? b : a;
-            });
-            deduped.push(best);
-          }
-        }
-      }
-      return deduped;
-    }
-    return { comboDedupGifts };
-  })();
-
-  const dedupedCount = dedup(gRaw).length;
+  const dedupedCount = comboDedupGifts(gRaw).length;
   fs.writeFileSync(outPath, JSON.stringify(data, null, 2));
   console.log(`Written! Gifts: ${gRaw.length} (deduped: ${dedupedCount})`);
   console.log(`Danmaku:${dMapped.length} Members:${mMapped.length}`);

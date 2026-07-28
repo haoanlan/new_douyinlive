@@ -6,6 +6,7 @@
 const fs = require('fs');
 const path = require('path');
 const { chromium } = require('playwright');
+const { comboDedupGifts } = require('./lib/gift-utils.js');
 
 const SESSION_FILE = path.join(__dirname, 'current_session.json');
 const DATA_DIR = __dirname;
@@ -325,59 +326,7 @@ function placeholderAvatarHTML(nickname, size) {
 }
 
 /** 修补旧数据：从 rawMessages 提取房间/弹幕头像，给缺失 avatar 的礼物设默认值 */
-/** 连击去重：按(uid, gift_name)分组，comboCount 连续递增视为同一连击，每组只留最终帧 */
-function comboDedupGifts(gifts) {
-  // 按 (uid, gift_name, 收礼人) 三分组，不同收礼人不混在一起
-  const rawGroups = {};
-  for (const g of gifts) {
-    const uid = g.user_display_id || g.nickname;
-    const toKey = g.to_user_sec_uid || g.to_user_display_id || g.to_nickname || '';
-    const key = uid + '\x00' + g.gift_name + '\x00' + toKey;
-    if (!rawGroups[key]) rawGroups[key] = [];
-    rawGroups[key].push(g);
-  }
-
-  const deduped = [];
-  for (const [, items] of Object.entries(rawGroups)) {
-    if (items.length === 1) { deduped.push(items[0]); continue; }
-    items.sort((a, b) => a.id - b.id);
-
-    // 在组内识别连续连击序列
-    let seq = [items[0]];
-    const sequences = [];
-    for (let i = 1; i < items.length; i++) {
-      const prev = seq[seq.length - 1];
-      const curr = items[i];
-      const pc = parseInt(String(prev.combo_count || 1), 10);
-      const cc = parseInt(String(curr.combo_count || 1), 10);
-      // 连击递增时加入序列。同值+repeat_end加入（连击终结帧）。
-      // cc小于pc但>1时也加入（帧序错乱，如combo 4在3之前到）
-      if (cc > pc || (cc === pc && curr.repeat_end === 1) || (cc < pc && cc > 1)) {
-        seq.push(curr);
-      } else {
-        sequences.push(seq);
-        seq = [curr];
-      }
-    }
-    sequences.push(seq);
-
-    for (const s of sequences) {
-      if (s.length === 1) {
-        deduped.push(s[0]);
-      } else {
-        // 序列内帧序可能错乱（如combo 4在3之前到），按combo_count排序取最高
-        s.sort((a, b) => {
-          const ac = parseInt(String(a.combo_count || 1), 10);
-          const bc = parseInt(String(b.combo_count || 1), 10);
-          if (bc !== ac) return bc - ac;
-          return (b.repeat_end === 1 ? 1 : 0) - (a.repeat_end === 1 ? 1 : 0);
-        });
-        deduped.push(s[0]);
-      }
-    }
-  }
-  return deduped;
-}
+/** 连击去重：使用共享模块 lib/gift-utils.js */
 
 function patchSessionData(data) {
   if (!data) return;

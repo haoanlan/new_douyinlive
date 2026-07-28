@@ -11,55 +11,43 @@ const url = require('url');
 const zlib = require('zlib');
 const db = require('./db-sqlite.js');
 const reportImg = require('./report-image.js');
+const { comboDedupGifts } = require('./lib/gift-utils.js');
 
-// ====== 连击去重（复用 report-image.js 逻辑）======
-function comboDedupGifts(gifts) {
-  const rawGroups = {};
-  for (const g of gifts) {
-    const uid = g.user_display_id || g.nickname;
-    const toKey = g.to_user_sec_uid || g.to_user_display_id || g.to_nickname || '';
-    const key = uid + '\x00' + (g.gift_name || '') + '\x00' + toKey;
-    if (!rawGroups[key]) rawGroups[key] = [];
-    rawGroups[key].push(g);
-  }
-  const deduped = [];
-  for (const [, items] of Object.entries(rawGroups)) {
-    if (items.length === 1) { deduped.push(items[0]); continue; }
-    items.sort((a, b) => (a.id || 0) - (b.id || 0));
-    let seq = [items[0]];
-    const sequences = [];
-    for (let i = 1; i < items.length; i++) {
-      const prev = seq[seq.length - 1];
-      const curr = items[i];
-      const pc = parseInt(String(prev.combo_count || 1), 10);
-      const cc = parseInt(String(curr.combo_count || 1), 10);
-      if (cc > pc || (cc === pc && curr.repeat_end === 1) || (cc < pc && cc > 1)) {
-        seq.push(curr);
-      } else {
-        sequences.push(seq);
-        seq = [curr];
-      }
-    }
-    sequences.push(seq);
-    for (const s of sequences) {
-      if (s.length === 1) {
-        deduped.push(s[0]);
-      } else {
-        s.sort((a, b) => {
-          const ac = parseInt(String(a.combo_count || 1), 10);
-          const bc = parseInt(String(b.combo_count || 1), 10);
-          if (bc !== ac) return bc - ac;
-          return (b.repeat_end === 1 ? 1 : 0) - (a.repeat_end === 1 ? 1 : 0);
-        });
-        deduped.push(s[0]);
-      }
-    }
-  }
-  return deduped;
-}
+// ====== 连击去重（使用共享模块 lib/gift-utils.js）======
 
 const PORT = process.env.DASHBOARD_PORT || 9871;
+const HOST = process.env.DASHBOARD_HOST || '127.0.0.1';
 const DATA_DIR = __dirname;
+
+// ====== 读取仪表盘认证 Token ======
+function getDashboardToken() {
+  // 优先从环境变量读取
+  if (process.env.DASHBOARD_TOKEN) return process.env.DASHBOARD_TOKEN;
+  // 从 config.yaml 读取
+  try {
+    const yaml = fs.readFileSync(path.join(__dirname, 'config.yaml'), 'utf-8');
+    const m = yaml.match(/dashboard:\s*\n\s*token:\s*(?:'([^']+)'|"([^"]+)"|([^\s\n]+))/);
+    return m ? (m[1] || m[2] || m[3] || '').trim() : '';
+  } catch { return ''; }
+}
+
+const AUTH_TOKEN = getDashboardToken();
+
+// ====== 认证中间件 ======
+function checkAuth(req, res) {
+  if (!AUTH_TOKEN) return true; // 未设置 token 则跳过认证
+  // 检查 Authorization: Bearer <token>
+  const auth = req.headers['authorization'] || '';
+  if (auth === `Bearer ${AUTH_TOKEN}`) return true;
+  // 检查 URL query param ?token=xxx
+  try {
+    const parsed = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+    if (parsed.searchParams.get('token') === AUTH_TOKEN) return true;
+  } catch {}
+  res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
+  res.end(JSON.stringify({ error: 'Unauthorized. 请在 URL 中添加 ?token=xxx 或在请求头中携带 Authorization: Bearer xxx' }));
+  return false;
+}
 
 // ====== 读取抖音Cookie ======
 function getCookie() {
@@ -1497,9 +1485,9 @@ const server = http.createServer(async (req, res) => {
   // CORS 预检
   if (req.method === 'OPTIONS') {
     res.writeHead(204, {
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': HOST === '0.0.0.0' ? '*' : `http://${req.headers.host || 'localhost'}`,
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type'
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization'
     });
     return res.end();
   }
@@ -1507,6 +1495,8 @@ const server = http.createServer(async (req, res) => {
   const { pathname } = parseQuery(req.url);
 
   if (pathname.startsWith('/api/')) {
+    // API 路由需要认证
+    if (!checkAuth(req, res)) return;
     await handleAPI(req, res);
   } else {
     serveStatic(req, res);
@@ -1516,8 +1506,17 @@ const server = http.createServer(async (req, res) => {
 // 启动
 async function start() {
   await db.init();
-  server.listen(PORT, '0.0.0.0', () => {
-    console.log(`[dashboard] 仪表板已启动: http://0.0.0.0:${PORT}`);
+  server.listen(PORT, HOST, () => {
+    console.log(`[dashboard] 仪表板已启动: http://${HOST}:${PORT}`);
+    if (!AUTH_TOKEN) {
+      console.warn('[dashboard] ⚠️ 警告: 未设置 DASHBOARD_TOKEN，仪表盘无认证保护！');
+      console.warn('[dashboard] ⚠️ 请在 config.yaml 中设置 dashboard.token 或设置环境变量 DASHBOARD_TOKEN');
+    } else {
+      console.log('[dashboard] 已启用 Token 认证');
+    }
+    if (HOST === '0.0.0.0') {
+      console.warn('[dashboard] ⚠️ 警告: 绑定 0.0.0.0，仪表盘可被外部网络访问');
+    }
   });
 }
 

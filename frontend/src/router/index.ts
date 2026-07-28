@@ -11,13 +11,13 @@ const router = createRouter({
     {
       path: '/sessions/:hostId',
       name: 'sessions',
-      component: () => import('@/views/HomeView.vue'),
+      component: () => import('@/views/SessionsView.vue'),
       props: true,
     },
     {
       path: '/detail/:sessionId',
       name: 'detail',
-      component: () => import('@/views/HomeView.vue'),
+      component: () => import('@/views/DetailView.vue'),
       props: true,
     },
   ],

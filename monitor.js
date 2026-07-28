@@ -33,6 +33,7 @@ const fs = require('fs');
 const path = require('path');
 const db = require('./db-sqlite.js');
 const api = require('./lib/douyin-api.js');
+const { getCookie } = require('./lib/config-reader');
 const reportImg = require('./report-image.js');
 const feishu = require('./feishu-send.js');
 
@@ -513,16 +514,7 @@ async function resolveAnchorName(anchorId, fallbackName) {
   }
 
   try {
-    const cookiePath = __dirname + '/config.yaml';
-    let cookie = '';
-    try {
-      const f = require('fs');
-      if (f.existsSync(cookiePath)) {
-        const yaml = f.readFileSync(cookiePath, 'utf-8');
-        const m = yaml.match(/douyin:\s*(?:'([^']+)'|"([^"]+)")/);
-        if (m) cookie = m[1] || m[2];
-      }
-    } catch(e) {}
+    const cookie = getCookie();
 
     const ab = randomABogus();
     const url = 'https://www.douyin.com/aweme/v1/web/user/profile/other/?user_id=' + anchorId + '&a_bogus=' + ab;

@@ -12,25 +12,15 @@ const zlib = require('zlib');
 const db = require('./db-sqlite.js');
 const reportImg = require('./report-image.js');
 const { comboDedupGifts } = require('./lib/gift-utils.js');
+const { getCookie, getDashboardToken, getDashboardHost, getDashboardPort } = require('./lib/config-reader');
 
 // ====== 连击去重（使用共享模块 lib/gift-utils.js）======
 
-const PORT = process.env.DASHBOARD_PORT || 9871;
-const HOST = process.env.DASHBOARD_HOST || '127.0.0.1';
+const PORT = getDashboardPort();
+const HOST = getDashboardHost();
 const DATA_DIR = __dirname;
 
-// ====== 读取仪表盘认证 Token ======
-function getDashboardToken() {
-  // 优先从环境变量读取
-  if (process.env.DASHBOARD_TOKEN) return process.env.DASHBOARD_TOKEN;
-  // 从 config.yaml 读取
-  try {
-    const yaml = fs.readFileSync(path.join(__dirname, 'config.yaml'), 'utf-8');
-    const m = yaml.match(/dashboard:\s*\n\s*token:\s*(?:'([^']+)'|"([^"]+)"|([^\s\n]+))/);
-    return m ? (m[1] || m[2] || m[3] || '').trim() : '';
-  } catch { return ''; }
-}
-
+// ====== 仪表盘认证 Token（使用共享模块 lib/config-reader.js）======
 const AUTH_TOKEN = getDashboardToken();
 
 // ====== 认证中间件 ======
@@ -49,14 +39,7 @@ function checkAuth(req, res) {
   return false;
 }
 
-// ====== 读取抖音Cookie ======
-function getCookie() {
-  try {
-    const yaml = require('fs').readFileSync(require('path').join(__dirname, 'config.yaml'), 'utf-8');
-    const m = yaml.match(/cookie:\s*douyin:\s*(?:'([^']+)'|"([^"]+)")/);
-    return m ? (m[1] || m[2]) : '';
-  } catch { return ''; }
-}
+// ====== 读取抖音Cookie（使用共享模块 lib/config-reader.js）======
 
 // ====== 工具函数 ======
 function sendJSON(res, data, status = 200) {

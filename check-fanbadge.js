@@ -3,9 +3,8 @@ const Database = require('better-sqlite3');
 const fs = require('fs');
 const path = require('path');
 
-const configContent = fs.readFileSync('config.yaml', 'utf-8');
-const cookieMatch = configContent.match(/cookie:\s*\n\s*douyin:\s*'([^']+)'/);
-const cookie = cookieMatch ? cookieMatch[1] : '';
+const { getCookie } = require('./lib/config-reader');
+const cookie = getCookie();
 
 const db = new Database('db/douyin.db');
 

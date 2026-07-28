@@ -1,5 +1,22 @@
 <template>
-  <div>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="top-bar">
+      <button class="back-btn" @click="goBack" title="返回">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </button>
+      <h1 class="page-title">{{ data?.session?.title || '场次详情' }}</h1>
+      <button v-if="data?.session?.is_live" class="refresh-btn" @click="refreshDetail" :disabled="refreshing">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" :class="{ spinning: refreshing }">
+          <polyline points="23 4 23 10 17 10"/>
+          <polyline points="1 20 1 14 7 14"/>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+      </button>
+    </header>
+
     <!-- Stats Row -->
     <div class="stats-row" v-if="data">
       <div class="stat-card">
@@ -403,23 +420,48 @@
       </div>
       加载失败: {{ error }}
     </div>
+
+    <!-- Anchor Modal -->
+    <div class="anchor-modal-overlay" :class="{ show: anchorModalVisible }" @click.self="closeAnchorModal">
+      <div class="anchor-modal">
+        <div class="anchor-modal-header">
+          <h3>{{ anchorModalTitle }}</h3>
+          <button class="anchor-modal-close" @click="closeAnchorModal">✕</button>
+        </div>
+        <div class="anchor-modal-body" v-html="anchorModalBody"></div>
+      </div>
+    </div>
+
+    <!-- Gift Detail Modal -->
+    <div class="anchor-modal-overlay" :class="{ show: giftDetailModalVisible }" @click.self="closeGiftDetailModal">
+      <div class="anchor-modal">
+        <div class="anchor-modal-header">
+          <h3>{{ giftDetailTitle }}</h3>
+          <button class="anchor-modal-close" @click="closeGiftDetailModal">✕</button>
+        </div>
+        <div class="anchor-modal-body" v-html="giftDetailBody"></div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
-import { esc, fmtTime, formatDuration } from '../utils/format'
+import { esc, fmtTime, formatDuration, avatarHtml } from '../utils/format'
 import { replaceDouyinEmoji } from '../utils/douyin-emoji'
 import { renderWordCloud as drawWordCloud } from '../utils/wordcloud'
 import { fetchSessionDetail, fetchDanmaku, getReportUrl } from '../api'
+import { useRouter } from 'vue-router'
 
 const props = defineProps({
   sessionId: { type: String, required: true }
 })
 
-const emit = defineEmits(['toast', 'confirm', 'openAnchorModal', 'showGiftDetail'])
+const router = useRouter()
 
-const API = ''
+function goBack() {
+  router.back()
+}
 
 // State
 const data = ref(null)
@@ -618,13 +660,62 @@ async function queryAnonymous() {
 }
 
 // Anchor modal
-function openAnchorModal(anchorName) {
-  emit('openAnchorModal', anchorName)
+const anchorModalVisible = ref(false)
+const anchorModalTitle = ref('主播榜')
+const anchorModalBody = ref('')
+
+function closeAnchorModal() { anchorModalVisible.value = false }
+
+function openAnchorModal(anchorName: string) {
+  anchorModalTitle.value = anchorName
+  const allGifts = (data.value?.giftDetails || []).filter((g: any) => g.to_nickname === anchorName)
+  if (!allGifts.length) {
+    anchorModalBody.value = '<div class="empty" style="padding:20px">暂无礼物数据</div>'
+    anchorModalVisible.value = true
+    return
+  }
+  const aggMap: Record<string, any> = {}
+  allGifts.forEach((g: any) => {
+    const uid = g.user_sec_uid || g.nickname
+    if (!aggMap[uid]) aggMap[uid] = { nickname: g.nickname, avatar_url: g.avatar_url, total_diamonds: 0, gift_count: 0 }
+    if (g.nickname && !g.nickname.startsWith('神秘人')) { aggMap[uid].nickname = g.nickname; if (g.avatar_url) aggMap[uid].avatar_url = g.avatar_url }
+    aggMap[uid].total_diamonds += g.total_diamonds
+    aggMap[uid].gift_count += g.count
+  })
+  const gifts = Object.values(aggMap).sort((a: any, b: any) => b.total_diamonds - a.total_diamonds)
+  const totalD = gifts.reduce((s: number, g: any) => s + g.total_diamonds, 0)
+  let html = `<div class="anchor-modal-summary"><span><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:-2px;fill:var(--orange)"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg> <span class="sv">${totalD.toLocaleString()}</span></span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:-2px"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> <span class="sv">${gifts.length}</span> 人</span></div>`
+  html += '<div class="gift-list-card">'
+  gifts.forEach((g: any, i: number) => {
+    html += `<div class="gift-list-item"><span class="gift-rank-num">${String(i + 1).padStart(2, '0')}</span><div class="user-cell">${avatarHtml(g.avatar_url, g.nickname)}<span>${esc(g.nickname)}</span></div><div class="diamonds"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:-2px;margin-right:2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg> ${g.total_diamonds.toLocaleString()}</div></div>`
+  })
+  html += '</div>'
+  anchorModalBody.value = html
+  anchorModalVisible.value = true
 }
 
-// Gift detail
-function showGiftDetail(nickname, secUid) {
-  emit('showGiftDetail', nickname, secUid)
+// Gift detail modal
+const giftDetailModalVisible = ref(false)
+const giftDetailTitle = ref('礼物明细')
+const giftDetailBody = ref('')
+
+function closeGiftDetailModal() { giftDetailModalVisible.value = false }
+
+function showGiftDetail(nickname: string, secUid: string) {
+  const details = (data.value?.giftDetails || []).filter((d: any) => secUid ? d.user_sec_uid === secUid : d.nickname === nickname)
+  if (!details.length) return
+  const totalD = details.reduce((s: number, d: any) => s + d.total_diamonds, 0)
+  giftDetailTitle.value = nickname + ' 的礼物'
+  let html = `<div class="anchor-modal-summary"><span><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:-2px;fill:var(--orange)"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg> <span class="sv">${totalD.toLocaleString()}</span></span><span>${details.length} 种礼物</span></div>`
+  html += '<div style="display:flex;flex-direction:column;gap:6px">'
+  details.forEach((d: any) => {
+    const icon = d.gift_icon ? `<img src="${esc(d.gift_icon)}" class="gdi-icon">` : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="gdi-icon" style="padding:2px;box-sizing:border-box"><rect x="3" y="8" width="18" height="13" rx="1"/><path d="M12 8V6c0-2-1.5-4-4-4S4 4 4 6h2"/><path d="M20 6c0-2-1.5-4-4-4s-4 2-4 4h2"/><line x1="12" y1="8" x2="12" y2="21"/><line x1="3" y1="13" x2="21" y2="13"/></svg>'
+    const to = d.to_nickname ? `<span class="gdi-to">→ ${esc(d.to_nickname)}</span>` : ''
+    html += `<div class="gift-detail-item">${icon}<span class="gdi-name">${esc(d.gift_name)} ×${d.count}</span>${to}<span class="gdi-diamonds"><svg viewBox="0 0 24 24" width="12" height="12" style="margin-right:2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg>${d.total_diamonds.toLocaleString()}</span></div>`
+  })
+  html += '</div>'
+  giftDetailBody.value = html
+  giftDetailModalVisible.value = true
 }
 
 // Auto-refresh

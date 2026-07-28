@@ -1,5 +1,15 @@
 <template>
-  <div>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="top-bar">
+      <button class="back-btn" @click="goBack" title="返回">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </button>
+      <h1 class="page-title">场次列表</h1>
+    </header>
+
     <!-- Stats Row -->
     <div class="stats-row">
       <div class="stat-card">
@@ -46,7 +56,8 @@
           日期
         </label>
         <div class="dp-input" id="dpFrom" @click="dpOpen('from')">
-          <span class="dp-ph">开始日期</span>
+          <span v-if="!dpData.from" class="dp-ph">开始日期</span>
+          <span v-else class="dp-val">{{ dpData.from }}</span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="4" width="18" height="18" rx="2"/>
             <line x1="16" y1="2" x2="16" y2="6"/>
@@ -56,7 +67,8 @@
         </div>
         <span class="filter-sep">~</span>
         <div class="dp-input" id="dpTo" @click="dpOpen('to')">
-          <span class="dp-ph">结束日期</span>
+          <span v-if="!dpData.to" class="dp-ph">结束日期</span>
+          <span v-else class="dp-val">{{ dpData.to }}</span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="4" width="18" height="18" rx="2"/>
             <line x1="16" y1="2" x2="16" y2="6"/>
@@ -247,18 +259,25 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { fmtTime, formatDuration } from '../utils/format'
+import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
-import { fetchSessions, deleteSession } from '../api'
+import { fetchSessions, deleteSession, getReportUrl } from '../api'
 
 const props = defineProps({
   hostId: { type: String, required: true }
 })
 
-const emit = defineEmits(['viewDetail', 'toast', 'confirm'])
+const router = useRouter()
+const { toast } = useToast()
 const { showConfirm } = useConfirm()
+
+function goBack() {
+  router.push({ name: 'hosts' })
+}
 
 const API = ''
 
@@ -404,42 +423,42 @@ function clearDateFilter() {
 }
 
 // Actions
-function viewDetail(id) {
-  emit('viewDetail', id)
+function viewDetail(id: number) {
+  router.push({ name: 'detail', params: { sessionId: String(id) } })
 }
 
-function downloadReport(id) {
-  window.open(`${API}/api/sessions/${id}/report`, '_blank')
+function downloadReport(id: number) {
+  window.open(getReportUrl(id), '_blank')
 }
 
 function downloadSelectedReports() {
   const ids = [...selectedIds.value]
   if (ids.length === 0) {
-    emit('toast', '请先选择场次', 'error')
+    toast('请先选择场次', 'error')
     return
   }
   ids.forEach((id, i) => {
-    setTimeout(() => window.open(`${API}/api/sessions/${id}/report`, '_blank'), i * 500)
+    setTimeout(() => window.open(getReportUrl(id), '_blank'), i * 500)
   })
-  emit('toast', `正在生成 ${ids.length} 份报告...`, 'success')
+  toast(`正在生成 ${ids.length} 份报告...`, 'success')
 }
 
-async function deleteSessionFromList(sessionId) {
+async function deleteSessionFromList(sessionId: number) {
   const confirmed = await showConfirm('🗑️', '确定删除这场直播数据？<br><br>弹幕、礼物、在线记录将一并清除<br>此操作不可恢复！')
   if (!confirmed) return
   try {
     const r = await deleteSession(String(sessionId))
-    emit('toast', r.ok ? '场次已删除' : (r.error || '删除失败'), r.ok ? 'success' : 'error')
+    toast(r.ok ? '场次已删除' : (r.error || '删除失败'), r.ok ? 'success' : 'error')
     if (r.ok) fetchSessionsList()
   } catch(e) {
-    emit('toast', '网络错误: ' + e.message, 'error')
+    toast('网络错误: ' + e.message, 'error')
   }
 }
 
 async function deleteSelectedSessions() {
   const ids = [...selectedIds.value]
   if (ids.length === 0) {
-    emit('toast', '请先选择场次', 'error')
+    toast('请先选择场次', 'error')
     return
   }
   const confirmed = await showConfirm('🗑️', `确定删除选中的 <strong>${ids.length}</strong> 场数据？<br><br>弹幕、礼物、在线记录将一并清除<br>此操作不可恢复！`)
@@ -451,7 +470,7 @@ async function deleteSelectedSessions() {
       r.ok ? ok++ : fail++
     } catch(e) { fail++ }
   }
-  emit('toast', `已删除 ${ok} 场${fail ? `，${fail} 场失败` : ''}`, ok > 0 ? 'success' : 'error')
+  toast(`已删除 ${ok} 场${fail ? `，${fail} 场失败` : ''}`, ok > 0 ? 'success' : 'error')
   fetchSessionsList()
 }
 

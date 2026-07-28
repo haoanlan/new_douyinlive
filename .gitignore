@@ -38,3 +38,4 @@ current_session.json
 runtime-config.json
 db/*.db-*
 bg-design/
+gift_debug.json

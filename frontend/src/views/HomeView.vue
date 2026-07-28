@@ -231,7 +231,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useAppStore } from '../stores/app'
-import { lookupRoom, addRoom, pauseRoom, resumeRoom, removeRoom, fetchRooms, fetchUser } from '../api'
+import { lookupRoom, addRoom, pauseRoom, resumeRoom, removeRoom, fetchRooms, fetchSummary, fetchUser } from '../api'
 import { esc, fmtTime, fmtSessionTime, avatarHtml, avatarHtml52, giftEmoji } from '../utils/format'
 import { replaceDouyinEmoji } from '../utils/douyin-emoji'
 import { useToast } from '../composables/useToast'
@@ -266,18 +266,10 @@ const summary = store.summary  // reactive object
 const { toast } = useToast()
 const { showConfirm } = useConfirm()
 
-const API = ''
-
 // Cache-aware: show cached data immediately (no spinner), only show loading on first visit
 const _hasCache = rooms.value.length > 0
 contentLoading.value = !_hasCache
 contentFadeIn.value = false
-
-async function api(path: string) {
-  const r = await fetch(API + path)
-  if (!r.ok) throw new Error(`${r.status} ${r.statusText}`)
-  return r.json()
-}
 
 // ============================================================
 // NAVIGATION (to child routes)
@@ -311,7 +303,7 @@ async function loadRoomsView(gen?: number) {
   }
   // hasCache: silent refresh — keep showing cached data, no spinner
   try {
-    const [s, r] = await Promise.all([api('/api/summary'), api('/api/rooms')])
+    const [s, r] = await Promise.all([fetchSummary(), fetchRooms()])
     if (gen !== undefined && gen !== _viewGen) return
     rooms.value = r
     Object.assign(summary, s)

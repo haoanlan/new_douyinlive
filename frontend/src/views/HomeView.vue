@@ -268,8 +268,9 @@ const { showConfirm } = useConfirm()
 
 const API = ''
 
-// Block 0-flash on route return: setup body runs before first render
-contentLoading.value = true
+// Cache-aware: show cached data immediately (no spinner), only show loading on first visit
+const _hasCache = rooms.value.length > 0
+contentLoading.value = !_hasCache
 contentFadeIn.value = false
 
 async function api(path: string) {
@@ -303,19 +304,23 @@ function roomBadgeText(r: Room) {
 let _viewGen = 0
 
 async function loadRoomsView(gen?: number) {
-  contentLoading.value = true
-  contentFadeIn.value = false
+  const hasCache = rooms.value.length > 0
+  if (!hasCache) {
+    contentLoading.value = true
+    contentFadeIn.value = false
+  }
+  // hasCache: silent refresh — keep showing cached data, no spinner
   try {
     const [s, r] = await Promise.all([api('/api/summary'), api('/api/rooms')])
     if (gen !== undefined && gen !== _viewGen) return
     rooms.value = r
     Object.assign(summary, s)
     contentLoading.value = false
-    contentFadeIn.value = true
+    if (!hasCache) contentFadeIn.value = true
   } catch (e: any) {
     if (gen !== undefined && gen !== _viewGen) return
     contentLoading.value = false
-    contentFadeIn.value = true
+    if (!hasCache) contentFadeIn.value = true
     toast('加载失败: ' + e.message, 'error')
   }
   if (gen === undefined || gen === _viewGen) startRoomStatusPoll()

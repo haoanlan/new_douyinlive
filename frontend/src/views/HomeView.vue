@@ -307,9 +307,11 @@ async function loadRoomsView(gen?: number) {
     rooms.value = r
     Object.assign(summary, s)
     contentLoading.value = false
+    contentFadeIn.value = true
   } catch (e: any) {
     if (gen !== undefined && gen !== _viewGen) return
     contentLoading.value = false
+    contentFadeIn.value = true
     toast('加载失败: ' + e.message, 'error')
   }
   if (gen === undefined || gen === _viewGen) startRoomStatusPoll()

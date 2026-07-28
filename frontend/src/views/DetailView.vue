@@ -319,6 +319,11 @@ const {
 const { toast } = useToast()
 const { showConfirm } = useConfirm()
 
+// Prevent 0-flash: set loading + reset data before first render (onMounted runs after first paint)
+contentLoading.value = true
+contentFadeIn.value = false
+detailData.value = null
+
 // ============================================================
 // LOCAL STATE
 // ============================================================
@@ -830,8 +835,10 @@ onMounted(async () => {
     detailTab.value = hasMultiAnchor ? 'anchors' : 'gifts'
     if (data.session.is_live) startAutoRefresh()
     contentLoading.value = false
+    contentFadeIn.value = true
   } catch (e: any) {
     contentLoading.value = false
+    contentFadeIn.value = true
     toast('加载失败: ' + e.message, 'error')
   }
 

@@ -134,6 +134,10 @@ const {
 
 const API = ''
 
+// Prevent 0-flash: set loading before first render (onMounted runs after first paint)
+contentLoading.value = true
+contentFadeIn.value = false
+
 // Filtered sessions (depends on date picker)
 const filteredSessions = computed(() => {
   const from = dpData.from
@@ -225,8 +229,10 @@ async function loadSessions() {
     const data = await fetchSessions(hostId)
     sessions.value = data
     contentLoading.value = false
+    contentFadeIn.value = true
   } catch (e: any) {
     contentLoading.value = false
+    contentFadeIn.value = true
     toast('加载失败: ' + e.message, 'error')
   }
 }

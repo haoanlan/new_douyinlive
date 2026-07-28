@@ -268,6 +268,10 @@ const { showConfirm } = useConfirm()
 
 const API = ''
 
+// Block 0-flash on route return: setup body runs before first render
+contentLoading.value = true
+contentFadeIn.value = false
+
 async function api(path: string) {
   const r = await fetch(API + path)
   if (!r.ok) throw new Error(`${r.status} ${r.statusText}`)
@@ -299,7 +303,7 @@ function roomBadgeText(r: Room) {
 let _viewGen = 0
 
 async function loadRoomsView(gen?: number) {
-  contentLoading.value = rooms.value.length === 0
+  contentLoading.value = true
   contentFadeIn.value = false
   try {
     const [s, r] = await Promise.all([api('/api/summary'), api('/api/rooms')])

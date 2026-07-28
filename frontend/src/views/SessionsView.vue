@@ -115,12 +115,6 @@ import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
 import { useDatePicker } from '../composables/useDatePicker'
 
-interface Session {
-  id: number; title: string; is_live: boolean; started_at: string; ended_at: string
-  duration_min: number; gift_count: number; total_diamonds: number
-  danmaku_count: number; user_count: number; stats_like: number
-}
-
 const store = useAppStore()
 const router = useRouter()
 const route = useRoute()
@@ -131,8 +125,6 @@ const {
   dpOverlayVisible, dpData, dpTitleText, dpDaysHtml,
   dpOpen, dpClose, dpNav, dpConfirm, dpClear, clearDateFilter
 } = useDatePicker()
-
-const API = ''
 
 // Prevent 0-flash: set loading before first render (onMounted runs after first paint)
 contentLoading.value = true

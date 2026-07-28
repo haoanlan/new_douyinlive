@@ -232,6 +232,7 @@ import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useAppStore } from '../stores/app'
 import { lookupRoom, addRoom, pauseRoom, resumeRoom, removeRoom, fetchRooms, fetchSummary, fetchUser } from '../api'
+import type { Room } from '../api'
 import { esc, fmtTime, fmtSessionTime, avatarHtml, avatarHtml52, giftEmoji } from '../utils/format'
 import { replaceDouyinEmoji } from '../utils/douyin-emoji'
 import { useToast } from '../composables/useToast'
@@ -240,12 +241,8 @@ import { useSearch } from '../composables/useSearch'
 import { useProfile } from '../composables/useProfile'
 
 // ============================================================
-// TYPES
+// TYPES (Room imported from API layer, only UI-specific types here)
 // ============================================================
-interface Room {
-  room_id: string; name: string; avatar: string; enabled: boolean
-  connected: boolean; recording: boolean; session_count: number; _connecting?: boolean
-}
 interface LookupData { room_id: string; nickname: string; avatar: string; is_live: boolean }
 interface AnonUser {
   sec_uid: string; db_nicknames: string[]; api_nickname: string

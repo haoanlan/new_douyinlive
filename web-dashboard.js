@@ -85,11 +85,19 @@ function parseQuery(reqUrl) {
   return { pathname: u.pathname, query: q };
 }
 
-function bodyParse(req) {
+function bodyParse(req, maxBytes = 10 * 1024 * 1024) {
   return new Promise((resolve) => {
     let body = '';
-    req.on('data', chunk => body += chunk);
+    let size = 0;
+    let tooLarge = false;
+    req.on('data', chunk => {
+      if (tooLarge) return;
+      size += chunk.length;
+      if (size > maxBytes) { tooLarge = true; body = ''; return; }
+      body += chunk;
+    });
     req.on('end', () => {
+      if (tooLarge) { resolve({ _error: 'body too large' }); return; }
       try { resolve(JSON.parse(body)); } catch { resolve({}); }
     });
   });

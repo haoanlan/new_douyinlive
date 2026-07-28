@@ -4,6 +4,7 @@
  */
 import { defineStore } from 'pinia'
 import { ref, reactive, computed } from 'vue'
+import type { Room, Summary, Session, SessionDetail } from '../api'
 
 export const useAppStore = defineStore('app', () => {
   // ===================== View State =====================
@@ -21,20 +22,6 @@ export const useAppStore = defineStore('app', () => {
   const breadcrumbItems = ref<{ label: string; onClick?: () => void }[]>([])
 
   // ===================== Data =====================
-  interface Room {
-    room_id: string; name: string; avatar: string; enabled: boolean
-    connected: boolean; recording: boolean; session_count: number; _connecting?: boolean
-  }
-  interface Summary {
-    total_sessions: number; total_gifts: number; total_diamonds: number
-    total_danmaku: number; unique_users: number
-  }
-  interface Session {
-    id: number; title: string; is_live: boolean; started_at: string; ended_at: string
-    duration_min: number; gift_count: number; total_diamonds: number
-    danmaku_count: number; user_count: number; stats_like: number
-  }
-
   const rooms = ref<Room[]>([])
   const summary = reactive<Summary>({
     total_sessions: 0, total_gifts: 0, total_diamonds: 0,
@@ -43,7 +30,7 @@ export const useAppStore = defineStore('app', () => {
   const sessions = ref<Session[]>([])
 
   // ===================== Detail =====================
-  const detailData = ref<any>(null)
+  const detailData = ref<SessionDetail | null>(null)
   const _danmaku = ref<any[]>([])
   const _giftDetails = ref<any[]>([])
   const detailTab = ref('gifts')

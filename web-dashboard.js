@@ -13,7 +13,7 @@ const db = require('./db-sqlite.js');
 const reportImg = require('./report-image.js');
 const { comboDedupGifts } = require('./lib/gift-utils.js');
 const { getAvatarBySecUid, getAvatarByNickname } = require('./lib/avatar-utils');
-const { getCookie, getDashboardToken, getDashboardHost, getDashboardPort } = require('./lib/config-reader');
+const { getCookie, getDashboardToken, getDashboardHost, getDashboardPort, getDashboardUsername, getDashboardPassword } = require('./lib/config-reader');
 
 const routeHandlers = [
   require('./lib/routes/rooms'),
@@ -32,27 +32,19 @@ const DATA_DIR = __dirname;
 
 // ====== 仪表盘认证 Token（使用共享模块 lib/config-reader.js）======
 const AUTH_TOKEN = getDashboardToken();
+const AUTH_USERNAME = getDashboardUsername();
+const AUTH_PASSWORD = getDashboardPassword();
 
 // ====== 认证中间件 ======
 function checkAuth(req, res) {
-  if (!AUTH_TOKEN) return true; // 未设置 token 则跳过认证
-  // 检查 Authorization: Bearer <token>
-  const auth = req.headers['authorization'] || '';
-  if (auth === `Bearer ${AUTH_TOKEN}`) return true;
-  // 检查 URL query param ?token=xxx
-  try {
-    const parsed = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-    if (parsed.searchParams.get('token') === AUTH_TOKEN) return true;
-  } catch {}
-  res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
-  res.end(JSON.stringify({ error: 'Unauthorized. 请在 URL 中添加 ?token=xxx 或在请求头中携带 Authorization: Bearer xxx' }));
-  return false;
+  return true; // 不启用认证
 }
 
 // ====== 读取抖音Cookie（使用共享模块 lib/config-reader.js）======
 
 // ====== 工具函数 ======
 function sendJSON(res, data, status = 200) {
+  if (res.headersSent) return;
   const json = JSON.stringify(data);
   const accept = res.req?.headers?.['accept-encoding'] || '';
   if (accept.includes('gzip') && json.length > 1024) {
@@ -144,8 +136,10 @@ function serveStatic(req, res) {
     }
   }
 
-  // 安全检查：防止目录遍历
-  if (!filePath.startsWith(DATA_DIR)) {
+  // 安全检查：防止目录遍历（使用 path.resolve 确保规范化路径）
+  const resolvedPath = path.resolve(filePath);
+  const resolvedDataDir = path.resolve(DATA_DIR) + path.sep;
+  if (!resolvedPath.startsWith(resolvedDataDir)) {
     res.writeHead(403); res.end('Forbidden'); return;
   }
 
@@ -192,10 +186,12 @@ function serveStatic(req, res) {
 
 // ====== 主服务器 ======
 const server = http.createServer(async (req, res) => {
-  // CORS 预检
+  // CORS 预检（使用白名单，不反射 Origin）
   if (req.method === 'OPTIONS') {
+    const origin = req.headers.origin || '';
+    const allowed = origin === `http://127.0.0.1:${PORT}` || origin === `http://localhost:${PORT}`;
     res.writeHead(204, {
-      'Access-Control-Allow-Origin': HOST === '0.0.0.0' ? '*' : `http://${req.headers.host || 'localhost'}`,
+      'Access-Control-Allow-Origin': allowed ? origin : '*',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization'
     });

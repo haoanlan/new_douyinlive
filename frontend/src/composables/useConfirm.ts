@@ -11,6 +11,8 @@ let _cb: ((val: boolean) => void) | null = null
 
 function showConfirm(icon: string, html: string): Promise<boolean> {
   return new Promise(resolve => {
+    // 如果之前有未完成的confirm，先resolve为false
+    if (_cb) { _cb(false); _cb = null }
     _cb = resolve
     confirmIcon.value = icon
     confirmText.value = html

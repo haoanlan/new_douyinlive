@@ -337,7 +337,7 @@ async function dbFlush(room) {
     const newDanmaku = room.session.danmaku.slice(room.dbSyncState.danmaku);
     if (newDanmaku.length > 0) {
       await db.insertDanmaku(room.dbSessionId, newDanmaku.map(d => ({
-        msg_id: d.uid + '_' + d.time,
+        msgId: d.uid + '_' + d.time,
         nickname: d.nickname,
         avatar: d.avatar || '',
         content: d.content,
@@ -417,7 +417,7 @@ async function dbFlush(room) {
       room.dbSyncState.likes = room.session.stats.like || 0;
     }
   } catch(e) {
-    if (e.code !== 'ER_DUP_ENTRY') {
+    if (e.code !== 'SQLITE_CONSTRAINT') {
       console.error(`[dbFlush][${room.roomId}] 错误:`, e.message);
     }
   }
@@ -702,48 +702,39 @@ function handleMessage(room, data) {
         sendType: data.sendType !== undefined ? parseInt(data.sendType, 10) : null,
         icon: data.gift?.icon?.urlList?.[0] || null,
       });
-      // 礼物调试日志：记录所有礼物的完整解析结构，方便排查 icon 等问题
-      try {
-        const debugPath = path.join(DATA_DIR, 'gift_debug.json');
-        let existing = [];
-        try { existing = JSON.parse(fs.readFileSync(debugPath, 'utf8')); } catch(e) {}
-        existing.push({
-          time: cstISO(),
-          // 基本信息
-          giftId: data.giftId || data.gift?.id || null,
-          giftName, baseName, displayName,
-          // 价格
-          diamondCount: data.gift?.diamondCount || null,
-          diamondPerUnit, count: giftCount, totalDiamonds,
-          // 图标
-          icon: data.gift?.icon?.urlList || null,
-          iconType: data.gift?.iconType || null,
-          image: data.gift?.image?.urlList || null,
-          webpImage: data.gift?.webpImage?.urlList || null,
-          // 送礼人
-          uid: user.id, nickname: user.nickname, avatar: user.avatar,
-          user_display_id: userDisplayId, user_sec_uid: userSecUid,
-          // 收礼人
-          to_nickname, to_avatar,
-          to_user_display_id: toUserDisplayId, to_user_sec_uid: toUserSecUid,
-          // 组合/连击
-          traceId: data.traceId || null,
-          comboCount: parseInt(String(data.comboCount || '1'), 10),
-          repeatEnd: data.repeatEnd !== undefined ? data.repeatEnd : null,
-          groupCount: parseInt(String(data.groupCount || '1'), 10),
-          sendType: data.sendType !== undefined ? parseInt(data.sendType, 10) : null,
-          // 原始 gift 对象（完整结构）
-          giftRaw: JSON.parse(JSON.stringify(data.gift || {})),
-          // gift 所有 key
-          giftKeys: data.gift ? Object.keys(data.gift) : [],
-        });
-        // 超过20MB时从头部删除一半
-        const jsonStr = JSON.stringify(existing, null, 2);
-        if (Buffer.byteLength(jsonStr, 'utf8') > 20 * 1024 * 1024) {
-          existing = existing.slice(Math.floor(existing.length / 2));
-        }
-        fs.writeFileSync(debugPath, JSON.stringify(existing, null, 2));
-      } catch(e) {}
+      // gift_debug.json 已禁用（调试代码，同步写入阻塞事件循环）
+      // try {
+      //   const debugPath = path.join(DATA_DIR, 'gift_debug.json');
+      //   let existing = [];
+      //   try { existing = JSON.parse(fs.readFileSync(debugPath, 'utf8')); } catch(e) {}
+      //   existing.push({
+      //     time: cstISO(),
+      //     giftId: data.giftId || data.gift?.id || null,
+      //     giftName, baseName, displayName,
+      //     diamondCount: data.gift?.diamondCount || null,
+      //     diamondPerUnit, count: giftCount, totalDiamonds,
+      //     icon: data.gift?.icon?.urlList || null,
+      //     iconType: data.gift?.iconType || null,
+      //     image: data.gift?.image?.urlList || null,
+      //     webpImage: data.gift?.webpImage?.urlList || null,
+      //     uid: user.id, nickname: user.nickname, avatar: user.avatar,
+      //     user_display_id: userDisplayId, user_sec_uid: userSecUid,
+      //     to_nickname, to_avatar,
+      //     to_user_display_id: toUserDisplayId, to_user_sec_uid: toUserSecUid,
+      //     traceId: data.traceId || null,
+      //     comboCount: parseInt(String(data.comboCount || '1'), 10),
+      //     repeatEnd: data.repeatEnd !== undefined ? data.repeatEnd : null,
+      //     groupCount: parseInt(String(data.groupCount || '1'), 10),
+      //     sendType: data.sendType !== undefined ? parseInt(data.sendType, 10) : null,
+      //     giftRaw: JSON.parse(JSON.stringify(data.gift || {})),
+      //     giftKeys: data.gift ? Object.keys(data.gift) : [],
+      //   });
+      //   const jsonStr = JSON.stringify(existing, null, 2);
+      //   if (Buffer.byteLength(jsonStr, 'utf8') > 20 * 1024 * 1024) {
+      //     existing = existing.slice(Math.floor(existing.length / 2));
+      //   }
+      //   fs.writeFileSync(debugPath, JSON.stringify(existing, null, 2));
+      // } catch(e) {}
       if (!room.stats.giftUsers[user.nickname]) {
         room.stats.giftUsers[user.nickname] = { count: 0, totalDiamonds: 0, giftNames: [] };
       }
@@ -843,7 +834,11 @@ function handleMessage(room, data) {
     case 'WebcastRoomStatsMessage': {
       const count = parseInt(data.total || data.displayValue || 0, 10);
       session.online.push({ time: cstISO(), count });
-      if (session.online.length > 1000) session.online = session.online.slice(-500);
+      if (session.online.length > 1000) {
+        session.online = session.online.slice(-500);
+        // 重置同步计数器，避免 slice 后新数据丢失
+        if (room && room.dbSyncState) room.dbSyncState.online = 0;
+      }
       break;
     }
 
@@ -1059,7 +1054,7 @@ function startConnection(roomId, config) {
                 }
                 const streamerId = await db.upsertStreamer(room.session.room_author || '', roomId, '', '');
                 room.dbSessionId = await db.createSession(streamerId, room.session.room_title, roomId);
-                room.dbSyncState = { danmaku: 0, gifts: 0, members: 0, online: 0 };
+                room.dbSyncState = { danmaku: 0, gifts: 0, members: 0, online: 0, likes: 0 };
                 console.log(`[${getDisplayName(room)}] [db] session #${room.dbSessionId} 已创建`);
                 // 执行挂起的更新
                 const updates = room.pendingDbUpdates;
@@ -1203,15 +1198,22 @@ function startControlSocket() {
       // 收到数据后立即处理并回复（不等 end 事件）
       if (!processed) {
         processed = true;
-        handleControlCommand(JSON.parse(buf)).then(resp => {
+        try {
+          const cmd = JSON.parse(buf);
+          handleControlCommand(cmd).then(resp => {
+            if (!conn.destroyed) {
+              conn.end(JSON.stringify(resp));
+            }
+          }).catch(e => {
+            if (!conn.destroyed) {
+              conn.end(JSON.stringify({ ok: false, error: e.message }));
+            }
+          });
+        } catch (e) {
           if (!conn.destroyed) {
-            conn.end(JSON.stringify(resp));
+            conn.end(JSON.stringify({ ok: false, error: '无效JSON: ' + e.message }));
           }
-        }).catch(e => {
-          if (!conn.destroyed) {
-            conn.end(JSON.stringify({ ok: false, error: e.message }));
-          }
-        });
+        }
       }
     });
     conn.on('error', () => {});  // 忽略客户端断开错误

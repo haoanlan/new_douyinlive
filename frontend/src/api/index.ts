@@ -34,7 +34,7 @@ function authHeaders(): Record<string, string> {
 /**
  * Generic API fetch wrapper
  */
-async function api<T = any>(url: string, options?: RequestInit): Promise<T> {
+export async function api<T = any>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${API_PREFIX}${url}`, {
     headers: authHeaders(),
     ...options,

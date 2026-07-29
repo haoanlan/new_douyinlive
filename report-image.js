@@ -1386,8 +1386,8 @@ async function main() {
     const toSecUid = data.gifts.find(g => g.to_nickname && g.to_nickname.includes(toName) && g.to_user_sec_uid);
     if (toSecUid && toSecUid.to_user_sec_uid) {
       try {
-        const { execSync } = require('child_process');
-        const result = execSync('node ' + __dirname + '/douyin-user.js "' + toSecUid.to_user_sec_uid + '"', { timeout: 10000, encoding: 'utf-8' });
+        const { execFileSync } = require('child_process');
+        const result = execFileSync('node', [__dirname + '/douyin-user.js', toSecUid.to_user_sec_uid], { timeout: 10000, encoding: 'utf-8' });
         const user = JSON.parse(result);
         if (user && user.avatar) {
           toAvatar = user.avatar;

@@ -106,7 +106,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRouter, useRoute, onBeforeRouteUpdate } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useAppStore } from '../stores/app'
 import { fetchSessions, fetchRooms, deleteSession } from '../api'
@@ -244,6 +244,9 @@ function setupNav() {
   ]
 }
 
+// Need currentSessionId from store for cleanup
+const { currentSessionId } = storeToRefs(store)
+
 onMounted(async () => {
   const hostId = route.params.hostId as string
   currentHostId.value = hostId
@@ -258,6 +261,13 @@ onMounted(async () => {
   await loadSessions()
 })
 
-// Need currentSessionId from store for cleanup
-const { currentSessionId } = storeToRefs(store)
+// FIX: 同路由不同参数切换时重新加载数据（如 /sessions/123 → /sessions/456）
+// 没有此钩子时，组件复用不会重新触发 onMounted，导致数据不刷新
+onBeforeRouteUpdate(async (to) => {
+  const hostId = to.params.hostId as string
+  currentHostId.value = hostId
+  currentSessionId.value = null
+  setupNav()
+  await loadSessions()
+})
 </script>

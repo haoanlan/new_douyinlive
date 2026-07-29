@@ -295,7 +295,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRouter, useRoute, onBeforeRouteUpdate } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useAppStore } from '../stores/app'
 import { fetchSessionDetail, fetchDanmaku, fetchRooms } from '../api'
@@ -792,9 +792,9 @@ watch(detailTab, (tab) => {
 // ============================================================
 // LIFECYCLE
 // ============================================================
-onMounted(async () => {
-  const sessionId = Number(route.params.sessionId)
-  currentSessionId.value = sessionId
+// FIX: 提取数据加载逻辑，供 onMounted 和 onBeforeRouteUpdate 复用
+async function loadDetail(sessionId: number) {
+  // Reset state
   detailTab.value = 'gifts'
   detailData.value = null
   _danmaku.value = []
@@ -803,6 +803,8 @@ onMounted(async () => {
   danmakuDisplayLimit.value = 50
   anonQuery.value = ''
   anonMatches.value = []; anonSearched.value = false; anonLoading.value = false; danmakuLoading.value = false
+  stopAutoRefresh()
+  stopDanmakuPoll()
 
   // Ensure rooms loaded (for breadcrumb host name)
   if (!rooms.value.length) {
@@ -811,6 +813,7 @@ onMounted(async () => {
 
   setupNav()
   contentLoading.value = true
+  contentFadeIn.value = false
   try {
     const data = await fetchSessionDetail(String(sessionId))
     // Preload avatars
@@ -841,9 +844,23 @@ onMounted(async () => {
     contentFadeIn.value = true
     toast('加载失败: ' + e.message, 'error')
   }
+}
+
+onMounted(async () => {
+  const sessionId = Number(route.params.sessionId)
+  currentSessionId.value = sessionId
+  await loadDetail(sessionId)
 
   document.addEventListener('click', handleDocClick)
   nextTick(() => measureVsContainer())
+})
+
+// FIX: 同路由不同参数切换时重新加载数据（如 /detail/123 → /detail/456）
+// 没有此钩子时，组件复用不会重新触发 onMounted，导致数据不刷新
+onBeforeRouteUpdate(async (to) => {
+  const sessionId = Number(to.params.sessionId)
+  currentSessionId.value = sessionId
+  await loadDetail(sessionId)
 })
 
 onUnmounted(() => {

@@ -61,16 +61,27 @@
 
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
+import { watch } from 'vue'
 import { useAppStore } from '../stores/app'
 import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
 
 const store = useAppStore()
 const router = useRouter()
-const { pageTitle, showBackBtn, showTopNav, breadcrumbItems, topNavTab } = storeToRefs(store)
+const route = useRoute()
+const { pageTitle, showBackBtn, showTopNav, breadcrumbItems, topNavTab, viewLevel } = storeToRefs(store)
 const { toastMsg, toastType, toastClasses, toast } = useToast()
 const { confirmVisible, confirmIcon, confirmText, showConfirm, confirmResolve } = useConfirm()
+
+// 从路由 meta 同步静态导航状态（在视图挂载前生效，避免 UI 闪烁）
+watch(() => route.meta, (meta) => {
+  if (meta.viewLevel) viewLevel.value = meta.viewLevel as 'hosts' | 'sessions' | 'detail'
+  if (meta.showBackBtn !== undefined) showBackBtn.value = meta.showBackBtn as boolean
+  if (meta.showTopNav !== undefined) showTopNav.value = meta.showTopNav as boolean
+  if (meta.pageTitle) store.pageTitle = meta.pageTitle as string
+  if (meta.viewLevel === 'hosts') store.breadcrumbItems = []
+}, { immediate: true })
 
 // Navigation: back button (debounced)
 let _lastBackTime = 0
@@ -78,16 +89,12 @@ function goBack() {
   const now = Date.now()
   if (now - _lastBackTime < 300) return
   _lastBackTime = now
-  history.back()
+  router.back()
 }
 
-// Top nav tab switching — only relevant at hosts level (top-nav hidden otherwise)
+// Top nav tab switching — top nav 仅在 hosts 层级显示（showTopNav 控制）
 function switchTopNav(tab: 'rooms' | 'search' | 'profile') {
   if (topNavTab.value === tab) return
   topNavTab.value = tab
-  // If somehow not on hosts route, navigate back
-  if (router.currentRoute.value.name !== 'hosts') {
-    router.push({ name: 'hosts' })
-  }
 }
 </script>

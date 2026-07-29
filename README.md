@@ -1,78 +1,119 @@
-# new_douyinlive — 抖音直播监控与数据看板
+# 🎥 douyin-live — 抖音直播数据采集与可视化看板
 
-一个基于 Node.js 的抖音直播**多房间监控 + 数据分析看板**。它封装上游 Go 版 [`jwwsjlm/douyinLive`](https://github.com/jwwsjlm/douyinLive) 抓取弹幕/礼物，落地到 SQLite，并通过 Vue 3 前端提供场次管理、礼物排行、弹幕词云、用户画像、趋势分析和图片报告推送。
+> 🤖 抖音直播间多房间数据采集与可视化分析工具。后台守护进程持续运行，自动检测开播/下播，采集弹幕/礼物/进场数据落地 SQLite，并通过 Vue 3 Web 看板提供场次管理、礼物排行、用户画像、趋势分析与图片报告推送。
+>
+> **⚠️ 本项目仅供学习和研究使用，请勿用于任何商业或非法用途。使用者应遵守相关法律法规及平台规则。**
 
-> 本项目面向**已开播直播间的数据记录与回看分析**，不是录播工具，不下载视频流。
-
----
-
-## 架构
-
-三个组件协作运行：
-
-```
-┌──────────────────────┐    WebSocket     ┌──────────────────────┐
-│  Go 抓取代理          │  ws://127.0.0.1  │  monitor.js 守护进程  │
-│  douyinLive-linux     │  :1088/ws/<room> │  (多房间常驻)          │
-│  (上游, 端口 1088)     │ ◄────────────── │  解析/落地/通知/报告    │
-└──────────────────────┘                  └─────────┬────────────┘
-                                                    │ better-sqlite3
-                                                    ▼
-                                          ┌──────────────────┐
-                                          │  db/douyin.db     │
-                                          └──────────────────┘
-                                                    ▲
-┌──────────────────────┐  HTTP (port 9871) ┌────────┴───────────┐
-│  浏览器 Vue 3 看板     │ ◄──────────────► │  web-dashboard.js   │
-│  (frontend/dist)      │   /api/* + 静态   │  REST API + SPA     │
-└──────────────────────┘                  └────────────────────┘
-```
-
-1. **Go 抓取代理** — 上游 `douyinLive` 二进制（`douyinLive-linux-amd64`），监听 `1088`，对外暴露 `ws://127.0.0.1:1088/ws/<房间标识>`，负责连接抖音直播间消息流并把 protobuf 消息转成 JSON。
-2. **`monitor.js`** — Node.js 守护进程。管理 Go 代理生命周期（崩溃自动重启），为每个房间维持 WebSocket 连接，解析消息、去重、按场次写入 SQLite，并在开播/下播时触发飞书通知与图片报告。通过 Unix socket（`monitor.sock`）接收控制命令。
-3. **`web-dashboard.js`** — Node.js HTTP 服务（默认端口 `9871`）。托管 Vue 前端静态文件，并提供带 Token 认证、gzip 压缩、CSV 导出的 REST API。
+[![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org)
+[![Platform](https://img.shields.io/badge/platform-linux%20%7C%20amd64-blue)](#)
+[![Vue](https://img.shields.io/badge/vue-3-42b883)](#)
+[![SQLite](https://img.shields.io/badge/sqlite-better--sqlite3-003b57)](#)
+[![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
 
 ---
 
 ## 功能
 
-- **多房间常驻监控**：一次配置多个直播间，开播自动开始录制，下播自动结束场次
-- **全量消息记录**：弹幕、礼物、点赞、进场、关注、社交、在线人数、飘屏、星守护等
-- **礼物智能处理**：连击(combo)去重、融合礼物价格匹配、固定价格表、星守护折算
-- **SQLite 落地**：WAL 模式 + 索引，支持大批量弹幕/礼物写入
-- **Vue 3 看板**：房间列表、场次历史、单场详情（礼物排行、弹幕词云、时间线、团播主播排名）
-- **用户画像**：按 `sec_uid` 聚合送礼历史、活跃时段、送礼风格、常看主播；匿名昵称反查真实资料
-- **趋势分析**：7/30/90 天的礼物钻石、弹幕、在线峰值趋势（按日/周/月聚合）
-- **CSV 导出**：礼物、弹幕、场次汇总一键导出（带 BOM 兼容 Excel）
-- **图片报告**：用 Playwright 把 HTML 报告渲染成 PNG，下播自动生成并通过飞书推送
-- **飞书通知**：开播提醒、下播图片报告，走飞书 Open API（tenant_access_token）
-- **健壮性**：session 快照防崩溃丢数据、Go 代理崩溃指数退避重启、WebSocket 指数退避重连、日志轮转
-- **安全**：仪表盘 Token 认证、敏感文件访问拦截、目录遍历防护
+- **多房间实时监控** — 一次配置多个直播间，WebSocket 连接 douyinLive 代理，监听弹幕/礼物/进场/在线人数
+- **自动录制** — 检测到开播自动开始记录，下播 30 秒确认后自动保存场次
+- **Web 看板** — Vue 3 + vue-router + Pinia 单页应用，房间列表 / 场次历史 / 单场详情（礼物排行、弹幕词云、时间线、团播主播排名）
+- **数据持久化** — SQLite（WAL 模式 + 索引），弹幕、礼物、进场、在线人数完整记录
+- **图片报告** — Playwright 截图生成可视化直播报告，下播自动生成
+- **飞书推送** — 开播提醒 + 下播报告通过飞书 Open API（tenant_access_token）自动推送
+- **用户画像** — 按 sec_uid 聚合送礼历史、活跃时段、送礼风格；匿名昵称反查真实资料
+- **连击去重** — 智能识别抖音礼物连击帧，去重后统计真实送礼数据
+- **趋势分析** — 7/30/90 天礼物钻石、弹幕、在线峰值趋势（按日/周/月聚合）
+- **CSV 导出** — 礼物、弹幕、场次汇总一键导出（带 BOM 兼容 Excel）
+- **任意切换房间** — 看板内增删房间，或改配置重启即可切换监控目标
 
----
+## 架构
+
+```
+抖音直播间 ←WebSocket→ douyinLive代理(Go二进制, 1088端口)
+                               ↓ ws://127.0.0.1:1088/ws/<room>
+                    monitor.js (常驻守护进程, 多房间)
+                    ├─ 消息解析 → 增量刷写 SQLite
+                    │   ├─ streamers       主播信息
+                    │   ├─ sessions        直播场次/统计
+                    │   ├─ danmaku         弹幕（含飘屏弹幕）
+                    │   ├─ gifts           礼物（含连击元数据、星守护、融合定价）
+                    │   ├─ members         进场记录
+                    │   ├─ online_records  在线人数时序
+                    │   └─ gift_icons      礼物图标库（运行时积累）
+                    │
+                    ├─ 开播/下播 → feishu-send.js → 飞书（tenant_access_token）
+                    └─ 下播后 → report-image.js (Playwright截图)
+                                        └── feishu-send.js → 飞书群
+
+                    web-dashboard.js (HTTP, 9871端口)
+                    ├─ 托管 frontend/dist (Vue 3 SPA)
+                    └─ REST API /api/* (Token认证 + gzip)
+                            ↑ 控制 socket (monitor.sock)
+                            └─ 增删/暂停/恢复房间, 实时状态
+```
 
 ## 快速开始
 
-### 环境要求
+### 前置条件
 
-- **Linux** 服务器（部署脚本路径为 `/opt/data/douyin-monitor`，Go 二进制为 `douyinLive-linux-amd64`）
-- **Node.js** ≥ 18（使用了内置 `fetch`）
-- **上游 Go 二进制** `douyinLive-linux-amd64` 放在项目根目录
-- **Playwright Chromium**（仅图片报告功能需要）：`npx playwright install chromium`
-- 依赖：`better-sqlite3`、`playwright`、`ws`、`xlsx`（`npm install`）
+- Node.js ≥ 18（使用内置 `fetch`）
+- Go 抓取代理二进制 `douyinLive-linux-amd64`（放在项目根目录）
+- Chromium（report-image.js 截图用，Playwright 自动安装）
+
+### 安装
+
+```bash
+# 克隆仓库
+git clone https://github.com/haoanlan/new_douyinlive.git
+cd new_douyinlive
+
+# 安装依赖
+npm install
+
+# 安装 Playwright 浏览器
+npx playwright install chromium
+
+# 构建前端
+cd frontend && npm install && npm run build && cd ..
+```
 
 ### 配置
 
-```bash
-cp config.example.yaml config.yaml      # Go 代理 + 仪表盘配置
+#### 1. douyin cookie + 仪表盘
+
+复制 `config.example.yaml` 为 `config.yaml`，填入抖音 cookie 和仪表盘令牌：
+
+```yaml
+cookie:
+  douyin: "你的抖音登录cookie"
+port: "1088"
+monitor:
+  poll_interval: 15s
+  notify_interval: 30s
+dashboard:
+  token: "你的仪表盘访问令牌"   # 强烈建议设置，留空则无认证
+  host: "127.0.0.1"            # 0.0.0.0 允许外部访问
+  port: "9871"
 ```
 
-编辑 `config.yaml`，至少设置：
+> cookie 获取方式：浏览器登录抖音网页版 → F12 → Application → Cookies → 复制完整 cookie 字符串
 
-- `dashboard.token`：仪表盘访问令牌（**强烈建议设置**，留空则无认证）
-- `cookie.douyin`：抖音 Cookie（可选，不填先跑，被限流再补）
+#### 2. 环境变量
 
-监控房间列表写在 `runtime-config.json`（由看板动态维护，也可手动编辑）：
+复制 `.env.example` 为 `.env`，填入飞书应用凭证（推送功能需要）：
+
+```
+FEISHU_APP_ID=cli_xxx
+FEISHU_APP_SECRET=xxx
+```
+
+> 表结构会在首次启动时自动创建。`.env` 已加入 `.gitignore`，不会被提交。
+>
+> 仪表盘也可用环境变量覆盖配置：`DASHBOARD_TOKEN`、`DASHBOARD_HOST`、`DASHBOARD_PORT`、`DB_SQLITE_PATH`。
+
+#### 3. 房间号
+
+编辑 `runtime-config.json`（也可在看板内动态增删，支持热加载）：
 
 ```json
 {
@@ -82,222 +123,220 @@ cp config.example.yaml config.yaml      # Go 代理 + 仪表盘配置
   "check_interval_seconds": 30,
   "reconnect_delay_seconds": 10,
   "save_json": false,
-  "feishu": { "open_id": "" }
+  "feishu": { "open_id": "ou_xxx" }
 }
 ```
 
-飞书推送需在 `.env` 配置（参考 `feishu-send.js`）：
+| 字段 | 说明 |
+| --- | --- |
+| `rooms[]` | 监控房间列表，每项 `{ id, name, enabled }` |
+| `save_json` | 是否同时保存 JSON 场次文件（默认 false，纯 SQLite） |
+| `feishu.open_id` | 飞书用户 open_id，推送到私聊 |
+| `feishu.chat_id` | 飞书群 chat_id，推送到群聊（与 open_id 二选一） |
 
-```
-FEISHU_APP_ID=cli_xxx
-FEISHU_APP_SECRET=xxx
-```
+> ✅ **所有代码中不包含任何硬编码的个人 ID/房间名/主播名**。换房间只需改 `runtime-config.json` 或在看板内操作。
+>
+> - 仪表盘配置走 `config.yaml` 的 `dashboard` 段或环境变量
+> - 飞书推送目标从 `runtime-config.json` 读取
+> - 主播名统计从每场礼物数据的收礼人字段动态提取
+
+## 使用
 
 ### 启动
 
 ```bash
+# 一键启动守护进程 + 仪表盘
 bash start.sh
+
+# 或手动分别启动
+node monitor.js --daemon      # 守护进程（多房间监控 + 落库 + 通知）
+node web-dashboard.js         # 仪表盘 HTTP 服务
+
+# 查看状态
+bash status.sh
+node monitor.js status
 ```
 
-等价于手动启动两个进程：
+访问仪表盘：`http://127.0.0.1:9871`（设置了 token 则用 `?token=xxx`）
+
+### 守护进程命令
 
 ```bash
-node monitor.js --daemon        # 守护进程（多房间监控 + 落库 + 通知）
-node web-dashboard.js           # 仪表盘 HTTP 服务
+node monitor.js                  # 启动守护
+node monitor.js stop             # 停止守护
+node monitor.js status           # 查看所有房间状态
+node monitor.js snapshot         # 手动快照（防崩溃丢数据）
+node monitor.js report-image     # 生成图片报告发飞书
 ```
-
-查看状态：
-
-```bash
-bash status.sh                  # 进程/房间/数据库统计
-node monitor.js status          # 命令行状态
-```
-
-访问仪表盘：`http://127.0.0.1:9871`（设置了 token 则用 `http://127.0.0.1:9871/?token=xxx`）
 
 ### 前端开发
 
 ```bash
 cd frontend
-npm install
 npm run dev          # Vite 开发服务器（代理到后端 API）
 npm run build        # 构建到 frontend/dist，由 web-dashboard.js 托管
+npm run type-check   # 类型检查
 ```
 
----
+### 报告生成
 
-## 配置项说明
+```bash
+# 生成当前 session 报告 → 保存到本地
+node report-image.js --output
 
-### `config.yaml`
+# 指定 session ID
+node report-image.js --session 265 --output
 
-| 配置项 | 说明 | 默认值 |
-| --- | --- | --- |
-| `port` | Go 代理 WebSocket 端口 | `1088` |
-| `unknown` | 是否打印未知消息类型 | `false` |
-| `log.level` | Go 代理日志级别 | `info` |
-| `sign.provider` | WebSocket 签名来源（`local`/`tikhub`） | `local` |
-| `tikhub.key` | TikHub API Key（仅 `tikhub` 模式） | — |
-| `monitor.poll_interval` | 未开播时检查间隔 | `15s` |
-| `monitor.notify_interval` | 未开播状态推送间隔 | `30s` |
-| `cookie.douyin` | 默认抖音 Cookie | — |
-| `cookie.rooms` | 按房间单独配置 Cookie | — |
-| `dashboard.token` | 仪表盘访问令牌 | — |
-| `dashboard.host` | 仪表盘绑定地址 | `127.0.0.1` |
-| `dashboard.port` | 仪表盘端口 | `9871` |
+# 生成某用户的送礼明细
+node report-image.js --user "用户名" --output
 
-### 环境变量（优先级高于 config.yaml）
+# 生成送给某人的礼物榜单
+node report-image.js --to "主播名" --output
+```
 
-| 变量 | 作用 |
+> 下播后报告自动通过飞书 Open API（tenant_access_token）推送到飞书群，无需手动操作。
+
+### 用户查询
+
+```bash
+# 按 sec_uid 查抖音用户资料
+node douyin-user.js <secUid>
+```
+
+身份信息包含：头像 + 昵称 + 抖音号 + 粉丝/关注 + 签名 + IP 属地。
+
+### 其他工具
+
+```bash
+# 合并多场 session 数据（编辑顶部 sessionIds 数组）
+node merge-sessions.js
+
+# WS 消息调试
+node ws-debug.js <room_id>
+
+# 同步礼物图标 / 检查粉丝牌 / 查询用户礼物
+node sync-gift-icons.js
+node check-fanbadge.js
+node query-user-gifts.js
+```
+
+## 消息处理
+
+| 消息类型 | 处理方式 |
 | --- | --- |
-| `DASHBOARD_TOKEN` | 仪表盘令牌 |
-| `DASHBOARD_HOST` | 仪表盘绑定地址 |
-| `DASHBOARD_PORT` | 仪表盘端口 |
-| `DB_SQLITE_PATH` | SQLite 数据库路径（默认 `db/douyin.db`） |
-| `FEISHU_APP_ID` / `FEISHU_APP_SECRET` | 飞书应用凭证 |
+| `WebcastChatMessage` | 弹幕 → `danmaku` 表 |
+| `WebcastGiftMessage` | 礼物 → `gifts` 表（含连击元数据、融合定价） |
+| `WebcastMemberMessage` | 进场 → `members` 表 |
+| `WebcastLikeMessage` | 点赞计数 |
+| `WebcastSocialMessage` | 关注计数 |
+| `WebcastRoomStatsMessage` | 在线人数时序 → `online_records` |
+| `WebcastScreenChatMessage` | 飘屏弹幕 → `danmaku` 表（`[飘屏]` 前缀） |
+| `WebcastPrivilegeScreenChatMessage` | 特权飘屏 → `danmaku` 表（`[飘屏]` 前缀） |
+| `WebcastFansclubMessage` | action=7 星守护 → 转为礼物记录（1280钻/月 / 12个月）；其他 action 不记录 |
+| `WebcastResidentGuestMessage` | 团播主播信息 → 更新场次标题/主播名/头像 |
 
-### `runtime-config.json`
+## 数据表
 
-监控守护进程的运行时配置，支持 `fs.watch` 热加载：
+### gifts（礼物记录）
 
-- `rooms[]`：监控房间列表，每项 `{ id, name, enabled }`
-- `check_interval_seconds`：状态检查间隔
-- `reconnect_delay_seconds`：重连基础延迟（指数退避，上限 60s）
-- `save_json`：是否同时保存 JSON 场次文件
-- `feishu.open_id`：飞书通知接收人
+| 字段 | 说明 |
+| --- | --- |
+| session_id | 关联 sessions |
+| nickname | 送礼人昵称 |
+| avatar | 送礼人头像 URL |
+| user_sec_uid | 送礼人 secUid |
+| gift_name | 礼物名 |
+| diamond_count | 单价（钻） |
+| repeat_count | 数量 |
+| total_diamonds | 总价 = 单价 × 数量 |
+| to_nickname | 收礼人 |
+| to_user_sec_uid | 收礼人 secUid |
+| combo_count | 当前帧连击数 |
+| repeat_end | 连击终结帧标记（1=终结） |
+| send_type | 发送类型（1/4=连击 5=单次） |
+| trace_id | 连击追踪 ID |
+| icon | 礼物图标 URL |
+| create_time | 时间戳（毫秒） |
 
----
+> ⚠️ 送礼统计必须用 `comboDedupGifts()` 去重，不能直接 SUM。去重 key：`(user_sec_uid, gift_name, to_user_sec_uid)` 三分组。
 
-## 项目结构
+### danmaku（弹幕记录）
 
-```text
-new_douyinlive/
-├── monitor.js                # 守护进程：多房间监控、消息解析、落库、通知、报告
-├── web-dashboard.js          # 仪表盘 HTTP 服务（静态托管 + REST API）
-├── db-sqlite.js              # SQLite 数据层（建表、CRUD、排行、词云）
-├── report-image.js           # 图片报告生成（Playwright 渲染 HTML → PNG）
-├── feishu-send.js            # 飞书 Open API 消息/图片推送
-├── douyin-user.js            # 抖音用户资料查询（按 sec_uid）
-├── config.example.yaml       # 配置示例
-├── runtime-config.json       # 监控房间运行时配置（热加载）
-├── start.sh / status.sh      # 启动 / 状态脚本
-├── lib/
-│   ├── config-reader.js      # config.yaml 统一解析（带 mtime 缓存）
-│   ├── douyin-api.js         # 抖音 API 查询（直播间/用户信息）
-│   ├── avatar-utils.js       # 头像查询（按 sec_uid / 昵称）
-│   ├── gift-utils.js         # 礼物连击去重（comboDedupGifts）
-│   └── routes/               # 仪表盘 API 路由（按域拆分）
-│       ├── rooms.js          # 房间增删/暂停/恢复/查询
-│       ├── sessions.js       # 场次列表/详情/删除/报告
-│       ├── detail.js         # 单场完整详情（排行/词云/时间线/团播）
-│       ├── gifts.js          # 礼物排行（全量/按场/按类型）
-│       ├── users.js          # 用户画像/匿名反查
-│       └── misc.js           # 趋势/搜索/导出/总览/状态
-├── frontend/                 # Vue 3 + TS + Vite + vue-router + Pinia
-│   └── src/
-│       ├── views/            # HomeView / SessionsView / DetailView
-│       ├── components/       # AppLayout / AvatarFallback
-│       ├── composables/      # useConfirm / useToast / useSearch / useProfile ...
-│       ├── stores/app.ts     # Pinia 全局状态
-│       └── router/index.ts   # 路由
-├── test/                     # node:test 单元测试
-├── docs/websocket-fields-ref.md  # douyinLive WebSocket 消息字段参考
-└── db/douyin.db              # SQLite 数据库（运行时生成）
+| 字段 | 说明 |
+| --- | --- |
+| nickname | 用户名 |
+| content | 弹幕内容（飘屏弹幕带 `[飘屏]` 前缀） |
+| user_sec_uid | 用户 secUid |
+| create_time | 时间戳 |
+
+### sessions（直播场次）
+
+| 字段 | 说明 |
+| --- | --- |
+| streamer_id | 关联 streamers |
+| room_title | 直播间标题 |
+| start_time / end_time | 开播/下播时间 |
+| duration_seconds | 时长（秒） |
+| stats_danmaku/gift/like/member/follow | 各类统计 |
+| online_peak | 在线峰值 |
+| archived | 是否已归档 |
+
+## 连击去重逻辑
+
+礼物入库时**全量写入**（所有 WebSocket 帧都进 SQLite），在**加载数据时**做 combo 去重：
+
+- 函数 `comboDedupGifts(gifts)`（位于 `lib/gift-utils.js`）
+- 按 `(user_sec_uid || nickname, gift_name, to_user_sec_uid || to_nickname)` 三分组
+- `comboCount` 连续递增(1→2→3) → 同一连击
+- 同值 + `repeatEnd` → 归入该组
+- 帧序错乱时（如 combo 4 在 3 之前到达）→ 按 combo_count 排序取最高
+- 每组只保留 comboCount 最大的那条
+
+## 礼物定价
+
+部分礼物抖音下发的 `diamondCount` 不准或为 0，monitor.js 内置价格修正：
+
+- **融合礼物** — 工坊宝箱类按关键词组合匹配档位价格（1~4 阶）
+- **固定价格表** — 闪烁星河/钻石跑车/豪华邮轮等高价值礼物固定钻数
+- **星守护** — 按 1280钻/月、12个月 15360钻 折算
+
+## 切换房间
+
+```bash
+# 方式一：看板内增删（推荐，无需重启）
+# 访问 http://127.0.0.1:9871 → 房间管理 → 添加/暂停/删除
+
+# 方式二：改配置重启
+node monitor.js stop
+# 编辑 runtime-config.json 修改 rooms
+node monitor.js --daemon
 ```
 
----
+## 守护进程自愈
+
+- **Go 代理崩溃** — 自动重启，指数退避（5s 起，上限 60s），最多重试 10 次
+- **WebSocket 断开** — 指数退避重连（10s 起，上限 60s）；录制中 code=1000 快速重连
+- **session 快照** — 内存数据定时写临时文件，进程重启可恢复
+- **下播确认** — `live=false` 后 30 秒再次校验，避免团播切主播误判下播
+- **日志轮转** — 单文件 10MB，保留 3 个备份；错误日志每分钟限 50 条
 
 ## API 速览
 
 所有 `/api/*` 接口需携带 Token（`?token=xxx` 或 `Authorization: Bearer xxx`），返回 JSON 支持 gzip。
 
-### 房间
-- `GET  /api/rooms` — 房间列表（含 daemon 实时连接/录制状态）
-- `GET  /api/rooms/lookup?room_id=xxx` — 按房间号/抖音号查询主播信息
-- `POST /api/rooms/add` `{room_id, name}` — 添加监控房间
-- `POST /api/rooms/remove` `{room_id, delete_data}` — 移除房间（可选删数据）
-- `POST /api/rooms/pause` `{room_id}` — 暂停房间
-- `POST /api/rooms/resume` `{room_id}` — 恢复房间
-
-### 场次
-- `GET  /api/streamers` / `GET /api/hosts` — 主播列表
-- `GET  /api/sessions?streamer_id=` — 场次列表
-- `GET  /api/hosts/<id>/sessions` — 某主播场次聚合（含去重钻石/弹幕数）
-- `GET  /api/sessions/<id>` — 场次基础信息
-- `GET  /api/sessions/<id>/detail` — 单场完整详情（礼物排行/明细/团播排名/词云/时间线）
-- `GET  /api/sessions/<id>/gifts` / `/danmaku` / `/online` — 分页明细
-- `GET  /api/sessions/<id>/anchor-gifts?anchor=` — 团播某主播礼物明细
-- `GET  /api/sessions/<id>/report` — 场次报告图片（自动生成）
-- `POST /api/sessions/<id>/delete` — 删除场次（级联删数据）
-
-### 礼物
-- `GET  /api/gifts/ranking?session_id=&period=&limit=` — 礼物用户排行（全量/按场/按时段）
-- `GET  /api/gifts/by-type?session_id=&limit=` — 礼物类型排行
-
-### 用户
-- `GET  /api/users/search?q=` — 按昵称搜索用户
-- `GET  /api/anonymous-lookup?q=&streamer_id=` — 匿名反查（昵称 → sec_uid → API 真实资料）
-- `GET  /api/users/<sec_uid>` — 用户画像（送礼历史/活跃时段/风格/常看主播）
-
-### 其他
-- `GET  /api/summary` — 总览统计
-- `GET  /api/trends?range=7d&group=day` — 趋势数据
-- `GET  /api/danmaku/search?q=` — 全局弹幕搜索
-- `GET  /api/status` — 实时监控状态（来自 daemon 控制 socket）
-- `GET  /api/export/gifts|danmaku|sessions` — CSV 导出
-- `POST /api/report/generate` `{session_id}` — 生成图片报告
-
----
-
-## 数据模型
-
-SQLite（`db/douyin.db`，WAL 模式）主要表：
-
-- `streamers` — 主播（name, room_id, avatar, sec_uid）
-- `sessions` — 直播场次（标题/时间/时长/各类统计/在线峰值）
-- `danmaku` — 弹幕（昵称/头像/内容/sec_uid/create_time）
-- `gifts` — 礼物（送礼人/收礼人/礼物名/钻石/连击/trace_id/icon）
-- `members` — 进场记录
-- `online_records` — 在线人数时序
-- `gift_icons` — 礼物图标库（运行时积累）
-
-礼物统计统一走 `comboDedupGifts` 连击去重后再聚合，避免重复计算钻石。
-
----
-
-## 工具脚本
-
-| 脚本 | 作用 |
+| 域 | 主要接口 |
 | --- | --- |
-| `monitor.js` | 主守护进程，`--daemon` 多房间 / `stop` / `status` / `snapshot` / `report-image` |
-| `web-dashboard.js` | 仪表盘服务 |
-| `report-image.js` | 生成图片报告，支持 `--user` 生成专属榜单 |
-| `feishu-send.js` | 飞书消息/图片发送 |
-| `douyin-user.js` | 按 sec_uid 查抖音用户资料 |
-| `lib/douyin-api.js` | 抖音 API 查询（直播间/用户，Python spider 移植） |
-| `merge-sessions.js` | 合并场次 |
-| `thanks-rank.js` | 答谢榜 |
-| `query-user-gifts.js` | 查询用户礼物 |
-| `sync-gift-icons.js` | 同步礼物图标 |
-| `check-fanbadge.js` | 粉丝牌检查 |
-| `ws-debug.js` | WebSocket 调试 |
-
-运行测试：
-
-```bash
-npm test              # node --test
-npm run test:watch    # 监听模式
-```
-
----
+| 房间 | `GET /api/rooms` · `GET /api/rooms/lookup` · `POST /api/rooms/add\|remove\|pause\|resume` |
+| 场次 | `GET /api/sessions` · `GET /api/sessions/<id>/detail` · `GET /api/sessions/<id>/gifts\|danmaku\|online\|report` |
+| 礼物 | `GET /api/gifts/ranking` · `GET /api/gifts/by-type` |
+| 用户 | `GET /api/users/<sec_uid>` · `GET /api/anonymous-lookup` · `GET /api/users/search` |
+| 其他 | `GET /api/summary` · `GET /api/trends` · `GET /api/status` · `GET /api/export/*` |
 
 ## 致谢
 
-- 抓取能力基于上游 Go 项目 [`jwwsjlm/douyinLive`](https://github.com/jwwsjlm/douyinLive)
-- 抖音 API 查询参考 [DouYin_Spider](https://github.com/ReaJason/DouYin_Spider)
-- 消息字段参考见 `docs/websocket-fields-ref.md`
+- [douyinLive](https://github.com/jwwsjlm/douyinLive) — WebSocket 抓取代理二进制
+- [DouYin_Spider](https://github.com/ReaJason/DouYin_Spider) — 抖音 API 查询灵感参考
 
----
+## License
 
-## 许可证
-
-见 [LICENSE](./LICENSE)。
+This project is licensed under the MIT License — see the [LICENSE](./LICENSE) file for details.

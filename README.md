@@ -23,7 +23,6 @@
 - **用户画像** — 按 sec_uid 聚合送礼历史、活跃时段、送礼风格；匿名昵称反查真实资料
 - **连击去重** — 智能识别抖音礼物连击帧，去重后统计真实送礼数据
 - **趋势分析** — 7/30/90 天礼物钻石、弹幕、在线峰值趋势（按日/周/月聚合）
-- **CSV 导出** — 礼物、弹幕、场次汇总一键导出（带 BOM 兼容 Excel）
 - **任意切换房间** — 看板内增删房间，或改配置重启即可切换监控目标
 
 ## 架构
@@ -330,7 +329,7 @@ node monitor.js --daemon
 | 场次 | `GET /api/sessions` · `GET /api/sessions/<id>/detail` · `GET /api/sessions/<id>/gifts\|danmaku\|online\|report` |
 | 礼物 | `GET /api/gifts/ranking` · `GET /api/gifts/by-type` |
 | 用户 | `GET /api/users/<sec_uid>` · `GET /api/anonymous-lookup` · `GET /api/users/search` |
-| 其他 | `GET /api/summary` · `GET /api/trends` · `GET /api/status` · `GET /api/export/*` |
+| 其他 | `GET /api/summary` · `GET /api/trends` · `GET /api/status` |
 
 ## 致谢
 

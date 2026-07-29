@@ -6,6 +6,7 @@ const https = require('https');
 const http = require('http');
 const Database = require('better-sqlite3');
 const path = require('path');
+const { getCookie } = require('./lib/config-reader');
 
 const DB_PATH = path.join(__dirname, 'db', 'douyin.db');
 
@@ -33,13 +34,9 @@ function fetchGiftList(cookie) {
 }
 
 async function main() {
-  // 读取cookie
-  const fs = require('fs');
-  const configPath = path.join(__dirname, 'config.yaml');
-  const configText = fs.readFileSync(configPath, 'utf8');
-  const cookieMatch = configText.match(/^douyin:\s*'(.+?)'/m);
-  if (!cookieMatch) { console.error('找不到cookie'); process.exit(1); }
-  const cookie = cookieMatch[1];
+  // 读取cookie（使用共享模块 lib/config-reader.js）
+  const cookie = getCookie();
+  if (!cookie) { console.error('找不到cookie，请检查 config.yaml'); process.exit(1); }
 
   console.log('正在拉取礼物列表...');
   const gifts = await fetchGiftList(cookie);

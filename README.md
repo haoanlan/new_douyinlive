@@ -1,4 +1,4 @@
-# douyinLive
+﻿# douyinLive
 
 一个基于 WebSocket 的抖音直播弹幕抓取工具。
 
@@ -23,7 +23,7 @@
 
 [![GitHub Release](https://img.shields.io/github/v/release/jwwsjlm/douyinLive)](https://github.com/jwwsjlm/douyinLive/releases)
 [![License](https://img.shields.io/github/license/jwwsjlm/douyinLive)](LICENSE)
-[![Go Version](https://img.shields.io/badge/go-%3E%3D1.25.7-blue)](https://golang.org)
+[![Go Version](https://img.shields.io/badge/go-1.26.4-blue)](https://golang.org)
 
 ## 功能
 
@@ -63,7 +63,17 @@ douyinLive-v2.0.3-abcdef123456-linux-amd64.tar.gz
 douyinLive-v2.0.3-abcdef123456-windows-amd64.zip
 ```
 
+当前只发布一个主版本：
+
+- 默认使用本地 JS 计算 WebSocket 签名，普通用户不需要额外配置。
+- 如果要使用 TikHub 在线 API 生成 WebSocket 签名，通过 `sign.provider`、`APP_SIGN_PROVIDER` 或 `--sign-provider` 在运行时切换，不需要下载单独版本。
+
 压缩包里的可执行文件名仍然固定为 `douyinLive`，所以脚本和 Docker 启动命令不需要因为 hash 变化而每次修改。
+
+也就是说，发布包文件名用于区分版本和构建来源；解压后的程序名保持固定：
+
+- Linux / macOS：`douyinLive`
+- Windows：`douyinLive.exe`
 
 ```bash
 ./douyinLive
@@ -101,7 +111,7 @@ go build -o douyinLive ./cmd/main
 输出示例：
 
 ```text
-tag=v2.0.3 commit=abcdef123456 buildDate=2026-05-24T00:00:00Z source=github-actions/release#123.1
+tag=v2.0.3 commit=abcdef123456 buildDate=2026-05-24T00:00:00Z source=github-actions/release#123.1 signProvider=local
 ```
 
 ### 方式三：Docker 运行
@@ -124,10 +134,26 @@ ws://127.0.0.1:1088/ws/直播间标识
 docker run --rm -p 1088:1088 ghcr.io/jwwsjlm/douyinlive:v2.0.3
 ```
 
+测试版不会覆盖 `latest`。如果你要验证某个 beta 版本，请使用完整测试版 tag：
+
+```bash
+docker pull ghcr.io/jwwsjlm/douyinlive:v2.0.18-beta.1
+docker run --rm -p 1088:1088 ghcr.io/jwwsjlm/douyinlive:v2.0.18-beta.1
+```
+
 Docker 镜像也支持查看构建信息：
 
 ```bash
 docker run --rm ghcr.io/jwwsjlm/douyinlive:v2.0.3 --version
+```
+
+如果要使用 TikHub 在线签名，仍然使用同一个镜像，只需要在配置文件、环境变量或命令行里指定签名来源并提供 TikHub API Key：
+
+```bash
+docker run --rm -p 1088:1088 \
+  -e APP_SIGN_PROVIDER=tikhub \
+  -e APP_TIKHUB_KEY=YOUR_TIKHUB_KEY \
+  ghcr.io/jwwsjlm/douyinlive:v2.0.3
 ```
 
 #### 2. 通过 Docker 挂载 `config.yaml`
@@ -307,6 +333,8 @@ https://live.douyin.com/xxxxx
 - 然后按配置的时间间隔持续推送未开播状态
 - 一旦检测到开播，就自动切回正常消息流
 
+`live_status` 里的 `live=false` 不是网络错误，也不代表本地服务已经失效。客户端收到这个状态后建议保持连接，等待后续 `live=true` 通知；只有 WebSocket 本身断开时，客户端才需要按自己的策略重连。
+
 ---
 
 ## 运行方式
@@ -361,6 +389,7 @@ Windows：
 - 如果没有配置文件，就使用默认值
 - 默认端口：`1088`
 - 默认日志级别：`info`
+- 默认使用 `local` 本地签名；需要 TikHub 时在运行时切换为 `tikhub`
 
 ### 指定端口
 
@@ -437,6 +466,75 @@ Windows：
 - `commit`：构建时注入的短 commit hash
 - `buildDate`：构建时间
 - `source`：构建来源，例如 GitHub Actions 或本地构建
+- `signProvider`：当前二进制默认签名来源，`local` 或 `tikhub`
+
+### 设置签名来源
+
+程序默认使用 `local`。需要 TikHub 在线签名时，可以通过配置文件、命令行或环境变量切换：
+
+```bash
+./douyinLive --sign-provider local
+./douyinLive --sign-provider tikhub --tikhub-key YOUR_TIKHUB_KEY
+APP_SIGN_PROVIDER=tikhub APP_TIKHUB_KEY=YOUR_TIKHUB_KEY ./douyinLive
+```
+
+三种方式任选一种即可，不需要下载单独的 TikHub 版本，也不会和本地签名版本冲突。配置优先级从高到低是：
+
+1. 命令行参数：`--sign-provider`、`--tikhub-key`
+2. 环境变量：`APP_SIGN_PROVIDER`、`APP_TIKHUB_KEY`
+3. 配置文件：`sign.provider`、`tikhub.key`
+4. 程序默认值：`local`
+
+如果多个地方同时配置，以优先级最高的为准。`sign.provider=local` 时会使用内置本地 JS 签名，`tikhub.key` 即使存在也不会被使用；只有 `sign.provider=tikhub` 时才会调用 TikHub 在线 API，并且必须提供 `tikhub.key`。
+
+TikHub API Key 可以在 [TikHub 注册页](https://user.tikhub.io/register) 注册账号后，到 [TikHub 用户中心](https://user.tikhub.io/) 创建 API Key / API Token。Key 属于敏感信息，不要提交到仓库。
+
+### 日志等级与 Issue 排查
+
+日志使用 Go `slog` 文本格式，默认输出 `info` 及以上级别。排查连接、签名、心跳或重连问题时，请先临时开启 `debug`：
+
+```bash
+./douyinLive --config ./config.yaml --log-level debug
+```
+
+Windows：
+
+```powershell
+.\douyinLive.exe --config .\config.yaml --log-level debug
+```
+
+日志等级含义：
+
+- `debug`：详细排查信息，包括 `web/enter`、`im/fetch`、WebSocket URL 生成、签名输入、cursor/internal_ext、重连上下文等。提交连接类 Issue 时建议开启。
+- `info`：正常生命周期信息，例如服务启动、房间开始监听、WebSocket 连接成功、重连成功、正常关闭。
+- `warn`：可恢复异常，例如读取 WS 超时、心跳发送失败、一次直播状态兜底检测失败、准备重连。
+- `error`：不可自动恢复或最终失败，例如配置加载失败、房间状态刷新失败、连接最终失败。
+
+关键字段说明：
+
+- `stage`：失败发生的大阶段，例如 `startup`、`room_info`、`im_fetch`、`ws`。
+- `step`：阶段内的具体步骤，例如 `live_page_state`、`web_enter`、`prefetch`、`signature`、`build_url`、`dial`、`read`、`decode_push_frame`。
+- `live_id`：用户传入的直播间标识。
+- `room_id`：网页解析到的真实直播间房间 ID。
+- `user_unique_id`：网页侧用于 IM/WS 的用户唯一 ID。
+- `reason`：重连或读取失败的分类，例如 `timeout`、`closed_network_connection`、`network_or_unknown`。
+- `status`、`status_code`、`content_type`、`raw_len`：HTTP 或 WS 响应状态，常用于判断是接口空响应、protobuf 解析失败还是握手失败。
+
+提交 Issue 时建议贴这几段日志：
+
+- 程序启动后的版本行：包含 `version`、`source`、`signProvider`。
+- 第一次出现 `stage=room_info` 到 `stage=ws step=dial` 的完整日志。
+- 发生断线时，从第一条 `读取 WebSocket 消息失败` 到后续 `检测到需重连`、`重连成功` 或 `连接最终失败` 的日志。
+- 如果是签名问题，请贴 `stage=ws step=signature` 和 `stage=ws step=build_url`，但不要贴完整 Cookie、完整 URL、完整 `signature`、完整 `msToken`。
+
+提交前请打码：
+
+- `Cookie`
+- `msToken`
+- `a_bogus`
+- `signature`
+- `sessionid` / `sid_guard` / `ttwid`
+- 任何账号、手机号、邮箱或私密直播间信息
 
 ### CLI 参数速查
 
@@ -445,6 +543,8 @@ Windows：
 --port string        本地 WebSocket 服务端口，默认 1088
 --unknown            输出未知 protobuf 消息类型，调试用
 --log-level string   日志级别：debug、info、warn、error
+--sign-provider      WebSocket 签名来源：local、tikhub
+--tikhub-key string  TikHub API Key，仅 sign-provider=tikhub 时需要
 --version            输出版本和构建来源
 ```
 
@@ -461,6 +561,10 @@ port: "1088"
 unknown: false
 log:
   level: "info"
+sign:
+  provider: ""
+tikhub:
+  key: ""
 monitor:
   poll_interval: "15s"
   notify_interval: "30s"
@@ -503,6 +607,48 @@ unknown: false
 ```yaml
 log:
   level: "info"
+```
+
+#### `sign.provider`
+
+WebSocket 签名来源。可选值：
+
+- `local`：使用内置本地 JS 签名，默认推荐。
+- `tikhub`：使用 TikHub 在线 API 生成签名，需要配置 `tikhub.key`。
+
+默认值：
+
+```yaml
+sign:
+  provider: ""
+```
+
+留空表示使用当前二进制默认值，也就是 `local`。如果你想强制指定，也可以写成 `local` 或 `tikhub`。
+
+#### `tikhub.key`
+
+TikHub API Key，仅当 `sign.provider` 为 `tikhub` 时需要。
+
+获取方式：
+
+1. 打开 [TikHub 注册页](https://user.tikhub.io/register) 注册账号
+2. 登录 [TikHub 用户中心](https://user.tikhub.io/)
+3. 创建 API Key / API Token
+4. 把 Key 保存到本地 `config.yaml`
+
+配置写法：
+
+```yaml
+sign:
+  provider: "tikhub"
+tikhub:
+  key: "YOUR_TIKHUB_KEY"
+```
+
+也可以通过环境变量传入，适合 Docker、systemd、CI 等不想把 Key 写进配置文件的场景：
+
+```bash
+APP_SIGN_PROVIDER=tikhub APP_TIKHUB_KEY=YOUR_TIKHUB_KEY ./douyinLive
 ```
 
 #### `monitor.poll_interval`
@@ -562,6 +708,10 @@ port: "1088"
 unknown: false
 log:
   level: "info"
+sign:
+  provider: ""
+tikhub:
+  key: ""
 monitor:
   poll_interval: "15s"
   notify_interval: "30s"
@@ -631,6 +781,45 @@ cookie:
 go get github.com/jwwsjlm/douyinLive/v2
 ```
 
+### Protobuf 类型来源
+
+当前 protobuf 定义和生成代码已经从主仓库拆到单独仓库维护：
+
+```text
+github.com/jwwsjlm/douyinlive-proto
+```
+
+如果你只是把本项目当成本地 WebSocket 服务使用，不需要额外处理。服务端会继续把解析后的消息转成 JSON 发给客户端。
+
+如果你把本项目当 Go 库使用，并且需要自己解析 `LiveMessage.GetPayload()`，请使用新的 protobuf import 路径：
+
+```go
+import (
+	"github.com/jwwsjlm/douyinlive-proto/generated"
+	"github.com/jwwsjlm/douyinlive-proto/generated/new_douyin"
+)
+```
+
+旧版本里如果使用过下面这种路径：
+
+```go
+import "github.com/jwwsjlm/douyinLive/v2/generated/new_douyin"
+```
+
+需要改成：
+
+```go
+import "github.com/jwwsjlm/douyinlive-proto/generated/new_douyin"
+```
+
+`new_douyin` 的 protobuf schema 没有因为拆仓库改变，抖音下发的二进制 payload 解析方式也不变；变化的是 Go 代码的 import 路径。升级后建议执行：
+
+```bash
+go get github.com/jwwsjlm/douyinLive/v2@latest
+go get github.com/jwwsjlm/douyinlive-proto@latest
+go mod tidy
+```
+
 ### 订阅接口怎么选
 
 新版本推荐使用 `LiveMessage` 相关订阅接口：
@@ -667,6 +856,35 @@ type LiveMessage struct {
 dl, err := douyinlive.NewDouyinLiveWithSlog(roomID, slog.Default(), cookie)
 ```
 
+如果你想在库模式下使用 TikHub 在线签名，可以改用 TikHub 构造器：
+
+```go
+dl, err := douyinlive.NewDouyinLiveWithTikHub(roomID, log.Default(), cookie, tikHubKey)
+```
+
+对应的 slog 构造器是：
+
+```go
+dl, err := douyinlive.NewDouyinLiveWithSlogAndTikHub(roomID, slog.Default(), cookie, tikHubKey)
+```
+
+### 生命周期和关闭方式
+
+`Start()` 会阻塞当前 goroutine，直到直播连接结束、主动 `Close()` 或发生不可恢复错误。如果你的程序需要自己控制停止时机，建议把 `Start()` 放到 goroutine 里运行，然后在退出时调用 `Close()`。
+
+`Close()` 表示主动停止当前实例。调用后不要再对同一个 `DouyinLive` 实例重新 `Start()`；如果要重新连接同一个直播间，重新创建一个新的 `DouyinLive` 实例即可。
+
+`Dispose()` 适合“创建了实例但不再进入 `Start()`”的场景，比如只调用 `IsLive()` 做状态检查后就结束。已经正常进入 `Start()` 的实例，退出时内部会自动清理连接和缓存，通常只需要 `Close()`。
+
+推荐的停止流程：
+
+1. 业务层先标记自己的 `stopped` 状态，避免 handler 继续处理耗时任务
+2. 调用 `Unsubscribe(id)` 取消订阅
+3. 调用 `Close()` 停止直播连接
+4. 等待 `Start()` 所在 goroutine 返回
+
+`Unsubscribe()` 会阻止后续还没开始执行的回调继续触发；如果某个 handler 已经正在运行，Go 无法从外部强行中断它，所以 handler 里不要做长时间阻塞操作。确实需要耗时处理时，建议在 handler 内检查业务层的停止标记，或者把任务投递到你自己的队列里异步处理。
+
 ### 最简使用示例
 
 ```go
@@ -701,7 +919,9 @@ func main() {
 	})
 
 	// 启动监听，会阻塞直到连接关闭
-	dl.Start()
+	if err := dl.Start(); err != nil {
+		log.Printf("监听结束: %v", err)
+	}
 }
 ```
 
@@ -714,7 +934,7 @@ import (
 	"log"
 
 	douyinlive "github.com/jwwsjlm/douyinLive/v2"
-	"github.com/jwwsjlm/douyinLive/v2/generated/new_douyin"
+	"github.com/jwwsjlm/douyinlive-proto/generated/new_douyin"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -767,13 +987,64 @@ func main() {
 		}
 	})
 
-	dl.Start()
+	if err := dl.Start(); err != nil {
+		log.Printf("监听结束: %v", err)
+	}
 }
 ```
 
-更多消息类型可以参考 `generated/new_douyin` 包下的 protobuf 生成代码。
+更多消息类型可以参考 [`github.com/jwwsjlm/douyinlive-proto/generated/new_douyin`](https://github.com/jwwsjlm/douyinlive-proto/tree/main/generated/new_douyin) 包下的 protobuf 生成代码。
 
 旧的 `Subscribe(func(raw, parsed))` 接口仍然保留，方便已有代码兼容；新代码建议优先使用 `SubscribeMessage` / `SubscribeMethod` / `SubscribeMethods`。
+
+### 可主动停止的库模式示例
+
+如果你的程序要在收到信号、用户退出或业务结束时主动停止监听，可以按下面这种方式组织：
+
+```go
+package main
+
+import (
+	"context"
+	"errors"
+	"log"
+	"sync/atomic"
+	"time"
+
+	douyinlive "github.com/jwwsjlm/douyinLive/v2"
+)
+
+func main() {
+	dl, err := douyinlive.NewDouyinLive("516466932480", log.Default(), "")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var stopped atomic.Bool
+	subID := dl.SubscribeMessage(func(msg *douyinlive.LiveMessage) {
+		if stopped.Load() {
+			return
+		}
+		log.Printf("收到消息 method=%s\n", msg.GetMethod())
+	})
+
+	done := make(chan error, 1)
+	go func() {
+		done <- dl.Start()
+	}()
+
+	time.Sleep(30 * time.Second)
+	stopped.Store(true)
+	dl.Unsubscribe(subID)
+	dl.Close()
+
+	if err := <-done; err != nil && !errors.Is(err, context.Canceled) {
+		log.Printf("监听异常退出: %v", err)
+	}
+}
+```
+
+这里的关键点是：`Close()` 用来结束当前实例，`Unsubscribe()` 用来取消后续回调，`done` 用来等待 `Start()` 真正退出。不要在 `Close()` 后复用同一个实例重新 `Start()`。
 
 ---
 
@@ -828,7 +1099,7 @@ ws.onerror = (err) => {
   console.error('WebSocket 错误:', err);
 };
 
-// 可选：给本地服务发 ping，服务会回 pong
+// 可选：给本地服务发文本 ping，服务会回文本 pong
 setInterval(() => {
   if (ws.readyState === WebSocket.OPEN) {
     ws.send('ping');
@@ -836,36 +1107,188 @@ setInterval(() => {
 }, 30000);
 ```
 
+浏览器端不能直接发送 WebSocket ping 控制帧，所以示例里使用文本 `"ping"`。如果你的客户端库支持 WebSocket ping frame，也可以发送标准 ping 控制帧，服务端会按规范用相同 payload 回复 pong。
+
 ### 服务端返回什么格式
 
-服务端会把解析后的 protobuf 消息转成 JSON 文本发给你。
+服务端会返回两类 JSON 文本：
 
-不同消息类型字段不完全一样，但都会包含对应消息内容。
+1. **系统状态消息**：`type="system"`，用于告诉客户端直播间当前处于什么状态。
+2. **直播业务消息**：抖音 WebSocket 下发的 protobuf 消息转成 JSON 后再推给客户端。
 
-另外会额外补一个字段：
+#### 系统状态消息字段说明
 
-- `livename`：直播间名称
-- `method`：抖音消息类型，例如 `WebcastChatMessage`
-- `title`：直播间标题
-- `avatarThumb`：主播头像缩略图地址
+| 字段 | 含义 |
+| --- | --- |
+| `type` | 固定为 `system`，表示这是服务端状态通知，不是弹幕或礼物消息。 |
+| `event` | 固定为 `live_status` 时，表示直播间状态变化。 |
+| `code` | 给程序判断用的稳定状态码，例如 `ROOM_OFFLINE`、`ROOM_ONLINE`。 |
+| `status` | 简短英文状态：`offline`、`online`、`ended`、`not_found`、`error`。 |
+| `status_text` | 给用户看的中文状态，例如“直播间未开播”。 |
+| `valid` | `true` 表示账号或直播间有效；`false` 表示无效 ID 或状态检查失败。 |
+| `live` | `true` 表示已开播；`false` 表示未开播、已下播或异常。 |
+| `message` | 给用户直接展示的中文说明。 |
+| `suggestion` | 给客户端或用户的下一步建议。 |
+| `room_id` | 用户连接时传入的直播间标识。 |
+| `live_name` | 主播昵称；如果网页没有返回，可能为空字符串。 |
+| `title` | 直播间标题；账号存在但当前没有直播间对象时可能为空字符串。 |
+| `avatar_thumb` | 主播头像缩略图地址；没有取到时为空字符串。 |
+| `retry_interval_seconds` | 未开播/已下播时，服务端下一次轮询的大致间隔。 |
 
-如果直播间还没开播，则会返回系统状态消息，例如：
+#### 情况一：直播间未开播，但账号/直播间有效
+
+服务端会保持本地 WebSocket 连接，并持续后台轮询，不会关闭客户端。
 
 ```json
-{"type":"system","event":"live_status","live":false,"room_id":"516466932480","message":"直播间未开播","retry_interval_seconds":30}
+{
+  "type": "system",
+  "event": "live_status",
+  "code": "ROOM_OFFLINE",
+  "valid": true,
+  "live": false,
+  "status": "offline",
+  "status_text": "直播间未开播",
+  "room_id": "32536162943",
+  "live_name": "一只喵动漫",
+  "title": "",
+  "avatar_thumb": "https://example.com/avatar.jpeg",
+  "message": "直播间当前未开播，服务端会保持连接并继续轮询",
+  "suggestion": "客户端不需要重连，保持当前 WebSocket 连接等待开播通知",
+  "retry_interval_seconds": 30
+}
 ```
 
-检测到开播时，也会先返回一条状态消息：
+客户端处理建议：不要断开，不要立即重连，显示“未开播，等待中”即可。
+
+#### 情况二：账号存在，但当前没有直播间房间对象
+
+有些短号或主页号能打开账号页，但网页没有返回 `roomInfo.room`，只返回了 `roomInfo.anchor`。这说明账号存在，只是当前没有直播间房间对象，常见于账号从未开播过、或当前没有创建直播间房间对象。服务端会把它当成“未开播等待中”，并保持本地 WebSocket 连接。判断依据以网页 SSR 状态为准：只要没有 `roomInfo.room`，即使旁边存在 `roomId` 字段，也不会当作已存在的直播间房间对象。
 
 ```json
-{"type":"system","event":"live_status","live":true,"room_id":"516466932480","message":"直播间已开播"}
+{
+  "type": "system",
+  "event": "live_status",
+  "code": "ACCOUNT_OFFLINE_NO_ROOM",
+  "valid": true,
+  "live": false,
+  "status": "account_offline",
+  "status_text": "账号存在但当前没有直播间",
+  "room_id": "32536162943",
+  "live_name": "一只喵动漫",
+  "title": "",
+  "avatar_thumb": "https://example.com/avatar.jpeg",
+  "has_room": false,
+  "account_only": true,
+  "message": "账号存在，但网页没有返回直播间房间对象，可能是该账号从未开播或当前未创建直播间，当前按未开播处理",
+  "suggestion": "客户端不需要重连，保持当前 WebSocket 连接；如果该账号后续开播，服务端会自动切换为直播连接",
+  "retry_interval_seconds": 30
+}
 ```
 
-如果直播过程中下播，也会先返回一条状态消息：
+客户端处理建议：和未开播一样处理，不要断开，不要立即重连。
+
+#### 情况三：直播间已开播
 
 ```json
-{"type":"system","event":"live_status","live":false,"room_id":"516466932480","message":"直播间已下播","ended":true,"retry_interval_seconds":30}
+{
+  "type": "system",
+  "event": "live_status",
+  "code": "ROOM_ONLINE",
+  "valid": true,
+  "live": true,
+  "status": "online",
+  "status_text": "直播间已开播",
+  "room_id": "536681248455",
+  "live_name": "主播昵称",
+  "title": "直播间标题",
+  "avatar_thumb": "https://example.com/avatar.jpeg",
+  "message": "直播间已开播，后续将开始推送弹幕、礼物、点赞等直播消息",
+  "suggestion": "客户端可以开始正常处理直播消息"
+}
 ```
+
+客户端处理建议：进入正常消息处理流程。
+
+#### 情况四：直播过程中下播
+
+服务端会推送已下播状态，然后切回后台轮询，等待再次开播。
+
+```json
+{
+  "type": "system",
+  "event": "live_status",
+  "code": "ROOM_ENDED",
+  "valid": true,
+  "live": false,
+  "status": "ended",
+  "status_text": "直播间已下播",
+  "room_id": "386395296025",
+  "live_name": "CACA呆夫（无畏契约）",
+  "title": "奶妈王来了",
+  "avatar_thumb": "https://example.com/avatar.jpeg",
+  "message": "直播间已经下播，服务端会保持连接并等待再次开播",
+  "suggestion": "客户端不需要重连，保持当前 WebSocket 连接等待下一次开播",
+  "ended": true,
+  "retry_interval_seconds": 30
+}
+```
+
+#### 情况五：直播间不存在或 ID 无效
+
+这种情况服务端会关闭当前客户端连接，因为继续轮询没有意义。
+
+```json
+{
+  "type": "system",
+  "event": "live_status",
+  "code": "ROOM_NOT_FOUND",
+  "valid": false,
+  "live": false,
+  "status": "not_found",
+  "status_text": "直播间不存在或房间号无效",
+  "message": "直播间不存在或房间号无效，已关闭连接",
+  "suggestion": "请检查直播间ID是否输入正确；如果是短号或主页号，请确认网页可以正常打开该账号或直播间"
+}
+```
+
+#### 情况六：状态检查失败
+
+这种情况通常是网络、Cookie、风控或网页结构变化导致。服务端会关闭本次连接，客户端可以稍后重试。
+
+```json
+{
+  "type": "system",
+  "event": "live_status",
+  "code": "ROOM_CHECK_FAILED",
+  "valid": false,
+  "live": false,
+  "status": "error",
+  "status_text": "直播间状态检查失败",
+  "message": "直播间状态检查失败，请稍后重试",
+  "suggestion": "请稍后重新连接；如果多次失败，请开启 debug 日志并检查 Cookie 是否过期"
+}
+```
+
+#### 直播业务消息
+
+直播间正常开播后，服务端会把解析后的 protobuf 消息转成 JSON 文本发给你。不同消息类型字段不完全一样，但都会尽量补充以下元信息：
+
+- `method`：抖音消息类型，例如 `WebcastChatMessage`、`WebcastGiftMessage`。
+- `livename`：主播昵称。
+- `title`：直播间标题。
+- `avatarThumb`：主播头像缩略图地址。
+
+示例：
+
+```json
+{
+  "method": "WebcastChatMessage",
+  "livename": "主播昵称",
+  "title": "直播间标题",
+  "avatarThumb": "https://example.com/avatar.jpeg"
+}
+```
+
 
 ---
 
@@ -882,8 +1305,7 @@ douyinLive/
 ├── douyin.go                 # 核心抓取逻辑，对外库接口
 ├── sign/                     # 签名与 Cookie 相关逻辑
 ├── jsScript/                 # 签名脚本
-├── protobuf/                 # protobuf 定义
-├── generated/                # 生成后的 protobuf 代码
+├── go.mod                    # Go module 依赖，protobuf 类型来自 github.com/jwwsjlm/douyinlive-proto
 ├── utils/                    # 工具函数
 ├── config.example.yaml       # 配置示例
 └── README.md

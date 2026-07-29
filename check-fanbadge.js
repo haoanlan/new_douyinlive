@@ -1,12 +1,20 @@
 const https = require('https');
 const Database = require('better-sqlite3');
 const fs = require('fs');
+const path = require('path');
 
-const configContent = fs.readFileSync('config.yaml', 'utf-8');
-const cookieMatch = configContent.match(/cookie:\s*\n\s*douyin:\s*'([^']+)'/);
-const cookie = cookieMatch ? cookieMatch[1] : '';
+const { getCookie } = require('./lib/config-reader');
+const cookie = getCookie();
 
 const db = new Database('db/douyin.db');
+
+// 从外部文件加载主播列表（streamers.json）
+const streamersPath = path.join(__dirname, 'streamers.json');
+if (!fs.existsSync(streamersPath)) {
+  console.error('未找到 streamers.json，请复制 streamers.example.json 为 streamers.json 并填写主播信息');
+  process.exit(1);
+}
+const streamers = JSON.parse(fs.readFileSync(streamersPath, 'utf-8'));
 
 // 敌意弹幕用户
 const startMs = new Date('2026-06-29T18:20:00Z').getTime();
@@ -34,29 +42,7 @@ const hostileUsers = db.prepare(`
   ORDER BY d.create_time ASC
 `).all(startMs, endMs);
 
-// 所有主播
-const streamers = [
-  { name: '萱萱', sec_uid: 'MS4wLjABAAAADIfsDB7U0DIiWMgxvb4R-9XKulWeO0wrc71WQ1olSLyiBhoaxT_OrXy9cRpIZiN7' },
-  { name: '叮当', sec_uid: 'MS4wLjABAAAA-ff2KFROEFlrKTgxAOZ6PWXpskG1O-abr4maAqgBXAh_fNZsZMYXxwBxsltjKkSr' },
-  { name: '橙子', sec_uid: 'MS4wLjABAAAA7qQeVCIzwGVZ2y4GZ3kCUJ2yWvmrtnAkexsdMMdFL0tjOhTqfXPOgECxY7JyLZ2_' },
-  { name: '蟹蟹(香香)', sec_uid: 'MS4wLjABAAAAkyI91XbyKgahgcc7EFzZilmFThIZSguuCnNcWs9XcyI' },
-  { name: '周六', sec_uid: 'MS4wLjABAAAABHw1oYktVCRjsQGzgFTpcQDrXQ8aacva-gE6DZf6iWTsFz_3GOsYWPwaIQJZOnXO' },
-  { name: '耀华', sec_uid: 'MS4wLjABAAAAYDdrhWAlEbYF1pP7R4gwoT4cVP1TuN2tQ-3vOFoKS5J-R0nxVYEdMqugsT6g8R9W' },
-  { name: '大脸螃蟹', sec_uid: 'MS4wLjABAAAA_ghmZKU1UZf6bTnrkLjNOc9YT78EG71AVMiIjoI4z6g' },
-  { name: '娴娴', sec_uid: 'MS4wLjABAAAAr93OXMuvzhdieinX2GSB4q6oODH9y4J8E0jy0OSMiZk' },
-  { name: '奶思', sec_uid: 'MS4wLjABAAAA2hfNUj7A2mLqBivonD7a4_32GSlddsmHYLOM0Hiq22lF3eRz4ClCdL69W6bFq7cK' },
-  { name: 'Aya扶瑶', sec_uid: 'MS4wLjABAAAAdrvUBPp7gtXTHbkinx8WuiDCCSqqgx-DoMZF3MsDfrU' },
-  { name: '不晚', sec_uid: 'MS4wLjABAAAATmlqArc60-_oWnyObk3QiuNCbnYSCU34givHm6dTwmE' },
-  { name: '韩一战', sec_uid: 'MS4wLjABAAAA8EAg4QjKZ8YoMuxURdBFQwTQ7pAO2czYhkwarDDTjU4' },
-  { name: '左左', sec_uid: 'MS4wLjABAAAAgT0J4kXLeVdoNPT3ASQXKr2nc4IB8uPepVbH1d0ejbA' },
-  { name: '甜不了一点茶', sec_uid: 'MS4wLjABAAAAsc87DW2PgIVI05NL2XnDs_hIJwNrH9UD34e3DzonRSQ' },
-  { name: '7不7辣条', sec_uid: 'MS4wLjABAAAAMJ0FMFGGXFxaXjp0twxwhmjORqUITYBmAJCstGqHZ04' },
-  { name: '九万', sec_uid: 'MS4wLjABAAAA6mXQiTscb1GT2BSiFyOu2S6zq-jmwlEbdk-fyHRgNL0' },
-  { name: 'Coco', sec_uid: 'MS4wLjABAAAADYK5123Anv6e_hIyjWatRd1nHtDabINRTgqIIUdQaJZ3qPkFBsbc1wJDG2rSt_t4' },
-  { name: '薯条条', sec_uid: 'MS4wLjABAAAA3BUVV664_HdpEgZxxBFqcOXS69PowYtykw6CRxgwhiJCTKkRgeigjSVkFQyIj06f' },
-  { name: '林汐', sec_uid: 'MS4wLjABAAAA7C849g_CQUIpxjIUVVEm7XSQNtHOfMStnidFL4mJlas' },
-  { name: '云启', sec_uid: 'MS4wLjABAAAAE2sqC2LfucErG_sC_W9zd3yu83TmOPAfRVlqq4cae2g' },
-];
+// 所有主播（从 streamers.json 加载，见上方）
 
 function query(userUid, anchorUid) {
   return new Promise((resolve, reject) => {

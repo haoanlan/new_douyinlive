@@ -33,6 +33,7 @@ const fs = require('fs');
 const path = require('path');
 const db = require('./db-sqlite.js');
 const api = require('./lib/douyin-api.js');
+const { getCookie } = require('./lib/config-reader');
 const reportImg = require('./report-image.js');
 const feishu = require('./feishu-send.js');
 
@@ -513,16 +514,7 @@ async function resolveAnchorName(anchorId, fallbackName) {
   }
 
   try {
-    const cookiePath = __dirname + '/config.yaml';
-    let cookie = '';
-    try {
-      const f = require('fs');
-      if (f.existsSync(cookiePath)) {
-        const yaml = f.readFileSync(cookiePath, 'utf-8');
-        const m = yaml.match(/douyin:\s*(?:'([^']+)'|"([^"]+)")/);
-        if (m) cookie = m[1] || m[2];
-      }
-    } catch(e) {}
+    const cookie = getCookie();
 
     const ab = randomABogus();
     const url = 'https://www.douyin.com/aweme/v1/web/user/profile/other/?user_id=' + anchorId + '&a_bogus=' + ab;
@@ -774,7 +766,7 @@ function handleMessage(room, data) {
       const user = extractUser(data);
       const rawUser = data.user || data.userValue?.user || {};
       const userDispId = rawUser.displayId || rawUser.id || user.id || '';
-      const userSec = rawUser.secUid || '';
+      const userSec = rawUser.secUid || rawUser.sec_uid || data.user?.secUid || data.user?.sec_uid || '';
       const userAvatar = rawUser.avatarThumb?.urlList?.[0] || user.avatar || '';
       const key = user.nickname;
       if (key && !session._seenMembers.has(key)) {
@@ -1040,6 +1032,13 @@ function startConnection(roomId, config) {
           console.log(`[${getDisplayName(room)}] [live_status] live=${data.live} title=${data.title||''}主播=${data.livename||''}`);
           const isLive = !!data.live;
 
+          // 主播回来时，取消可能残留的下播定时器
+          if (isLive && room.liveStopTimer) {
+            clearTimeout(room.liveStopTimer);
+            room.liveStopTimer = null;
+            console.log(`[${getDisplayName(room)}] 🟢 主播回来了，取消下播确认`);
+          }
+
           if (isLive && !room.isRecording) {
             // 🔴 开播
             console.log(`[${getDisplayName(room)}] 🔴 检测到开播！`);
@@ -1073,10 +1072,20 @@ function startConnection(roomId, config) {
             console.log(`[${getDisplayName(room)}] 开始录制: ${data.title || ''}`);
           } else if (!isLive && room.isRecording) {
             // 🟢 可能下播
-            if (!room.liveStopTimer) {
+            // 如果最近还有数据流入（lastDataTime在60秒内），说明主播只是暂时离开，不启动下播定时器
+            const dataAge = room.lastDataTime ? (Date.now() - room.lastDataTime) / 1000 : Infinity;
+            if (dataAge < 60) {
+              console.log(`[${getDisplayName(room)}] 🟡 live=false 但最近${Math.round(dataAge)}秒有数据流入，跳过下播判定`);
+            } else if (!room.liveStopTimer) {
               room.liveStopTimer = setTimeout(() => {
                 room.liveStopTimer = null;
                 if (!room.isRecording) return;
+                // 定时器触发时再次检查：如果期间有新数据流入，取消下播
+                const lateDataAge = room.lastDataTime ? (Date.now() - room.lastDataTime) / 1000 : Infinity;
+                if (lateDataAge < 60) {
+                  console.log(`[${getDisplayName(room)}] 🟡 下播确认时发现最近${Math.round(lateDataAge)}秒有数据，取消下播`);
+                  return;
+                }
                 console.log(`[${getDisplayName(room)}] 🟢 确认下播！`);
                 room.isRecording = false;
                 finalizeSession(room);
@@ -1255,7 +1264,7 @@ async function handleControlCommand(req) {
 
     case 'add': {
       if (!roomId) return { ok: false, error: '缺少 roomId' };
-      if (!/^\d{5,15}$/.test(roomId)) return { ok: false, error: `roomId 格式无效: ${roomId}（应为5-15位纯数字）` };
+      if (!/^[A-Za-z0-9]{5,30}$/.test(roomId)) return { ok: false, error: `roomId 格式无效: ${roomId}（应为5-30位字母数字）` };
       if (rooms.has(roomId)) return { ok: false, error: `房间 ${roomId} 已在监控` };
       // 写入配置
       if (!config.rooms) config.rooms = [];

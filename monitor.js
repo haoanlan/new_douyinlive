@@ -113,12 +113,14 @@ function setStreamerDir(room, authorName) {
   if (!authorName) return;
   const streamersDir = path.join(DATA_DIR, 'streamers');
   if (!fs.existsSync(streamersDir)) fs.mkdirSync(streamersDir, { recursive: true });
+  const linksDir = path.join(DATA_DIR, 'current_sessions');
+  if (!fs.existsSync(linksDir)) fs.mkdirSync(linksDir, { recursive: true });
   const dir = path.join(streamersDir, authorName.replace(/[\\/:*?"<>|]/g, '_'));
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   room.sessionDir = dir;
   room.sessionFile = path.join(dir, 'current_session.json');
   room.reportFile = path.join(dir, 'pending_report.json');
-  const rootLink = path.join(DATA_DIR, `current_session_${room.roomId}.json`);
+  const rootLink = path.join(linksDir, `${room.roomId}.json`);
   try { fs.unlinkSync(rootLink); } catch(e) {}
   try { fs.symlinkSync(room.sessionFile, rootLink); } catch(e) {
     try { fs.copyFileSync(room.sessionFile, rootLink); } catch(e2) {}
@@ -137,7 +139,7 @@ function createRoomState(roomId) {
     displayName: roomId,  // 初始用roomId，获取到主播名后更新
     ws: null,
     session: null,
-    sessionFile: path.join(DATA_DIR, `current_session_${roomId}.json`),
+    sessionFile: path.join(DATA_DIR, 'current_sessions', `${roomId}.json`),
     sessionDir: DATA_DIR,
     reportFile: path.join(DATA_DIR, `pending_report_${roomId}.json`),
     isRecording: false,

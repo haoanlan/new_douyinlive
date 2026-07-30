@@ -35,6 +35,7 @@ compose.yaml
 monitor.js.bak2
 monitor.pid
 current_session.json
+current_sessions/
 runtime-config.json
 db/*.db-*
 bg-design/

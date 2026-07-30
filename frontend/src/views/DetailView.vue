@@ -261,7 +261,7 @@
       </div>
       <!-- Report tab -->
       <div v-if="detailTab === 'report'" class="tab-panel active" style="text-align:center;padding:20px">
-        <img :src="`/api/sessions/${detailData.session?.id}/report`" style="max-width:100%;border-radius:var(--radius);box-shadow:var(--shadow-lg)">
+        <img :src="reportImageUrl" style="max-width:100%;border-radius:var(--radius);box-shadow:var(--shadow-lg)">
       </div>
     </div>
   </div>
@@ -298,7 +298,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRouter, useRoute, onBeforeRouteUpdate } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useAppStore } from '../stores/app'
-import { fetchSessionDetail, fetchDanmaku, fetchRooms } from '../api'
+import { fetchSessionDetail, fetchDanmaku, fetchRooms, getReportUrl } from '../api'
 import { esc, fmtTime, formatDuration, avatarHtml, giftEmoji } from '../utils/format'
 import { replaceDouyinEmoji } from '../utils/douyin-emoji'
 import { useToast } from '../composables/useToast'
@@ -335,6 +335,12 @@ const anchorModalBody = ref('')
 const giftDetailModalVisible = ref(false)
 const giftDetailTitle = ref('礼物明细')
 const giftDetailBody = ref('')
+
+// 报告图片 URL（带认证 token）
+const reportImageUrl = computed(() => {
+  const id = detailData.value?.session?.id
+  return id ? getReportUrl(String(id)) : ''
+})
 
 // Virtual scroll
 const isVscroll = computed(() => danmakuDisplayLimit.value === 0)

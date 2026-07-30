@@ -34,18 +34,22 @@ function authHeaders(): Record<string, string> {
 /**
  * Generic API fetch wrapper
  */
-export async function api<T = any>(url: string, options?: RequestInit): Promise<T> {
+export async function api<T = any>(url: string, options?: RequestInit, _retried = false): Promise<T> {
   const response = await fetch(`${API_PREFIX}${url}`, {
     headers: authHeaders(),
     ...options,
   })
   if (response.status === 401) {
-    // 认证失败，提示用户输入 token
+    // 认证失败，提示用户输入 token（最多重试1次，防止无限循环）
+    if (_retried) {
+      localStorage.removeItem('dashboard_token')
+      throw new Error('认证失败，请提供有效的 Token')
+    }
     const token = prompt('请输入仪表盘访问令牌 (Token)：')
     if (token) {
       localStorage.setItem('dashboard_token', token)
       // 重试请求
-      return api(url, options)
+      return api(url, options, true)
     }
     throw new Error('认证失败，请提供有效的 Token')
   }

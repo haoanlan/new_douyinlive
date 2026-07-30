@@ -297,7 +297,11 @@ function saveSession(room) {
   );
   if (loadConfig().save_json) {
     try {
-      fs.writeFileSync(room.sessionFile, JSON.stringify(room.session, null, 2), 'utf-8');
+      // Map/Set 不能直接 JSON.stringify，需要转换
+      const data = { ...room.session };
+      if (data._seenMembers instanceof Set) data._seenMembers = [...data._seenMembers];
+      if (data.rawMessages instanceof Map) data.rawMessages = Object.fromEntries(data.rawMessages);
+      fs.writeFileSync(room.sessionFile, JSON.stringify(data, null, 2), 'utf-8');
     } catch(e) {}
   }
 }

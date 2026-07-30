@@ -41,8 +41,8 @@ function getFeishuCredentials() {
 
 /** 飞书专用日志 */
 const feishuLogPath = require('path').join(__dirname, 'logs', 'feishu.log');
-function feishuLog(msg) {
-  const line = `[${new Date().toISOString()}] ${msg}\n`;
+function feishuLog(...args) {
+  const line = `[${new Date().toISOString()}] ${args.join(' ')}\n`;
   try { require('fs').appendFileSync(feishuLogPath, line); } catch(e) {}
   // 同时输出到 stdout 以便 daemon.log 捕获
   process.stdout.write(line);

@@ -109,7 +109,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute, onBeforeRouteUpdate } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useAppStore } from '../stores/app'
-import { fetchSessions, fetchRooms, deleteSession } from '../api'
+import { fetchSessions, fetchRooms, deleteSession, getReportUrl } from '../api'
 import { fmtTime, formatDuration } from '../utils/format'
 import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
@@ -136,7 +136,7 @@ const filteredSessions = computed(() => {
   const to = dpData.to
   if (!from && !to) return sessions.value
   return sessions.value.filter(s => {
-    const d = (s.started_at || '').substring(0, 10)
+    const d = String(s.started_at || '').substring(0, 10)
     if (!d) return true
     if (from && d < from) return false
     if (to && d > to) return false
@@ -177,7 +177,7 @@ function toggleSessionCheckbox(id: number, e: Event) {
 
 // Session actions
 function downloadReport(sessionId: number) {
-  window.open(`${API}/api/sessions/${sessionId}/report`, '_blank')
+  window.open(getReportUrl(String(sessionId)), '_blank')
 }
 
 async function deleteSessionFromList(sessionId: number) {
@@ -193,7 +193,7 @@ async function deleteSessionFromList(sessionId: number) {
 function downloadSelectedReports() {
   const ids = selectedSessionIds.value
   if (ids.length === 0) { toast('请先选择场次', 'error'); return }
-  ids.forEach((id, i) => { setTimeout(() => window.open(`${API}/api/sessions/${id}/report`, '_blank'), i * 500) })
+  ids.forEach((id, i) => { setTimeout(() => window.open(getReportUrl(String(id)), '_blank'), i * 500) })
   toast(`正在生成 ${ids.length} 份报告...`, 'success')
 }
 

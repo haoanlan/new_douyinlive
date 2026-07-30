@@ -8,6 +8,8 @@ export function useDatePicker() {
   const dpOverlayVisible = ref(false)
   const dpState = reactive({ type: '' as string, year: 0, month: 0, day: 0, temp: null as string | null })
   const dpData = reactive({ from: null as string | null, to: null as string | null })
+  // 存储当前绑定的清理函数，避免事件监听器泄漏
+  let cleanupClickHandlers: (() => void)[] = []
 
   const dpTitleText = computed(() => {
     const months = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
@@ -41,6 +43,10 @@ export function useDatePicker() {
   })
 
   function dpOpen(type: string) {
+    // 清理之前的事件监听器
+    cleanupClickHandlers.forEach(fn => fn())
+    cleanupClickHandlers = []
+
     dpState.type = type
     const val = dpData[type as keyof typeof dpData]
     const now = val ? new Date(val + 'T00:00:00') : new Date()
@@ -53,9 +59,11 @@ export function useDatePicker() {
       const dpDays = document.getElementById('dpDays')
       if (dpDays) {
         dpDays.querySelectorAll('.dp-day:not(.other):not(:disabled)').forEach(btn => {
-          btn.addEventListener('click', () => {
+          const handler = () => {
             dpState.temp = (btn as HTMLElement).dataset.date || null
-          })
+          }
+          btn.addEventListener('click', handler)
+          cleanupClickHandlers.push(() => btn.removeEventListener('click', handler))
         })
       }
     })

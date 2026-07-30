@@ -29,10 +29,6 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           信息查询
         </button>
-        <button v-if="detailData.hasReport" class="tab-btn" :class="{ active: detailTab === 'report' }" @click="switchDetailTab('report')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-          报告
-        </button>
       </div>
       <!-- Live refresh bar -->
       <div v-if="detailData.session?.is_live" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
@@ -259,10 +255,6 @@
           </div>
         </div>
       </div>
-      <!-- Report tab -->
-      <div v-if="detailTab === 'report'" class="tab-panel active" style="text-align:center;padding:20px">
-        <img :src="reportImageUrl" style="max-width:100%;border-radius:var(--radius);box-shadow:var(--shadow-lg)">
-      </div>
     </div>
   </div>
 
@@ -298,7 +290,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRouter, useRoute, onBeforeRouteUpdate } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useAppStore } from '../stores/app'
-import { fetchSessionDetail, fetchDanmaku, fetchRooms, getReportUrl } from '../api'
+import { fetchSessionDetail, fetchDanmaku, fetchRooms } from '../api'
 import { esc, fmtTime, formatDuration, avatarHtml, giftEmoji } from '../utils/format'
 import { replaceDouyinEmoji } from '../utils/douyin-emoji'
 import { useToast } from '../composables/useToast'
@@ -335,12 +327,6 @@ const anchorModalBody = ref('')
 const giftDetailModalVisible = ref(false)
 const giftDetailTitle = ref('礼物明细')
 const giftDetailBody = ref('')
-
-// 报告图片 URL（带认证 token）
-const reportImageUrl = computed(() => {
-  const id = detailData.value?.session?.id
-  return id ? getReportUrl(String(id)) : ''
-})
 
 // Virtual scroll
 const isVscroll = computed(() => danmakuDisplayLimit.value === 0)

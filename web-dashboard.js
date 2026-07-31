@@ -43,20 +43,27 @@ function checkAuth(req, res) {
 // ====== 读取抖音Cookie（使用共享模块 lib/config-reader.js）======
 
 // ====== 工具函数 ======
-function sendJSON(res, data, status = 200) {
+async function sendJSON(res, data, status = 200) {
   if (res.headersSent) return;
   const json = JSON.stringify(data);
   const accept = res.req?.headers?.['accept-encoding'] || '';
   if (accept.includes('gzip') && json.length > 1024) {
-    const compressed = zlib.gzipSync(json);
-    res.writeHead(status, {
-      'Content-Type': 'application/json; charset=utf-8',
-      'Content-Encoding': 'gzip',
-      'Access-Control-Allow-Origin': '*'
+    const buf = Buffer.from(json);
+    const compressed = await new Promise((resolve, reject) => {
+      zlib.gzip(buf, (err, result) => err ? reject(err) : resolve(result));
     });
+    if (!res.headersSent) {
+      res.writeHead(status, {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Content-Encoding': 'gzip',
+        'Access-Control-Allow-Origin': '*'
+      });
+    }
     res.end(compressed);
   } else {
-    res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*' });
+    if (!res.headersSent) {
+      res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*' });
+    }
     res.end(json);
   }
 }
@@ -122,7 +129,7 @@ async function handleAPI(req, res) {
 }
 
 // ====== 静态文件服务 ======
-function serveStatic(req, res) {
+async function serveStatic(req, res) {
   const { pathname } = parseQuery(req.url);
   let filePath;
   const VUE_DIST = path.join(DATA_DIR, 'frontend', 'dist');
@@ -131,7 +138,7 @@ function serveStatic(req, res) {
   } else {
     filePath = path.join(VUE_DIST, pathname);
     // fallback to DATA_DIR for API assets etc
-    if (!fs.existsSync(filePath)) {
+    if (!await fs.promises.access(filePath).then(() => true).catch(() => false)) {
       filePath = path.join(DATA_DIR, pathname);
     }
   }
@@ -149,7 +156,7 @@ function serveStatic(req, res) {
     res.writeHead(403); res.end('Forbidden'); return;
   }
 
-  if (!fs.existsSync(filePath)) {
+  if (!await fs.promises.access(filePath).then(() => true).catch(() => false)) {
     // SPA fallback: 非 API 路由返回 index.html
     if (!pathname.startsWith('/api/')) {
       filePath = path.join(VUE_DIST, 'index.html');
@@ -168,19 +175,35 @@ function serveStatic(req, res) {
   const accept = req.headers?.['accept-encoding'] || '';
   // gzip 压缩文本文件（>1KB）
   if (accept.includes('gzip') && (ext === '.html' || ext === '.css' || ext === '.js' || ext === '.json')) {
-    const buf = fs.readFileSync(filePath);
-    if (buf.length > 1024) {
-      const compressed = zlib.gzipSync(buf);
-      res.writeHead(200, {
-        'Content-Type': contentType,
-        'Content-Encoding': 'gzip',
-        'Cache-Control': 'no-cache'
-      });
-      res.end(compressed);
-      return;
+    try {
+      const buf = await fs.promises.readFile(filePath);
+      if (buf.length > 1024) {
+        const compressed = await new Promise((resolve, reject) => {
+          zlib.gzip(buf, (err, result) => err ? reject(err) : resolve(result));
+        });
+        // 带 hash 的静态资源长期缓存，index.html 不缓存
+        const isHashed = /\-[A-Za-z0-9]{8}\.(css|js)$/.test(pathname);
+        const cacheControl = pathname === '/' || pathname === '/index.html'
+          ? 'no-cache'
+          : isHashed ? 'public, max-age=31536000, immutable' : 'public, max-age=3600';
+        res.writeHead(200, {
+          'Content-Type': contentType,
+          'Content-Encoding': 'gzip',
+          'Cache-Control': cacheControl
+        });
+        res.end(compressed);
+        return;
+      }
+    } catch (e) {
+      // 读取失败，fallback 到非压缩
     }
   }
-  res.writeHead(200, { 'Content-Type': contentType, 'Cache-Control': 'no-cache' });
+  // 非压缩响应也加缓存头
+  const isHashed = /\-[A-Za-z0-9]{8}\.(css|js)$/.test(pathname);
+  const cacheControl = pathname === '/' || pathname === '/index.html'
+    ? 'no-cache'
+    : isHashed ? 'public, max-age=31536000, immutable' : 'public, max-age=3600';
+  res.writeHead(200, { 'Content-Type': contentType, 'Cache-Control': cacheControl });
   fs.createReadStream(filePath).pipe(res);
 }
 

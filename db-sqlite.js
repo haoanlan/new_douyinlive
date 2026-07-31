@@ -29,6 +29,9 @@ function getDb() {
       'CREATE INDEX IF NOT EXISTS idx_danmaku_session_time ON danmaku(session_id, create_time)',
       'CREATE INDEX IF NOT EXISTS idx_members_session ON members(session_id)',
       'CREATE INDEX IF NOT EXISTS idx_sessions_streamer ON sessions(streamer_id)',
+      'CREATE INDEX IF NOT EXISTS idx_gifts_user_sec_uid ON gifts(user_sec_uid)',
+      'CREATE INDEX IF NOT EXISTS idx_danmaku_user_sec_uid ON danmaku(user_sec_uid)',
+      'CREATE INDEX IF NOT EXISTS idx_gifts_create_time ON gifts(create_time)',
     ];
     for (const sql of idxs) { try { db.prepare(sql).run(); } catch (e) { /* ignore */ } }
   }
@@ -154,7 +157,10 @@ async function init() {
     `CREATE INDEX IF NOT EXISTS idx_gifts_user ON gifts(nickname)`,
     `CREATE INDEX IF NOT EXISTS idx_gifts_session_trace ON gifts(session_id, trace_id)`,
     `CREATE INDEX IF NOT EXISTS idx_members_session ON members(session_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_online_session_time ON online_records(session_id, recorded_at)`
+    `CREATE INDEX IF NOT EXISTS idx_online_session_time ON online_records(session_id, recorded_at)`,
+    `CREATE INDEX IF NOT EXISTS idx_gifts_user_sec_uid ON gifts(user_sec_uid)`,
+    `CREATE INDEX IF NOT EXISTS idx_danmaku_user_sec_uid ON danmaku(user_sec_uid)`,
+    `CREATE INDEX IF NOT EXISTS idx_gifts_create_time ON gifts(create_time)`
   ];
 
   for (const sql of sqls) {

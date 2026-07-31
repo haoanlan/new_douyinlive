@@ -528,7 +528,7 @@ function generateHTML(data) {
   memberHours.forEach(h => hourCounts[h] = (hourCounts[h] || 0) + 1);
   const peakH = Object.entries(hourCounts).sort((a, b) => b[1] - a[1])[0];
   const peakHour = peakH ? parseInt(peakH[0]) : -1;
-  const slowHour = memberHours.length > 0 ? Math.min(...memberHours) : -1;
+  const slowHour = memberHours.length > 0 ? memberHours.reduce((a, b) => Math.min(a, b), Infinity) : -1;
   
   // 弹幕氛围词
   const hasCall = topPhrases.some(p => p[0].includes('打call') || p[0].includes('鼓掌'));

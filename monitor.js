@@ -340,11 +340,11 @@ function restoreFromSnapshot(roomId) {
 async function dbFlush(room) {
   if (!room.session || !room.dbSessionId) return;
   try {
-    // 记录本轮起始位置，写库成功后从内存数组中删除已入库部分
-    const startDanmaku = room.dbSyncState.danmaku;
-    const startGifts = room.dbSyncState.gifts;
-    const startMembers = room.dbSyncState.members;
-    const startOnline = room.dbSyncState.online;
+    // 记录写库前的数组长度，写库成功后从内存中删除已入库部分
+    const lenDanmaku = room.session.danmaku.length;
+    const lenGifts = room.session.gifts.length;
+    const lenMembers = room.session.members.length;
+    const lenOnline = room.session.online.length;
     const newDanmaku = room.session.danmaku.slice(room.dbSyncState.danmaku);
     if (newDanmaku.length > 0) {
       await db.insertDanmaku(room.dbSessionId, newDanmaku.map(d => ({
@@ -430,10 +430,10 @@ async function dbFlush(room) {
       room.dbSyncState.likes = room.session.stats.like || 0;
     }
     // 写库全部成功，从内存数组中删除已入库部分，防止内存无限增长
-    if (startDanmaku > 0) room.session.danmaku.splice(0, startDanmaku);
-    if (startGifts > 0) room.session.gifts.splice(0, startGifts);
-    if (startMembers > 0) room.session.members.splice(0, startMembers);
-    if (startOnline > 0) room.session.online.splice(0, startOnline);
+    if (lenDanmaku > 0) room.session.danmaku.splice(0, lenDanmaku);
+    if (lenGifts > 0) room.session.gifts.splice(0, lenGifts);
+    if (lenMembers > 0) room.session.members.splice(0, lenMembers);
+    if (lenOnline > 0) room.session.online.splice(0, lenOnline);
     // splice 后数组只剩未入库部分，重置同步位置
     room.dbSyncState.danmaku = 0;
     room.dbSyncState.gifts = 0;

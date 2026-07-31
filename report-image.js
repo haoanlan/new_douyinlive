@@ -6,6 +6,9 @@
 const fs = require('fs');
 const path = require('path');
 const { chromium } = require('playwright');
+const { execFile } = require('child_process');
+const { promisify } = require('util');
+const execFileAsync = promisify(execFile);
 const { comboDedupGifts } = require('./lib/gift-utils.js');
 
 const SESSION_FILE = path.join(__dirname, 'current_session.json');
@@ -1209,22 +1212,30 @@ function htmlWrap(theme, bodyContent) {
 
 // ────────── 截图 ──────────
 
-async function screenshotHTML(html, outputPath) {
-  const reportsDir = path.join(DATA_DIR, 'reports');
-  if (!fs.existsSync(reportsDir)) fs.mkdirSync(reportsDir, { recursive: true });
-  const htmlPath = path.join(DATA_DIR, 'report_temp.html');
-  fs.writeFileSync(htmlPath, html, 'utf-8');
-  const browser = await chromium.launch({ 
+// 复用的浏览器实例（惰性创建，用完不关，进程退出时自动回收）
+let _sharedBrowser = null;
+async function getSharedBrowser() {
+  if (_sharedBrowser && _sharedBrowser.isConnected()) return _sharedBrowser;
+  _sharedBrowser = await chromium.launch({
     headless: true,
     executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || '/opt/data/home/.agent-browser/browsers/chrome-148.0.7778.167/chrome',
   });
-  const page = await browser.newPage({ viewport: { width: 900, height: 1 }, deviceScaleFactor: 2 });
+  return _sharedBrowser;
+}
+
+async function screenshotHTML(html, outputPath) {
+  const reportsDir = path.join(DATA_DIR, 'reports');
+  await fs.promises.mkdir(reportsDir, { recursive: true });
+  const htmlPath = path.join(DATA_DIR, 'report_temp.html');
+  await fs.promises.writeFile(htmlPath, html, 'utf-8');
+  const browser = await getSharedBrowser();
+  const page = await browser.newPage({ viewport: { width: 900, height: 1 }, deviceScaleFactor: 1 });
   await page.goto('file://' + htmlPath, { waitUntil: 'load', timeout: 60000 });
   const bodyHeight = await page.evaluate(() => document.body.scrollHeight);
   await page.setViewportSize({ width: 900, height: bodyHeight });
   await page.screenshot({ path: outputPath, fullPage: true, type: 'jpeg', quality: 90 });
-  await browser.close();
-  fs.unlinkSync(htmlPath);
+  await page.close();
+  await fs.promises.unlink(htmlPath);
   return outputPath;
 }
 
@@ -1388,8 +1399,7 @@ async function main() {
     const toSecUid = data.gifts.find(g => g.to_nickname && g.to_nickname.includes(toName) && g.to_user_sec_uid);
     if (toSecUid && toSecUid.to_user_sec_uid) {
       try {
-        const { execFileSync } = require('child_process');
-        const result = execFileSync('node', [__dirname + '/douyin-user.js', toSecUid.to_user_sec_uid], { timeout: 10000, encoding: 'utf-8' });
+        const { stdout: result } = await execFileAsync('node', [__dirname + '/douyin-user.js', toSecUid.to_user_sec_uid], { timeout: 10000, encoding: 'utf-8' });
         const user = JSON.parse(result);
         if (user && user.avatar) {
           toAvatar = user.avatar;

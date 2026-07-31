@@ -108,7 +108,7 @@ async function loadFromDb(sessionId) {
       'SELECT count, recorded_at FROM online_records WHERE session_id = ? ORDER BY recorded_at', [sessionId]
     );
     const onlinePeak = onlineRecords.length > 0
-      ? Math.max(...onlineRecords.map(o => o.count))
+      ? onlineRecords.reduce((max, o) => Math.max(max, o.count), 0)
       : (sess.online_peak || 0);
 
     // 只查被送礼人（主播）的头像，送礼人的已有
@@ -446,7 +446,9 @@ function buildHostRanking(data) {
 
 function generateHTML(data) {
   const duration = data.duration_seconds ? formatDuration(data.duration_seconds) : calcDuration(data.start_time, data.end_time);
-  const onlinePeak = data.online?.length ? Math.max(...data.online.map(o => o.count)) : (data.stats?.online || 0);
+  const onlinePeak = data.online?.length
+    ? data.online.reduce((max, o) => Math.max(max, o.count), 0)
+    : (data.stats?.online || 0);
   const danmakuCount = data.stats?.danmaku || 0;
   const likeCount = data.stats?.like || 0;
   const memberCount = data.stats?.member || 0;
@@ -1290,7 +1292,7 @@ async function main() {
             member: parts.reduce((s, p) => s + (p.stats?.member || 0), 0),
             follow: parts.reduce((s, p) => s + (p.stats?.follow || 0), 0),
             social: parts.reduce((s, p) => s + (p.stats?.social || 0), 0),
-            online: Math.max(...parts.map(p => p.stats?.online || 0))
+            online: parts.reduce((max, p) => Math.max(max, p.stats?.online || 0), 0)
           }
         };
         // 合并头像缓存

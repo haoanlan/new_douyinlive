@@ -340,6 +340,11 @@ function restoreFromSnapshot(roomId) {
 async function dbFlush(room) {
   if (!room.session || !room.dbSessionId) return;
   try {
+    // 记录本轮起始位置，写库成功后从内存数组中删除已入库部分
+    const startDanmaku = room.dbSyncState.danmaku;
+    const startGifts = room.dbSyncState.gifts;
+    const startMembers = room.dbSyncState.members;
+    const startOnline = room.dbSyncState.online;
     const newDanmaku = room.session.danmaku.slice(room.dbSyncState.danmaku);
     if (newDanmaku.length > 0) {
       await db.insertDanmaku(room.dbSessionId, newDanmaku.map(d => ({
@@ -404,7 +409,9 @@ async function dbFlush(room) {
       room.dbSyncState.online = room.session.online.length;
     }
     if (newDanmaku.length > 0 || newGifts.length > 0 || newMembers.length > 0) {
-      const peak = room.session.online.length > 0 ? Math.max(...room.session.online.map(o => parseInt(String(o.count), 10) || 0)) : 0;
+      const peak = room.session.online.length > 0
+        ? room.session.online.reduce((max, o) => Math.max(max, parseInt(String(o.count), 10) || 0), 0)
+        : 0;
       await db.updateSessionStats(room.dbSessionId, {
         danmaku: newDanmaku.length,
         gift: newGifts.length,
@@ -422,6 +429,16 @@ async function dbFlush(room) {
       );
       room.dbSyncState.likes = room.session.stats.like || 0;
     }
+    // 写库全部成功，从内存数组中删除已入库部分，防止内存无限增长
+    if (startDanmaku > 0) room.session.danmaku.splice(0, startDanmaku);
+    if (startGifts > 0) room.session.gifts.splice(0, startGifts);
+    if (startMembers > 0) room.session.members.splice(0, startMembers);
+    if (startOnline > 0) room.session.online.splice(0, startOnline);
+    // splice 后数组只剩未入库部分，重置同步位置
+    room.dbSyncState.danmaku = 0;
+    room.dbSyncState.gifts = 0;
+    room.dbSyncState.members = 0;
+    room.dbSyncState.online = 0;
   } catch(e) {
     if (e.code !== 'SQLITE_CONSTRAINT') {
       console.error(`[dbFlush][${room.roomId}] 错误:`, e.message);
@@ -840,11 +857,6 @@ function handleMessage(room, data) {
     case 'WebcastRoomStatsMessage': {
       const count = parseInt(data.total || data.displayValue || 0, 10);
       session.online.push({ time: cstISO(), count });
-      if (session.online.length > 1000) {
-        session.online = session.online.slice(-500);
-        // 重置同步计数器，避免 slice 后新数据丢失
-        if (room && room.dbSyncState) room.dbSyncState.online = 0;
-      }
       break;
     }
 

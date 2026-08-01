@@ -74,13 +74,15 @@ const { pageTitle, showBackBtn, showTopNav, breadcrumbItems, topNavTab, viewLeve
 const { toastMsg, toastType, toastClasses, toast } = useToast()
 const { confirmVisible, confirmIcon, confirmText, showConfirm, confirmResolve } = useConfirm()
 
-// 从路由 meta 同步静态导航状态（在视图挂载前生效，避免 UI 闪烁）
+// 从路由 meta 同步静态导航状态（仅 hosts 层级由 meta 管理，其他层级由子组件接管）
 watch(() => route.meta, (meta) => {
-  if (meta.viewLevel) viewLevel.value = meta.viewLevel as 'hosts' | 'sessions' | 'detail'
-  if (meta.showBackBtn !== undefined) showBackBtn.value = meta.showBackBtn as boolean
-  if (meta.showTopNav !== undefined) showTopNav.value = meta.showTopNav as boolean
-  if (meta.pageTitle) store.pageTitle = meta.pageTitle as string
-  if (meta.viewLevel === 'hosts') store.breadcrumbItems = []
+  if (meta.viewLevel === 'hosts') {
+    viewLevel.value = 'hosts'
+    showBackBtn.value = false
+    showTopNav.value = true
+    store.pageTitle = '直播监控'
+    store.breadcrumbItems = []
+  }
 }, { immediate: true })
 
 // Navigation: back button (debounced)

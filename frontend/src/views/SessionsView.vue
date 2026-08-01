@@ -267,6 +267,9 @@ onBeforeRouteUpdate(async (to) => {
   const hostId = to.params.hostId as string
   currentHostId.value = hostId
   currentSessionId.value = null
+  if (!rooms.value.length) {
+    try { rooms.value = await fetchRooms() } catch { /* ignore */ }
+  }
   setupNav()
   await loadSessions()
 })

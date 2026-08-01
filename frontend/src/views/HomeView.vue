@@ -264,7 +264,8 @@ const { toast } = useToast()
 const { showConfirm } = useConfirm()
 
 // Cache-aware: show cached data immediately (no spinner), only show loading on first visit
-const _hasCache = rooms.value.length > 0
+// rooms 由 SessionsView 加载过也算有缓存，但 summary 必须也加载过才不算"从0开始"
+const _hasCache = rooms.value.length > 0 && summary.total_sessions > 0
 contentLoading.value = !_hasCache
 contentFadeIn.value = false
 

@@ -221,6 +221,22 @@ async function endSession(sessionId, durationSeconds, filePath) {
   d.prepare(
     'UPDATE sessions SET end_time = datetime(\'now\',\'localtime\'), duration_seconds = ?, file_path = ?, archived = 1 WHERE id = ?'
   ).run(durationSeconds || 0, filePath || null, sessionId);
+  // 场次结束时计算并存储聚合数据
+  try {
+    const { comboDedupGifts } = require('./lib/gift-utils.js');
+    const rawGifts = d.prepare('SELECT * FROM gifts WHERE session_id = ? ORDER BY id').all(sessionId);
+    const deduped = comboDedupGifts(rawGifts);
+    const agg_gifts = deduped.reduce((s, g) => s + (g.repeat_count || 1), 0);
+    const agg_diamonds = deduped.reduce((s, g) => s + (g.total_diamonds || 0), 0);
+    const dmRow = d.prepare('SELECT COUNT(*) as cnt FROM danmaku WHERE session_id = ?').get(sessionId);
+    const giftUsers = deduped.map(g => g.user_sec_uid).filter(Boolean);
+    const danmakuUsers = d.prepare('SELECT DISTINCT user_sec_uid FROM danmaku WHERE session_id = ? AND user_sec_uid IS NOT NULL').all(sessionId).map(r => r.user_sec_uid);
+    const agg_users = new Set([...giftUsers, ...danmakuUsers]).size;
+    d.prepare('UPDATE sessions SET agg_gifts=?, agg_diamonds=?, agg_danmaku=?, agg_users=? WHERE id=?')
+      .run(agg_gifts, agg_diamonds, dmRow.cnt, agg_users, sessionId);
+  } catch (e) {
+    console.error(`[endSession] 聚合计算失败:`, e.message);
+  }
 }
 
 /** 更新 session 统计（增量） */

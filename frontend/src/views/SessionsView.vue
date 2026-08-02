@@ -215,8 +215,8 @@ async function loadSessions() {
   const hostId = currentHostId.value
   if (!hostId) return
   selectedSessionIds.value = []
-  sessions.value = []
   contentLoading.value = true
+  contentFadeIn.value = false
   try {
     const data = await fetchSessions(hostId)
     sessions.value = data
@@ -251,6 +251,10 @@ onMounted(async () => {
   const hostId = route.params.hostId as string
   currentHostId.value = hostId
   currentSessionId.value = null
+
+  // 立即设 loading，防止从其他页面切换过来时先闪现空数据
+  contentLoading.value = true
+  contentFadeIn.value = false
 
   // Ensure rooms loaded (needed for breadcrumb host name)
   if (!rooms.value.length) {

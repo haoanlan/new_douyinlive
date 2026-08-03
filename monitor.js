@@ -409,17 +409,14 @@ async function dbFlush(room) {
       room.dbSyncState.online = room.session.online.length;
     }
     if (newDanmaku.length > 0 || newGifts.length > 0 || newMembers.length > 0) {
-      const peak = room.session.online.length > 0
-        ? room.session.online.reduce((max, o) => Math.max(max, parseInt(String(o.count), 10) || 0), 0)
-        : 0;
       await db.updateSessionStats(room.dbSessionId, {
         danmaku: newDanmaku.length,
         gift: newGifts.length,
         member: newMembers.length
       });
       await db.getPool().query(
-        'UPDATE sessions SET stats_like = ?, stats_follow = ?, stats_social = ?, online_peak = ? WHERE id = ?',
-        [room.session.stats.like || 0, room.session.stats.follow || 0, room.session.stats.social || 0, peak, room.dbSessionId]
+        'UPDATE sessions SET stats_like = ?, stats_follow = ?, stats_social = ? WHERE id = ?',
+        [room.session.stats.like || 0, room.session.stats.follow || 0, room.session.stats.social || 0, room.dbSessionId]
       );
       room.dbSyncState.likes = room.session.stats.like || 0;
     } else if (room.session.stats.like > 0 && room.session.stats.like !== room.dbSyncState.likes) {
@@ -428,6 +425,16 @@ async function dbFlush(room) {
         [room.session.stats.like || 0, room.session.stats.follow || 0, room.session.stats.social || 0, room.dbSessionId]
       );
       room.dbSyncState.likes = room.session.stats.like || 0;
+    }
+    // online_peak 单独更新：只要有在线数据就计算峰值
+    if (lenOnline > 0) {
+      const peak = room.session.online.reduce((max, o) => Math.max(max, parseInt(String(o.count), 10) || 0), 0);
+      if (peak > 0) {
+        await db.getPool().query(
+          'UPDATE sessions SET online_peak = MAX(COALESCE(online_peak, 0), ?) WHERE id = ?',
+          [peak, room.dbSessionId]
+        );
+      }
     }
     // 写库全部成功，从内存数组中删除已入库部分，防止内存无限增长
     if (lenDanmaku > 0) room.session.danmaku.splice(0, lenDanmaku);

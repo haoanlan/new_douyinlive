@@ -153,7 +153,7 @@
                               <span v-if="d._type === 'gift'" style="font-size:10px;padding:1px 5px;border-radius:var(--radius-xs);background:rgba(255,107,157,0.15);color:#FF6B9D;flex-shrink:0">{{ fmtTime(d.timestamp) }}</span>
                               <span v-else style="font-size:11px;padding:1px 6px;border-radius:var(--radius-xs);background:rgba(108,140,255,0.15);color:var(--accent);flex-shrink:0">{{ fmtTime(d.timestamp) }}</span>
                             </div>
-                            <div v-if="d._type === 'gift'" style="font-size:12px;color:#FF6B9D;word-break:break-all;line-height:1.5">
+                            <div v-if="d._type === 'gift'" class="dm-gift-text">
                               送了
                               <img v-if="d.gift_icon" :src="d.gift_icon" style="width:16px;height:16px;vertical-align:-3px;margin:0 2px;border-radius:var(--radius-xs)">
                               <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="vertical-align:-2px;margin:0 2px"><rect x="3" y="8" width="18" height="13" rx="1"/><path d="M12 8V6c0-2-1.5-4-4-4S4 4 4 6h2"/><path d="M20 6c0-2-1.5-4-4-4s-4 2-4 4h2"/><line x1="12" y1="8" x2="12" y2="21"/><line x1="3" y1="13" x2="21" y2="13"/></svg>
@@ -165,7 +165,7 @@
                                 {{ d.total_diamonds.toLocaleString() }}
                               </span>
                             </div>
-                            <div v-else style="font-size:12px;color:var(--text-muted);word-break:break-all;line-height:1.5" :title="d.content" v-html="replaceDouyinEmoji(esc(d.content))"></div>
+                            <div v-else class="dm-danmaku-text" :title="d.content" v-html="replaceDouyinEmoji(esc(d.content))"></div>
                           </div>
                         </div>
                       </template>
@@ -180,7 +180,7 @@
                                 <span v-if="d._type === 'gift'" style="font-size:10px;padding:1px 5px;border-radius:var(--radius-xs);background:rgba(255,107,157,0.15);color:#FF6B9D;flex-shrink:0">{{ fmtTime(d.timestamp) }}</span>
                                 <span v-else style="font-size:11px;padding:1px 6px;border-radius:var(--radius-xs);background:rgba(108,140,255,0.15);color:var(--accent);flex-shrink:0">{{ fmtTime(d.timestamp) }}</span>
                               </div>
-                              <div v-if="d._type === 'gift'" style="font-size:12px;color:#FF6B9D;word-break:break-all;line-height:1.5">
+                              <div v-if="d._type === 'gift'" class="dm-gift-text">
                                 送了
                                 <img v-if="d.gift_icon" :src="d.gift_icon" style="width:16px;height:16px;vertical-align:-3px;margin:0 2px;border-radius:var(--radius-xs)">
                                 <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="vertical-align:-2px;margin:0 2px"><rect x="3" y="8" width="18" height="13" rx="1"/><path d="M12 8V6c0-2-1.5-4-4-4S4 4 4 6h2"/><path d="M20 6c0-2-1.5-4-4-4s-4 2-4 4h2"/><line x1="12" y1="8" x2="12" y2="21"/><line x1="3" y1="13" x2="21" y2="13"/></svg>
@@ -192,7 +192,7 @@
                                   {{ d.total_diamonds.toLocaleString() }}
                                 </span>
                               </div>
-                              <div v-else style="font-size:12px;color:var(--text-muted);word-break:break-all;line-height:1.5" :title="d.content" v-html="replaceDouyinEmoji(esc(d.content))"></div>
+                              <div v-else class="dm-danmaku-text" :title="d.content" v-html="replaceDouyinEmoji(esc(d.content))"></div>
                             </div>
                           </div>
                         </div>
@@ -862,3 +862,23 @@ onUnmounted(() => {
   if (_resizeObs) { _resizeObs.disconnect(); _resizeObs = null }
 })
 </script>
+
+<style scoped>
+.dm-gift-text {
+  font-size: 12px;
+  color: #FF6B9D;
+  word-break: break-all;
+  line-height: 1.5;
+}
+.dm-danmaku-text {
+  font-size: 12px;
+  color: var(--text-muted);
+  word-break: break-all;
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+</style>

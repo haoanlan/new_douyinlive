@@ -483,7 +483,8 @@ function finalizeSession(room) {
     const end = new Date(room.session.end_time);
     const dur = Math.round((end - start) / 1000);
     db.endSession(room.dbSessionId, dur, room.session.file_path || '')
-      .catch(e => console.error(`[session][${room.roomId}] endSession 失败:`, e.message));
+      .then(() => console.log(`[session][${room.roomId}] endSession 完成, id=${room.dbSessionId}`))
+      .catch(e => console.error(`[session][${room.roomId}] endSession 失败:`, e.message, e.stack));
   }
 
   if (loadConfig().save_json) {

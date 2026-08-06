@@ -39,7 +39,7 @@
         </button>
       </div>
       <!-- Anchors tab -->
-      <div v-if="detailTab === 'anchors'" class="tab-panel active">
+      <div v-show="detailTab === 'anchors'" class="tab-panel active">
         <template v-if="detailData.anchorRanking && detailData.anchorRanking.length > 0">
           <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -65,7 +65,7 @@
         <div v-else class="empty" style="padding:40px"><div class="empty-icon">—</div>暂无主播数据</div>
       </div>
       <!-- Gifts tab -->
-      <div v-if="detailTab === 'gifts'" class="tab-panel active">
+      <div v-show="detailTab === 'gifts'" class="tab-panel active">
         <template v-if="detailData.gifts && detailData.gifts.length > 0">
           <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
@@ -210,7 +210,7 @@
         </div>
       </div>
       <!-- Anon query tab -->
-      <div v-if="detailTab === 'anon'" class="tab-panel active">
+      <div v-show="detailTab === 'anon'" class="tab-panel active">
         <div class="detail-section">
           <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>

@@ -312,8 +312,9 @@ function buildPrecomputed(d, sessionId, dedupedGifts) {
   const giftUserMap = {};
   for (const g of dedupedGifts) {
     const uid = g.user_sec_uid || g.nickname;
-    if (!giftUserMap[uid]) giftUserMap[uid] = { nickname: g.nickname, avatar_url: g.avatar_url, user_sec_uid: g.user_sec_uid, total_diamonds: 0, gift_count: 0 };
-    if (g.nickname && !g.nickname.startsWith('神秘人')) { giftUserMap[uid].nickname = g.nickname; if (g.avatar_url) giftUserMap[uid].avatar_url = g.avatar_url; }
+    const av = g.avatar_url || g.avatar || null;
+    if (!giftUserMap[uid]) giftUserMap[uid] = { nickname: g.nickname, avatar_url: av, user_sec_uid: g.user_sec_uid, total_diamonds: 0, gift_count: 0 };
+    if (g.nickname && !g.nickname.startsWith('神秘人')) { giftUserMap[uid].nickname = g.nickname; if (av) giftUserMap[uid].avatar_url = av; }
     giftUserMap[uid].total_diamonds += g.total_diamonds || 0;
     giftUserMap[uid].gift_count += g.repeat_count || 1;
   }
@@ -346,8 +347,9 @@ function buildPrecomputed(d, sessionId, dedupedGifts) {
   const giftDetailMap = {};
   for (const g of dedupedGifts) {
     const key = (g.user_sec_uid || g.nickname) + '\x00' + (g.gift_name || '') + '\x00' + (g.to_nickname || '');
-    if (!giftDetailMap[key]) giftDetailMap[key] = { nickname: g.nickname, user_sec_uid: g.user_sec_uid, gift_name: g.gift_name, to_nickname: g.to_nickname, total_diamonds: 0, count: 0, avatar_url: g.avatar_url, gift_icon: null, create_time: g.create_time || 0 };
-    if (g.nickname && !g.nickname.startsWith('神秘人')) { giftDetailMap[key].nickname = g.nickname; if (g.avatar_url) giftDetailMap[key].avatar_url = g.avatar_url; }
+    const av = g.avatar_url || g.avatar || null;
+    if (!giftDetailMap[key]) giftDetailMap[key] = { nickname: g.nickname, user_sec_uid: g.user_sec_uid, gift_name: g.gift_name, to_nickname: g.to_nickname, total_diamonds: 0, count: 0, avatar_url: av, gift_icon: null, create_time: g.create_time || 0 };
+    if (g.nickname && !g.nickname.startsWith('神秘人')) { giftDetailMap[key].nickname = g.nickname; if (av) giftDetailMap[key].avatar_url = av; }
     giftDetailMap[key].total_diamonds += g.total_diamonds || 0;
     giftDetailMap[key].count += g.repeat_count || 1;
     if ((g.create_time || 0) > giftDetailMap[key].create_time) giftDetailMap[key].create_time = g.create_time;

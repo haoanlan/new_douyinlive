@@ -166,7 +166,35 @@ async function init() {
   for (const sql of sqls) {
     d.exec(sql);
   }
+  // 添加 agg 聚合字段（兼容旧库）
+  const aggCols = ['agg_gifts', 'agg_diamonds', 'agg_danmaku', 'agg_users'];
+  for (const col of aggCols) {
+    try { d.exec(`ALTER TABLE sessions ADD COLUMN ${col} INTEGER DEFAULT NULL`); } catch (e) { /* 已存在 */ }
+  }
   console.log('[db] SQLite 表结构初始化完成');
+  // 回填已结束场次的聚合数据
+  try {
+    const { comboDedupGifts } = require('./lib/gift-utils.js');
+    const pending = d.prepare("SELECT id FROM sessions WHERE end_time IS NOT NULL AND (agg_gifts IS NULL OR agg_gifts = 0)").all();
+    if (pending.length > 0) {
+      console.log(`[db] 回填 ${pending.length} 个场次的聚合数据...`);
+      for (const { id: sid } of pending) {
+        const rawGifts = d.prepare('SELECT * FROM gifts WHERE session_id = ? ORDER BY id').all(sid);
+        const deduped = comboDedupGifts(rawGifts);
+        const agg_gifts = deduped.reduce((s, g) => s + (g.repeat_count || 1), 0);
+        const agg_diamonds = deduped.reduce((s, g) => s + (g.total_diamonds || 0), 0);
+        const dmRow = d.prepare('SELECT COUNT(*) as cnt FROM danmaku WHERE session_id = ?').get(sid);
+        const giftUsers = deduped.map(g => g.user_sec_uid).filter(Boolean);
+        const danmakuUsers = d.prepare('SELECT DISTINCT user_sec_uid FROM danmaku WHERE session_id = ? AND user_sec_uid IS NOT NULL').all(sid).map(r => r.user_sec_uid);
+        const agg_users = new Set([...giftUsers, ...danmakuUsers]).size;
+        d.prepare('UPDATE sessions SET agg_gifts=?, agg_diamonds=?, agg_danmaku=?, agg_users=? WHERE id=?')
+          .run(agg_gifts, agg_diamonds, dmRow.cnt, agg_users, sid);
+      }
+      console.log(`[db] 聚合数据回填完成`);
+    }
+  } catch (e) {
+    console.error('[db] 回填聚合数据失败:', e.message);
+  }
 }
 
 /** 获取/创建主播 */

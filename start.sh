@@ -1,7 +1,7 @@
 #!/bin/bash
 cd /opt/data/douyin-monitor
 # 先停旧进程
-node monitor.js stop 2>/dev/null
+pkill -f "node monitor.js --daemon" 2>/dev/null
 pkill -f "node web-dashboard.js" 2>/dev/null
 sleep 2
 # 用nohup启动

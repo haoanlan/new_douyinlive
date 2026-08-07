@@ -1,19 +1,18 @@
 /**
  * Combine composable — 合并场次查看逻辑
  */
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
 interface CombineSession {
   id: number
-  title: string
+  room_title: string | null
   streamer_name: string
-  streamer_id: string
-  started_at: number
-  ended_at: number | null
-  gift_count: number
-  total_diamonds: number
-  danmaku_count: number
-  user_count: number
+  streamer_id: number
+  start_time: string
+  end_time: string | null
+  agg_gifts: number | null
+  agg_diamonds: number | null
+  agg_danmaku: number | null
 }
 
 interface CombinedResult {
@@ -46,6 +45,12 @@ interface CombinedResult {
   }[]
 }
 
+interface StreamerGroup {
+  streamer_id: number
+  streamer_name: string
+  sessions: CombineSession[]
+}
+
 export function useCombine(api: (path: string) => Promise<any>, toast: (msg: string, type?: string) => void) {
   const allSessions = ref<CombineSession[]>([])
   const selectedIds = ref<Set<number>>(new Set())
@@ -53,15 +58,29 @@ export function useCombine(api: (path: string) => Promise<any>, toast: (msg: str
   const viewLoading = ref(false)
   const combinedResult = ref<CombinedResult | null>(null)
   const showCombineModal = ref(false)
+  const expandedStreamers = ref<Set<number>>(new Set())
+
+  // 按主播分组
+  const groupedSessions = computed<StreamerGroup[]>(() => {
+    const map = new Map<number, StreamerGroup>()
+    for (const s of allSessions.value) {
+      if (!map.has(s.streamer_id)) {
+        map.set(s.streamer_id, { streamer_id: s.streamer_id, streamer_name: s.streamer_name, sessions: [] })
+      }
+      map.get(s.streamer_id)!.sessions.push(s)
+    }
+    return Array.from(map.values()).sort((a, b) => a.streamer_name.localeCompare(b.streamer_name))
+  })
 
   async function loadCombineView() {
     selectedIds.value = new Set()
     combinedResult.value = null
+    expandedStreamers.value = new Set()
     viewLoading.value = true
     try {
       const streamers = await api('/api/streamers')
       const sessionArrays = await Promise.all(
-        streamers.map((s: { id: string; name: string }) =>
+        streamers.map((s: { id: number; name: string }) =>
           api(`/api/hosts/${s.id}/sessions`).then((sessions: any[]) =>
             sessions.map((sess: any) => ({
               ...sess,
@@ -71,14 +90,7 @@ export function useCombine(api: (path: string) => Promise<any>, toast: (msg: str
           )
         )
       )
-      // flatten and sort by started_at descending
-      const flat = sessionArrays.flat()
-      flat.sort((a: CombineSession, b: CombineSession) => {
-        const ta = typeof a.started_at === 'number' ? a.started_at : new Date(a.started_at).getTime() / 1000
-        const tb = typeof b.started_at === 'number' ? b.started_at : new Date(b.started_at).getTime() / 1000
-        return tb - ta
-      })
-      allSessions.value = flat
+      allSessions.value = sessionArrays.flat()
     } catch (e: any) {
       toast('加载场次列表失败: ' + e.message, 'error')
       allSessions.value = []
@@ -93,12 +105,32 @@ export function useCombine(api: (path: string) => Promise<any>, toast: (msg: str
     selectedIds.value = s
   }
 
-  function toggleSelectAll() {
-    if (selectedIds.value.size === allSessions.value.length) {
-      selectedIds.value = new Set()
-    } else {
-      selectedIds.value = new Set(allSessions.value.map(s => s.id))
+  function toggleStreamer(streamerId: number) {
+    const s = new Set(expandedStreamers.value)
+    if (s.has(streamerId)) s.delete(streamerId)
+    else s.add(streamerId)
+    expandedStreamers.value = s
+  }
+
+  function toggleStreamerSessions(streamerId: number) {
+    const group = groupedSessions.value.find(g => g.streamer_id === streamerId)
+    if (!group) return
+    const allSelected = group.sessions.every(s => selectedIds.value.has(s.id))
+    const s = new Set(selectedIds.value)
+    for (const sess of group.sessions) {
+      if (allSelected) s.delete(sess.id)
+      else s.add(sess.id)
     }
+    selectedIds.value = s
+  }
+
+  function selectRecent(n: number) {
+    const sorted = [...allSessions.value].sort((a, b) => {
+      const ta = new Date(a.start_time).getTime()
+      const tb = new Date(b.start_time).getTime()
+      return tb - ta
+    })
+    selectedIds.value = new Set(sorted.slice(0, n).map(s => s.id))
   }
 
   async function mergeSessions() {
@@ -124,8 +156,8 @@ export function useCombine(api: (path: string) => Promise<any>, toast: (msg: str
 
   return {
     allSessions, selectedIds, combineLoading, viewLoading,
-    combinedResult, showCombineModal,
-    loadCombineView, toggleSelect, toggleSelectAll,
-    mergeSessions, closeCombineModal,
+    combinedResult, showCombineModal, groupedSessions, expandedStreamers,
+    loadCombineView, toggleSelect, toggleStreamer, toggleStreamerSessions,
+    selectRecent, mergeSessions, closeCombineModal,
   }
 }

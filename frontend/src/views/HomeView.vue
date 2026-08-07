@@ -172,38 +172,50 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
             合并查看
           </div>
-          <button v-if="combineSelectedIds.size >= 2" class="btn btn-ghost btn-sm" @click="mergeSessions" :disabled="combineLoading" style="border-color:var(--accent);color:var(--accent)">
-            {{ combineLoading ? '合并中...' : '合并查看 (' + combineSelectedIds.size + ')' }}
-          </button>
-        </div>
-        <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">选择多个场次，合并查看礼物、弹幕等数据汇总</div>
-        <div v-if="combineViewLoading" class="loading" style="min-height:auto;padding:30px">加载场次列表...</div>
-        <div v-else-if="combineSessions.length > 0">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-            <span style="font-size:12px;color:var(--text-muted)">共 <strong style="color:var(--text)">{{ combineSessions.length }}</strong> 个场次</span>
-            <button class="btn btn-ghost btn-sm" @click="combineToggleSelectAll" style="border-color:var(--border-light);font-size:11px">
-              {{ combineSelectedIds.size === combineSessions.length ? '取消全选' : '全选' }}
+          <div style="display:flex;gap:6px;align-items:center">
+            <button class="btn btn-ghost btn-sm" @click="combineSelectRecent(3)" style="border-color:var(--border-light);font-size:11px">最近3场</button>
+            <button class="btn btn-ghost btn-sm" @click="combineSelectRecent(5)" style="border-color:var(--border-light);font-size:11px">最近5场</button>
+            <button v-if="combineSelectedIds.size >= 2" class="btn btn-ghost btn-sm" @click="mergeSessions" :disabled="combineLoading" style="border-color:var(--accent);color:var(--accent)">
+              {{ combineLoading ? '合并中...' : '查看合并 (' + combineSelectedIds.size + ')' }}
             </button>
           </div>
-          <div style="display:flex;flex-direction:column;gap:4px;max-height:60vh;overflow-y:auto">
-            <div v-for="s in combineSessions" :key="s.id"
-                 class="lookup-card"
-                 :style="combineSelectedIds.has(s.id) ? 'border-color:var(--accent);background:var(--accent-bg)' : ''"
-                 @click="combineToggleSelect(s.id)">
-              <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
-                <input type="checkbox" :checked="combineSelectedIds.has(s.id)" @click.stop="combineToggleSelect(s.id)" style="accent-color:var(--accent);width:14px;height:14px;flex-shrink:0">
-                <div style="flex:1;min-width:0">
-                  <div style="font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ s.title || '场次 #' + s.id }}</div>
-                  <div style="font-size:11px;color:var(--text-muted);margin-top:2px">
-                    <span>{{ s.streamer_name }}</span>
-                    <span style="margin:0 4px">·</span>
-                    <span>{{ fmtTime(s.started_at) }}</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">按主播分组选择场次，合并查看数据汇总</div>
+        <div v-if="combineViewLoading" class="loading" style="min-height:auto;padding:30px">加载场次列表...</div>
+        <div v-else-if="combineGrouped.length > 0">
+          <div v-for="group in combineGrouped" :key="group.streamer_id" style="margin-bottom:8px">
+            <!-- 主播标题行 -->
+            <div class="lookup-card" style="cursor:pointer;padding:10px 12px" @click="combineToggleStreamer(group.streamer_id)">
+              <div style="display:flex;align-items:center;gap:8px;flex:1">
+                <svg viewBox="0 0 24 24" width="14" height="14" style="fill:none;stroke:var(--text-muted);stroke-width:2;transition:transform .2s;flex-shrink:0" :style="combineExpanded.has(group.streamer_id) ? 'transform:rotate(90deg)' : ''"><polyline points="9 18 15 12 9 6"/></svg>
+                <span style="font-size:13px;font-weight:600;color:var(--text)">{{ group.streamer_name }}</span>
+                <span style="font-size:11px;color:var(--text-muted)">({{ group.sessions.length }}场)</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:11px;color:var(--text-muted)">{{ combineStreamerSelectedCount(group.streamer_id) }}/{{ group.sessions.length }}</span>
+                <button class="btn btn-ghost btn-sm" @click.stop="combineToggleStreamerSessions(group.streamer_id)" style="font-size:10px;padding:2px 6px;border-color:var(--border-light)">
+                  {{ combineStreamerSelectedCount(group.streamer_id) === group.sessions.length ? '取消' : '全选' }}
+                </button>
+              </div>
+            </div>
+            <!-- 该主播的场次列表 -->
+            <div v-show="combineExpanded.has(group.streamer_id)" style="padding-left:20px">
+              <div v-for="s in group.sessions" :key="s.id"
+                   class="lookup-card"
+                   :style="combineSelectedIds.has(s.id) ? 'border-color:var(--accent);background:var(--accent-bg)' : ''"
+                   @click="combineToggleSelect(s.id)" style="margin:4px 0">
+                <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">
+                  <input type="checkbox" :checked="combineSelectedIds.has(s.id)" @click.stop="combineToggleSelect(s.id)" style="accent-color:var(--accent);width:14px;height:14px;flex-shrink:0">
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ s.room_title || '场次 #' + s.id }}</div>
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:1px">{{ fmtTime(s.start_time) }}</div>
                   </div>
                 </div>
-              </div>
-              <div style="font-size:11px;color:var(--text-muted);flex-shrink:0;display:flex;align-items:center;gap:6px">
-                <span style="display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" width="10" height="10" style="fill:var(--orange);margin-right:2px"><path d="M6 2h12l4 7-10 13L2 9z"/></svg>{{ s.total_diamonds.toLocaleString() }}</span>
-                <span>弹幕 {{ s.danmaku_count }}</span>
+                <div style="font-size:11px;color:var(--text-muted);flex-shrink:0;display:flex;align-items:center;gap:8px">
+                  <span v-if="s.end_time" style="color:var(--text-muted)">已结束</span>
+                  <span v-else style="color:var(--green)">直播中</span>
+                  <span style="font-family:var(--font-mono)">{{ (s.agg_diamonds || 0).toLocaleString() }}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -537,10 +549,19 @@ const {
   allSessions: combineSessions, selectedIds: combineSelectedIds,
   combineLoading, viewLoading: combineViewLoading,
   combinedResult: combineResult, showCombineModal,
+  groupedSessions: combineGrouped, expandedStreamers: combineExpanded,
   loadCombineView, toggleSelect: combineToggleSelect,
-  toggleSelectAll: combineToggleSelectAll,
+  toggleStreamer: combineToggleStreamer,
+  toggleStreamerSessions: combineToggleStreamerSessions,
+  selectRecent: combineSelectRecent,
   mergeSessions, closeCombineModal,
 } = useCombine(api, toast)
+
+function combineStreamerSelectedCount(streamerId: number) {
+  const group = combineGrouped.value.find((g: any) => g.streamer_id === streamerId)
+  if (!group) return 0
+  return group.sessions.filter((s: any) => combineSelectedIds.value.has(s.id)).length
+}
 
 // ============================================================
 // ANON DETAIL MODAL

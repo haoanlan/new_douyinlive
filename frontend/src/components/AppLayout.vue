@@ -31,9 +31,9 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         匿名查询
       </button>
-      <button class="top-nav-btn" :class="{ active: topNavTab === 'profile' }" @click="switchTopNav('profile')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        用户画像
+      <button class="top-nav-btn" :class="{ active: topNavTab === 'combine' }" @click="switchTopNav('combine')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        合并查看
       </button>
     </div>
 
@@ -95,7 +95,7 @@ function goBack() {
 }
 
 // Top nav tab switching — top nav 仅在 hosts 层级显示（showTopNav 控制）
-function switchTopNav(tab: 'rooms' | 'search' | 'profile') {
+function switchTopNav(tab: 'rooms' | 'search' | 'combine') {
   if (topNavTab.value === tab) return
   topNavTab.value = tab
 }

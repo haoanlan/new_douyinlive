@@ -10,7 +10,7 @@ export const useAppStore = defineStore('app', () => {
   // ===================== View State =====================
   const contentLoading = ref(true)
   const contentFadeIn = ref(false)
-  const topNavTab = ref<'rooms' | 'search' | 'profile'>('rooms')
+  const topNavTab = ref<'rooms' | 'search' | 'combine'>('rooms')
   const viewLevel = ref<'hosts' | 'sessions' | 'detail'>('hosts')
 
   // ===================== Navigation =====================

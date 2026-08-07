@@ -164,37 +164,51 @@
         </div>
       </div>
     </template>
-    <!-- Profile view -->
-    <template v-else-if="topNavTab === 'profile'">
+    <!-- Combine view -->
+    <template v-else-if="topNavTab === 'combine'">
       <div class="section">
         <div class="section-header">
           <div class="section-title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            用户画像
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+            合并查看
           </div>
+          <button v-if="combineSelectedIds.size >= 2" class="btn btn-ghost btn-sm" @click="mergeSessions" :disabled="combineLoading" style="border-color:var(--accent);color:var(--accent)">
+            {{ combineLoading ? '合并中...' : '合并查看 (' + combineSelectedIds.size + ')' }}
+          </button>
         </div>
-        <div style="display:flex;gap:8px;margin-bottom:16px">
-          <input v-model="profileInput" placeholder="输入用户昵称搜索..." style="flex:1;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:13px;outline:none" @keydown.enter="searchProfileUser">
-          <button class="btn btn-ghost btn-sm" @click="searchProfileUser" style="border-color:var(--border-light)">查询</button>
-        </div>
-        <div id="profileUserList">
-          <div v-if="profileLoading" class="loading" style="min-height:auto;padding:30px">搜索中...</div>
-          <div v-else-if="profileUsers.length > 0">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-              <span style="font-size:12px;color:var(--text-muted)">找到 <strong style="color:var(--text)">{{ profileUsers.length }}</strong> 个用户</span>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:6px">
-              <div v-for="u in profileUsers" :key="u.user_sec_uid" class="lookup-card" @click="showUserProfile(u.user_sec_uid)">
-                <div class="user-cell">
-                  <div class="avatar" v-html="avatarHtml(u.avatar, u.nickname)"></div>
-                  <span>{{ u.nickname }}</span>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">选择多个场次，合并查看礼物、弹幕等数据汇总</div>
+        <div v-if="combineViewLoading" class="loading" style="min-height:auto;padding:30px">加载场次列表...</div>
+        <div v-else-if="combineSessions.length > 0">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <span style="font-size:12px;color:var(--text-muted)">共 <strong style="color:var(--text)">{{ combineSessions.length }}</strong> 个场次</span>
+            <button class="btn btn-ghost btn-sm" @click="combineToggleSelectAll" style="border-color:var(--border-light);font-size:11px">
+              {{ combineSelectedIds.size === combineSessions.length ? '取消全选' : '全选' }}
+            </button>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;max-height:60vh;overflow-y:auto">
+            <div v-for="s in combineSessions" :key="s.id"
+                 class="lookup-card"
+                 :style="combineSelectedIds.has(s.id) ? 'border-color:var(--accent);background:var(--accent-bg)' : ''"
+                 @click="combineToggleSelect(s.id)">
+              <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
+                <input type="checkbox" :checked="combineSelectedIds.has(s.id)" @click.stop="combineToggleSelect(s.id)" style="accent-color:var(--accent);width:14px;height:14px;flex-shrink:0">
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ s.title || '场次 #' + s.id }}</div>
+                  <div style="font-size:11px;color:var(--text-muted);margin-top:2px">
+                    <span>{{ s.streamer_name }}</span>
+                    <span style="margin:0 4px">·</span>
+                    <span>{{ fmtTime(s.started_at) }}</span>
+                  </div>
                 </div>
-                <div style="font-size:11px;color:var(--accent);flex-shrink:0">查看画像 →</div>
+              </div>
+              <div style="font-size:11px;color:var(--text-muted);flex-shrink:0;display:flex;align-items:center;gap:6px">
+                <span style="display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" width="10" height="10" style="fill:var(--orange);margin-right:2px"><path d="M6 2h12l4 7-10 13L2 9z"/></svg>{{ s.total_diamonds.toLocaleString() }}</span>
+                <span>弹幕 {{ s.danmaku_count }}</span>
               </div>
             </div>
           </div>
-          <div v-else-if="profileSearched && profileUsers.length === 0" class="empty" style="padding:20px">未找到用户</div>
         </div>
+        <div v-else class="empty" style="padding:30px">暂无场次数据</div>
       </div>
     </template>
   </div>
@@ -212,16 +226,78 @@
     </div>
   </div>
 
-  <!-- USER PROFILE MODAL -->
-  <div id="profileModal" class="anchor-modal-overlay" :class="{ show: profileModalVisible }" @click.self="closeProfileModal">
-    <div class="anchor-modal">
+  <!-- COMBINE MODAL -->
+  <div id="combineModal" class="anchor-modal-overlay" :class="{ show: showCombineModal }" @click.self="closeCombineModal">
+    <div class="anchor-modal" style="width:min(90vw,600px)">
       <div class="anchor-modal-header">
-        <h3 id="profileModalTitle">{{ profileModalTitle }}</h3>
-        <button class="anchor-modal-close" @click="closeProfileModal">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        <h3>合并查看结果</h3>
+        <button class="anchor-modal-close" @click="closeCombineModal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
         </button>
       </div>
-      <div class="anchor-modal-body" id="profileModalBody" v-html="profileModalBody"></div>
+      <div class="anchor-modal-body" v-if="combineResult">
+        <!-- Summary Stats -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">
+          <div style="text-align:center;padding:12px 8px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius)">
+            <div style="font-size:18px;font-weight:700;color:var(--orange)">{{ combineResult.summary.total_diamonds.toLocaleString() }}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px">总钻石</div>
+          </div>
+          <div style="text-align:center;padding:12px 8px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius)">
+            <div style="font-size:18px;font-weight:700;color:var(--text)">{{ combineResult.summary.total_gifts.toLocaleString() }}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px">总礼物</div>
+          </div>
+          <div style="text-align:center;padding:12px 8px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius)">
+            <div style="font-size:18px;font-weight:700;color:var(--accent)">{{ combineResult.summary.total_danmaku.toLocaleString() }}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px">总弹幕</div>
+          </div>
+          <div style="text-align:center;padding:12px 8px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius)">
+            <div style="font-size:18px;font-weight:700;color:var(--green)">{{ combineResult.summary.user_count.toLocaleString() }}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px">独立用户</div>
+          </div>
+        </div>
+        <!-- Gift Ranking -->
+        <div v-if="combineResult.gifts && combineResult.gifts.length" style="margin-bottom:16px">
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px">🎁 礼物排行 (Top 20)</div>
+          <div style="display:flex;flex-direction:column;gap:3px;max-height:300px;overflow-y:auto">
+            <div v-for="(g, i) in combineResult.gifts.slice(0, 20)" :key="i" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm)">
+              <span style="font-size:12px;font-weight:700;width:22px;text-align:center;color:var(--text-muted);font-variant-numeric:tabular-nums">{{ String(i + 1).padStart(2, '0') }}</span>
+              <div class="avatar" v-html="avatarHtml(g.avatar_url, g.nickname)" style="width:28px;height:28px;flex-shrink:0"></div>
+              <span style="font-size:12px;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ g.nickname }}</span>
+              <span style="font-size:11px;color:var(--text-muted);flex-shrink:0">{{ g.gift_count }} 次</span>
+              <span style="font-size:12px;color:var(--orange);font-weight:600;flex-shrink:0;display:inline-flex;align-items:center">
+                <svg viewBox="0 0 24 24" width="11" height="11" style="margin-right:2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/></svg>{{ g.total_diamonds.toLocaleString() }}
+              </span>
+            </div>
+          </div>
+        </div>
+        <!-- Anchor Ranking -->
+        <div v-if="combineResult.anchorRanking && combineResult.anchorRanking.length" style="margin-bottom:16px">
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px">🏆 主播排行</div>
+          <div style="display:flex;flex-direction:column;gap:3px">
+            <div v-for="(a, i) in combineResult.anchorRanking" :key="i" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm)">
+              <span style="font-size:12px;font-weight:700;width:22px;text-align:center;color:var(--text-muted);font-variant-numeric:tabular-nums">{{ String(i + 1).padStart(2, '0') }}</span>
+              <div class="avatar" v-html="avatarHtml(a.anchor_avatar, a.anchor_name)" style="width:28px;height:28px;flex-shrink:0"></div>
+              <span style="font-size:12px;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ a.anchor_name }}</span>
+              <span style="font-size:11px;color:var(--text-muted);flex-shrink:0">{{ a.user_count }} 用户</span>
+              <span style="font-size:12px;color:var(--orange);font-weight:600;flex-shrink:0;display:inline-flex;align-items:center">
+                <svg viewBox="0 0 24 24" width="11" height="11" style="margin-right:2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/></svg>{{ a.total_diamonds.toLocaleString() }}
+              </span>
+            </div>
+          </div>
+        </div>
+        <!-- Danmaku Ranking -->
+        <div v-if="combineResult.danmakuRanking && combineResult.danmakuRanking.length">
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px">💬 弹幕排行 (Top 20)</div>
+          <div style="display:flex;flex-direction:column;gap:3px;max-height:300px;overflow-y:auto">
+            <div v-for="(d, i) in combineResult.danmakuRanking.slice(0, 20)" :key="i" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm)">
+              <span style="font-size:12px;font-weight:700;width:22px;text-align:center;color:var(--text-muted);font-variant-numeric:tabular-nums">{{ String(i + 1).padStart(2, '0') }}</span>
+              <div class="avatar" v-html="avatarHtml(d.avatar, d.nickname)" style="width:28px;height:28px;flex-shrink:0"></div>
+              <span style="font-size:12px;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ d.nickname }}</span>
+              <span style="font-size:12px;color:var(--accent);font-weight:600;flex-shrink:0">{{ d.msg_count }} 条</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -233,12 +309,12 @@ import { storeToRefs } from 'pinia'
 import { useAppStore } from '../stores/app'
 import { lookupRoom, addRoom, pauseRoom, resumeRoom, removeRoom, fetchRooms, fetchSummary, fetchUser, api } from '../api'
 import type { Room } from '../api'
-import { esc, fmtTime, fmtSessionTime, avatarHtml, avatarHtml52, giftEmoji } from '../utils/format'
+import { esc, fmtTime, fmtSessionTime, avatarHtml, avatarHtml52 } from '../utils/format'
 import { replaceDouyinEmoji } from '../utils/douyin-emoji'
 import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
 import { useSearch } from '../composables/useSearch'
-import { useProfile } from '../composables/useProfile'
+import { useCombine } from '../composables/useCombine'
 
 // ============================================================
 // TYPES (Room imported from API layer, only UI-specific types here)
@@ -455,12 +531,16 @@ const {
 } = useSearch(api, toast)
 
 // ============================================================
-// PROFILE VIEW (from composable)
+// COMBINE VIEW (from composable)
 // ============================================================
 const {
-  profileInput, profileUsers, profileLoading, profileSearched,
-  loadProfileView, searchProfileUser
-} = useProfile(api, toast)
+  allSessions: combineSessions, selectedIds: combineSelectedIds,
+  combineLoading, viewLoading: combineViewLoading,
+  combinedResult: combineResult, showCombineModal,
+  loadCombineView, toggleSelect: combineToggleSelect,
+  toggleSelectAll: combineToggleSelectAll,
+  mergeSessions, closeCombineModal,
+} = useCombine(api, toast)
 
 // ============================================================
 // ANON DETAIL MODAL
@@ -523,101 +603,7 @@ async function showAnonymousDetail(idx: number) {
   }).catch(() => {})
 }
 
-// ============================================================
-// PROFILE MODAL
-// ============================================================
-const profileModalVisible = ref(false)
-const profileModalTitle = ref('用户画像')
-const profileModalBody = ref('')
 
-function closeProfileModal() { profileModalVisible.value = false }
-
-async function showUserProfile(secUid: string) {
-  profileModalVisible.value = true
-  const found = profileUsers.value.find(u => u.user_sec_uid === secUid)
-  const avatarUrl = found?.avatar || ''
-  const nickname = found?.nickname || '用户画像'
-  profileModalTitle.value = nickname
-  let preHtml = `<div style="display:flex;align-items:center;gap:14px;padding:16px 0;border-bottom:1px solid var(--border);margin-bottom:14px">`
-  preHtml += avatarHtml52(avatarUrl, nickname)
-  preHtml += `<div><div style="font-size:16px;font-weight:600;color:var(--text)">${esc(nickname)}</div></div></div><div class="loading">加载画像...</div>`
-  profileModalBody.value = preHtml
-  try {
-    const p = await fetchUser(secUid) as any
-    profileModalTitle.value = p.nickname || '用户画像'
-    let html = ''
-    html += `<div style="display:flex;align-items:center;gap:14px;padding:16px 0;border-bottom:1px solid var(--border);margin-bottom:14px">`
-    html += avatarHtml52(p.avatar, p.nickname)
-    html += `<div><div style="font-size:16px;font-weight:600;color:var(--text)">${esc(p.nickname)}</div><div style="font-size:12px;color:var(--text-muted);margin-top:2px">活跃 ${p.activeSessionCount} 场 · 最爱 ${esc(p.favoriteStreamer)}</div></div></div>`
-    html += `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">`
-    html += `<div class="profile-stat"><div class="profile-stat-val orange" style="display:inline-flex;align-items:center">${(p.totalDiamonds || 0).toLocaleString()}<svg viewBox="0 0 24 24" width="14" height="14" style="margin-left:2px;fill:currentColor;opacity:0.6"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg></div><div class="profile-stat-label">总钻石</div></div>`
-    html += `<div class="profile-stat"><div class="profile-stat-val">${p.totalGifts || 0}</div><div class="profile-stat-label">礼物数</div></div>`
-    html += `<div class="profile-stat"><div class="profile-stat-val">${p.danmakuCount || 0}</div><div class="profile-stat-label">弹幕</div></div>`
-    html += `</div>`
-    if (p.activeSessions?.length) {
-      html += `<div class="profile-section-title" style="margin-bottom:8px">活跃场次 (${p.activeSessions.length})</div><div style="display:flex;flex-direction:column;gap:4px">`
-      p.activeSessions.slice(0, 5).forEach((s: any) => {
-        const d = s.session_diamonds || 0
-        html += `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm)"><span style="font-size:12px;color:var(--text-muted);width:72px;flex-shrink:0;font-variant-numeric:tabular-nums">${fmtSessionTime(s.start_time)}</span><span style="font-size:12px;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.streamer_name || '未知')}</span><span style="font-size:12px;color:${d > 0 ? 'var(--orange)' : 'var(--text-muted)'};flex-shrink:0;font-weight:600;font-variant-numeric:tabular-nums;display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" width="12" height="12" style="margin-left:2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg>${d.toLocaleString()}</span></div>`
-      })
-      if (p.activeSessions.length > 5) html += `<div style="text-align:center;font-size:11px;color:var(--text-muted);padding:4px">还有 ${p.activeSessions.length - 5} 场</div>`
-      html += `</div>`
-    }
-    if (p.hourStats?.length) {
-      html += `<div class="profile-section-title" style="margin-top:14px">活跃时段</div><div class="hour-chart">`
-      const hourArr = Array(24).fill(0)
-      p.hourStats.forEach((h: any) => { hourArr[parseInt(h.hour)] = h.count })
-      const fullMax = Math.max(...hourArr, 1)
-      hourArr.forEach((cnt: number, hr: number) => {
-        const pct = (cnt / fullMax * 100)
-        html += `<div class="hour-bar" style="height:${Math.max(pct, 3)}%;opacity:${cnt ? 0.7 : 0.15}" title="${hr}时: ${cnt}次"></div>`
-      })
-      html += `</div><div class="hour-labels"><span>0</span><span>6</span><span>12</span><span>18</span><span>23</span></div>`
-    }
-    if (p.giftStyle || p.topStreamers?.length) {
-      html += `<div class="profile-section-title" style="margin-top:14px">送礼画像</div><div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">`
-      html += `<div style="padding:6px 12px;background:rgba(251,146,60,0.12);border-radius:var(--radius-sm);font-size:12px;color:var(--orange);display:inline-flex;align-items:center">${esc(p.giftStyle || '-')}</div>`
-      html += `<div style="padding:6px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;color:var(--text-muted);display:inline-flex;align-items:center;gap:4px">场均 <span style="color:var(--text);font-weight:600;font-variant-numeric:tabular-nums;display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" width="12" height="12" style="margin-right:2px;fill:var(--orange)"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg>${(p.avgPerSession || 0).toLocaleString()}</span></div>`
-      html += `<div style="padding:6px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;color:var(--text-muted);display:inline-flex;align-items:center;gap:4px">巅峰时段 <span style="color:var(--text);font-weight:600">${esc(p.peakHour || '-')}</span></div>`
-      html += `</div>`
-      if (p.topStreamers?.length) {
-        html += `<div style="font-size:11px;color:var(--text-secondary);margin-bottom:6px">最爱送礼主播</div><div style="display:flex;flex-direction:column;gap:3px;margin-bottom:10px">`
-        p.topStreamers.slice(0, 3).forEach((s: any, i: number) => {
-          html += `<div style="display:flex;align-items:center;gap:6px;padding:5px 8px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px"><span style="color:var(--orange);font-weight:700;width:16px;text-align:center;font-variant-numeric:tabular-nums">${String(i + 1).padStart(2, '0')}</span><span style="color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.name)}</span><span style="color:var(--orange);font-weight:600;font-variant-numeric:tabular-nums"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:-2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg>${s.diamonds.toLocaleString()}</span></div>`
-        })
-        html += `</div>`
-      }
-      if (p.topGiftsByCount?.length) {
-        html += `<div style="font-size:11px;color:var(--text-secondary);margin-bottom:6px">最常送礼物</div><div style="display:flex;flex-direction:column;gap:3px">`
-        p.topGiftsByCount.slice(0, 3).forEach((g: any, i: number) => {
-          html += `<div style="display:flex;align-items:center;gap:6px;padding:5px 8px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px"><span style="color:var(--orange);font-weight:700;width:16px;text-align:center;font-variant-numeric:tabular-nums">${String(i + 1).padStart(2, '0')}</span><span style="font-size:14px">${g.icon_url ? `<img src="${esc(g.icon_url)}" style="width:20px;height:20px;vertical-align:-4px" onerror="this.style.display='none'">` : giftEmoji(g.gift_name)}</span><span style="color:var(--text);flex:1">${esc(g.gift_name)}</span><span style="color:var(--text-muted)">×${g.count}</span><span style="color:var(--orange);font-weight:600;font-variant-numeric:tabular-nums"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:-2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg>${g.total_diamonds.toLocaleString()}</span></div>`
-        })
-        html += `</div>`
-      }
-    }
-    if (p.danmakuSamples?.length || p.danmakuStyle) {
-      html += `<div class="profile-section-title" style="margin-top:14px">弹幕风格</div>`
-      if (p.danmakuStyle) {
-        html += `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">`
-        p.danmakuStyle.split('·').forEach((t: string) => {
-          html += `<div style="padding:4px 10px;background:rgba(108,140,255,0.12);border-radius:var(--radius-sm);font-size:11px;color:var(--accent)">${esc(t)}</div>`
-        })
-        html += `<div style="padding:4px 10px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:11px;color:var(--text-muted)">共 ${p.danmakuCount || 0} 条弹幕</div></div>`
-      }
-      if (p.danmakuSamples?.length) {
-        html += '<div style="display:flex;flex-direction:column;gap:3px">'
-        p.danmakuSamples.forEach((d: any) => {
-          let content = d.content || ''
-          if (content.length > 60) content = content.slice(0, 60) + '…'
-          const ts = fmtTime(d.create_time)
-          html += `<div style="padding:5px 8px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;display:flex;gap:8px;align-items:flex-start"><span style="color:var(--text);flex:1;line-height:1.4">${esc(content)}</span><span style="color:var(--text-muted);font-size:10px;flex-shrink:0;white-space:nowrap">${ts}</span></div>`
-        })
-        html += '</div>'
-      }
-    }
-    profileModalBody.value = html
-  } catch (e: any) { profileModalBody.value = `<div class="empty" style="padding:20px">加载失败: ${esc(e.message)}</div>` }
-}
 
 // ============================================================
 // GLOBAL EVENT LISTENERS
@@ -634,7 +620,7 @@ function handleDocClick(e: MouseEvent) {
 watch(topNavTab, (tab) => {
   if (tab === 'rooms') loadRoomsView()
   else if (tab === 'search') loadSearchView()
-  else if (tab === 'profile') loadProfileView()
+  else if (tab === 'combine') loadCombineView()
 })
 
 // ============================================================

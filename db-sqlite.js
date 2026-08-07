@@ -293,7 +293,7 @@ async function endSession(sessionId, durationSeconds, filePath) {
     d.prepare('UPDATE sessions SET agg_gifts=?, agg_diamonds=?, agg_danmaku=?, agg_users=? WHERE id=?')
       .run(agg_gifts, agg_diamonds, dmRow.cnt, agg_users, sessionId);
     // 写入预聚合表
-    buildPrecomputed(d, sessionId, deduped);
+    await buildPrecomputed(d, sessionId, deduped);
   } catch (e) {
     console.error(`[endSession] 聚合计算失败:`, e.message);
   }
@@ -301,7 +301,7 @@ async function endSession(sessionId, durationSeconds, filePath) {
 
 
 /** 构建预聚合数据并写入表 */
-function buildPrecomputed(d, sessionId, dedupedGifts) {
+async function buildPrecomputed(d, sessionId, dedupedGifts) {
   d.prepare('DELETE FROM session_gift_ranking WHERE session_id = ?').run(sessionId);
   d.prepare('DELETE FROM session_anchor_ranking WHERE session_id = ?').run(sessionId);
   d.prepare('DELETE FROM session_danmaku_ranking WHERE session_id = ?').run(sessionId);
@@ -333,6 +333,22 @@ function buildPrecomputed(d, sessionId, dedupedGifts) {
     if (g.nickname) anchorMap[key].users.add(g.nickname);
     if (g.to_nickname && !anchorMap[key].anchor_name) anchorMap[key].anchor_name = g.to_nickname;
   }
+  // 补全缺失的主播头像
+  try {
+    const { fetchUserBySecUid } = require('../../douyin-user');
+    const missing = Object.values(anchorMap).filter(a => !a.anchor_avatar && a.anchor_sec_uid);
+    if (missing.length > 0) {
+      await Promise.all(missing.map(async a => {
+        try {
+          const info = await fetchUserBySecUid(a.anchor_sec_uid);
+          if (info && info.avatar) {
+            a.anchor_avatar = info.avatar;
+            d.prepare('UPDATE gifts SET to_avatar = ? WHERE session_id = ? AND to_user_sec_uid = ? AND to_avatar IS NULL').run(info.avatar, sessionId, a.anchor_sec_uid);
+          }
+        } catch (e) {}
+      }));
+    }
+  } catch (e) {}
   const insAR = d.prepare('INSERT INTO session_anchor_ranking (session_id, anchor_sec_uid, anchor_name, anchor_avatar, total_diamonds, gift_count, user_count) VALUES (?,?,?,?,?,?,?)');
   for (const a of Object.values(anchorMap)) {
     insAR.run(sessionId, a.anchor_sec_uid, a.anchor_name, a.anchor_avatar, a.total_diamonds, a.gift_count, a.users.size);

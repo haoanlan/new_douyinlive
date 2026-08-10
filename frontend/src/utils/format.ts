@@ -64,9 +64,10 @@ function escAttr(s: string | null | undefined): string {
 export function avatarHtml(url: string, name: string, size?: number): string {
   const s = size ? `width:${size}px;height:${size}px` : ''
   const safeName = escAttr(name?.[0] || '?')
+  const textStyle = 'display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:13px;color:var(--text-muted)'
   if (url) {
     const safeUrl = escAttr(url)
-    return `<div class="avatar" style="${s}"><img src="${safeUrl}" alt="" loading="eager" style="opacity:0;transition:opacity 0.2s" onload="this.style.opacity=1" onerror="this.style.opacity=0;this.parentElement.textContent='${safeName}'"></div>`
+    return `<div class="avatar" style="position:relative;${s}"><span style="${textStyle}">${safeName}</span><img src="${safeUrl}" alt="" loading="eager" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;border-radius:50%;opacity:0;transition:opacity 0.2s" onload="this.style.opacity=1" onerror="this.style.display='none'"></div>`
   }
   return `<div class="avatar" style="${s};display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--text-muted)">${safeName}</div>`
 }

@@ -76,7 +76,7 @@
               <div class="gift-rank-card-top">
                 <span class="gift-rank-num">{{ String(idx + 1).padStart(2, '0') }}</span>
                 <div class="user-cell">
-                  <AvatarFallback :src="g.avatar_url" :name="g.nickname" size="32" />
+                  <div class="avatar" v-html="avatarHtml(g.avatar_url, g.nickname)"></div>
                   <span>{{ g.nickname }}</span>
                 </div>
                 <div class="diamonds"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:-2px;margin-right:2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg> {{ g.total_diamonds.toLocaleString() }}</div>

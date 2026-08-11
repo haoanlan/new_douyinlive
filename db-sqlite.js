@@ -319,6 +319,13 @@ async function buildPrecomputed(d, sessionId, dedupedGifts) {
     giftUserMap[uid].gift_count += g.repeat_count || 1;
   }
   const giftRanking = Object.values(giftUserMap).sort((a, b) => b.total_diamonds - a.total_diamonds).slice(0, 20);
+  // 补全缺失的头像：从 gifts 表按 uid/nickname 查
+  try {
+    const avRows = d.prepare('SELECT DISTINCT user_sec_uid, nickname, avatar FROM gifts WHERE session_id = ? AND avatar IS NOT NULL').all(sessionId);
+    const uidAvMap = {}, nickAvMap = {};
+    for (const r of avRows) { if (r.user_sec_uid) uidAvMap[r.user_sec_uid] = r.avatar; nickAvMap[r.nickname] = r.avatar; }
+    for (const g of giftRanking) { if (!g.avatar_url) g.avatar_url = uidAvMap[g.user_sec_uid] || nickAvMap[g.nickname] || null; }
+  } catch (e) {}
   const insGR = d.prepare('INSERT INTO session_gift_ranking (session_id, rank, nickname, avatar_url, user_sec_uid, total_diamonds, gift_count) VALUES (?,?,?,?,?,?,?)');
   giftRanking.forEach((g, i) => insGR.run(sessionId, i + 1, g.nickname, g.avatar_url, g.user_sec_uid, g.total_diamonds, g.gift_count));
 

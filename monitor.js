@@ -1026,6 +1026,12 @@ function startConnection(roomId, config) {
     rooms.set(roomId, room);
   }
 
+  // 房间无效（ROOM_NOT_FOUND），不连接
+  if (room.invalid) {
+    console.log(`[${roomId}] 房间无效，跳过连接`);
+    return;
+  }
+
   const wsUrl = `ws://127.0.0.1:1088/ws/${roomId}`;
   console.log(`[${getDisplayName(room)}] 连接: ${wsUrl}`);
 
@@ -1050,8 +1056,59 @@ function startConnection(roomId, config) {
         const event = data.event || '';
         if (event === 'live_status') {
           if (data.livename) room.displayName = data.livename;
-          console.log(`[${getDisplayName(room)}] [live_status] live=${data.live} title=${data.title||''}主播=${data.livename||''}`);
+          const code = data.code || '';
           const isLive = !!data.live;
+          const isEnded = !!data.ended;
+          console.log(`[${getDisplayName(room)}] [live_status] code=${code} live=${data.live} ended=${data.ended||false} title=${data.title||''}主播=${data.livename||''}`);
+
+          // --- v2.1.0 新增: 基于 code 字段的精确处理 ---
+
+          // ROOM_ENDED: Go代理确认已下播，直接结束session
+          if (code === 'ROOM_ENDED' || isEnded) {
+            if (room.isRecording) {
+              console.log(`[${getDisplayName(room)}] 🟢 确认下播 (code=${code}, ended=${data.ended})`);
+              // 清理可能残留的下播定时器
+              if (room.liveStopTimer) {
+                clearTimeout(room.liveStopTimer);
+                room.liveStopTimer = null;
+              }
+              room.isRecording = false;
+              finalizeSession(room);
+              console.log(`[${getDisplayName(room)}] session 已保存 (${room.session.stats.danmaku}条弹幕, ${room.session.stats.gift}个礼物)`);
+              generateAndSendReport(room);
+            }
+            if (room.session) room.session._liveStatus = false;
+            console.log(`[${getDisplayName(room)}] 直播已结束，等待下次开播 (${data.message || ''})`);
+            return;
+          }
+
+          // ROOM_NOT_FOUND: 房间不存在，标记无效，停止重连
+          if (code === 'ROOM_NOT_FOUND') {
+            console.log(`[${getDisplayName(room)}] ❌ 房间不存在 (${roomId})，停止重连`);
+            if (room.isRecording) {
+              room.isRecording = false;
+              finalizeSession(room);
+              generateAndSendReport(room);
+            }
+            // 标记房间无效，后续重连时跳过
+            room.invalid = true;
+            if (room.ws) {
+              try { room.ws.removeAllListeners(); room.ws.close(); } catch(e) {}
+              room.ws = null;
+            }
+            return;
+          }
+
+          // ROOM_OFFLINE / ACCOUNT_OFFLINE_NO_ROOM: 未开播，保持连接等待
+          if (code === 'ROOM_OFFLINE' || code === 'ACCOUNT_OFFLINE_NO_ROOM') {
+            if (room.session) room.session._liveStatus = false;
+            if (!room.isRecording) {
+              console.log(`[${getDisplayName(room)}] 直播未开播，等待中... (${data.message || ''})`);
+            }
+            return;
+          }
+
+          // --- 兜底: 兼容旧版 Go代理 (v2.0.x) 的 live_status ---
 
           // 主播回来时，取消可能残留的下播定时器
           if (isLive && room.liveStopTimer) {
@@ -1092,7 +1149,7 @@ function startConnection(roomId, config) {
             });
             console.log(`[${getDisplayName(room)}] 开始录制: ${data.title || ''}`);
           } else if (!isLive && room.isRecording) {
-            // 🟢 可能下播
+            // 🟢 可能下播（兜底逻辑，新版Go代理会走 ROOM_ENDED 分支）
             // 如果最近还有数据流入（lastDataTime在60秒内），说明主播只是暂时离开，不启动下播定时器
             const dataAge = room.lastDataTime ? (Date.now() - room.lastDataTime) / 1000 : Infinity;
             if (dataAge < 60) {
@@ -1176,6 +1233,11 @@ function startConnection(roomId, config) {
     const roomConfig = currentConfig.rooms?.find(r => r.id === roomId);
     if (roomConfig && roomConfig.enabled === false) {
       console.log(`[${getDisplayName(room)}] 房间已暂停，停止重连`);
+      return;
+    }
+    // 房间不存在（ROOM_NOT_FOUND），不再重连
+    if (room.invalid) {
+      console.log(`[${getDisplayName(room)}] 房间无效，停止重连`);
       return;
     }
     // code=1000 不再直接结束 session — 团播切换主播时 Go 代理会断开 WS，

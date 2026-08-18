@@ -133,6 +133,10 @@ export function useCombine(api: (path: string) => Promise<any>, toast: (msg: str
     selectedIds.value = new Set(sorted.slice(0, n).map(s => s.id))
   }
 
+  function selectAll() {
+    selectedIds.value = new Set(allSessions.value.map(s => s.id))
+  }
+
   async function mergeSessions() {
     if (selectedIds.value.size < 2) {
       toast('请至少选择2个场次', 'error')
@@ -158,6 +162,6 @@ export function useCombine(api: (path: string) => Promise<any>, toast: (msg: str
     allSessions, selectedIds, combineLoading, viewLoading,
     combinedResult, showCombineModal, groupedSessions, expandedStreamers,
     loadCombineView, toggleSelect, toggleStreamer, toggleStreamerSessions,
-    selectRecent, mergeSessions, closeCombineModal,
+    selectRecent, selectAll, mergeSessions, closeCombineModal,
   }
 }

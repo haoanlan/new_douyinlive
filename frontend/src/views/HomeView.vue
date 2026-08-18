@@ -172,55 +172,79 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
             合并查看
           </div>
-          <div style="display:flex;gap:6px;align-items:center">
-            <button class="btn btn-ghost btn-sm" @click="combineSelectRecent(3)" style="border-color:var(--border-light);font-size:11px">最近3场</button>
-            <button class="btn btn-ghost btn-sm" @click="combineSelectRecent(5)" style="border-color:var(--border-light);font-size:11px">最近5场</button>
-            <button v-if="combineSelectedIds.size >= 2" class="btn btn-ghost btn-sm" @click="mergeSessions" :disabled="combineLoading" style="border-color:var(--accent);color:var(--accent)">
-              {{ combineLoading ? '合并中...' : '查看合并 (' + combineSelectedIds.size + ')' }}
-            </button>
+        </div>
+        <!-- Quick select toolbar -->
+        <div class="combine-toolbar">
+          <div class="combine-toolbar-left">
+            <span class="combine-toolbar-hint">按主播分组选择场次，合并查看数据汇总</span>
+          </div>
+          <div class="combine-toolbar-right">
+            <button class="btn btn-ghost btn-sm" @click="combineSelectRecent(3)">最近3场</button>
+            <button class="btn btn-ghost btn-sm" @click="combineSelectRecent(5)">最近5场</button>
+            <button class="btn btn-ghost btn-sm" @click="combineSelectAll">全选</button>
           </div>
         </div>
-        <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">按主播分组选择场次，合并查看数据汇总</div>
+        <!-- Loading -->
         <div v-if="combineViewLoading" class="loading" style="min-height:auto;padding:30px">加载场次列表...</div>
-        <div v-else-if="combineGrouped.length > 0">
-          <div v-for="group in combineGrouped" :key="group.streamer_id" style="margin-bottom:8px">
-            <!-- 主播标题行 -->
-            <div class="lookup-card" style="cursor:pointer;padding:10px 12px" @click="combineToggleStreamer(group.streamer_id)">
-              <div style="display:flex;align-items:center;gap:8px;flex:1">
-                <svg viewBox="0 0 24 24" width="14" height="14" style="fill:none;stroke:var(--text-muted);stroke-width:2;transition:transform .2s;flex-shrink:0" :style="combineExpanded.has(group.streamer_id) ? 'transform:rotate(90deg)' : ''"><polyline points="9 18 15 12 9 6"/></svg>
-                <span style="font-size:13px;font-weight:600;color:var(--text)">{{ group.streamer_name }}</span>
-                <span style="font-size:11px;color:var(--text-muted)">({{ group.sessions.length }}场)</span>
+        <!-- Streamer cards -->
+        <div v-else-if="combineGrouped.length > 0" class="combine-streamer-grid">
+          <div v-for="group in combineGrouped" :key="group.streamer_id" class="combine-streamer-card" :class="{ expanded: combineExpanded.has(group.streamer_id) }">
+            <!-- Streamer header -->
+            <div class="combine-streamer-header" @click="combineToggleStreamer(group.streamer_id)">
+              <div class="combine-streamer-chevron" :class="{ open: combineExpanded.has(group.streamer_id) }">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
               </div>
-              <div style="display:flex;align-items:center;gap:8px">
-                <span style="font-size:11px;color:var(--text-muted)">{{ combineStreamerSelectedCount(group.streamer_id) }}/{{ group.sessions.length }}</span>
-                <button class="btn btn-ghost btn-sm" @click.stop="combineToggleStreamerSessions(group.streamer_id)" style="font-size:10px;padding:2px 6px;border-color:var(--border-light)">
+              <div class="combine-streamer-info">
+                <div class="combine-streamer-name">{{ group.streamer_name }}</div>
+                <div class="combine-streamer-meta">
+                  <span class="combine-meta-badge">{{ group.sessions.length }} 场</span>
+                  <span class="combine-meta-diamonds">
+                    <svg viewBox="0 0 24 24" width="10" height="10" style="fill:var(--orange)"><path d="M6 2h12l4 7-10 13L2 9z"/></svg>
+                    {{ combineStreamerTotalDiamonds(group.streamer_id).toLocaleString() }}
+                  </span>
+                </div>
+              </div>
+              <div class="combine-streamer-actions" @click.stop>
+                <span class="combine-selected-count">{{ combineStreamerSelectedCount(group.streamer_id) }}/{{ group.sessions.length }}</span>
+                <button class="btn btn-ghost btn-sm combine-select-all-btn" @click="combineToggleStreamerSessions(group.streamer_id)">
                   {{ combineStreamerSelectedCount(group.streamer_id) === group.sessions.length ? '取消' : '全选' }}
                 </button>
               </div>
             </div>
-            <!-- 该主播的场次列表 -->
-            <div v-show="combineExpanded.has(group.streamer_id)" style="padding-left:20px">
+            <!-- Session list (expanded) -->
+            <div v-show="combineExpanded.has(group.streamer_id)" class="combine-sessions-list">
               <div v-for="s in group.sessions" :key="s.id"
-                   class="lookup-card"
-                   :style="combineSelectedIds.has(s.id) ? 'border-color:var(--accent);background:var(--accent-bg)' : ''"
-                   @click="combineToggleSelect(s.id)" style="margin:4px 0">
-                <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">
-                  <input type="checkbox" :checked="combineSelectedIds.has(s.id)" @click.stop="combineToggleSelect(s.id)" style="accent-color:var(--accent);width:14px;height:14px;flex-shrink:0">
-                  <div style="flex:1;min-width:0">
-                    <div style="font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ s.room_title || '场次 #' + s.id }}</div>
-                    <div style="font-size:11px;color:var(--text-muted);margin-top:1px">{{ fmtTime(s.start_time) }}</div>
-                  </div>
+                   class="combine-session-card"
+                   :class="{ selected: combineSelectedIds.has(s.id) }"
+                   @click="combineToggleSelect(s.id)">
+                <input type="checkbox" :checked="combineSelectedIds.has(s.id)" @click.stop="combineToggleSelect(s.id)" class="session-cb">
+                <div class="combine-session-info">
+                  <div class="combine-session-title">{{ s.room_title || '场次 #' + s.id }}</div>
+                  <div class="combine-session-time">{{ fmtTime(s.start_time) }}</div>
                 </div>
-                <div style="font-size:11px;color:var(--text-muted);flex-shrink:0;display:flex;align-items:center;gap:8px">
-                  <span v-if="s.end_time" style="color:var(--text-muted)">已结束</span>
-                  <span v-else style="color:var(--green)">直播中</span>
-                  <span style="font-family:var(--font-mono)">{{ (s.agg_diamonds || 0).toLocaleString() }}</span>
+                <div class="combine-session-meta">
+                  <span v-if="s.end_time" class="session-badge offline">已结束</span>
+                  <span v-else class="session-badge live">直播中</span>
+                  <span class="combine-session-diamonds">
+                    <svg viewBox="0 0 24 24" width="10" height="10" style="fill:var(--orange)"><path d="M6 2h12l4 7-10 13L2 9z"/></svg>
+                    {{ (s.agg_diamonds || 0).toLocaleString() }}
+                  </span>
                 </div>
               </div>
             </div>
           </div>
         </div>
         <div v-else class="empty" style="padding:30px">暂无场次数据</div>
+      </div>
+      <!-- Floating action bar -->
+      <div class="combine-float-bar" :class="{ show: combineSelectedIds.size > 0 }">
+        <div class="combine-float-count">
+          已选 <strong>{{ combineSelectedIds.size }}</strong> 场
+        </div>
+        <button class="btn btn-ghost btn-sm combine-float-btn" @click="mergeSessions" :disabled="combineLoading || combineSelectedIds.size < 2">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          {{ combineLoading ? '合并中...' : '查看合并' }}
+        </button>
       </div>
     </template>
   </div>
@@ -240,7 +264,7 @@
 
   <!-- COMBINE MODAL -->
   <div id="combineModal" class="anchor-modal-overlay" :class="{ show: showCombineModal }" @click.self="closeCombineModal">
-    <div class="anchor-modal" style="width:min(90vw,600px)">
+    <div class="anchor-modal combine-modal">
       <div class="anchor-modal-header">
         <h3>合并查看结果</h3>
         <button class="anchor-modal-close" @click="closeCombineModal">
@@ -249,65 +273,83 @@
       </div>
       <div class="anchor-modal-body" v-if="combineResult">
         <!-- Summary Stats -->
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">
-          <div style="text-align:center;padding:12px 8px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius)">
-            <div style="font-size:18px;font-weight:700;color:var(--orange)">{{ combineResult.summary.total_diamonds.toLocaleString() }}</div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:2px">总钻石</div>
+        <div class="combine-stats-grid">
+          <div class="combine-stat-item">
+            <div class="combine-stat-value orange">{{ combineResult.summary.total_diamonds.toLocaleString() }}</div>
+            <div class="combine-stat-label">总钻石</div>
           </div>
-          <div style="text-align:center;padding:12px 8px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius)">
-            <div style="font-size:18px;font-weight:700;color:var(--text)">{{ combineResult.summary.total_gifts.toLocaleString() }}</div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:2px">总礼物</div>
+          <div class="combine-stat-item">
+            <div class="combine-stat-value">{{ combineResult.summary.total_gifts.toLocaleString() }}</div>
+            <div class="combine-stat-label">总礼物</div>
           </div>
-          <div style="text-align:center;padding:12px 8px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius)">
-            <div style="font-size:18px;font-weight:700;color:var(--accent)">{{ combineResult.summary.total_danmaku.toLocaleString() }}</div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:2px">总弹幕</div>
+          <div class="combine-stat-item">
+            <div class="combine-stat-value accent">{{ combineResult.summary.total_danmaku.toLocaleString() }}</div>
+            <div class="combine-stat-label">总弹幕</div>
           </div>
-          <div style="text-align:center;padding:12px 8px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius)">
-            <div style="font-size:18px;font-weight:700;color:var(--green)">{{ combineResult.summary.user_count.toLocaleString() }}</div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:2px">独立用户</div>
+          <div class="combine-stat-item">
+            <div class="combine-stat-value green">{{ combineResult.summary.user_count.toLocaleString() }}</div>
+            <div class="combine-stat-label">独立用户</div>
           </div>
         </div>
-        <!-- Gift Ranking -->
-        <div v-if="combineResult.gifts && combineResult.gifts.length" style="margin-bottom:16px">
-          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px">🎁 礼物排行 (Top 20)</div>
-          <div style="display:flex;flex-direction:column;gap:3px;max-height:300px;overflow-y:auto">
-            <div v-for="(g, i) in combineResult.gifts.slice(0, 20)" :key="i" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm)">
-              <span style="font-size:12px;font-weight:700;width:22px;text-align:center;color:var(--text-muted);font-variant-numeric:tabular-nums">{{ String(i + 1).padStart(2, '0') }}</span>
+        <!-- Tab bar -->
+        <div class="tab-bar">
+          <button class="tab-btn" :class="{ active: combineResultTab === 'gifts' }" @click="combineResultTab = 'gifts'">
+            🎁 礼物排行
+          </button>
+          <button class="tab-btn" :class="{ active: combineResultTab === 'anchors' }" @click="combineResultTab = 'anchors'">
+            🏆 主播排行
+          </button>
+          <button class="tab-btn" :class="{ active: combineResultTab === 'danmaku' }" @click="combineResultTab = 'danmaku'">
+            💬 弹幕排行
+          </button>
+        </div>
+        <!-- Gift Ranking Tab -->
+        <div v-show="combineResultTab === 'gifts'">
+          <div v-if="combineResult.gifts && combineResult.gifts.length" class="combine-rank-list">
+            <div v-for="(g, i) in combineResult.gifts.slice(0, 20)" :key="i" class="gift-list-item">
+              <span class="gift-rank-num">{{ String(i + 1).padStart(2, '0') }}</span>
               <div class="avatar" v-html="avatarHtml(g.avatar_url, g.nickname)" style="width:28px;height:28px;flex-shrink:0"></div>
-              <span style="font-size:12px;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ g.nickname }}</span>
+              <div class="user-cell" style="flex:1;min-width:0">
+                <span style="font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ g.nickname }}</span>
+              </div>
               <span style="font-size:11px;color:var(--text-muted);flex-shrink:0">{{ g.gift_count }} 次</span>
-              <span style="font-size:12px;color:var(--orange);font-weight:600;flex-shrink:0;display:inline-flex;align-items:center">
+              <span class="diamonds">
                 <svg viewBox="0 0 24 24" width="11" height="11" style="margin-right:2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/></svg>{{ g.total_diamonds.toLocaleString() }}
               </span>
             </div>
           </div>
+          <div v-else class="empty" style="padding:20px">暂无礼物数据</div>
         </div>
-        <!-- Anchor Ranking -->
-        <div v-if="combineResult.anchorRanking && combineResult.anchorRanking.length" style="margin-bottom:16px">
-          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px">🏆 主播排行</div>
-          <div style="display:flex;flex-direction:column;gap:3px">
-            <div v-for="(a, i) in combineResult.anchorRanking" :key="i" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm)">
-              <span style="font-size:12px;font-weight:700;width:22px;text-align:center;color:var(--text-muted);font-variant-numeric:tabular-nums">{{ String(i + 1).padStart(2, '0') }}</span>
+        <!-- Anchor Ranking Tab -->
+        <div v-show="combineResultTab === 'anchors'">
+          <div v-if="combineResult.anchorRanking && combineResult.anchorRanking.length" class="combine-rank-list">
+            <div v-for="(a, i) in combineResult.anchorRanking" :key="i" class="gift-list-item">
+              <span class="gift-rank-num">{{ String(i + 1).padStart(2, '0') }}</span>
               <div class="avatar" v-html="avatarHtml(a.anchor_avatar, a.anchor_name)" style="width:28px;height:28px;flex-shrink:0"></div>
-              <span style="font-size:12px;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ a.anchor_name }}</span>
+              <div class="user-cell" style="flex:1;min-width:0">
+                <span style="font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ a.anchor_name }}</span>
+              </div>
               <span style="font-size:11px;color:var(--text-muted);flex-shrink:0">{{ a.user_count }} 用户</span>
-              <span style="font-size:12px;color:var(--orange);font-weight:600;flex-shrink:0;display:inline-flex;align-items:center">
+              <span class="diamonds">
                 <svg viewBox="0 0 24 24" width="11" height="11" style="margin-right:2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/></svg>{{ a.total_diamonds.toLocaleString() }}
               </span>
             </div>
           </div>
+          <div v-else class="empty" style="padding:20px">暂无主播数据</div>
         </div>
-        <!-- Danmaku Ranking -->
-        <div v-if="combineResult.danmakuRanking && combineResult.danmakuRanking.length">
-          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px">💬 弹幕排行 (Top 20)</div>
-          <div style="display:flex;flex-direction:column;gap:3px;max-height:300px;overflow-y:auto">
-            <div v-for="(d, i) in combineResult.danmakuRanking.slice(0, 20)" :key="i" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm)">
-              <span style="font-size:12px;font-weight:700;width:22px;text-align:center;color:var(--text-muted);font-variant-numeric:tabular-nums">{{ String(i + 1).padStart(2, '0') }}</span>
+        <!-- Danmaku Ranking Tab -->
+        <div v-show="combineResultTab === 'danmaku'">
+          <div v-if="combineResult.danmakuRanking && combineResult.danmakuRanking.length" class="combine-rank-list">
+            <div v-for="(d, i) in combineResult.danmakuRanking.slice(0, 20)" :key="i" class="gift-list-item">
+              <span class="gift-rank-num">{{ String(i + 1).padStart(2, '0') }}</span>
               <div class="avatar" v-html="avatarHtml(d.avatar, d.nickname)" style="width:28px;height:28px;flex-shrink:0"></div>
-              <span style="font-size:12px;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ d.nickname }}</span>
+              <div class="user-cell" style="flex:1;min-width:0">
+                <span style="font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ d.nickname }}</span>
+              </div>
               <span style="font-size:12px;color:var(--accent);font-weight:600;flex-shrink:0">{{ d.msg_count }} 条</span>
             </div>
           </div>
+          <div v-else class="empty" style="padding:20px">暂无弹幕数据</div>
         </div>
       </div>
     </div>
@@ -553,14 +595,22 @@ const {
   loadCombineView, toggleSelect: combineToggleSelect,
   toggleStreamer: combineToggleStreamer,
   toggleStreamerSessions: combineToggleStreamerSessions,
-  selectRecent: combineSelectRecent,
+  selectRecent: combineSelectRecent, selectAll: combineSelectAll,
   mergeSessions, closeCombineModal,
 } = useCombine(api, toast)
+
+const combineResultTab = ref<'gifts' | 'anchors' | 'danmaku'>('gifts')
 
 function combineStreamerSelectedCount(streamerId: number) {
   const group = combineGrouped.value.find((g: any) => g.streamer_id === streamerId)
   if (!group) return 0
   return group.sessions.filter((s: any) => combineSelectedIds.value.has(s.id)).length
+}
+
+function combineStreamerTotalDiamonds(streamerId: number) {
+  const group = combineGrouped.value.find((g: any) => g.streamer_id === streamerId)
+  if (!group) return 0
+  return group.sessions.reduce((sum: number, s: any) => sum + (s.agg_diamonds || 0), 0)
 }
 
 // ============================================================

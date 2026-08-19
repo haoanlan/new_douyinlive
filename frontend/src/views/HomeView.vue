@@ -220,7 +220,7 @@
                 <input type="checkbox" :checked="combineSelectedIds.has(s.id)" @click.stop="combineToggleSelect(s.id)" class="session-cb">
                 <div class="combine-session-info">
                   <div class="combine-session-title">{{ s.room_title || '场次 #' + s.id }}</div>
-                  <div class="combine-session-time">{{ fmtTime(s.start_time) }}</div>
+                  <div class="combine-session-time">{{ fmtTime(s.started_at) }}</div>
                 </div>
                 <div class="combine-session-meta">
                   <span v-if="s.is_live" class="session-badge live">直播中</span>

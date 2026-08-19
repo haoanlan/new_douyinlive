@@ -265,91 +265,113 @@
   <!-- COMBINE MODAL -->
   <div id="combineModal" class="anchor-modal-overlay" :class="{ show: showCombineModal }" @click.self="closeCombineModal">
     <div class="anchor-modal combine-modal">
-      <div class="anchor-modal-header">
-        <h3>合并查看结果</h3>
+      <div class="anchor-modal-header" style="border-bottom:none;padding-bottom:0">
+        <h3 style="font-size:16px">📊 合并查看结果</h3>
         <button class="anchor-modal-close" @click="closeCombineModal">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
         </button>
       </div>
-      <div class="anchor-modal-body" v-if="combineResult">
+      <div class="anchor-modal-body" v-if="combineResult" style="padding-top:12px">
         <!-- Summary Stats -->
         <div class="combine-stats-grid">
-          <div class="combine-stat-item">
-            <div class="combine-stat-value orange">{{ combineResult.summary.total_diamonds.toLocaleString() }}</div>
-            <div class="combine-stat-label">总钻石</div>
+          <div class="combine-stat-card orange">
+            <div class="combine-stat-icon">💎</div>
+            <div class="combine-stat-content">
+              <div class="combine-stat-value">{{ combineResult.summary.total_diamonds.toLocaleString() }}</div>
+              <div class="combine-stat-label">总钻石</div>
+            </div>
           </div>
-          <div class="combine-stat-item">
-            <div class="combine-stat-value">{{ combineResult.summary.total_gifts.toLocaleString() }}</div>
-            <div class="combine-stat-label">总礼物</div>
+          <div class="combine-stat-card">
+            <div class="combine-stat-icon">🎁</div>
+            <div class="combine-stat-content">
+              <div class="combine-stat-value">{{ combineResult.summary.total_gifts.toLocaleString() }}</div>
+              <div class="combine-stat-label">总礼物</div>
+            </div>
           </div>
-          <div class="combine-stat-item">
-            <div class="combine-stat-value accent">{{ combineResult.summary.total_danmaku.toLocaleString() }}</div>
-            <div class="combine-stat-label">总弹幕</div>
+          <div class="combine-stat-card accent">
+            <div class="combine-stat-icon">💬</div>
+            <div class="combine-stat-content">
+              <div class="combine-stat-value">{{ combineResult.summary.total_danmaku.toLocaleString() }}</div>
+              <div class="combine-stat-label">总弹幕</div>
+            </div>
           </div>
-          <div class="combine-stat-item">
-            <div class="combine-stat-value green">{{ combineResult.summary.user_count.toLocaleString() }}</div>
-            <div class="combine-stat-label">独立用户</div>
+          <div class="combine-stat-card green">
+            <div class="combine-stat-icon">👥</div>
+            <div class="combine-stat-content">
+              <div class="combine-stat-value">{{ combineResult.summary.user_count.toLocaleString() }}</div>
+              <div class="combine-stat-label">独立用户</div>
+            </div>
           </div>
         </div>
         <!-- Tab bar -->
-        <div class="tab-bar">
-          <button class="tab-btn" :class="{ active: combineResultTab === 'gifts' }" @click="combineResultTab = 'gifts'">
-            🎁 礼物排行
+        <div class="combine-tab-bar">
+          <button class="combine-tab" :class="{ active: combineResultTab === 'gifts' }" @click="combineResultTab = 'gifts'">
+            <span class="combine-tab-icon">🎁</span>
+            <span class="combine-tab-text">礼物排行</span>
+            <span v-if="combineResult.gifts" class="combine-tab-count">{{ combineResult.gifts.length }}</span>
           </button>
-          <button class="tab-btn" :class="{ active: combineResultTab === 'anchors' }" @click="combineResultTab = 'anchors'">
-            🏆 主播排行
+          <button class="combine-tab" :class="{ active: combineResultTab === 'anchors' }" @click="combineResultTab = 'anchors'">
+            <span class="combine-tab-icon">🏆</span>
+            <span class="combine-tab-text">主播排行</span>
+            <span v-if="combineResult.anchorRanking" class="combine-tab-count">{{ combineResult.anchorRanking.length }}</span>
           </button>
-          <button class="tab-btn" :class="{ active: combineResultTab === 'danmaku' }" @click="combineResultTab = 'danmaku'">
-            💬 弹幕排行
+          <button class="combine-tab" :class="{ active: combineResultTab === 'danmaku' }" @click="combineResultTab = 'danmaku'">
+            <span class="combine-tab-icon">💬</span>
+            <span class="combine-tab-text">弹幕排行</span>
+            <span v-if="combineResult.danmakuRanking" class="combine-tab-count">{{ combineResult.danmakuRanking.length }}</span>
           </button>
         </div>
         <!-- Gift Ranking Tab -->
-        <div v-show="combineResultTab === 'gifts'">
+        <div v-show="combineResultTab === 'gifts'" class="combine-tab-content">
           <div v-if="combineResult.gifts && combineResult.gifts.length" class="combine-rank-list">
-            <div v-for="(g, i) in combineResult.gifts.slice(0, 20)" :key="i" class="gift-list-item">
-              <span class="gift-rank-num">{{ String(i + 1).padStart(2, '0') }}</span>
-              <div class="avatar" v-html="avatarHtml(g.avatar_url, g.nickname)" style="width:28px;height:28px;flex-shrink:0"></div>
-              <div class="user-cell" style="flex:1;min-width:0">
-                <span style="font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ g.nickname }}</span>
+            <div v-for="(g, i) in combineResult.gifts.slice(0, 20)" :key="i" class="combine-rank-item" :class="{ 'top3': i < 3 }">
+              <div class="combine-rank-num" :class="{ 'gold': i === 0, 'silver': i === 1, 'bronze': i === 2 }">{{ i + 1 }}</div>
+              <div class="avatar" v-html="avatarHtml(g.avatar_url, g.nickname)" style="width:32px;height:32px;flex-shrink:0"></div>
+              <div class="combine-rank-info">
+                <div class="combine-rank-name">{{ g.nickname }}</div>
+                <div class="combine-rank-meta">{{ g.gift_count }} 次赠送</div>
               </div>
-              <span style="font-size:11px;color:var(--text-muted);flex-shrink:0">{{ g.gift_count }} 次</span>
-              <span class="diamonds">
-                <svg viewBox="0 0 24 24" width="11" height="11" style="margin-right:2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/></svg>{{ g.total_diamonds.toLocaleString() }}
-              </span>
+              <div class="combine-rank-value orange">
+                <svg viewBox="0 0 24 24" width="12" height="12" style="fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/></svg>
+                {{ g.total_diamonds.toLocaleString() }}
+              </div>
             </div>
           </div>
-          <div v-else class="empty" style="padding:20px">暂无礼物数据</div>
+          <div v-else class="empty" style="padding:30px;text-align:center;color:var(--text-muted)">暂无礼物数据</div>
         </div>
         <!-- Anchor Ranking Tab -->
-        <div v-show="combineResultTab === 'anchors'">
+        <div v-show="combineResultTab === 'anchors'" class="combine-tab-content">
           <div v-if="combineResult.anchorRanking && combineResult.anchorRanking.length" class="combine-rank-list">
-            <div v-for="(a, i) in combineResult.anchorRanking" :key="i" class="gift-list-item">
-              <span class="gift-rank-num">{{ String(i + 1).padStart(2, '0') }}</span>
-              <div class="avatar" v-html="avatarHtml(a.anchor_avatar, a.anchor_name)" style="width:28px;height:28px;flex-shrink:0"></div>
-              <div class="user-cell" style="flex:1;min-width:0">
-                <span style="font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ a.anchor_name }}</span>
+            <div v-for="(a, i) in combineResult.anchorRanking" :key="i" class="combine-rank-item" :class="{ 'top3': i < 3 }">
+              <div class="combine-rank-num" :class="{ 'gold': i === 0, 'silver': i === 1, 'bronze': i === 2 }">{{ i + 1 }}</div>
+              <div class="avatar" v-html="avatarHtml(a.anchor_avatar, a.anchor_name)" style="width:32px;height:32px;flex-shrink:0"></div>
+              <div class="combine-rank-info">
+                <div class="combine-rank-name">{{ a.anchor_name }}</div>
+                <div class="combine-rank-meta">{{ a.user_count }} 用户 · {{ a.gift_count }} 礼物</div>
               </div>
-              <span style="font-size:11px;color:var(--text-muted);flex-shrink:0">{{ a.user_count }} 用户</span>
-              <span class="diamonds">
-                <svg viewBox="0 0 24 24" width="11" height="11" style="margin-right:2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/></svg>{{ a.total_diamonds.toLocaleString() }}
-              </span>
+              <div class="combine-rank-value orange">
+                <svg viewBox="0 0 24 24" width="12" height="12" style="fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/></svg>
+                {{ a.total_diamonds.toLocaleString() }}
+              </div>
             </div>
           </div>
-          <div v-else class="empty" style="padding:20px">暂无主播数据</div>
+          <div v-else class="empty" style="padding:30px;text-align:center;color:var(--text-muted)">暂无主播数据</div>
         </div>
         <!-- Danmaku Ranking Tab -->
-        <div v-show="combineResultTab === 'danmaku'">
+        <div v-show="combineResultTab === 'danmaku'" class="combine-tab-content">
           <div v-if="combineResult.danmakuRanking && combineResult.danmakuRanking.length" class="combine-rank-list">
-            <div v-for="(d, i) in combineResult.danmakuRanking.slice(0, 20)" :key="i" class="gift-list-item">
-              <span class="gift-rank-num">{{ String(i + 1).padStart(2, '0') }}</span>
-              <div class="avatar" v-html="avatarHtml(d.avatar, d.nickname)" style="width:28px;height:28px;flex-shrink:0"></div>
-              <div class="user-cell" style="flex:1;min-width:0">
-                <span style="font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ d.nickname }}</span>
+            <div v-for="(d, i) in combineResult.danmakuRanking.slice(0, 20)" :key="i" class="combine-rank-item" :class="{ 'top3': i < 3 }">
+              <div class="combine-rank-num" :class="{ 'gold': i === 0, 'silver': i === 1, 'bronze': i === 2 }">{{ i + 1 }}</div>
+              <div class="avatar" v-html="avatarHtml(d.avatar, d.nickname)" style="width:32px;height:32px;flex-shrink:0"></div>
+              <div class="combine-rank-info">
+                <div class="combine-rank-name">{{ d.nickname }}</div>
               </div>
-              <span style="font-size:12px;color:var(--accent);font-weight:600;flex-shrink:0">{{ d.msg_count }} 条</span>
+              <div class="combine-rank-value accent">
+                {{ d.msg_count }} 条
+              </div>
             </div>
           </div>
-          <div v-else class="empty" style="padding:20px">暂无弹幕数据</div>
+          <div v-else class="empty" style="padding:30px;text-align:center;color:var(--text-muted)">暂无弹幕数据</div>
         </div>
       </div>
     </div>

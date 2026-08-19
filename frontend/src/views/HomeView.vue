@@ -223,11 +223,11 @@
                   <div class="combine-session-time">{{ fmtTime(s.start_time) }}</div>
                 </div>
                 <div class="combine-session-meta">
-                  <span v-if="s.end_time" class="session-badge offline">已结束</span>
-                  <span v-else class="session-badge live">直播中</span>
+                  <span v-if="s.is_live" class="session-badge live">直播中</span>
+                  <span v-else class="session-badge offline">已结束</span>
                   <span class="combine-session-diamonds">
                     <svg viewBox="0 0 24 24" width="10" height="10" style="fill:var(--orange)"><path d="M6 2h12l4 7-10 13L2 9z"/></svg>
-                    {{ (s.agg_diamonds || 0).toLocaleString() }}
+                    {{ (s.total_diamonds || 0).toLocaleString() }}
                   </span>
                 </div>
               </div>
@@ -610,7 +610,7 @@ function combineStreamerSelectedCount(streamerId: number) {
 function combineStreamerTotalDiamonds(streamerId: number) {
   const group = combineGrouped.value.find((g: any) => g.streamer_id === streamerId)
   if (!group) return 0
-  return group.sessions.reduce((sum: number, s: any) => sum + (s.agg_diamonds || 0), 0)
+  return group.sessions.reduce((sum: number, s: any) => sum + (s.total_diamonds || 0), 0)
 }
 
 // ============================================================

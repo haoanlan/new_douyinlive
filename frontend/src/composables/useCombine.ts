@@ -10,9 +10,9 @@ interface CombineSession {
   streamer_id: number
   start_time: string
   end_time: string | null
-  agg_gifts: number | null
-  agg_diamonds: number | null
-  agg_danmaku: number | null
+  gift_count: number | null
+  total_diamonds: number | null
+  danmaku_count: number | null
 }
 
 interface CombinedResult {

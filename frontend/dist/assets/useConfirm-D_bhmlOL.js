@@ -1,1 +1,0 @@
-import{k as o}from"./index-WGynrvRK.js";const f=o(!1),l=o(""),r=o("");let n=null;function s(e,i){return new Promise(u=>{n&&(n(!1),n=null),n=u,l.value=e,r.value=i,f.value=!0})}function t(e){f.value=!1,n&&(n(e),n=null)}function a(){return{confirmVisible:f,confirmIcon:l,confirmText:r,showConfirm:s,confirmResolve:t}}export{a as u};

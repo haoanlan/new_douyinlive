@@ -38,7 +38,7 @@
             </thead>
             <tbody id="sessionTbody">
               <tr v-for="s in filteredSessions" :key="s.id" :data-id="s.id" :data-start="s.started_at || ''" @click="viewDetail(s.id)">
-                <td data-label="" @click.stop style="padding-left:8px"><input type="checkbox" class="session-cb" :value="s.id" :checked="selectedSessionIds.includes(s.id)" @change="toggleSessionCheckbox(s.id, $event)"></td>
+                <td data-label="" @click.stop ><input type="checkbox" class="session-cb" :value="s.id" :checked="selectedSessionIds.includes(s.id)" @change="toggleSessionCheckbox(s.id, $event)"></td>
                 <td data-label="场次" style="font-weight:500">{{ s.title || '未命名' }}</td>
                 <td data-label="状态"><span class="session-badge" :class="s.is_live ? 'live' : 'offline'">{{ s.is_live ? '直播中' : '已结束' }}</span></td>
                 <td data-label="开始" style="color:var(--text-secondary)">{{ fmtTime(s.started_at) }}</td>

@@ -32,7 +32,7 @@
           <table class="session-table">
             <thead>
               <tr>
-                <th style="width:36px;padding-left:8px"><input type="checkbox" class="session-cb" id="selectAll" :checked="selectedSessionIds.length === sessions.length && sessions.length > 0" @change="toggleSelectAll"></th>
+                <th style="width:36px"><input type="checkbox" class="session-cb" id="selectAll" :checked="selectedSessionIds.length === sessions.length && sessions.length > 0" @change="toggleSelectAll"></th>
                 <th>场次</th><th>状态</th><th>开始时间</th><th>结束时间</th><th>时长</th><th>礼物</th><th>钻石</th><th>弹幕</th><th>用户</th><th style="width:80px">操作</th>
               </tr>
             </thead>

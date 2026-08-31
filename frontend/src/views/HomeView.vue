@@ -74,7 +74,7 @@
             <div class="modal-field">
               <label>房间号 / 抖音号</label>
               <div style="display:flex;gap:8px">
-                <input ref="addRoomInputEl" v-model="addRoomInput" placeholder="输入房间号或抖音号" @keydown.enter="lookupRoomFn">
+                <input ref="addRoomInputEl" aria-label="房间号" v-model="addRoomInput" placeholder="输入房间号或抖音号" @keydown.enter="lookupRoomFn">
                 <button type="button" class="btn btn-ghost btn-sm" @click="lookupRoomFn" :disabled="lookupLoading" id="lookupBtn" style="border-color:var(--border-light)">{{ lookupLoading ? '查询中...' : '查询' }}</button>
               </div>
               <div class="modal-hint">纯数字为房间号，含字母为抖音号</div>
@@ -82,7 +82,7 @@
             <div v-if="lookupData" id="addRoomResult">
               <div class="modal-field">
                 <label>主播名称</label>
-                <input v-model="addRoomName" placeholder="主播名称" style="width:100%">
+                <input v-model="addRoomName" aria-label="主播名称" placeholder="主播名称" style="width:100%">
               </div>
               <div class="modal-preview" id="addRoomPreview">
                 <img v-if="lookupData.avatar" :src="lookupData.avatar" alt="主播头像" style="width:40px;height:40px;border-radius:50%;object-fit:cover">
@@ -128,7 +128,7 @@
           </div>
         </div>
         <div style="display:flex;gap:8px;margin-bottom:16px">
-          <input v-model="searchInput" placeholder="输入昵称关键词..." style="flex:1;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:13px;outline:none" @keydown.enter="doAnonymousLookup">
+          <input v-model="searchInput" aria-label="搜索用户" placeholder="输入昵称关键词..." style="flex:1;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:13px;outline:none" @keydown.enter="doAnonymousLookup">
           <button type="button" class="btn btn-ghost btn-sm" @click="doAnonymousLookup" style="border-color:var(--border-light)">查询</button>
         </div>
         <div id="searchResults">

@@ -127,7 +127,7 @@
                 <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-shrink:0;flex-wrap:wrap">
                   <div class="search-wrap" style="flex:1;min-width:120px;margin-bottom:0">
                     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><path d="M11 11l3 3"/></svg>
-                    <input id="danmakuSearch" placeholder="搜索弹幕或礼物..." v-model="danmakuSearchQuery" @input="onDanmakuSearchInput">
+                    <input id="danmakuSearch" aria-label="搜索弹幕" placeholder="搜索弹幕或礼物..." v-model="danmakuSearchQuery" @input="onDanmakuSearchInput">
                   </div>
                   <div class="dm-limit-select" @click.stop="dmLimitOpen = !dmLimitOpen">
                     <span>{{ danmakuDisplayLimit === 0 ? '全部' : danmakuDisplayLimit + '条' }}</span>
@@ -218,7 +218,7 @@
           </div>
           <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px">输入关键词，查询本场次相关的送礼或弹幕记录</div>
           <div class="anon-input-row">
-            <input id="anonInput" v-model="anonQuery" placeholder="输入关键词（昵称/礼物名/弹幕内容）..." @keydown.enter="queryAnonymous">
+            <input id="anonInput" aria-label="匿名查询" v-model="anonQuery" placeholder="输入关键词（昵称/礼物名/弹幕内容）..." @keydown.enter="queryAnonymous">
             <button type="button" class="btn btn-ghost btn-sm" @click="queryAnonymous" style="border-color:var(--border)">查询</button>
           </div>
           <div id="anonResult" class="anon-result" style="display:none" :style="anonMatches.length > 0 || anonSearched ? {display:'block'} : {}">

@@ -84,7 +84,7 @@ input,select{font-family:inherit;outline:none}
 
 /* ========== MODAL ========== */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:var(--z-modal);animation:fadeIn .15s}
-.modal{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);width:420px;max-width:90vw;box-shadow:0 16px 48px rgba(0,0,0,0.4);animation:slideUp .2s}
+.modal{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);width:420px;max-width:90vw;box-shadow:0 16px 48px rgba(0,0,0,0.4);animation:scaleIn .2s cubic-bezier(.16,1,.3,1)}
 .modal-header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 0}
 .modal-title{font-size:16px;font-weight:600}
 .modal-close{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-sm);background:transparent;border:none;color:var(--text-muted);font-size:16px;cursor:pointer;transition:background .15s,color .15s,border-color .15s}
@@ -103,6 +103,7 @@ input,select{font-family:inherit;outline:none}
 .confirm-text{font-size:14px;color:var(--text-secondary);line-height:1.6}
 .confirm-text strong{color:var(--text);font-weight:600}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes scaleIn{from{opacity:0;transform:scale(0.96)}to{opacity:1;transform:scale(1)}}
 @keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 /* 弹幕新消息入场动画 */
 .dm-new{animation:dmAppear .4s cubic-bezier(.16,1,.3,1) both}
@@ -719,4 +720,70 @@ a:focus-visible {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* ========== EMIL DESIGN ENG: INTERACTIVE STATES ========== */
+.btn:active:not(:disabled),
+.action-btn:active,
+.batch-float .batch-btn:active,
+.filter-bar .filter-btn:active,
+.tab-btn:active,
+.dp-day:active,
+.pagination button:active {
+  transform: scale(0.97);
+}
+
+.host-card:active,
+.room-card:active,
+.gift-rank-card:active,
+.anchor-card:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* 4. 优化卡片hover阴影 */
+.host-card:hover,
+.room-card:hover,
+.anchor-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15), 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* 5. 优化弹幕出现动画 - 更spring感 */
+.dm-new {
+  animation: dmSpring .35s cubic-bezier(.34,1.56,.64,1) both;
+}
+
+@keyframes dmSpring {
+  0% { opacity: 0; transform: translateY(8px) scale(0.98); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* 6. 优化排行变动动画 */
+.rank-flash {
+  animation: rankHighlight .5s cubic-bezier(.16,1,.3,1);
+}
+
+@keyframes rankHighlight {
+  0% { background: var(--bg-card); }
+  30% { background: rgba(108,140,255,0.12); }
+  100% { background: var(--bg-card); }
+}
+
+/* 7. 优化卡片翻转动画 */
+.flip-new {
+  animation: flipIn .35s cubic-bezier(.16,1,.3,1) both;
+}
+
+@keyframes flipIn {
+  0% { opacity: 0; transform: scale(0.96) translateY(6px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* 8. Toast动画优化 */
+.toast.show {
+  animation: toastIn .3s cubic-bezier(.16,1,.3,1) both;
+}
+
+@keyframes toastIn {
+  0% { opacity: 0; transform: translateY(10px) scale(0.96); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
 }

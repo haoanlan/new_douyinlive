@@ -28,7 +28,7 @@
       <div class="section">
         <div class="section-header">
           <div class="section-title">房间管理</div>
-          <button class="btn btn-ghost btn-sm" @click="showAddRoomFn" style="border-color:var(--border-light)">+ 添加房间</button>
+          <button type="button" class="btn btn-ghost btn-sm" @click="showAddRoomFn" style="border-color:var(--border-light)">+ 添加房间</button>
         </div>
         <TransitionGroup name="list" tag="div" class="host-grid" id="roomGrid">
           <div v-for="r in rooms" :key="r.room_id" class="room-card" @click="viewSessions(r.room_id)">
@@ -49,13 +49,13 @@
                 </div>
               </div>
               <div class="room-card-actions">
-                <button v-if="r.enabled" class="action-btn" @click.stop="pauseRoomFn(r.room_id)" title="暂停">
+                <button type="button" v-if="r.enabled" class="action-btn" @click.stop="pauseRoomFn(r.room_id)" title="暂停">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
                 </button>
-                <button v-else class="action-btn action-btn-resume" @click.stop="resumeRoomFn(r.room_id)" title="恢复">
+                <button type="button" v-else class="action-btn action-btn-resume" @click.stop="resumeRoomFn(r.room_id)" title="恢复">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
                 </button>
-                <button class="action-btn action-btn-del" @click.stop="confirmDeleteRoom(r.room_id, r.name)" title="删除">
+                <button type="button" class="action-btn action-btn-del" @click.stop="confirmDeleteRoom(r.room_id, r.name)" title="删除">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
               </div>
@@ -68,14 +68,14 @@
         <div class="modal">
           <div class="modal-header">
             <div class="modal-title">添加房间</div>
-            <button class="modal-close" @click="closeAddRoom">✕</button>
+            <button type="button" class="modal-close" @click="closeAddRoom">✕</button>
           </div>
           <div class="modal-body">
             <div class="modal-field">
               <label>房间号 / 抖音号</label>
               <div style="display:flex;gap:8px">
                 <input ref="addRoomInputEl" v-model="addRoomInput" placeholder="输入房间号或抖音号" @keydown.enter="lookupRoomFn">
-                <button class="btn btn-ghost btn-sm" @click="lookupRoomFn" :disabled="lookupLoading" id="lookupBtn" style="border-color:var(--border-light)">{{ lookupLoading ? '查询中...' : '查询' }}</button>
+                <button type="button" class="btn btn-ghost btn-sm" @click="lookupRoomFn" :disabled="lookupLoading" id="lookupBtn" style="border-color:var(--border-light)">{{ lookupLoading ? '查询中...' : '查询' }}</button>
               </div>
               <div class="modal-hint">纯数字为房间号，含字母为抖音号</div>
             </div>
@@ -95,8 +95,8 @@
             </div>
           </div>
           <div class="modal-footer">
-            <button class="btn btn-ghost btn-sm" @click="closeAddRoom">取消</button>
-            <button class="btn btn-ghost btn-sm" id="addRoomConfirmBtn" @click="confirmAddRoom" :disabled="!lookupData || !lookupData.room_id || addRoomSubmitting" style="border-color:var(--border-light)">{{ addRoomSubmitting ? '添加中...' : '确认添加' }}</button>
+            <button type="button" class="btn btn-ghost btn-sm" @click="closeAddRoom">取消</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="addRoomConfirmBtn" @click="confirmAddRoom" :disabled="!lookupData || !lookupData.room_id || addRoomSubmitting" style="border-color:var(--border-light)">{{ addRoomSubmitting ? '添加中...' : '确认添加' }}</button>
           </div>
         </div>
       </div>
@@ -113,14 +113,14 @@
         <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">输入用户昵称，可选直播间/场次缩小范围，匹配 sec_uid 后查询真实信息</div>
         <div class="anon-filter">
           <div class="cs-wrap" id="anonStreamerWrap">
-            <button class="cs-btn" id="anonStreamerBtn" @click="toggleCs('anonStreamer')">{{ csLabels.anonStreamer || '全部直播间' }}</button>
+            <button type="button" class="cs-btn" id="anonStreamerBtn" @click="toggleCs('anonStreamer')">{{ csLabels.anonStreamer || '全部直播间' }}</button>
             <div class="cs-list" :class="{ open: csOpen === 'anonStreamer' }" id="anonStreamerList">
               <div class="cs-opt" :class="{ selected: !csState.anonStreamer }" data-val="" @click="selectCs('anonStreamer', '', '全部直播间')">全部直播间</div>
               <div v-for="s in streamers" :key="s.id" class="cs-opt" :class="{ selected: csState.anonStreamer === s.id }" :data-val="s.id" @click="selectCs('anonStreamer', s.id, s.name || s.room_id)">{{ s.name || s.room_id }}</div>
             </div>
           </div>
           <div class="cs-wrap" id="anonSessionWrap">
-            <button class="cs-btn" :class="{ disabled: !csState.anonStreamer }" id="anonSessionBtn" @click="toggleCs('anonSession')">{{ csLabels.anonSession || '全部场次' }}</button>
+            <button type="button" class="cs-btn" :class="{ disabled: !csState.anonStreamer }" id="anonSessionBtn" @click="toggleCs('anonSession')">{{ csLabels.anonSession || '全部场次' }}</button>
             <div class="cs-list" :class="{ open: csOpen === 'anonSession' }" id="anonSessionList">
               <div class="cs-opt" :class="{ selected: !csState.anonSession }" data-val="" @click="selectCs('anonSession', '', '全部场次')">全部场次</div>
               <div v-for="s in anonSessions" :key="s.id" class="cs-opt" :class="{ selected: csState.anonSession === String(s.id) }" :data-val="s.id" @click="selectCs('anonSession', String(s.id), (s.started_at ? fmtTime(s.started_at) : '') + ' ' + (s.title || ''))">{{ fmtTime(s.started_at) }} {{ s.title }}</div>
@@ -129,7 +129,7 @@
         </div>
         <div style="display:flex;gap:8px;margin-bottom:16px">
           <input v-model="searchInput" placeholder="输入昵称关键词..." style="flex:1;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:13px;outline:none" @keydown.enter="doAnonymousLookup">
-          <button class="btn btn-ghost btn-sm" @click="doAnonymousLookup" style="border-color:var(--border-light)">查询</button>
+          <button type="button" class="btn btn-ghost btn-sm" @click="doAnonymousLookup" style="border-color:var(--border-light)">查询</button>
         </div>
         <div id="searchResults">
           <div v-if="searchLoading" class="loading" style="min-height:auto;padding:30px">查询中...</div>
@@ -179,9 +179,9 @@
             <span class="combine-toolbar-hint">按主播分组选择场次，合并查看数据汇总</span>
           </div>
           <div class="combine-toolbar-right">
-            <button class="btn btn-ghost btn-sm" @click="combineSelectRecent(3)">最近3场</button>
-            <button class="btn btn-ghost btn-sm" @click="combineSelectRecent(5)">最近5场</button>
-            <button class="btn btn-ghost btn-sm" @click="combineSelectAll">全选</button>
+            <button type="button" class="btn btn-ghost btn-sm" @click="combineSelectRecent(3)">最近3场</button>
+            <button type="button" class="btn btn-ghost btn-sm" @click="combineSelectRecent(5)">最近5场</button>
+            <button type="button" class="btn btn-ghost btn-sm" @click="combineSelectAll">全选</button>
           </div>
         </div>
         <!-- Loading -->
@@ -206,7 +206,7 @@
               </div>
               <div class="combine-streamer-actions" @click.stop>
                 <span class="combine-selected-count">{{ combineStreamerSelectedCount(group.streamer_id) }}/{{ group.sessions.length }}</span>
-                <button class="btn btn-ghost btn-sm combine-select-all-btn" @click="combineToggleStreamerSessions(group.streamer_id)">
+                <button type="button" class="btn btn-ghost btn-sm combine-select-all-btn" @click="combineToggleStreamerSessions(group.streamer_id)">
                   {{ combineStreamerSelectedCount(group.streamer_id) === group.sessions.length ? '取消' : '全选' }}
                 </button>
               </div>
@@ -241,7 +241,7 @@
         <div class="combine-float-count">
           已选 <strong>{{ combineSelectedIds.size }}</strong> 场
         </div>
-        <button class="btn btn-ghost btn-sm combine-float-btn" @click="mergeSessions" :disabled="combineLoading || combineSelectedIds.size < 2">
+        <button type="button" class="btn btn-ghost btn-sm combine-float-btn" @click="mergeSessions" :disabled="combineLoading || combineSelectedIds.size < 2">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
           {{ combineLoading ? '合并中...' : '查看合并' }}
         </button>
@@ -254,7 +254,7 @@
     <div class="anchor-modal">
       <div class="anchor-modal-header">
         <h3 id="anonDetailTitle">{{ anonDetailTitle }}</h3>
-        <button class="anchor-modal-close" @click="closeAnonDetailModal">
+        <button type="button" class="anchor-modal-close" @click="closeAnonDetailModal">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
@@ -267,7 +267,7 @@
     <div class="anchor-modal combine-modal">
       <div class="anchor-modal-header" style="border-bottom:none;padding-bottom:0">
         <h3 style="font-size:16px">📊 合并查看结果</h3>
-        <button class="anchor-modal-close" @click="closeCombineModal">
+        <button type="button" class="anchor-modal-close" @click="closeCombineModal">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
         </button>
       </div>
@@ -305,17 +305,17 @@
         </div>
         <!-- Tab bar -->
         <div class="combine-tab-bar">
-          <button class="combine-tab" :class="{ active: combineResultTab === 'gifts' }" @click="combineResultTab = 'gifts'">
+          <button type="button" class="combine-tab" :class="{ active: combineResultTab === 'gifts' }" @click="combineResultTab = 'gifts'">
             <span class="combine-tab-icon">🎁</span>
             <span class="combine-tab-text">礼物排行</span>
             <span v-if="combineResult.gifts" class="combine-tab-count">{{ combineResult.gifts.length }}</span>
           </button>
-          <button class="combine-tab" :class="{ active: combineResultTab === 'anchors' }" @click="combineResultTab = 'anchors'">
+          <button type="button" class="combine-tab" :class="{ active: combineResultTab === 'anchors' }" @click="combineResultTab = 'anchors'">
             <span class="combine-tab-icon">🏆</span>
             <span class="combine-tab-text">主播排行</span>
             <span v-if="combineResult.anchorRanking" class="combine-tab-count">{{ combineResult.anchorRanking.length }}</span>
           </button>
-          <button class="combine-tab" :class="{ active: combineResultTab === 'danmaku' }" @click="combineResultTab = 'danmaku'">
+          <button type="button" class="combine-tab" :class="{ active: combineResultTab === 'danmaku' }" @click="combineResultTab = 'danmaku'">
             <span class="combine-tab-icon">💬</span>
             <span class="combine-tab-text">弹幕排行</span>
             <span v-if="combineResult.danmakuRanking" class="combine-tab-count">{{ combineResult.danmakuRanking.length }}</span>

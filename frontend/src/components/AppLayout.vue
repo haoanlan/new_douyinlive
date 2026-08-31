@@ -3,7 +3,7 @@
     <!-- HEADER -->
     <div class="header">
       <div style="display:flex;align-items:center;gap:14px">
-        <button class="back-btn" :class="{ show: showBackBtn }" @click="goBack">
+        <button type="button" class="back-btn" :class="{ show: showBackBtn }" @click="goBack">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 3L5 8l5 5"/></svg>
           返回
         </button>
@@ -23,15 +23,15 @@
 
     <!-- TOP NAV (hosts level only) -->
     <div class="top-nav" :class="{ visible: showTopNav }">
-      <button class="top-nav-btn" :class="{ active: topNavTab === 'rooms' }" @click="switchTopNav('rooms')">
+      <button type="button" class="top-nav-btn" :class="{ active: topNavTab === 'rooms' }" @click="switchTopNav('rooms')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         房间管理
       </button>
-      <button class="top-nav-btn" :class="{ active: topNavTab === 'search' }" @click="switchTopNav('search')">
+      <button type="button" class="top-nav-btn" :class="{ active: topNavTab === 'search' }" @click="switchTopNav('search')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         匿名查询
       </button>
-      <button class="top-nav-btn" :class="{ active: topNavTab === 'combine' }" @click="switchTopNav('combine')">
+      <button type="button" class="top-nav-btn" :class="{ active: topNavTab === 'combine' }" @click="switchTopNav('combine')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
         合并查看
       </button>
@@ -51,8 +51,8 @@
           <div class="confirm-text" id="confirmText" v-html="confirmText"></div>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-ghost btn-sm" @click="confirmResolve(false)">取消</button>
-          <button class="btn btn-ghost btn-sm" id="confirmOkBtn" @click="confirmResolve(true)" style="border-color:var(--border-light)">确认</button>
+          <button type="button" class="btn btn-ghost btn-sm" @click="confirmResolve(false)">取消</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="confirmOkBtn" @click="confirmResolve(true)" style="border-color:var(--border-light)">确认</button>
         </div>
       </div>
     </div>

@@ -26,7 +26,7 @@
             <span v-else class="dp-val">{{ dpData.to }}</span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
           </div>
-          <button class="filter-btn" @click="clearDateFilter">清除</button>
+          <button type="button" class="filter-btn" @click="clearDateFilter">清除</button>
         </div>
         <div style="overflow-x:auto">
           <table class="session-table">
@@ -50,10 +50,10 @@
                 <td data-label="用户">{{ s.user_count.toLocaleString() }}</td>
                 <td data-label="" @click.stop>
                   <div style="display:flex;gap:4px">
-                    <button class="action-btn" title="下载报告" @click.stop="downloadReport(s.id)">
+                    <button type="button" class="action-btn" title="下载报告" @click.stop="downloadReport(s.id)">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                     </button>
-                    <button class="action-btn action-btn-del" title="删除" @click.stop="deleteSessionFromList(s.id)">
+                    <button type="button" class="action-btn action-btn-del" title="删除" @click.stop="deleteSessionFromList(s.id)">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="14" height="14"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
                   </div>
@@ -71,11 +71,11 @@
     <span class="batch-count">已选 <strong id="batchCount">{{ selectedSessionIds.length }}</strong> 场</span>
     <div class="batch-divider"></div>
     <div class="batch-actions">
-      <button class="batch-btn batch-btn-accent" @click="downloadSelectedReports">
+      <button type="button" class="batch-btn batch-btn-accent" @click="downloadSelectedReports">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         下载报告
       </button>
-      <button class="batch-btn batch-btn-del" @click="deleteSelectedSessions">
+      <button type="button" class="batch-btn batch-btn-del" @click="deleteSelectedSessions">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
         删除
       </button>
@@ -86,19 +86,19 @@
   <div id="dpOverlay" class="dp-overlay" :class="{ show: dpOverlayVisible }" @click.self="dpClose">
     <div class="dp-calendar">
       <div class="dp-head">
-        <button @click="dpNav(-1)">
+        <button type="button" @click="dpNav(-1)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
         <span class="dp-title" id="dpTitle">{{ dpTitleText }}</span>
-        <button @click="dpNav(1)">
+        <button type="button" @click="dpNav(1)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
       </div>
       <div class="dp-weekdays"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
       <div class="dp-days" id="dpDays" v-html="dpDaysHtml"></div>
       <div class="dp-foot">
-        <button @click="dpClear">清除</button>
-        <button class="dp-confirm" @click="dpConfirm">确定</button>
+        <button type="button" @click="dpClear">清除</button>
+        <button type="button" class="dp-confirm" @click="dpConfirm">确定</button>
       </div>
     </div>
   </div>

@@ -13,19 +13,19 @@
       </div>
       <!-- Tab Bar -->
       <div class="tab-bar" id="tabBar">
-        <button v-if="detailData.anchorRanking && detailData.anchorRanking.length > 1" class="tab-btn" :class="{ active: detailTab === 'anchors' }" @click="switchDetailTab('anchors')">
+        <button type="button" v-if="detailData.anchorRanking && detailData.anchorRanking.length > 1" class="tab-btn" :class="{ active: detailTab === 'anchors' }" @click="switchDetailTab('anchors')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           主播排名
         </button>
-        <button class="tab-btn" :class="{ active: detailTab === 'gifts' }" @click="switchDetailTab('gifts')">
+        <button type="button" class="tab-btn" :class="{ active: detailTab === 'gifts' }" @click="switchDetailTab('gifts')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
           礼物榜单
         </button>
-        <button class="tab-btn" :class="{ active: detailTab === 'danmaku' }" @click="switchDetailTab('danmaku')">
+        <button type="button" class="tab-btn" :class="{ active: detailTab === 'danmaku' }" @click="switchDetailTab('danmaku')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           弹幕
         </button>
-        <button class="tab-btn" :class="{ active: detailTab === 'anon' }" @click="switchDetailTab('anon')">
+        <button type="button" class="tab-btn" :class="{ active: detailTab === 'anon' }" @click="switchDetailTab('anon')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           信息查询
         </button>
@@ -33,7 +33,7 @@
       <!-- Live refresh bar -->
       <div v-if="detailData.session?.is_live" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
         <div style="font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:4px"><span class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse 2s infinite"></span> 直播中 · 每15秒自动刷新</div>
-        <button class="btn btn-ghost btn-sm" @click="manualRefresh" :disabled="refreshing" style="font-size:12px;padding:4px 10px;display:flex;align-items:center;gap:4px;min-width:72px;justify-content:center">
+        <button type="button" class="btn btn-ghost btn-sm" @click="manualRefresh" :disabled="refreshing" style="font-size:12px;padding:4px 10px;display:flex;align-items:center;gap:4px;min-width:72px;justify-content:center">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" :class="{ spin: refreshing }"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
           刷新
         </button>
@@ -219,7 +219,7 @@
           <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px">输入关键词，查询本场次相关的送礼或弹幕记录</div>
           <div class="anon-input-row">
             <input id="anonInput" v-model="anonQuery" placeholder="输入关键词（昵称/礼物名/弹幕内容）..." @keydown.enter="queryAnonymous">
-            <button class="btn btn-ghost btn-sm" @click="queryAnonymous" style="border-color:var(--border)">查询</button>
+            <button type="button" class="btn btn-ghost btn-sm" @click="queryAnonymous" style="border-color:var(--border)">查询</button>
           </div>
           <div id="anonResult" class="anon-result" style="display:none" :style="anonMatches.length > 0 || anonSearched ? {display:'block'} : {}">
             <div v-if="anonMatches.length === 0 && anonSearched" class="empty" style="padding:20px">未找到匹配 "{{ anonQuery }}" 的记录</div>
@@ -263,7 +263,7 @@
     <div class="anchor-modal">
       <div class="anchor-modal-header">
         <h3 id="anchorModalTitle">{{ anchorModalTitle }}</h3>
-        <button class="anchor-modal-close" @click="closeAnchorModal">
+        <button type="button" class="anchor-modal-close" @click="closeAnchorModal">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M4 4l8 8M12 4l-8 8"/></svg>
         </button>
       </div>
@@ -276,7 +276,7 @@
     <div class="anchor-modal">
       <div class="anchor-modal-header">
         <h3 id="giftDetailTitle">{{ giftDetailTitle }}</h3>
-        <button class="anchor-modal-close" @click="closeGiftDetailModal">
+        <button type="button" class="anchor-modal-close" @click="closeGiftDetailModal">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>

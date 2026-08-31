@@ -12,6 +12,7 @@
   --radius:10px;--radius-sm:6px;--radius-xs:4px;--radius-lg:14px;
   --shadow:0 1px 3px rgba(0,0,0,0.3),0 4px 12px rgba(0,0,0,0.2);
   --shadow-lg:0 4px 16px rgba(0,0,0,0.4);
+  --z-dropdown:100;--z-overlay:200;--z-toast:999;--z-modal:1000;
 }
 body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;min-height:100vh;overflow-y:scroll;scrollbar-gutter:stable}
 a{color:var(--accent);text-decoration:none}
@@ -82,7 +83,7 @@ input,select{font-family:inherit;outline:none}
 .action-btn-del:hover{background:var(--red-bg);color:var(--red);border-color:var(--red)}
 
 /* ========== MODAL ========== */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:1000;animation:fadeIn .15s}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:var(--z-modal);animation:fadeIn .15s}
 .modal{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);width:420px;max-width:90vw;box-shadow:0 16px 48px rgba(0,0,0,0.4);animation:slideUp .2s}
 .modal-header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 0}
 .modal-title{font-size:16px;font-weight:600}
@@ -119,7 +120,7 @@ input,select{font-family:inherit;outline:none}
 }
 .dm-limit-select svg{position:absolute;right:8px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none}
 .dm-limit-dropdown{
-  position:absolute;top:calc(100% + 4px);right:0;min-width:100%;z-index:100;
+  position:absolute;top:calc(100% + 4px);right:0;min-width:100%;z-index:var(--z-dropdown);
   background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);
   box-shadow:0 8px 24px rgba(0,0,0,0.2);overflow:hidden;
 }
@@ -150,7 +151,7 @@ thead .session-cb:hover{opacity:1}
 .session-table tbody tr.selected{background:var(--accent-bg) !important}
 
 /* ========== BATCH FLOAT BAR ========== */
-.batch-float{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);display:none;align-items:center;gap:12px;padding:12px 20px;background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);z-index:100;backdrop-filter:blur(12px);min-width:315px}
+.batch-float{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);display:none;align-items:center;gap:12px;padding:12px 20px;background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);z-index:var(--z-dropdown);backdrop-filter:blur(12px);min-width:315px}
 .batch-float.show{display:flex}
 .batch-float .batch-count{font-size:13px;color:var(--text-secondary);white-space:nowrap}
 .batch-float .batch-count strong{color:var(--text);font-weight:600}
@@ -179,7 +180,7 @@ thead .session-cb:hover{opacity:1}
 .dp-input .dp-val{color:var(--text)}
 .dp-input .dp-ph{color:var(--text-muted)}
 .dp-input svg{width:14px;height:14px;color:var(--text-muted);flex-shrink:0}
-.dp-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;display:none;align-items:center;justify-content:center}
+.dp-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:var(--z-overlay);display:none;align-items:center;justify-content:center}
 .dp-overlay.show{display:flex}
 .dp-calendar{background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:16px;width:300px;box-shadow:var(--shadow-lg)}
 .dp-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
@@ -345,7 +346,7 @@ thead .session-cb:hover{opacity:1}
 .empty-icon{font-size:32px;margin-bottom:8px;opacity:0.5}
 
 /* ========== TOAST ========== */
-.toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);font-size:13px;color:var(--text);box-shadow:var(--shadow-lg);opacity:0;transform:translateY(10px);transition:opacity .25s,transform .25s;z-index:999;pointer-events:none}
+.toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);font-size:13px;color:var(--text);box-shadow:var(--shadow-lg);opacity:0;transform:translateY(10px);transition:opacity .25s,transform .25s;z-index:var(--toast);pointer-events:none}
 .toast.show{opacity:1;transform:translateY(0)}
 .toast.success{border-color:var(--green)}
 .toast.error{border-color:var(--red)}
@@ -470,7 +471,7 @@ thead .session-cb:hover{opacity:1}
 .danmaku-rank-cnt{font-size:12px;color:var(--text-muted);flex-shrink:0;min-width:40px;text-align:right}
 
 /* Anchor gifts modal */
-.anchor-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.anchor-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:var(--z-overlay);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
 .anchor-modal-overlay.show{opacity:1;pointer-events:auto}
 .anchor-modal{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);width:min(90vw,520px);max-height:80vh;display:flex;flex-direction:column;box-shadow:var(--shadow-lg);transform:scale(.96);transition:transform .2s;overflow:hidden}
 .anchor-modal-overlay.show .anchor-modal{transform:scale(1)}
@@ -514,7 +515,7 @@ thead .session-cb:hover{opacity:1}
 .anon-filter .cs-btn{width:100%;padding:8px 28px 8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:13px;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;appearance:none;-webkit-appearance:none}
 .anon-filter .cs-btn::after{content:'';position:absolute;right:10px;top:50%;transform:translateY(-50%);width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid var(--text-muted);pointer-events:none}
 .anon-filter .cs-btn.disabled{opacity:0.5;cursor:not-allowed;pointer-events:none}
-.anon-filter .cs-list{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);z-index:100;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.anon-filter .cs-list{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);z-index:var(--z-dropdown);max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.4)}
 .anon-filter .cs-list.open{display:block}
 .anon-filter .cs-opt{padding:10px 12px;font-size:13px;color:var(--text);cursor:pointer;border-bottom:1px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .anon-filter .cs-opt:last-child{border-bottom:none}
@@ -621,7 +622,7 @@ thead .session-cb:hover{opacity:1}
 .combine-session-diamonds{font-size:11px;color:var(--orange);font-weight:600;display:inline-flex;align-items:center;gap:3px;font-variant-numeric:tabular-nums}
 
 /* Floating action bar */
-.combine-float-bar{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);display:none;align-items:center;gap:14px;padding:12px 20px;background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);z-index:100;backdrop-filter:blur(12px);min-width:260px;transition:transform .2s,opacity .2s;opacity:0}
+.combine-float-bar{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);display:none;align-items:center;gap:14px;padding:12px 20px;background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);z-index:var(--z-dropdown);backdrop-filter:blur(12px);min-width:260px;transition:transform .2s,opacity .2s;opacity:0}
 .combine-float-bar.show{display:flex;transform:translateX(-50%) translateY(0);opacity:1}
 .combine-float-count{font-size:13px;color:var(--text-secondary);white-space:nowrap}
 .combine-float-count strong{color:var(--text);font-weight:600}

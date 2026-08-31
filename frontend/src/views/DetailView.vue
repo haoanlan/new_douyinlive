@@ -155,7 +155,7 @@
                             </div>
                             <div v-if="d._type === 'gift'" class="dm-gift-text">
                               送了
-                              <img v-if="d.gift_icon" :src="d.gift_icon" style="width:16px;height:16px;vertical-align:-3px;margin:0 2px;border-radius:var(--radius-xs)">
+                              <img v-if="d.gift_icon" :src="d.gift_icon" alt="礼物图标" style="width:16px;height:16px;vertical-align:-3px;margin:0 2px;border-radius:var(--radius-xs)">
                               <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="vertical-align:-2px;margin:0 2px"><rect x="3" y="8" width="18" height="13" rx="1"/><path d="M12 8V6c0-2-1.5-4-4-4S4 4 4 6h2"/><path d="M20 6c0-2-1.5-4-4-4s-4 2-4 4h2"/><line x1="12" y1="8" x2="12" y2="21"/><line x1="3" y1="13" x2="21" y2="13"/></svg>
                               <span style="font-weight:600">{{ d.gift_name }}</span>
                               <span v-if="d.count > 1" style="font-weight:600;margin-left:2px">×{{ d.count }}</span>
@@ -182,7 +182,7 @@
                               </div>
                               <div v-if="d._type === 'gift'" class="dm-gift-text">
                                 送了
-                                <img v-if="d.gift_icon" :src="d.gift_icon" style="width:16px;height:16px;vertical-align:-3px;margin:0 2px;border-radius:var(--radius-xs)">
+                                <img v-if="d.gift_icon" :src="d.gift_icon" alt="礼物图标" style="width:16px;height:16px;vertical-align:-3px;margin:0 2px;border-radius:var(--radius-xs)">
                                 <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="vertical-align:-2px;margin:0 2px"><rect x="3" y="8" width="18" height="13" rx="1"/><path d="M12 8V6c0-2-1.5-4-4-4S4 4 4 6h2"/><path d="M20 6c0-2-1.5-4-4-4s-4 2-4 4h2"/><line x1="12" y1="8" x2="12" y2="21"/><line x1="3" y1="13" x2="21" y2="13"/></svg>
                                 <span style="font-weight:600">{{ d.gift_name }}</span>
                                 <span v-if="d.count > 1" style="font-weight:600;margin-left:2px">×{{ d.count }}</span>
@@ -227,7 +227,7 @@
             <div v-if="anonMatches.length > 0" style="font-size:12px;color:var(--text-muted);margin-bottom:10px">找到 <strong style="color:var(--text)">{{ anonMatches.length }}</strong> 条匹配记录</div>
             <div v-for="(m, idx) in anonMatches" :key="idx" class="anon-result-item" style="animation:fadeIn .3s ease">
               <div style="flex-shrink:0">
-                <img v-if="m.avatar" :src="m.avatar" class="avatar" style="width:32px;height:32px" @error="$event.target.style.display='none'">
+                <img v-if="m.avatar" :src="m.avatar" alt="用户头像" class="avatar" style="width:32px;height:32px" @error="$event.target.style.display='none'">
                 <div v-else class="avatar" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--text-muted)">{{ (m.nickname || '?')[0] }}</div>
               </div>
               <div style="flex:1;min-width:0">
@@ -237,7 +237,7 @@
                 </div>
                 <div style="font-size:12px;color:var(--text-muted);line-height:1.6" :title="m.content || ''">
                   <template v-if="m.type === '礼物'">
-                    <img v-if="m.giftIcon" :src="m.giftIcon" style="width:16px;height:16px;vertical-align:-3px;margin-right:2px;border-radius:var(--radius-xs)">
+                    <img v-if="m.giftIcon" :src="m.giftIcon" alt="礼物图标" style="width:16px;height:16px;vertical-align:-3px;margin-right:2px;border-radius:var(--radius-xs)">
                     <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="vertical-align:-2px;margin-right:2px"><rect x="3" y="8" width="18" height="13" rx="1"/><path d="M12 8V6c0-2-1.5-4-4-4S4 4 4 6h2"/><path d="M20 6c0-2-1.5-4-4-4s-4 2-4 4h2"/><line x1="12" y1="8" x2="12" y2="21"/><line x1="3" y1="13" x2="21" y2="13"/></svg>
                     <span style="color:var(--text)">{{ m.displayText }}</span>
                     <span v-if="m.diamonds" style="margin-left:6px;font-weight:600;color:var(--orange)">
@@ -627,7 +627,7 @@ function showGiftDetail(nickname: string, secUid: string) {
   let html = `<div class="anchor-modal-summary"><span><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:-2px;fill:var(--orange)"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg> <span class="sv">${totalD.toLocaleString()}</span></span><span>${details.length} 种礼物</span></div>`
   html += '<div style="display:flex;flex-direction:column;gap:6px">'
   details.forEach((d: any) => {
-    const icon = d.gift_icon ? `<img src="${esc(d.gift_icon)}" class="gdi-icon">` : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="gdi-icon" style="padding:2px;box-sizing:border-box"><rect x="3" y="8" width="18" height="13" rx="1"/><path d="M12 8V6c0-2-1.5-4-4-4S4 4 4 6h2"/><path d="M20 6c0-2-1.5-4-4-4s-4 2-4 4h2"/><line x1="12" y1="8" x2="12" y2="21"/><line x1="3" y1="13" x2="21" y2="13"/></svg>'
+    const icon = d.gift_icon ? `<img src="${esc(d.gift_icon)}" alt="礼物图标" class="gdi-icon">` : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="gdi-icon" style="padding:2px;box-sizing:border-box"><rect x="3" y="8" width="18" height="13" rx="1"/><path d="M12 8V6c0-2-1.5-4-4-4S4 4 4 6h2"/><path d="M20 6c0-2-1.5-4-4-4s-4 2-4 4h2"/><line x1="12" y1="8" x2="12" y2="21"/><line x1="3" y1="13" x2="21" y2="13"/></svg>'
     const to = d.to_nickname ? `<span class="gdi-to">→ ${esc(d.to_nickname)}</span>` : ''
     html += `<div class="gift-detail-item">${icon}<span class="gdi-name">${esc(d.gift_name)} ×${d.count}</span>${to}<span class="gdi-diamonds"><svg viewBox="0 0 24 24" width="12" height="12" style="margin-right:2px;fill:currentColor"><path d="M6 2h12l4 7-10 13L2 9z"/><path d="M2 9h20" stroke="rgba(255,255,255,0.2)" stroke-width="0.7" fill="none"/><path d="M12 22l-4-13h8z" fill="rgba(0,0,0,0.1)"/></svg>${d.total_diamonds.toLocaleString()}</span></div>`
   })

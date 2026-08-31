@@ -85,7 +85,7 @@
                 <input v-model="addRoomName" placeholder="主播名称" style="width:100%">
               </div>
               <div class="modal-preview" id="addRoomPreview">
-                <img v-if="lookupData.avatar" :src="lookupData.avatar" style="width:40px;height:40px;border-radius:50%;object-fit:cover">
+                <img v-if="lookupData.avatar" :src="lookupData.avatar" alt="主播头像" style="width:40px;height:40px;border-radius:50%;object-fit:cover">
                 <div>
                   <div style="font-weight:500;font-size:13px" v-if="lookupData.nickname">{{ lookupData.nickname }}</div>
                   <div style="font-weight:500;font-size:13px;color:var(--text-muted);font-style:italic" v-else>待解析</div>

@@ -17,6 +17,7 @@ const { getCookie, getDashboardToken, getDashboardHost, getDashboardPort, getDas
 
 const routeHandlers = [
   require('./lib/routes/auth'),
+  require('./lib/routes/overview'),
   require('./lib/routes/rooms'),
   require('./lib/routes/sessions'),
   require('./lib/routes/detail'),

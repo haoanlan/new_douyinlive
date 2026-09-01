@@ -190,6 +190,14 @@ async function init() {
       session_id INTEGER NOT NULL, time TEXT NOT NULL,
       gifts INTEGER DEFAULT 0, diamonds INTEGER DEFAULT 0, danmaku INTEGER DEFAULT 0,
       PRIMARY KEY (session_id, time), FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
+    )`,
+    `CREATE TABLE IF NOT EXISTS dashboard_users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT NOT NULL UNIQUE,
+      password TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'R_GUEST',
+      enabled INTEGER NOT NULL DEFAULT 1,
+      create_time TEXT DEFAULT (datetime('now','localtime'))
     )`
   ];
 
@@ -224,6 +232,21 @@ async function init() {
     }
   } catch (e) {
     console.error('[db] 回填聚合数据失败:', e.message);
+  }
+
+  // 种子：默认管理员与游客账号（仅当表为空时）
+  try {
+    const userCount = d.prepare('SELECT COUNT(*) c FROM dashboard_users').get().c;
+    if (userCount === 0) {
+      const crypto = require('crypto');
+      const hash = (s) => crypto.createHash('sha256').update(s).digest('hex');
+      const ins = d.prepare('INSERT INTO dashboard_users (username, password, role, enabled) VALUES (?, ?, ?, 1)');
+      ins.run('admin', hash('123456'), 'R_SUPER');
+      ins.run('guest', hash('123456'), 'R_GUEST');
+      console.log('[db] 已创建默认账号: admin / guest (密码 123456)');
+    }
+  } catch (e) {
+    console.error('[db] 初始化账号失败:', e.message);
   }
 }
 

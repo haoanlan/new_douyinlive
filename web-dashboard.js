@@ -44,7 +44,7 @@ function checkAuth(req, res) {
 
 // ====== 工具函数 ======
 async function sendJSON(res, data, status = 200) {
-  if (res.headersSent) return;
+  if (res.headersSent) return true;
   const json = JSON.stringify(data);
   const accept = res.req?.headers?.['accept-encoding'] || '';
   if (accept.includes('gzip') && json.length > 1024) {
@@ -66,6 +66,7 @@ async function sendJSON(res, data, status = 200) {
     }
     res.end(json);
   }
+  return true;
 }
 
 function sendError(res, msg, status = 500) {

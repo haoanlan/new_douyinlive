@@ -16,6 +16,7 @@ const { getAvatarBySecUid, getAvatarByNickname } = require('./lib/avatar-utils')
 const { getCookie, getDashboardToken, getDashboardHost, getDashboardPort, getDashboardUsername, getDashboardPassword } = require('./lib/config-reader');
 
 const routeHandlers = [
+  require('./lib/routes/auth'),
   require('./lib/routes/rooms'),
   require('./lib/routes/sessions'),
   require('./lib/routes/detail'),
@@ -37,7 +38,26 @@ const AUTH_PASSWORD = getDashboardPassword();
 
 // ====== 认证中间件 ======
 function checkAuth(req, res) {
-  return true; // 不启用认证
+  // 登录入口与用户列表免认证（列表仅本机演示）
+  const { pathname } = parseQuery(req.url);
+  if (pathname === '/api/auth/login' || pathname === '/api/user/list') return true;
+  const auth = String(req.headers.authorization || '');
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+  const userName = token ? Buffer.from(token, 'base64').toString().split(':')[0] : '';
+  if (!userName) {
+    res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({ error: '未授权，请先登录' }));
+    return false;
+  }
+  const user = db.getDb().prepare(
+    'SELECT id, username, enabled FROM dashboard_users WHERE username = ?'
+  ).get(userName);
+  if (!user || user.enabled !== 1) {
+    res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({ error: '未授权，请先登录' }));
+    return false;
+  }
+  return true;
 }
 
 // ====== 读取抖音Cookie（使用共享模块 lib/config-reader.js）======

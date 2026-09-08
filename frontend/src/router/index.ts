@@ -1,49 +1,23 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import type { App } from 'vue'
+import { createRouter, createWebHashHistory } from 'vue-router'
+import { staticRoutes } from './routes/staticRoutes'
+import { configureNProgress } from '@/utils/router'
+import { setupBeforeEachGuard } from './guards/beforeEach'
+import { setupAfterEachGuard } from './guards/afterEach'
 
-const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
-  routes: [
-    {
-      path: '/',
-      component: () => import('@/components/AppLayout.vue'),
-      children: [
-        {
-          path: '',
-          name: 'hosts',
-          component: () => import('@/views/HomeView.vue'),
-          meta: { viewLevel: 'hosts', pageTitle: '直播监控', showBackBtn: false, showTopNav: true },
-        },
-        {
-          path: 'sessions/:hostId',
-          name: 'sessions',
-          component: () => import('@/views/SessionsView.vue'),
-          meta: { viewLevel: 'sessions', showBackBtn: true, showTopNav: false },
-        },
-        {
-          path: 'detail/:sessionId',
-          name: 'detail',
-          component: () => import('@/views/DetailView.vue'),
-          meta: { viewLevel: 'detail', showBackBtn: true, showTopNav: false },
-        },
-      ],
-    },
-    // 404 兜底路由
-    { path: '/:pathMatch(.*)*', redirect: '/' },
-  ],
-  scrollBehavior(_to, _from, savedPosition) {
-    if (savedPosition) return savedPosition
-    return { top: 0 }
-  },
+// 创建路由实例
+export const router = createRouter({
+  history: createWebHashHistory(),
+  routes: staticRoutes // 静态路由
 })
 
-// 路由参数校验：缺少必要参数时回退到首页
-router.beforeEach((to) => {
-  if (to.name === 'sessions' && !to.params.hostId) {
-    return { name: 'hosts' }
-  }
-  if (to.name === 'detail' && !to.params.sessionId) {
-    return { name: 'hosts' }
-  }
-})
+// 初始化路由
+export function initRouter(app: App<Element>): void {
+  configureNProgress() // 顶部进度条
+  setupBeforeEachGuard(router) // 路由前置守卫
+  setupAfterEachGuard(router) // 路由后置守卫
+  app.use(router)
+}
 
-export default router
+// 主页路径，默认使用菜单第一个有效路径，配置后使用此路径
+export const HOME_PAGE_PATH = ''

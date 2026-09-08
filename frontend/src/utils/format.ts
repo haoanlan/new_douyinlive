@@ -21,7 +21,13 @@ export function fmtTime(ts: any): string {
   } else {
     d = new Date(ts)
   }
-  return d.toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+  return d.toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
 }
 
 /** 格式化场次日期 (YYYY/MM/DD) */
@@ -43,31 +49,37 @@ export function fmtSessionTime(t: any): string {
 /** 格式化时长 (分钟 → Xh Xm) */
 export function formatDuration(min: number): string {
   if (min < 60) return min + '分钟'
-  const h = Math.floor(min / 60), m = min % 60
+  const h = Math.floor(min / 60),
+    m = min % 60
   return m > 0 ? `${h}h ${m}m` : `${h}h`
 }
 
-/** 格式化数字 (万) */
+/** 格式化数字（万/亿，保留两位小数） */
 export function fmtNum(n: number): string {
   if (!n) return '0'
-  if (n >= 10000) return (n / 10000).toFixed(1) + '万'
+  if (n >= 1e8) return (n / 1e8).toFixed(2) + '亿'
+  if (n >= 10000) return (n / 10000).toFixed(2) + '万'
   return n.toLocaleString()
 }
 
 /** 转义属性值（用于 HTML 属性内部） */
 function escAttr(s: string | null | undefined): string {
   if (!s) return ''
-  return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
 }
 
 /** 生成头像 HTML（用于 v-html） */
 export function avatarHtml(url: string, name: string, size?: number): string {
   const s = size ? `width:${size}px;height:${size}px` : ''
   const safeName = escAttr(name?.[0] || '?')
-  const textStyle = 'display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:13px;color:var(--text-muted)'
   if (url) {
     const safeUrl = escAttr(url)
-    return `<div class="avatar" style="position:relative;${s}"><span style="${textStyle}">${safeName}</span><img src="${safeUrl}" alt="" loading="eager" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;border-radius:50%;opacity:0;transition:opacity 0.2s" onload="this.style.opacity=1" onerror="this.style.display='none'"></div>`
+    return `<div class="avatar" style="${s}"><img src="${safeUrl}" alt="" loading="eager" style="opacity:0;transition:opacity 0.2s" onload="this.style.opacity=1" onerror="this.style.opacity=0;this.parentElement.textContent='${safeName}'"></div>`
   }
   return `<div class="avatar" style="${s};display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--text-muted)">${safeName}</div>`
 }

@@ -46,3 +46,16 @@ streamers.json
 
 dashboard-*.log
 
+# Frontend
+frontend/dist/
+frontend/node_modules/
+frontend/pnpm-lock.yaml
+frontend/.tsbuildinfo
+frontend/db/
+frontend/docs/
+frontend/.vscode/
+frontend/dev.log
+frontend/push-retry.log
+frontend/.husky/
+frontend/scripts/
+

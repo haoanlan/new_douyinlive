@@ -1,31 +1,35 @@
 <template>
   <div class="p-4">
-    <el-card shadow="never" class="mb-4" v-loading="loading">
+    <div class="art-card p-5 mb-4" v-loading="loading">
       <div class="flex items-center gap-4">
         <el-avatar :size="56" :src="profile?.avatar" />
         <div>
           <div class="text-lg font-bold">{{ profile?.nickname }}</div>
-          <div class="text-sm text-gray-400">{{ profile?.signature || '无签名' }}</div>
+          <div class="text-sm text-g-400">{{ profile?.signature || '无签名' }}</div>
           <div class="text-sm mt-1">
             粉丝 {{ profile?.fans_count ?? '-' }} · 关注 {{ profile?.following_count ?? '-' }} ·
             {{ profile?.ip_location || '未知属地' }}
           </div>
         </div>
       </div>
-    </el-card>
+    </div>
 
     <el-row :gutter="16">
       <el-col :span="12">
-        <el-card shadow="never" class="mb-4">
-          <template #header>送礼风格</template>
+        <div class="art-card p-5 mb-4">
+          <div class="art-card-header">
+            <div class="title"><h4>送礼风格</h4></div>
+          </div>
           <div>{{ profile?.gift_profile?.style?.join('、') || '-' }}</div>
-          <div class="text-sm text-gray-400 mt-2">
+          <div class="text-sm text-g-400 mt-2">
             平均 {{ profile?.gift_profile?.avg_diamonds ?? '-' }} 钻 · 活跃高峰
             {{ profile?.gift_profile?.peak_hour ?? '-' }} 点
           </div>
-        </el-card>
-        <el-card shadow="never">
-          <template #header>近期行为</template>
+        </div>
+        <div class="art-card p-5">
+          <div class="art-card-header">
+            <div class="title"><h4>近期行为</h4></div>
+          </div>
           <el-timeline>
             <el-timeline-item
               v-for="(a, i) in profile?.recent_actions || []"
@@ -43,20 +47,24 @@
             description="暂无行为"
             :image-size="60"
           />
-        </el-card>
+        </div>
       </el-col>
 
       <el-col :span="12">
-        <el-card shadow="never" class="mb-4">
-          <template #header>常送主播</template>
+        <div class="art-card p-5 mb-4">
+          <div class="art-card-header">
+            <div class="title"><h4>常送主播</h4></div>
+          </div>
           <el-table :data="profile?.top_anchors || []" size="small">
             <el-table-column prop="name" label="主播" />
             <el-table-column prop="diamonds" label="钻石" width="100" />
           </el-table>
           <el-empty v-if="!profile?.top_anchors?.length" description="暂无数据" :image-size="60" />
-        </el-card>
-        <el-card shadow="never">
-          <template #header>常用礼物</template>
+        </div>
+        <div class="art-card p-5">
+          <div class="art-card-header">
+            <div class="title"><h4>常用礼物</h4></div>
+          </div>
           <el-table :data="profile?.top_gifts || []" size="small">
             <el-table-column label="礼物" min-width="120">
               <template #default="{ row }">
@@ -75,7 +83,7 @@
             <el-table-column prop="count" label="次数" width="100" />
           </el-table>
           <el-empty v-if="!profile?.top_gifts?.length" description="暂无数据" :image-size="60" />
-        </el-card>
+        </div>
       </el-col>
     </el-row>
   </div>
@@ -91,7 +99,7 @@
   const route = useRoute()
   const secUid = String(route.params.secUid)
   const profile = ref<UserProfile | null>(null)
-  const loading = ref(false)
+  const loading = ref(true)
 
   onMounted(async () => {
     loading.value = true

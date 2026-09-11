@@ -1,21 +1,19 @@
 <template>
   <div class="p-4">
-    <el-card shadow="never">
-      <template #header>
-        <div class="flex items-center justify-between">
-          <span class="font-bold">匿名查询</span>
-          <div class="flex gap-2">
-            <el-input
-              v-model="query"
-              placeholder="输入昵称或关键词"
-              class="!w-80"
-              clearable
-              @keyup.enter="doSearch"
-            />
-            <el-button type="primary" :loading="loading" @click="doSearch">查询</el-button>
-          </div>
+    <div class="art-card p-5">
+      <div class="flex items-center justify-between mb-4">
+        <span class="font-bold">匿名查询</span>
+        <div class="flex gap-2">
+          <el-input
+            v-model="query"
+            placeholder="输入昵称或关键词"
+            class="!w-80"
+            clearable
+            @keyup.enter="doSearch"
+          />
+          <el-button type="primary" :loading="loading" @click="doSearch">查询</el-button>
         </div>
-      </template>
+      </div>
       <el-table :data="results" v-loading="loading">
         <el-table-column prop="nickname" label="昵称" min-width="140" />
         <el-table-column prop="db_names" label="库内别名" min-width="180">
@@ -40,7 +38,7 @@
         </el-table-column>
       </el-table>
       <el-empty v-if="searched && !results.length && !loading" description="未找到匹配用户" />
-    </el-card>
+    </div>
   </div>
 </template>
 

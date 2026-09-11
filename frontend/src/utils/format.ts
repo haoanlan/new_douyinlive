@@ -62,6 +62,14 @@ export function fmtNum(n: number): string {
   return n.toLocaleString()
 }
 
+/** 排名徽章样式（前三名高亮） */
+export function rankClass(i: number): string {
+  if (i === 0) return 'bg-amber-100 text-amber-600'
+  if (i === 1) return 'bg-slate-200 text-slate-600'
+  if (i === 2) return 'bg-orange-100 text-orange-600'
+  return 'bg-g-100 text-g-500'
+}
+
 /** 转义属性值（用于 HTML 属性内部） */
 function escAttr(s: string | null | undefined): string {
   if (!s) return ''

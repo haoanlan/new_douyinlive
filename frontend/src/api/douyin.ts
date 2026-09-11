@@ -29,6 +29,7 @@ export interface Room {
   avatar?: string
   session_count?: number
   total_likes?: number
+  last_session_time?: string | null
   enabled: boolean
   connected: boolean
   recording: boolean

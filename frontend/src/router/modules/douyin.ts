@@ -17,6 +17,7 @@ export const douyinRoutes: AppRouteRecord = {
       meta: {
         title: 'menus.douyin.dashboard',
         icon: 'ri:bar-chart-2-line',
+        keepAlive: true,
         roles: ['R_SUPER', 'R_GUEST']
       }
     },
@@ -24,7 +25,7 @@ export const douyinRoutes: AppRouteRecord = {
       path: 'rooms',
       name: 'DouyinRooms',
       component: '/douyin/rooms',
-      meta: { title: 'menus.douyin.rooms', icon: 'ri:live-line', roles: ['R_SUPER', 'R_GUEST'] }
+      meta: { title: 'menus.douyin.rooms', icon: 'ri:live-line', keepAlive: true, roles: ['R_SUPER', 'R_GUEST'] }
     },
     {
       path: 'sessions',
@@ -35,6 +36,7 @@ export const douyinRoutes: AppRouteRecord = {
         icon: 'ri:file-list-3-line',
         isHide: true,
         isHideTab: true,
+        keepAlive: true,
         roles: ['R_SUPER', 'R_GUEST']
       }
     },
@@ -45,6 +47,7 @@ export const douyinRoutes: AppRouteRecord = {
       meta: {
         title: 'menus.douyin.trends',
         icon: 'ri:line-chart-line',
+        keepAlive: true,
         roles: ['R_SUPER', 'R_GUEST']
       }
     },
@@ -61,6 +64,7 @@ export const douyinRoutes: AppRouteRecord = {
       meta: {
         title: 'menus.douyin.status',
         icon: 'ri:heart-pulse-line',
+        keepAlive: true,
         roles: ['R_SUPER', 'R_GUEST']
       }
     },

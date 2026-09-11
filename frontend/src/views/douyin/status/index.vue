@@ -1,14 +1,16 @@
 <template>
   <div class="p-4">
     <el-row :gutter="16" class="mb-4">
-      <el-col :span="8">
-        <el-card shadow="never">
-          <template #header>守护进程 (monitor.js)</template>
+      <el-col :sm="24" :md="8">
+        <div class="art-card p-5">
+          <div class="art-card-header">
+            <div class="title"><h4>守护进程 (monitor.js)</h4></div>
+          </div>
           <div class="flex items-center gap-3">
             <el-tag :type="daemonRunning ? 'success' : 'danger'">
               {{ daemonRunning ? '运行中' : '未运行' }}
             </el-tag>
-            <span class="text-sm text-gray-400">PID: {{ daemon?.data?.pid ?? '-' }}</span>
+            <span class="text-sm text-g-400">PID: {{ daemon?.data?.pid ?? '-' }}</span>
           </div>
           <el-alert
             v-if="!daemonRunning"
@@ -17,31 +19,33 @@
             :closable="false"
             title="守护进程未运行，请执行 node monitor.js --daemon"
           />
-        </el-card>
+        </div>
       </el-col>
-      <el-col :span="8">
-        <el-card shadow="never">
-          <template #header>WebSocket 连接</template>
+      <el-col :sm="24" :md="8">
+        <div class="art-card p-5">
+          <div class="art-card-header">
+            <div class="title"><h4>WebSocket 连接</h4></div>
+          </div>
           <div class="text-2xl font-bold">{{ connectedCount }}</div>
-          <div class="text-sm text-gray-400">已连接房间数</div>
-        </el-card>
+          <div class="text-sm text-g-400">已连接房间数</div>
+        </div>
       </el-col>
-      <el-col :span="8">
-        <el-card shadow="never">
-          <template #header>录制中</template>
+      <el-col :sm="24" :md="8">
+        <div class="art-card p-5">
+          <div class="art-card-header">
+            <div class="title"><h4>录制中</h4></div>
+          </div>
           <div class="text-2xl font-bold">{{ recordingCount }}</div>
-          <div class="text-sm text-gray-400">正在录制的房间数</div>
-        </el-card>
+          <div class="text-sm text-g-400">正在录制的房间数</div>
+        </div>
       </el-col>
     </el-row>
 
-    <el-card shadow="never">
-      <template #header>
-        <div class="flex items-center justify-between">
-          <span>房间实时状态</span>
-          <el-button size="small" @click="refresh">刷新</el-button>
-        </div>
-      </template>
+    <div class="art-card p-5">
+      <div class="flex items-center justify-between mb-4">
+        <span class="font-bold">房间实时状态</span>
+        <el-button size="small" @click="refresh">刷新</el-button>
+      </div>
       <el-table :data="roomStatusRows" v-loading="loading">
         <el-table-column prop="roomId" label="房间ID" width="160" />
         <el-table-column label="WS 连接" width="110">
@@ -63,15 +67,15 @@
         </el-table-column>
         <el-table-column label="实时统计" min-width="200">
           <template #default="{ row }">
-            <span v-if="row.stats" class="text-sm text-gray-500">
+            <span v-if="row.stats" class="text-sm text-g-500">
               弹幕 {{ row.stats.danmaku ?? 0 }} · 礼物 {{ row.stats.gift ?? 0 }}
             </span>
-            <span v-else class="text-sm text-gray-300">-</span>
+            <span v-else class="text-sm text-g-300">-</span>
           </template>
         </el-table-column>
       </el-table>
       <el-empty v-if="!roomStatusRows.length && !loading" description="守护进程未运行或无房间" />
-    </el-card>
+    </div>
   </div>
 </template>
 

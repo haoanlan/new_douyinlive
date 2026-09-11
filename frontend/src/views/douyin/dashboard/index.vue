@@ -1,5 +1,5 @@
 <template>
-  <div v-loading="firstLoading" class="p-4" element-loading-text="加载中…">
+  <div class="p-4">
     <!-- 汇总卡片 -->
     <div class="flex flex-wrap gap-5 mb-5">
       <div
@@ -22,8 +22,8 @@
       </div>
     </div>
 
-    <!-- 监控状态 -->
-    <div class="flex flex-wrap gap-5 mb-5">
+    <!-- 监控状态 —— 立即显示，无阻塞 -->
+    <div v-loading="!daemon" class="flex flex-wrap gap-5 mb-5" element-loading-text="连接中…">
       <div class="art-card relative flex-1 min-w-[160px] flex items-center gap-3 h-20 px-5">
         <div class="size-10 rounded-lg flex-cc bg-theme/10 shrink-0">
           <ArtSvgIcon icon="ri:server-line" class="text-lg text-theme" />
@@ -82,7 +82,7 @@
               <p>历史在线人数 Top 5</p>
             </div>
           </div>
-          <TransitionGroup name="list" tag="div" class="flex flex-col gap-2.5 mt-4">
+          <TransitionGroup name="list" tag="div" class="flex flex-col gap-2.5 mt-4" appear>
             <div
               v-for="(p, i) in overview?.peakSessions || []"
               :key="p.id"
@@ -120,7 +120,7 @@
               <p>累计钻石 Top 5</p>
             </div>
           </div>
-          <TransitionGroup name="list" tag="div" class="flex flex-col gap-2.5 mt-4">
+          <TransitionGroup name="list" tag="div" class="flex flex-col gap-2.5 mt-4" appear>
             <div
               v-for="(g, i) in (overview?.topGifts || []).slice(0, 5)"
               :key="g.name"
@@ -159,7 +159,7 @@
               <p>累计钻石 Top 5</p>
             </div>
           </div>
-          <TransitionGroup name="list" tag="div" class="flex flex-col gap-2.5 mt-4">
+          <TransitionGroup name="list" tag="div" class="flex flex-col gap-2.5 mt-4" appear>
             <div
               v-for="(u, i) in overview?.topUsers || []"
               :key="u.sec_uid || u.nickname"
@@ -186,7 +186,7 @@
               <p>发言次数 Top 5</p>
             </div>
           </div>
-          <TransitionGroup name="list" tag="div" class="flex flex-col gap-2.5 mt-4">
+          <TransitionGroup name="list" tag="div" class="flex flex-col gap-2.5 mt-4" appear>
             <div
               v-for="(d, i) in overview?.topDanmaku || []"
               :key="d.nickname"
@@ -221,7 +221,7 @@
           <p>最新 8 场直播记录</p>
         </div>
       </div>
-      <div class="flex flex-col gap-2.5 mt-4">
+      <TransitionGroup name="list" tag="div" class="flex flex-col gap-2.5 mt-4" appear>
         <div
           v-for="s in overview?.recentSessions || []"
           :key="s.id"
@@ -270,24 +270,23 @@
           description="暂无场次"
           :image-size="60"
         />
-      </div>
+      </TransitionGroup>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, onUnmounted, ref } from 'vue'
+  import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
   import { useRouter } from 'vue-router'
   import { useTransition } from '@vueuse/core'
   import { fetchOverview, fetchStatus, type OverviewData, type DaemonStatus } from '@/api/douyin'
-  import { fmtNum, fmtTime } from '@/utils/format'
+  import { fmtNum, fmtTime, rankClass } from '@/utils/format'
 
   defineOptions({ name: 'DouyinDashboard' })
 
   const router = useRouter()
   const overview = ref<OverviewData | null>(null)
   const daemon = ref<DaemonStatus | null>(null)
-  const firstLoading = ref(true)
 
   const daemonRunning = computed(() => Boolean(daemon.value?.data?.running))
   const roomStatusList = computed(() => {
@@ -300,6 +299,7 @@
   const totalRooms = computed(() => roomStatusList.value.length)
   const connectedCount = computed(() => roomStatusList.value.filter((r) => r.connected).length)
   const recordingCount = computed(() => roomStatusList.value.filter((r) => r.recording).length)
+  const hasRecording = computed(() => recordingCount.value > 0)
 
   const rawSessions = ref(0)
   const rawDiamonds = ref(0)
@@ -313,55 +313,32 @@
   const animUsers = useTransition(rawUsers, { duration: 800 })
   const animLikes = useTransition(rawLikes, { duration: 800 })
 
+  const PLACEHOLDER_CARDS = [
+    { des: '直播场次', icon: 'ri:live-line', unit: '场' },
+    { des: '总钻石', icon: 'ri:diamond-line', unit: '钻' },
+    { des: '总弹幕', icon: 'ri:chat-3-line', unit: '条' },
+    { des: '活跃用户', icon: 'ri:user-heart-line', unit: '人' },
+    { des: '总点赞', icon: 'ri:thumb-up-line', unit: '次' }
+  ]
+
   const cards = computed(() => {
     const s = overview.value?.summary
-    if (!s) return []
-    return [
-      {
-        des: '直播场次',
-        icon: 'ri:live-line',
-        num: fmtNum(Math.round(animSessions.value)),
-        unit: '场'
-      },
-      {
-        des: '总钻石',
-        icon: 'ri:diamond-line',
-        num: fmtNum(Math.round(animDiamonds.value)),
-        unit: '钻'
-      },
-      {
-        des: '总弹幕',
-        icon: 'ri:chat-3-line',
-        num: fmtNum(Math.round(animDanmaku.value)),
-        unit: '条'
-      },
-      {
-        des: '活跃用户',
-        icon: 'ri:user-heart-line',
-        num: fmtNum(Math.round(animUsers.value)),
-        unit: '人'
-      },
-      {
-        des: '总点赞',
-        icon: 'ri:thumb-up-line',
-        num: fmtNum(Math.round(animLikes.value)),
-        unit: '次'
-      }
-    ]
+    return PLACEHOLDER_CARDS.map((p, i) => ({
+      ...p,
+      num: s ? fmtNum([animSessions, animDiamonds, animDanmaku, animUsers, animLikes][i].value) : '--'
+    }))
   })
 
-  function rankClass(i: number) {
-    if (i === 0) return 'bg-amber-100 text-amber-600'
-    if (i === 1) return 'bg-slate-200 text-slate-600'
-    if (i === 2) return 'bg-orange-100 text-orange-600'
-    return 'bg-g-100 text-g-500'
+  async function refreshStatus() {
+    try {
+      daemon.value = await fetchStatus()
+    } catch {}
   }
 
-  async function refresh() {
+  async function refreshOverview() {
     try {
-      const [ov, st] = await Promise.all([fetchOverview(), fetchStatus()])
+      const ov = await fetchOverview()
       overview.value = ov
-      daemon.value = st
       const s = ov?.summary
       if (s) {
         rawSessions.value = s.total_sessions || 0
@@ -370,19 +347,25 @@
         rawUsers.value = s.unique_users || 0
         rawLikes.value = s.total_likes || 0
       }
-    } catch {
-      // 401 等由拦截器处理
-    } finally {
-      firstLoading.value = false
-    }
+    } catch {}
   }
 
-  let timer: number | undefined
-  onMounted(() => {
-    refresh()
-    timer = window.setInterval(refresh, 15000)
+  // 录制停止（场次结束归档）时刷新历史总览数据
+  let wasRecording = false
+  watch(hasRecording, (recording) => {
+    if (wasRecording && !recording) refreshOverview()
+    wasRecording = recording
   })
-  onUnmounted(() => clearInterval(timer))
+
+  let statusTimer: number | undefined
+  onMounted(() => {
+    refreshStatus()
+    refreshOverview()
+    statusTimer = window.setInterval(refreshStatus, 10000)
+  })
+  onUnmounted(() => {
+    clearInterval(statusTimer)
+  })
 </script>
 
 <style scoped>

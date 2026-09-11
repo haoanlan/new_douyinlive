@@ -257,6 +257,13 @@ const server = http.createServer(async (req, res) => {
 // 启动
 async function start() {
   await db.init();
+  // 预热总览聚合缓存（后台异步，避免首个用户等待全表扫描）
+  try {
+    const overviewRoute = require('./lib/routes/overview');
+    if (overviewRoute.warmup) overviewRoute.warmup(db.getDb());
+  } catch (e) {
+    console.warn('[dashboard] overview 预热失败:', e.message);
+  }
   server.listen(PORT, HOST, () => {
     console.log(`[dashboard] 仪表板已启动: http://${HOST}:${PORT}`);
     if (!AUTH_TOKEN) {

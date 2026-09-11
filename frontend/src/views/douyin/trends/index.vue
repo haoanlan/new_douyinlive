@@ -1,33 +1,31 @@
 <template>
   <div v-loading="loading" class="p-4" element-loading-text="加载中…">
-    <el-card shadow="never">
-      <template #header>
-        <div class="flex items-center gap-3 flex-wrap">
-          <span class="font-bold">趋势分析</span>
-          <el-radio-group v-model="range" @change="refresh">
-            <el-radio-button value="7d">7天</el-radio-button>
-            <el-radio-button value="30d">30天</el-radio-button>
-            <el-radio-button value="90d">90天</el-radio-button>
-            <el-radio-button value="all">全部</el-radio-button>
-          </el-radio-group>
-          <el-radio-group v-model="group" @change="refresh">
-            <el-radio-button value="day">按日</el-radio-button>
-            <el-radio-button value="week">按周</el-radio-button>
-            <el-radio-button value="month">按月</el-radio-button>
-          </el-radio-group>
-        </div>
-      </template>
+    <div class="art-card p-5">
+      <div class="flex items-center gap-3 flex-wrap mb-4">
+        <span class="font-bold">趋势分析</span>
+        <el-radio-group v-model="range" @change="refresh">
+          <el-radio-button value="7d">7天</el-radio-button>
+          <el-radio-button value="30d">30天</el-radio-button>
+          <el-radio-button value="90d">90天</el-radio-button>
+          <el-radio-button value="all">全部</el-radio-button>
+        </el-radio-group>
+        <el-radio-group v-model="group" @change="refresh">
+          <el-radio-button value="day">按日</el-radio-button>
+          <el-radio-button value="week">按周</el-radio-button>
+          <el-radio-button value="month">按月</el-radio-button>
+        </el-radio-group>
+      </div>
       <div ref="diamondRef" class="h-72"></div>
       <el-divider />
       <div ref="danmakuRef" class="h-72"></div>
       <el-divider />
       <div ref="onlineRef" class="h-72"></div>
-    </el-card>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-  import { nextTick, onMounted, ref } from 'vue'
+  import { nextTick, onMounted, onUnmounted, ref } from 'vue'
   import { echarts } from '@/plugins/echarts'
   import { fetchTrends, type Trends } from '@/api/douyin'
 
@@ -45,6 +43,8 @@
     xData: string[],
     series: { name: string; data: number[] }[]
   ) {
+    const existing = echarts.getInstanceByDom(el)
+    if (existing) existing.dispose()
     const chart = echarts.init(el)
     chart.setOption({
       tooltip: { trigger: 'axis' },
@@ -95,4 +95,9 @@
   }
 
   onMounted(refresh)
+  onUnmounted(() => {
+    ;[diamondRef, danmakuRef, onlineRef].forEach((r) => {
+      if (r.value) echarts.getInstanceByDom(r.value)?.dispose()
+    })
+  })
 </script>

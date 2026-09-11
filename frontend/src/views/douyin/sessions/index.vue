@@ -8,123 +8,142 @@
       <el-breadcrumb-item>场次历史</el-breadcrumb-item>
     </el-breadcrumb>
 
-    <!-- 顶部实时汇总（当前主播全部场次） -->
-    <div class="flex flex-wrap gap-5 mb-5">
-      <div
-        v-for="card in summaryCards"
-        :key="card.label"
-        class="art-card relative flex-1 min-w-[150px] flex flex-col justify-center h-24 px-5"
-      >
-        <div class="flex items-center justify-between pr-2">
-          <span class="text-g-700 text-sm">{{ card.label }}</span>
+    <!-- 顶部汇总 -->
+    <ElRow :gutter="20">
+      <ElCol v-for="card in summaryCards" :key="card.label" :xs="12" :sm="8" :md="8" :lg="4">
+        <div class="art-card flex items-center justify-between h-20 px-5 mb-5">
+          <div class="min-w-0">
+            <div class="text-xs text-g-500">{{ card.label }}</div>
+            <div class="text-[20px] font-medium text-g-900 mt-1 leading-none truncate">
+              {{ card.value }}
+            </div>
+          </div>
           <div class="size-9 rounded-lg flex-cc bg-theme/10 shrink-0">
             <ArtSvgIcon :icon="card.icon" class="text-base text-theme" />
           </div>
         </div>
-        <span class="text-[22px] font-bold text-g-900 leading-tight mt-1">{{ card.value }}</span>
+      </ElCol>
+    </ElRow>
+
+    <!-- 工具条 -->
+    <div
+      class="art-card session-toolbar px-5 py-4 mb-5 flex items-center justify-between gap-4 flex-wrap"
+    >
+      <div class="flex items-center gap-2.5">
+        <span class="font-bold text-g-900">场次历史</span>
+        <span class="text-xs text-g-500">
+          共 {{ filteredSessions.length }} 场<template v-if="dateRange">（已筛选）</template>
+        </span>
+      </div>
+      <div class="flex items-center gap-2">
+        <el-date-picker
+          v-model="dateRange"
+          type="daterange"
+          range-separator="~"
+          start-placeholder="开始日期"
+          end-placeholder="结束日期"
+          value-format="YYYY-MM-DD"
+          style="width: 260px"
+          @change="onDateChange"
+        />
+        <el-button v-if="dateRange" @click="clearDate">清除</el-button>
+        <el-dropdown v-if="isAdmin && selectedIds.length" trigger="click" @command="onBatchCommand">
+          <el-button type="primary">
+            <ArtSvgIcon icon="ri:check-double-line" class="mr-1" />
+            批量 ({{ selectedIds.length }})
+            <ArtSvgIcon icon="ri:arrow-down-s-line" class="ml-1" />
+          </el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="download">
+                <ArtSvgIcon icon="ri:download-line" class="mr-1.5" />下载报告
+              </el-dropdown-item>
+              <el-dropdown-item command="delete" class="text-danger">
+                <ArtSvgIcon icon="ri:delete-bin-7-line" class="mr-1.5" />删除
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
       </div>
     </div>
 
     <!-- 场次列表 -->
     <div class="art-card p-5 mb-5">
-      <div class="flex items-center justify-between flex-wrap gap-3 px-1 pb-4 border-b border-t-d">
-        <div class="flex items-center gap-3">
-          <span class="font-bold text-g-900">场次历史</span>
-          <span class="text-sm text-g-500">{{ filteredSessions.length }} 场</span>
-        </div>
-        <div class="flex items-center gap-3">
-          <el-date-picker
-            v-model="dateRange"
-            type="daterange"
-            range-separator="~"
-            start-placeholder="开始日期"
-            end-placeholder="结束日期"
-            value-format="YYYY-MM-DD"
-            size="default"
-            class="!w-64"
-            @change="onDateChange"
-          />
-          <el-button v-if="dateRange" size="small" @click="clearDate">清除</el-button>
-          <template v-if="isAdmin">
-            <el-dropdown v-if="selectedIds.length" trigger="click" @command="onBatchCommand">
-              <el-button size="small" type="primary" plain>
-                批量 ({{ selectedIds.length }})
-                <el-icon class="ml-1"><ri:arrow-down-s-line /></el-icon>
-              </el-button>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item command="download">下载报告</el-dropdown-item>
-                  <el-dropdown-item command="delete" class="text-danger">删除</el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
-          </template>
-        </div>
-      </div>
-
-      <div v-loading="loading" class="flex flex-col gap-2.5 mt-4">
-        <div
-          v-for="row in pageSessions"
-          :key="row.id"
-          class="flex items-center gap-3 rounded-xl bg-g-100/50 px-3 py-2.5 c-p group hover:bg-g-100/70 transition-colors"
-          @click="router.push(`/douyin/detail/${row.id}`)"
-        >
-          <el-checkbox
-            v-if="isAdmin"
-            :model-value="selectedIds.includes(row.id)"
-            class="-ml-1 shrink-0"
-            @click.stop
-            @change="toggleSelect(row.id)"
-          />
-          <el-avatar :size="34" :src="row.streamer_avatar" class="shrink-0">{{
-            row.streamer_name?.[0] || '场'
-          }}</el-avatar>
-          <div class="flex-1 min-w-0">
-            <div class="font-medium text-sm truncate text-g-900">{{
-              row.title || '场次 #' + row.id
-            }}</div>
-            <div class="text-xs text-g-500 truncate">{{ fmtTime(row.started_at) }}</div>
-          </div>
-          <el-tag
-            :type="row.is_live ? 'danger' : 'info'"
-            size="small"
-            effect="light"
-            class="shrink-0"
+      <div v-loading="loading" class="flex flex-col gap-2.5">
+        <TransitionGroup name="row" tag="div" class="flex flex-col gap-2.5" appear>
+          <div
+            v-for="row in pageSessions"
+            :key="row.id"
+            class="rounded-xl bg-g-100/50 px-4 py-3 c-p group transition-colors hover:bg-g-100"
+            @click="router.push(`/douyin/detail/${row.id}`)"
           >
-            {{ row.is_live ? '直播中' : '已结束' }}
-          </el-tag>
-          <span class="flex items-center gap-1 text-xs text-g-600 shrink-0">
-            <ArtSvgIcon icon="ri:diamond-line" class="text-g-400" />{{ fmtNum(row.total_diamonds) }}
-          </span>
-          <span class="flex items-center gap-1 text-xs text-g-600 shrink-0">
-            <ArtSvgIcon icon="ri:gift-2-line" class="text-g-400" />{{ fmtNum(row.gift_count) }}
-          </span>
-          <span class="flex items-center gap-1 text-xs text-g-600 shrink-0">
-            <ArtSvgIcon icon="ri:chat-3-line" class="text-g-400" />{{ fmtNum(row.danmaku_count) }}
-          </span>
-          <span class="flex items-center gap-1 text-xs text-g-600 shrink-0">
-            <ArtSvgIcon icon="ri:user-3-line" class="text-g-400" />{{ fmtNum(row.user_count) }}
-          </span>
-          <el-tooltip content="下载报告" placement="top" :hide-after="0">
-            <el-button
-              text
-              size="small"
-              class="!p-0 !border-none !bg-transparent h-7 shrink-0"
-              @click.stop="downloadReport(row.id)"
-              ><span class="flex-cc size-7 rounded-lg bg-success/15 text-success"
-                ><ArtSvgIcon icon="ri:download-line" class="text-base" /></span
-            ></el-button>
-          </el-tooltip>
-          <el-button
-            v-if="isAdmin"
-            text
-            size="small"
-            class="!p-0 !border-none !bg-transparent h-7 shrink-0"
-            @click.stop="remove(row)"
-            ><span class="flex-cc size-7 rounded-lg bg-danger/15 text-danger"
-              ><ArtSvgIcon icon="ri:delete-bin-7-line" class="text-base" /></span
-          ></el-button>
-        </div>
+            <!-- 主行 -->
+            <div class="flex items-center gap-3">
+              <el-checkbox
+                v-if="isAdmin"
+                :model-value="selectedIds.includes(row.id)"
+                class="-ml-1 shrink-0"
+                @click.stop
+                @change="toggleSelect(row.id)"
+              />
+              <el-avatar :size="36" :src="row.streamer_avatar" class="shrink-0">{{
+                row.streamer_name?.[0] || '场'
+              }}</el-avatar>
+              <div class="flex-1 min-w-0">
+                <div class="font-medium text-sm truncate text-g-900">{{
+                  row.title || '场次 #' + row.id
+                }}</div>
+                <div class="text-xs text-g-500 truncate mt-0.5">{{ fmtTime(row.started_at) }}</div>
+              </div>
+              <el-tag
+                :type="row.is_live ? 'danger' : 'info'"
+                size="small"
+                effect="light"
+                class="shrink-0 !border-none"
+              >
+                {{ row.is_live ? '直播中' : '已结束' }}
+              </el-tag>
+              <div class="flex items-center gap-1.5 shrink-0" @click.stop>
+                <el-tooltip content="下载报告" placement="top" :hide-after="0">
+                  <button
+                    class="size-8 rounded-lg flex-cc bg-g-100/70 text-g-500 hover:bg-theme/10 hover:text-theme transition-colors"
+                    @click="downloadReport(row.id)"
+                  >
+                    <ArtSvgIcon icon="ri:download-line" class="text-base" />
+                  </button>
+                </el-tooltip>
+                <button
+                  v-if="isAdmin"
+                  class="size-8 rounded-lg flex-cc bg-g-100/70 text-g-500 hover:bg-danger/10 hover:text-danger transition-colors"
+                  @click="remove(row)"
+                >
+                  <ArtSvgIcon icon="ri:delete-bin-7-line" class="text-base" />
+                </button>
+              </div>
+            </div>
+            <!-- 数据行 -->
+            <div
+              class="flex items-center gap-4 mt-2.5 pt-2.5 border-t border-dashed border-t-d text-xs text-g-600 flex-wrap"
+            >
+              <span class="flex items-center gap-1">
+                <ArtSvgIcon icon="ri:diamond-line" class="text-g-400" />{{
+                  fmtNum(row.total_diamonds)
+                }}
+              </span>
+              <span class="flex items-center gap-1">
+                <ArtSvgIcon icon="ri:gift-2-line" class="text-g-400" />{{ fmtNum(row.gift_count) }}
+              </span>
+              <span class="flex items-center gap-1">
+                <ArtSvgIcon icon="ri:chat-3-line" class="text-g-400" />{{
+                  fmtNum(row.danmaku_count)
+                }}
+              </span>
+              <span class="flex items-center gap-1">
+                <ArtSvgIcon icon="ri:user-3-line" class="text-g-400" />{{ fmtNum(row.user_count) }}
+              </span>
+            </div>
+          </div>
+        </TransitionGroup>
         <el-empty v-if="!filteredSessions.length && !loading" description="该主播暂无场次" />
       </div>
 
@@ -142,7 +161,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, ref } from 'vue'
+  import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { fetchSessions, deleteSession, getReportUrl, type Session } from '@/api/douyin'
@@ -294,7 +313,62 @@
     refresh()
   }
 
+  watch(
+    () => route.query.hostId,
+    (val) => {
+      hostId.value = (val as string) || ''
+      selectedIds.value = []
+      page.value = 1
+      refresh()
+    }
+  )
+
+  let timer: number | undefined
   onMounted(() => {
     refresh()
+    timer = window.setInterval(refresh, 15000)
   })
+  onUnmounted(() => clearInterval(timer))
 </script>
+
+<style scoped>
+  /* 工具条控件圆角与卡片统一 */
+  :deep(.session-toolbar .el-input__wrapper) {
+    border-radius: 10px;
+    background: var(--art-gray-100);
+    box-shadow: none;
+    transition: box-shadow 0.2s ease;
+  }
+
+  :deep(.session-toolbar .el-input__wrapper:hover) {
+    box-shadow: 0 0 0 1px var(--art-gray-400) inset;
+  }
+
+  :deep(.session-toolbar .el-input__wrapper.is-focus) {
+    box-shadow: 0 0 0 1px var(--theme-color) inset;
+  }
+
+  :deep(.session-toolbar .el-button),
+  :deep(.session-toolbar .el-date-editor) {
+    border-radius: 10px;
+  }
+
+  .row-enter-active,
+  .row-leave-active {
+    transition: all 0.35s ease;
+  }
+
+  .row-enter-from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  .row-leave-to {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+
+  .row-move {
+    transition: transform 0.35s ease;
+  }
+</style>

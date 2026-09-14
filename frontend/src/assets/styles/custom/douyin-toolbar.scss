@@ -1,0 +1,86 @@
+/**
+ * 抖音监控页 · 工具条统一样式
+ *
+ * 背景：Element Plus 控件默认圆角 6px、内边距偏紧，而 art-card 圆角是 10px，
+ * 直接混排会显得"控件不像卡片体系里的东西"（房间管理页已单独修过这个问题）。
+ * 这里抽成一份公共样式，供各页工具条复用，保证：
+ *   - 控件圆角与卡片统一（10px）
+ *   - 控件间距统一（12px），避免 8/20 混排
+ *   - 输入框用灰底无描边风格，悬停/聚焦有反馈
+ */
+
+.dy-toolbar :deep(.el-button) {
+  border-radius: 10px;
+}
+
+.dy-toolbar :deep(.el-input__wrapper) {
+  border-radius: 10px;
+  background: var(--art-gray-100);
+  box-shadow: none;
+  transition: box-shadow 0.2s ease;
+}
+
+.dy-toolbar :deep(.el-input__wrapper:hover) {
+  box-shadow: 0 0 0 1px var(--art-gray-400) inset;
+}
+
+.dy-toolbar :deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 1px var(--theme-color) inset;
+}
+
+/* 开关与按钮视觉重量对齐 */
+.dy-toolbar :deep(.el-switch) {
+  --el-switch-on-color: var(--theme-color);
+}
+
+/*
+ * 自动刷新开关：Element Plus 的 switch 只有 20px 高，
+ * 和 36px 的按钮并排会明显"小一圈"（实测开关轨道 25px vs 按钮 45px 截图像素）。
+ * 这里把它包成一个与按钮等高的控件，内部仍是原生 switch。
+ */
+.dy-switch-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--art-gray-300);
+  border-radius: 10px;
+  background: #fff;
+  transition: border-color 0.2s ease;
+  user-select: none;
+}
+
+.dy-switch-btn:hover {
+  border-color: var(--theme-color);
+}
+
+.dy-switch-btn > .dy-switch-btn__label {
+  font-size: 12px; /* 与全局层级保持一致（不引入 13px 之类的碎档） */
+  color: var(--art-gray-700);
+  white-space: nowrap;
+}
+
+/* 工具条右侧控件统一间距 */
+.dy-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/*
+ * Element Plus 会给相邻按钮自动加 margin-left: 12px，
+ * 与上面的 gap 叠加会变成 24px（间距不统一的元凶），这里清零。
+ */
+.dy-toolbar-actions :deep(.el-button + .el-button) {
+  margin-left: 0;
+}
+
+/* 开关旁的文字说明（如"自动刷新"） */
+.dy-toolbar-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--art-gray-500);
+}

@@ -370,3 +370,94 @@ export function fetchOverview() {
 export function fetchStatus() {
   return request.get<DaemonStatus>({ url: '/api/status' })
 }
+
+// ===================== 服务状态（Go 代理 / 守护进程 / WS / 一键启停） =====================
+
+export interface ServiceIssue {
+  level: 'error' | 'warn'
+  text: string
+}
+
+export interface ServiceStatus {
+  ok: boolean
+  checkedAt: number
+  platform: string
+  proxy: {
+    port: number
+    reachable: boolean
+    healthy: boolean
+    health: {
+      status?: string
+      tag?: string
+      commit?: string
+      signProvider?: string
+    } | null
+    wsProbe: { upgraded: boolean; status?: number; error?: string } | null
+    binaryName: string
+    binaryPath: string | null
+    binaryExists: boolean
+    foreignBinary: string | null
+    candidates: string[]
+  }
+  daemon: {
+    pid: number | null
+    pidFile: number | null
+    pidStale: boolean
+    running: boolean
+    responsive: boolean
+    controlChannel: boolean
+    error: string | null
+    data: DaemonStatus['data'] | null
+  }
+  ws: {
+    rooms: number
+    connected: number
+    recording: number
+    live: number
+    connectedIds: string[]
+    /** socket = 来自控制通道；log = 控制通道不可用时取自监控日志 */
+    source: 'socket' | 'log' | 'none'
+    states: {
+      roomId: string
+      name: string
+      connected: boolean | null
+      recording: boolean | null
+      liveStatus: boolean | null
+      statusCode: string | null
+      title: string | null
+    }[]
+  }
+  checks: {
+    binary: boolean
+    configYaml: boolean
+    runtimeConfig: boolean
+    cookie: boolean
+  }
+  /** 已启用监控的房间数（来自 runtime-config.json） */
+  configuredRooms: number
+  /** 数据库里登记的房间总数（「房间管理」页看到的就是这些） */
+  totalRooms: number
+  /** 房间名 → 房间号 */
+  nameToId: Record<string, string>
+  issues: ServiceIssue[]
+  logLines: { src: 'monitor' | 'proxy' | 'daemon'; text: string }[]
+}
+
+export interface ServiceActionResult {
+  ok: boolean
+  message?: string
+  error?: string
+  pid?: number
+  alreadyRunning?: boolean
+  logLines?: string[]
+}
+
+export type ServiceAction = 'start' | 'stop' | 'restart' | 'start-proxy' | 'restart-proxy'
+
+export function fetchServiceStatus() {
+  return request.get<ServiceStatus>({ url: '/api/service/status' })
+}
+
+export function performServiceAction(action: ServiceAction) {
+  return request.post<ServiceActionResult>({ url: '/api/service/action', data: { action } })
+}

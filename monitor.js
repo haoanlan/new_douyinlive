@@ -75,10 +75,22 @@ const logStream = fs.createWriteStream(LOG_FILE, { flags: 'a' });
 const _errorLogWindow = { count: 0, resetTime: Date.now() + 60000 };
 const isDaemon = process.argv.includes('--daemon');
 if (isDaemon) {
-  // daemon 模式：stdout/stderr 重定向到 /dev/null，彻底避免 EPIPE
-  const devNull = require('fs').createWriteStream('/dev/null');
-  process.stdout = devNull;
-  process.stderr = devNull;
+  // daemon 模式：stdout/stderr 丢弃，彻底避免 EPIPE。
+  // 注意：Windows 上没有 /dev/null，必须走 NUL / \\.\NUL，
+  // 否则 createWriteStream 抛 ENOENT 变成未捕获异常。
+  const isWin = process.platform === 'win32';
+  try {
+    const devNull = isWin
+      ? require('fs').createWriteStream('\\\\.\\NUL', { flags: 'w' })
+      : require('fs').createWriteStream('/dev/null');
+    devNull.on('error', () => { /* 丢弃：daemon 模式下不关心 stdout */ });
+    process.stdout = devNull;
+    process.stderr = devNull;
+  } catch (e) {
+    // 拿不到空设备也不能让进程崩，退化为把 stdout/stderr 指向日志流
+    process.stdout = logStream;
+    process.stderr = logStream;
+  }
 }
 console.log = (...args) => { const s = args.join(' '); logStream.write(`[${new Date().toISOString()}] ${s}\n`); };
 console.error = (...args) => {
@@ -972,31 +984,52 @@ function checkPort(port) {
 }
 
 function startBinary() {
-  const binaryPath = __dirname + '/douyinLive-linux-amd64';
-  console.log('[binary] 启动 douyinLive 代理...');
+  // 平台自适应定位代理二进制；配置由 lib/proxy-binary.js 生成代理专用 proxy-config.yaml
+  // （代理的 config schema 与 Node 端不同，不能共用 config.yaml）
+  const proxy = require('./lib/proxy-binary');
+  const resolved = proxy.resolveBinary(__dirname);
+  if (!resolved.path) {
+    console.error(`[binary] 未找到 Go 抓取代理（候选: ${resolved.candidates.join(', ')}）`);
+    if (resolved.foreign) {
+      console.error(`[binary] 目录里的 ${resolved.foreign} 不是当前平台(${process.platform})的构建，请换成对应平台版本`);
+    }
+    console.error('[binary] 请放到项目根目录，或用环境变量 DOUYIN_PROXY_BIN 指定');
+    return;
+  }
+  const binaryPath = resolved.path;
+  console.log(`[binary] 启动 ${resolved.name} 代理...`);
   try {
-    binaryProcess = spawn(binaryPath, ['--unknown', '--log-level', 'debug'], { cwd: __dirname, stdio: ['ignore', 'pipe', 'pipe'] });
+    const started = proxy.startProxy(__dirname, binaryPath, path.join(logsDir, 'binary_output.log'), {
+      port: 1088,
+      logLevel: 'info'
+    });
+    if (!started.ok) {
+      console.error('[binary] 启动失败:', started.error);
+      return;
+    }
+    // 需要拿到子进程句柄以便监控退出与自动重启，这里复用同一套 spawn 结果
+    binaryProcess = { pid: started.pid, killed: false };
     const binaryLogFile = path.join(logsDir, 'binary_output.log');
     const binaryLogStream = fs.createWriteStream(binaryLogFile, { flags: 'a' });
-    binaryProcess.stdout.pipe(binaryLogStream);
-    binaryProcess.stderr.pipe(binaryLogStream);
-    binaryProcess.on('exit', (code, sig) => {
-      const reason = sig ? `信号 ${sig}` : `退出码 ${code}`;
-      console.log(`[binary] 进程退出 (${reason})`);
-      binaryProcess = null;
-      binaryCrashCount++;
-      const delay = Math.min(binaryCrashCount * 5000, 60000);
-      if (binaryCrashCount <= 10) {
-        console.log(`[binary] ${delay/1000}秒后自动重启...`);
-        setTimeout(startBinary, delay);
-      } else {
-        console.log('[binary] 重试次数过多，不再自动重启');
-      }
-    });
-    binaryProcess.on('error', (err) => {
-      console.error('[binary] 启动失败:', err.message);
-      binaryProcess = null;
-    });
+    binaryLogStream.on('error', () => { /* 忽略日志流错误 */ });
+    // 进程句柄不可跨模块传递，用轮询替代 exit 事件：端口消失即认为代理挂了
+    const watchTimer = setInterval(() => {
+      checkPort(1088).then((open) => {
+        if (!open && binaryProcess) {
+          clearInterval(watchTimer);
+          console.log('[binary] 代理端口已关闭，进程应已退出');
+          binaryProcess = null;
+          binaryCrashCount++;
+          const delay = Math.min(binaryCrashCount * 5000, 60000);
+          if (binaryCrashCount <= 10) {
+            console.log(`[binary] ${delay / 1000}秒后自动重启...`);
+            setTimeout(startBinary, delay);
+          } else {
+            console.log('[binary] 重试次数过多，不再自动重启');
+          }
+        }
+      }).catch(() => { /* ignore */ });
+    }, 15000);
   } catch (e) {
     console.error('[binary] 启动异常:', e.message);
   }
@@ -1444,6 +1477,16 @@ async function handleControlCommand(req) {
       await ensureBinaryRunning().catch(e => console.error(`[daemon] ensureBinary 异常:`, e.message));
       startConnection(roomId, config);
       return { ok: true, message: `已恢复房间 ${roomId}` };
+    }
+
+    case 'stop': {
+      // 供仪表盘"停止"按钮调用：优雅关停（比 SIGTERM 干净，Windows 下尤其重要）
+      setTimeout(() => {
+        stopDaemon()
+          .catch(e => console.error('[daemon] 停止异常:', e.message))
+          .finally(() => process.exit(0));
+      }, 300);
+      return { ok: true, message: '守护进程正在停止' };
     }
 
     default:

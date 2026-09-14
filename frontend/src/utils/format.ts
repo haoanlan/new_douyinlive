@@ -70,6 +70,44 @@ export function rankClass(i: number): string {
   return 'bg-g-100 text-g-500'
 }
 
+/**
+ * 毫秒/秒/字符串时间 → Date
+ * 后端 create_time 是毫秒时间戳，session start_time 是 "YYYY-MM-DD HH:mm:ss"
+ */
+export function toDate(t: any): Date | null {
+  if (t === null || t === undefined || t === '') return null
+  if (typeof t === 'number' || /^\d+(\.\d+)?$/.test(String(t).trim())) {
+    const n = Number(t)
+    if (!n) return null
+    return new Date(n > 1e12 ? n : n * 1000)
+  }
+  const d = new Date(t)
+  return isNaN(d.getTime()) ? null : d
+}
+
+/** 相对时间（刚刚 / N 分钟前 / N 小时前 / N 天前 / 日期） */
+export function fmtAgo(t: any): string {
+  const d = toDate(t)
+  if (!d) return '-'
+  const diff = Date.now() - d.getTime()
+  if (diff < 0) return fmtTime(t)
+  const min = Math.floor(diff / 60000)
+  if (min < 1) return '刚刚'
+  if (min < 60) return `${min} 分钟前`
+  const hour = Math.floor(min / 60)
+  if (hour < 24) return `${hour} 小时前`
+  const day = Math.floor(hour / 24)
+  if (day < 30) return `${day} 天前`
+  return fmtTime(t)
+}
+
+/** 只取时间戳的时分秒 (HH:mm:ss) */
+export function fmtClock(t: any): string {
+  const d = toDate(t)
+  if (!d) return '-'
+  return d.toLocaleTimeString('zh-CN', { hour12: false })
+}
+
 /** 转义属性值（用于 HTML 属性内部） */
 function escAttr(s: string | null | undefined): string {
   if (!s) return ''

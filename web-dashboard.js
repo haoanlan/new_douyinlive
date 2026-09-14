@@ -23,6 +23,7 @@ const routeHandlers = [
   require('./lib/routes/detail'),
   require('./lib/routes/gifts'),
   require('./lib/routes/users'),
+  require('./lib/routes/status'),
   require('./lib/routes/misc'),
 ];
 
@@ -187,6 +188,17 @@ async function serveStatic(req, res) {
     }
   }
 
+  // 兜底：前端未构建（开发态没有 frontend/dist）时，index.html 同样不存在，
+  // 这里必须显式 404，否则 createReadStream 会抛出未捕获的 ENOENT 把进程带崩。
+  if (!await fs.promises.access(filePath).then(() => true).catch(() => false)) {
+    if (pathname === '/' || pathname === '/index.html') {
+      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('前端未构建：请先 cd frontend && npm run build，开发时请改用 Vite 开发服务器（npm run dev）');
+      return;
+    }
+    res.writeHead(404); res.end('Not Found'); return;
+  }
+
   const ext = path.extname(filePath).toLowerCase();
   const mimeTypes = {
     '.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript',
@@ -226,7 +238,14 @@ async function serveStatic(req, res) {
     ? 'no-cache'
     : isHashed ? 'public, max-age=31536000, immutable' : 'public, max-age=3600';
   res.writeHead(200, { 'Content-Type': contentType, 'Cache-Control': cacheControl });
-  fs.createReadStream(filePath).pipe(res);
+  // 流式读取失败（文件被删除/权限变化）时兜底，避免未捕获的 error 事件导致进程退出
+  const stream = fs.createReadStream(filePath);
+  stream.on('error', (err) => {
+    console.error('[static] 读取文件失败:', filePath, err.message);
+    if (!res.headersSent) res.writeHead(404); 
+    res.end('Not Found');
+  });
+  stream.pipe(res);
 }
 
 // ====== 主服务器 ======

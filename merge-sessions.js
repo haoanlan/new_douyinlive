@@ -1,5 +1,6 @@
 const db = require('./db-sqlite.js');
 const fs = require('fs');
+const path = require('path');
 const { comboDedupGifts } = require('./lib/gift-utils.js');
 
 async function main() {
@@ -109,7 +110,11 @@ async function main() {
     gift_count: allGifts.length
   };
 
-  const outPath = '/tmp/merged_sessions_' + sessionIds.join('_') + '.json';
+  // 输出到系统临时目录（跨平台：Linux 用 /tmp，Windows 用 %TEMP%）
+  const outPath = path.join(
+    require('os').tmpdir(),
+    'merged_sessions_' + sessionIds.join('_') + '.json'
+  );
   // Add the dedup result count for reference
   const dedupedCount = comboDedupGifts(gRaw).length;
   fs.writeFileSync(outPath, JSON.stringify(data, null, 2));

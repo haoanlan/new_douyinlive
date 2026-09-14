@@ -1,0 +1,34 @@
+[Unit]
+Description=抖音直播监控守护进程 (monitor.js)
+Documentation=file:///opt/douyin-monitor/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# 按实际部署路径修改
+WorkingDirectory=/opt/douyin-monitor
+ExecStart=/usr/bin/node monitor.js --daemon
+# 优雅退出（monitor.js 监听 SIGTERM）
+KillSignal=SIGTERM
+TimeoutStopSec=30
+Restart=always
+RestartSec=10
+# 崩溃循环保护：5 分钟内最多重启 10 次
+StartLimitIntervalSec=300
+StartLimitBurst=10
+
+# 日志交给 journald，同时 monitor.js 也会写 logs/daemon.log
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=douyin-monitor
+
+# 环境变量：需要外部指定代理二进制时取消注释
+# Environment=DOUYIN_PROXY_BIN=/opt/douyin-monitor/douyinLive-linux-amd64
+
+# 安全加固（按需调整；若代理需要访问其它路径请放宽）
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

@@ -6,6 +6,14 @@ live_data.db
 # 二进制文件
 douyinLive-linux-amd64
 douyinLive-linux-amd64.old
+douyinLive-linux-arm64
+douyinLive-win-amd64.exe
+douyinLive-darwin-amd64
+douyinLive
+douyinLive.exe
+
+# Go 代理专用配置（由 lib/proxy-binary.js 生成，含 cookie）
+proxy-config.yaml
 
 # 日志
 logs/

@@ -14,6 +14,8 @@ const reportImg = require('./report-image.js');
 const { comboDedupGifts } = require('./lib/gift-utils.js');
 const { getAvatarBySecUid, getAvatarByNickname } = require('./lib/avatar-utils');
 const { getCookie, getDashboardToken, getDashboardHost, getDashboardPort, getDashboardUsername, getDashboardPassword } = require('./lib/config-reader');
+// 监控 worker：嵌入本进程运行（房间增删改查 = 同进程函数调用，不再需要 monitor.sock）
+const monitor = require('./monitor.js');
 
 const routeHandlers = [
   require('./lib/routes/auth'),
@@ -32,6 +34,11 @@ const routeHandlers = [
 const PORT = getDashboardPort();
 const HOST = getDashboardHost();
 const DATA_DIR = __dirname;
+
+// 是否把监控 worker 嵌入本进程（默认开启）。
+// 关掉（DASHBOARD_EMBED_WORKER=0）就退回"两个进程 + 控制 socket"的老模式，
+// 那种模式需要你自己跑 node monitor.js --daemon。
+const EMBED_WORKER = process.env.DASHBOARD_EMBED_WORKER !== '0';
 
 // ====== 仪表盘认证 Token（使用共享模块 lib/config-reader.js）======
 const AUTH_TOKEN = getDashboardToken();
@@ -283,6 +290,24 @@ async function start() {
   } catch (e) {
     console.warn('[dashboard] overview 预热失败:', e.message);
   }
+
+  // 监控 worker 与 HTTP 服务同进程运行：
+  // 房间增删改查变成同进程函数调用，不再依赖 monitor.sock（命名管道）
+  if (EMBED_WORKER) {
+    try {
+      const r = await monitor.startDaemon({ embedded: true });
+      if (r.ok) {
+        console.log(`[dashboard] 监控 worker 已嵌入启动（PID ${r.pid}，房间 ${r.rooms} 个）`);
+      } else {
+        console.warn(`[dashboard] 监控 worker 未启动: ${r.error || '未知原因'}`);
+      }
+    } catch (e) {
+      console.error('[dashboard] 监控 worker 启动异常:', e.message);
+    }
+  } else {
+    console.log('[dashboard] 已关闭内嵌 worker（DASHBOARD_EMBED_WORKER=0），需自行运行 node monitor.js --daemon');
+  }
+
   server.listen(PORT, HOST, () => {
     console.log(`[dashboard] 仪表板已启动: http://${HOST}:${PORT}`);
     if (!AUTH_TOKEN) {
@@ -296,6 +321,32 @@ async function start() {
     }
   });
 }
+
+// ====== 进程级兜底 ======
+// worker 与 HTTP 服务同进程，任何一侧抛出未捕获异常都不能让整个服务静默死掉
+process.on('unhandledRejection', (reason) => {
+  console.error('[dashboard] 未处理的 Promise 拒绝:', reason?.message || reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[dashboard] 未捕获异常:', err.message, err.stack);
+});
+
+// 优雅退出：先停 worker（刷库 + 保存场次 + 生成报告），再关 HTTP 服务
+let _shuttingDown = false;
+async function shutdown(signal) {
+  if (_shuttingDown) return;
+  _shuttingDown = true;
+  console.log(`[dashboard] 收到 ${signal}，正在退出...`);
+  try {
+    await monitor.stopWorker({ closeDb: false });
+  } catch (e) {
+    console.error('[dashboard] 停止 worker 异常:', e.message);
+  }
+  server.close(() => process.exit(0));
+  setTimeout(() => process.exit(0), 3000).unref();  // 兜底，避免卡住不退
+}
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));
 
 start().catch(e => {
   console.error('[dashboard] 启动失败:', e.message);

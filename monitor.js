@@ -71,10 +71,17 @@ function rotateLogFile(filePath) {
 
 const logStream = fs.createWriteStream(LOG_FILE, { flags: 'a' });
 
+// ====== 日志输出模式 ======
+// 本文件有两种运行方式，日志目标不同：
+//   独立模式（node monitor.js --daemon）：stdout/stderr 收进 logs/daemon.log；daemon 模式还丢弃 stdout 防 EPIPE
+//   嵌入模式（被 web-dashboard.js require 进同一进程）：保留仪表盘自己的 stdout，同时镜像一份到 logs/daemon.log
+const IS_STANDALONE = require.main === module;
+const _rawConsole = { log: console.log.bind(console), error: console.error.bind(console) };
+
 // 错误日志滑动窗口：每分钟最多 50 条
 const _errorLogWindow = { count: 0, resetTime: Date.now() + 60000 };
 const isDaemon = process.argv.includes('--daemon');
-if (isDaemon) {
+if (isDaemon && IS_STANDALONE) {
   // daemon 模式：stdout/stderr 丢弃，彻底避免 EPIPE。
   // 注意：Windows 上没有 /dev/null，必须走 NUL / \\.\NUL，
   // 否则 createWriteStream 抛 ENOENT 变成未捕获异常。
@@ -92,7 +99,11 @@ if (isDaemon) {
     process.stderr = logStream;
   }
 }
-console.log = (...args) => { const s = args.join(' '); logStream.write(`[${new Date().toISOString()}] ${s}\n`); };
+console.log = (...args) => {
+  const s = args.join(' ');
+  logStream.write(`[${new Date().toISOString()}] ${s}\n`);
+  if (!IS_STANDALONE) _rawConsole.log(...args);  // 嵌入模式：同时保留仪表盘的 stdout
+};
 console.error = (...args) => {
   const now = Date.now();
   // 滑动窗口：超过 1 分钟重置计数
@@ -105,6 +116,7 @@ console.error = (...args) => {
     logStream.write(`[${new Date().toISOString()}] ERROR ${s}\n`);
     _errorLogWindow.count++;
   }
+  if (!IS_STANDALONE) _rawConsole.error(...args);  // 嵌入模式：同时保留仪表盘的 stderr
 };
 
 // ====== 时区 ======
@@ -143,6 +155,9 @@ function setStreamerDir(room, authorName) {
 const rooms = new Map();  // roomId -> roomState
 let isShuttingDown = false;
 let daemonLoopInterval = null;
+let flushInterval = null;    // 每 5 秒刷库
+let rotateInterval = null;   // 每 5 分钟日志轮转
+let _workerRunning = false;  // worker 是否在运行（嵌入模式下供路由判断）
 
 /** 创建房间状态对象 */
 function createRoomState(roomId) {
@@ -162,6 +177,9 @@ function createRoomState(roomId) {
     lastDataTime: null,
     pendingDbUpdates: [],
     reconnectCount: 0,  // 重连次数，用于指数退避
+    removed: false,        // 已被"删除房间"移除：禁止任何重连，否则房间会复活
+    lastStatusCode: null,  // 最近一次 live_status 的 code（供 /api/rooms 直接读内存）
+    lastTitle: null,       // 最近一次 live_status 的 title
   };
 }
 
@@ -1092,6 +1110,9 @@ function startConnection(roomId, config) {
           const code = data.code || '';
           const isLive = !!data.live;
           const isEnded = !!data.ended;
+          // 记在房间对象上，供 /api/rooms 直接读内存（不再依赖解析日志）
+          if (code) room.lastStatusCode = code;
+          if (data.title) room.lastTitle = data.title;
           console.log(`[${getDisplayName(room)}] [live_status] code=${code} live=${data.live} ended=${data.ended||false} title=${data.title||''}主播=${data.livename||''}`);
 
           // --- v2.1.0 新增: 基于 code 字段的精确处理 ---
@@ -1261,6 +1282,17 @@ function startConnection(roomId, config) {
   room.ws.on('close', (code) => {
     console.log(`[${getDisplayName(room)}] 连接断开 (code=${code})`);
     if (isShuttingDown) return;
+    // 房间已被"删除房间"移除 → 绝不重连。
+    // 少了这一条，被删掉的房间会因为下面找不到 roomConfig 而继续重连，
+    // 并在 startConnection 里重新创建房间状态 —— 房间就"复活"了。
+    if (room.removed) {
+      console.log(`[${getDisplayName(room)}] 房间已被删除，停止重连`);
+      return;
+    }
+    if (!rooms.has(roomId)) {
+      console.log(`[${getDisplayName(room)}] 房间已不在监控列表中（停止/重启中），停止重连`);
+      return;
+    }
     // 检查房间是否已被暂停，暂停则不重连
     const currentConfig = loadConfig();
     const roomConfig = currentConfig.rooms?.find(r => r.id === roomId);
@@ -1294,6 +1326,8 @@ function startConnection(roomId, config) {
     }
     console.log(`[${getDisplayName(room)}] ${delay/1000}秒后重连 (退避第${room.reconnectCount}次)...`);
     setTimeout(async () => {
+      // 排队期间房间可能已被移除/暂停，或正在关停 —— 这里再确认一次，避免复活
+      if (room.removed || isShuttingDown || !rooms.has(roomId)) return;
       await ensureBinaryRunning().catch(e => console.error(`[daemon] ensureBinary 异常:`, e.message));
       startConnection(roomId, config);
     }, delay);
@@ -1425,7 +1459,8 @@ async function handleControlCommand(req) {
         finalizeSession(room);
         generateAndSendReport(room);
       }
-      // 关闭连接
+      // 关闭连接（先打"已移除"标记：close 事件据此禁止重连，否则房间会复活）
+      room.removed = true;
       if (room.ws) try { room.ws.close(); } catch(e) {}
       if (room.liveStopTimer) clearTimeout(room.liveStopTimer);
       rooms.delete(roomId);
@@ -1481,12 +1516,28 @@ async function handleControlCommand(req) {
 
     case 'stop': {
       // 供仪表盘"停止"按钮调用：优雅关停（比 SIGTERM 干净，Windows 下尤其重要）
+      if (IS_STANDALONE) {
+        setTimeout(() => {
+          stopDaemon()
+            .catch(e => console.error('[daemon] 停止异常:', e.message))
+            .finally(() => process.exit(0));
+        }, 300);
+        return { ok: true, message: '守护进程正在停止' };
+      }
+      // 嵌入模式：只停 worker，仪表盘进程继续对外服务
       setTimeout(() => {
-        stopDaemon()
-          .catch(e => console.error('[daemon] 停止异常:', e.message))
-          .finally(() => process.exit(0));
+        stopWorker({ closeDb: false })
+          .catch(e => console.error('[daemon] 停止 worker 异常:', e.message));
       }, 300);
-      return { ok: true, message: '守护进程正在停止' };
+      return { ok: true, message: '监控 worker 正在停止（仪表盘继续运行）' };
+    }
+
+    case 'start': {
+      // 嵌入模式下由仪表盘自己拉起 worker（不会再 spawn 第二个进程）
+      if (_workerRunning) return { ok: true, message: '监控 worker 已在运行' };
+      startDaemon({ embedded: !IS_STANDALONE })
+        .catch(e => console.error('[daemon] 启动 worker 异常:', e.message));
+      return { ok: true, message: '监控 worker 正在启动' };
     }
 
     default:
@@ -1508,9 +1559,16 @@ function readPid() {
   return null;
 }
 
-async function stopDaemon() {
+/**
+ * 停止 worker：刷新并保存所有房间、断开连接、清理定时器。
+ * 默认**不关闭数据库、不退出进程** —— 嵌入模式下仪表盘还要继续用 DB。
+ * 可重复调用；调用后可以再次 startDaemon()。
+ */
+async function stopWorker({ closeDb = false } = {}) {
   isShuttingDown = true;
-  if (daemonLoopInterval) clearInterval(daemonLoopInterval);
+  if (daemonLoopInterval) { clearInterval(daemonLoopInterval); daemonLoopInterval = null; }
+  if (flushInterval) { clearInterval(flushInterval); flushInterval = null; }
+  if (rotateInterval) { clearInterval(rotateInterval); rotateInterval = null; }
   if (binaryProcess && !binaryProcess.killed) {
     try { binaryProcess.kill('SIGTERM'); } catch(e) {}
   }
@@ -1525,15 +1583,56 @@ async function stopDaemon() {
       await generateAndSendReport(room);
     }
     // 清理快照文件
-    try { fs.unlinkSync(path.join(DATA_DIR, `snapshot_${roomId}.json`)); } catch(e) {}
+    try { fs.unlinkSync(path.join(DATA_DIR, `snapshot_${roomId}.json`)) } catch(e) {}
     if (room.ws) {
       try { room.ws.close(); } catch (e) {}
     }
+    rooms.delete(roomId);
   }
-  try { await db.close(); } catch(e) {}
   try { fs.unlinkSync(PID_FILE); } catch (e) {}
+  if (closeDb) { try { await db.close(); } catch(e) {} }
+  _workerRunning = false;
+  isShuttingDown = false;  // 收敛完成，允许再次 startDaemon()
+}
+
+/** 独立守护进程的优雅停止：停 worker + 关库 + 清理控制 socket */
+async function stopDaemon() {
+  await stopWorker({ closeDb: true });
   try { fs.unlinkSync(CONTROL_SOCKET); } catch (e) {}
   console.log('[stop] 守护进程已停止');
+}
+
+/** worker 是否正在运行（嵌入模式下路由用它判断"监控脚本是否在跑"） */
+function isWorkerRunning() {
+  return _workerRunning;
+}
+
+/**
+ * 直接读内存的房间运行状态，供 /api/rooms 与 /api/service/status 使用。
+ * 嵌入模式下房间状态就在同一进程的内存里，不需要走 socket、也不需要解析日志。
+ * 返回结构与 lib/room-status.js 的 getRoomStates() 对齐。
+ */
+function getRoomStateList() {
+  const list = [];
+  for (const [roomId, room] of rooms) {
+    const connected = Boolean(room.ws && room.ws.readyState === WebSocket.OPEN);
+    const st = room.session?.stats || {};
+    list.push({
+      roomId: String(roomId),
+      name: getDisplayName(room),
+      connected,
+      recording: Boolean(room.isRecording),
+      liveStatus: room.session?._liveStatus ?? null,
+      statusCode: room.lastStatusCode ?? null,
+      title: room.lastTitle || room.session?.room_title || '',
+      danmaku: st.danmaku ?? null,
+      gift: st.gift ?? null,
+      ageMs: 0,
+      stale: false,
+      active: true,
+    });
+  }
+  return list;
 }
 
 function daemonStatus() {
@@ -1694,22 +1793,73 @@ if (require.main === module) {
     return;
   }
 
-  // ====== 启动守护进程 ======
+  // ====== 启动守护进程（独立模式）======
+  startDaemon({ cliRoomId: args.find(a => /^\d+$/.test(a)) }).catch((e) => {
+    console.error('[daemon] 启动失败:', e.message);
+    process.exit(1);
+  });
+}
+
+// ====== Worker 启动（独立模式 / 嵌入仪表盘共用）======
+/**
+ * 启动监控 worker。
+ *
+ * @param {object}  opts
+ * @param {string}  [opts.cliRoomId] 只监控指定房间（命令行参数）
+ * @param {boolean} [opts.embedded]  true = 被 web-dashboard.js require 进同一进程：
+ *   - 不启动控制 socket（同进程直接函数调用，不需要 IPC）
+ *   - 房间未配置时只告警，不退出进程
+ *   - 不注册 SIGINT/SIGTERM 与全局异常兜底（由宿主进程统一负责）
+ * @returns {Promise<{ok:boolean, pid?:number, rooms?:number, alreadyRunning?:boolean, error?:string}>}
+ */
+async function startDaemon({ cliRoomId = null, embedded = false } = {}) {
+  if (_workerRunning) {
+    console.log('[daemon] worker 已在运行，忽略重复启动');
+    return { ok: true, alreadyRunning: true, pid: process.pid };
+  }
+
   const config = loadConfig();
-  const cliRoomId = args.find(a => /^\d+$/.test(a));
   const targetRooms = getTargetRooms(config, cliRoomId);
 
   if (targetRooms.length === 0) {
     console.error('[daemon] 没有配置要监控的房间');
     console.error('用法: node monitor.js --daemon [room_id]');
     console.error('或在 runtime-config.json 中配置 rooms 数组');
-    process.exit(1);
+    if (!embedded) process.exit(1);
+    return { ok: false, error: '没有配置要监控的房间' };
   }
 
-  db.init().catch(e => console.error('[db] 初始化失败:', e.message));
+  await db.init().catch(e => console.error('[db] 初始化失败:', e.message));
+
+  // 检查已有进程：避免两个 worker 同时写同一个库
+  const existingPid = readPid();
+  if (existingPid && existingPid !== process.pid) {
+    let alive = false;
+    try { process.kill(existingPid, 0); alive = true; } catch (e) { /* 过期 PID */ }
+    if (alive) {
+      console.error(`[daemon] 已有守护进程在运行 (PID ${existingPid})`);
+      if (!embedded) {
+        console.error('运行 "node monitor.js stop" 先停止');
+        process.exit(1);
+      }
+      console.error('[daemon] 嵌入模式不启动 worker：请先停止它，否则两个 worker 会同时写库');
+      return { ok: false, error: `已有独立守护进程在运行 (PID ${existingPid})` };
+    }
+    console.log('[daemon] 清理过期 PID');
+  }
+
+  writePid();  // 写入宿主进程 PID，独立模式据此检测冲突
+  _workerRunning = true;
+  isShuttingDown = false;
+
+  const roomIds = targetRooms.map(r => r.id).join(', ');
+  console.log(`[daemon] 启动，PID=${process.pid}，监控房间=${roomIds}，模式=${embedded ? '嵌入仪表盘' : '独立进程'}`);
+
+  // 控制 socket：仅独立模式需要（嵌入模式同进程直接调用函数，不再走 IPC）
+  if (!embedded) startControlSocket();
 
   // 定期 DB 刷写 + 内存快照
-  setInterval(() => {
+  flushInterval = setInterval(() => {
     for (const [, room] of rooms) {
       if (room.isRecording && room.session) {
         dbFlush(room).catch(e => console.error(`[dbFlush][${room.roomId}] 异常:`, e.message));
@@ -1719,54 +1869,36 @@ if (require.main === module) {
   }, 5000);
 
   // 定期日志轮转（每 5 分钟检查一次）
-  setInterval(() => {
+  rotateInterval = setInterval(() => {
     rotateLogFile(LOG_FILE);
     rotateLogFile(path.join(logsDir, 'binary_output.log'));
   }, 5 * 60 * 1000);
 
-  // 检查已有进程
-  const existingPid = readPid();
-  if (existingPid) {
-    try {
-      process.kill(existingPid, 0);
-      console.error(`[daemon] 已有守护进程在运行 (PID ${existingPid})`);
-      console.error('运行 "node monitor.js stop" 先停止');
-      process.exit(1);
-    } catch (e) {
-      console.log('[daemon] 清理过期 PID');
-    }
+  try {
+    await ensureBinaryRunning();
+  } catch (e) {
+    console.error('[daemon] 二进制启动失败，仍尝试连接:', e.message);
   }
 
-  writePid();
-  const roomIds = targetRooms.map(r => r.id).join(', ');
-  console.log(`[daemon] 启动，PID=${process.pid}，监控房间=${roomIds}`);
+  for (const r of targetRooms) {
+    if (rooms.has(r.id)) continue;
+    const room = createRoomState(r.id);
+    rooms.set(r.id, room);
+    await loadRoomName(room);
+    console.log(`[daemon] ${room.displayName} (${r.id}) 已加载`);
+    startConnection(r.id, config);
+  }
 
-  // 启动控制 socket
-  const controlServer = startControlSocket();
-
-  ensureBinaryRunning().then(async () => {
-    for (const r of targetRooms) {
-      const room = createRoomState(r.id);
-      rooms.set(r.id, room);
-      await loadRoomName(room);
-      console.log(`[daemon] ${room.displayName} (${r.id}) 已加载`);
-      startConnection(r.id, config);
-    }
-  }).catch((e) => {
-    console.error('[daemon] 二进制启动失败，仍尝试连接:', e.message);
-    for (const r of targetRooms) {
-      startConnection(r.id, config);
-    }
-  });
-
-  process.on('unhandledRejection', (reason) => {
-    console.error('[daemon] 未处理的 Promise 拒绝:', reason?.message || reason);
-  });
-  process.on('uncaughtException', (err) => {
-    console.error('[daemon] 未捕获异常:', err.message, err.stack);
-  });
-  process.on('SIGINT', async () => { console.log('\n[daemon] 收到 SIGINT'); await stopDaemon(); process.exit(0); });
-  process.on('SIGTERM', async () => { console.log('[daemon] 收到 SIGTERM'); await stopDaemon(); process.exit(0); });
+  if (!embedded) {
+    process.on('unhandledRejection', (reason) => {
+      console.error('[daemon] 未处理的 Promise 拒绝:', reason?.message || reason);
+    });
+    process.on('uncaughtException', (err) => {
+      console.error('[daemon] 未捕获异常:', err.message, err.stack);
+    });
+    process.on('SIGINT', async () => { console.log('\n[daemon] 收到 SIGINT'); await stopDaemon(); process.exit(0); });
+    process.on('SIGTERM', async () => { console.log('[daemon] 收到 SIGTERM'); await stopDaemon(); process.exit(0); });
+  }
 
   // 定期心跳
   daemonLoopInterval = setInterval(async () => {
@@ -1776,7 +1908,7 @@ if (require.main === module) {
       console.log('[daemon] Go 代理端口不可达，尝试重启...');
       await ensureBinaryRunning().catch(e => console.error(`[daemon] ensureBinary 异常:`, e.message));
     }
-    
+
     for (const [roomId, room] of rooms) {
       const st = room.session?.stats || {};
       const connected = room.ws && room.ws.readyState === WebSocket.OPEN;
@@ -1784,4 +1916,21 @@ if (require.main === module) {
       if (!connected) ensureBinaryRunning().catch(e => console.error(`[daemon] ensureBinary 异常:`, e.message));
     }
   }, 30000);
+
+  return { ok: true, pid: process.pid, rooms: targetRooms.length };
 }
+
+// ====== 对外导出：供 web-dashboard.js 嵌入调用 ======
+module.exports = {
+  startDaemon,
+  stopWorker,
+  stopDaemon,
+  isWorkerRunning,
+  getRoomStateList,
+  handleControlCommand,
+  daemonStatus,
+  loadConfig,
+  getTargetRooms,
+  DATA_DIR,
+  PID_FILE,
+};

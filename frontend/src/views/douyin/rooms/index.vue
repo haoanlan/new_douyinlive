@@ -40,7 +40,7 @@
             <ArtSvgIcon icon="ri:search-line" class="text-g-400" />
           </template>
         </el-input>
-        <el-button v-if="isAdmin" type="primary" @click="showAdd = true">
+        <el-button v-if="isAdmin" type="primary" @click="openAdd">
           <ArtSvgIcon icon="ri:add-line" class="mr-1" />
           添加房间
         </el-button>
@@ -55,8 +55,9 @@
             @click="goSessions(row)"
           >
             <div class="flex items-center gap-3.5">
-              <!-- 头像 -->
-              <div class="relative shrink-0">
+              <!-- 头像（flex 消除 el-avatar 作为 inline 元素的基线间隙：
+                   否则外层容器会比头像高 6px，导致录制绿点下坠到头像之外） -->
+              <div class="relative shrink-0 flex">
                 <el-avatar :size="48" :src="row.avatar">{{
                   (row.name || row.room_id)?.[0]
                 }}</el-avatar>
@@ -146,14 +147,14 @@
           <span class="font-bold text-g-900">添加房间</span>
           <button
             class="size-7 rounded-lg flex-cc bg-g-100/70 text-g-500 hover:bg-g-100 hover:text-g-900 transition-colors"
-            @click="showAdd = false"
+            @click="closeAdd"
           >
             <ArtSvgIcon icon="ri:close-line" class="text-base" />
           </button>
         </div>
 
-        <!-- 表单 -->
-        <div class="mb-3">
+        <!-- 步骤 1：输入房间号 -->
+        <div v-if="!preview" class="mb-3">
           <label class="block text-sm text-g-700 mb-1.5">
             房间号 <span class="text-danger">*</span>
           </label>
@@ -161,7 +162,7 @@
             v-model="newRoomId"
             placeholder="请输入抖音房间号或抖音号"
             clearable
-            @keyup.enter="add"
+            @keyup.enter="doLookup"
           >
             <template #prefix>
               <ArtSvgIcon icon="ri:live-line" class="text-g-400" />
@@ -169,23 +170,83 @@
           </el-input>
           <div class="mt-1.5 text-xs text-g-500">纯数字为房间号，含字母为抖音号</div>
         </div>
-        <div class="mb-4">
-          <label class="block text-sm text-g-700 mb-1.5">
-            主播名 <span class="text-g-400">（选填）</span>
-          </label>
-          <el-input v-model="newRoomName" placeholder="留空则自动获取" clearable>
-            <template #prefix>
-              <ArtSvgIcon icon="ri:user-line" class="text-g-400" />
-            </template>
-          </el-input>
+
+        <!-- 步骤 2：预览确认（避免加错房间） -->
+        <div v-else class="mb-3">
+          <div class="rounded-xl border border-t-d px-3.5 py-3">
+            <div class="flex items-center gap-3">
+              <div class="relative shrink-0 flex">
+                <el-avatar :size="44" :src="preview.avatar">{{
+                  (preview.nickname || preview.room_id)?.[0]
+                }}</el-avatar>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="font-medium text-g-900 truncate">
+                  {{ preview.nickname || '未获取到主播名' }}
+                </div>
+                <div class="flex items-center gap-1.5 mt-1">
+                  <span class="size-1.5 rounded-full shrink-0" :class="previewDotClass" />
+                  <span class="text-xs text-g-600">{{ previewStatusText }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="mt-3 pt-3 border-t border-dashed border-t-d text-xs space-y-1.5">
+              <div class="flex justify-between gap-3">
+                <span class="text-g-500 shrink-0">房间号</span>
+                <span class="text-g-900 font-mono truncate">{{ preview.room_id }}</span>
+              </div>
+              <div v-if="preview.room_title" class="flex justify-between gap-3">
+                <span class="text-g-500 shrink-0">直播间标题</span>
+                <span class="text-g-900 truncate">{{ preview.room_title }}</span>
+              </div>
+            </div>
+          </div>
+          <el-alert
+            v-if="preview.already_monitored"
+            type="warning"
+            :closable="false"
+            class="mt-2.5"
+            title="该房间已在监控列表中，继续添加会提示重复"
+          />
+          <el-alert
+            v-else-if="!preview.nickname && preview.room_status !== 'offline'"
+            type="warning"
+            :closable="false"
+            class="mt-2.5"
+            title="上游暂时无法确认该房间，请再确认房间号是否正确"
+          />
+          <div v-else-if="!preview.nickname" class="mt-2 text-xs text-g-500">
+            该房间当前未开播，暂时拿不到主播资料；添加后开播会自动补全
+          </div>
+          <div class="mt-3">
+            <label class="block text-sm text-g-700 mb-1.5">
+              主播名 <span class="text-g-400">（选填）</span>
+            </label>
+            <el-input
+              v-model="newRoomName"
+              :placeholder="preview.nickname || '留空则自动获取'"
+              clearable
+            >
+              <template #prefix>
+                <ArtSvgIcon icon="ri:user-line" class="text-g-400" />
+              </template>
+            </el-input>
+          </div>
         </div>
 
         <!-- 按钮 -->
         <div class="flex justify-end gap-2">
-          <el-button @click="showAdd = false">取消</el-button>
-          <el-button type="primary" :loading="adding" :disabled="!newRoomId.trim()" @click="add">
-            确认添加
+          <el-button @click="closeAdd">{{ preview ? '返回修改' : '取消' }}</el-button>
+          <el-button
+            v-if="!preview"
+            type="primary"
+            :loading="looking"
+            :disabled="!newRoomId.trim()"
+            @click="doLookup"
+          >
+            查询房间
           </el-button>
+          <el-button v-else type="primary" :loading="adding" @click="add">确认添加</el-button>
         </div>
       </div>
     </el-dialog>
@@ -196,7 +257,16 @@
   import { computed, onMounted, onUnmounted, ref } from 'vue'
   import { useRouter } from 'vue-router'
   import { ElMessage } from 'element-plus'
-  import { fetchRooms, addRoom, pauseRoom, resumeRoom, removeRoom, type Room } from '@/api/douyin'
+  import {
+    fetchRooms,
+    addRoom,
+    pauseRoom,
+    resumeRoom,
+    removeRoom,
+    lookupRoom,
+    type Room,
+    type LookupResult,
+  } from '@/api/douyin'
   import { useUserStore } from '@/store/modules/user'
   import { fmtTime } from '@/utils/format'
 
@@ -213,9 +283,28 @@
   const newRoomId = ref('')
   const newRoomName = ref('')
   const adding = ref(false)
+  // 「添加房间」改为两步：先查询预览确认，再真正添加
+  const preview = ref<LookupResult | null>(null)
+  const looking = ref(false)
 
   const connectedCount = computed(() => rooms.value.filter((r) => r.connected).length)
   const pausedCount = computed(() => rooms.value.filter((r) => !r.enabled).length)
+
+  const previewStatusText = computed(() => {
+    const p = preview.value
+    if (!p) return ''
+    if (p.is_live) return '直播中'
+    if (p.room_status === 'offline') return '未开播'
+    return '状态暂时无法确认'
+  })
+
+  const previewDotClass = computed(() => {
+    const p = preview.value
+    if (!p) return 'bg-g-400'
+    if (p.is_live) return 'bg-success'
+    if (p.room_status === 'offline') return 'bg-g-400'
+    return 'bg-warning'
+  })
 
   function statusText(row: Room) {
     if (row.recording) return '录制中'
@@ -249,6 +338,48 @@
     router.push({ path: '/douyin/sessions', query: { hostId: search.value } })
   }
 
+  function openAdd() {
+    showAdd.value = true
+    preview.value = null
+    newRoomId.value = ''
+    newRoomName.value = ''
+  }
+
+  function closeAdd() {
+    showAdd.value = false
+    preview.value = null
+    newRoomId.value = ''
+    newRoomName.value = ''
+  }
+
+  /** 第一步：查询房间信息让用户确认（无副作用，不写入任何东西） */
+  async function doLookup() {
+    const id = newRoomId.value.trim()
+    if (!id) return
+    looking.value = true
+    try {
+      preview.value = await lookupRoom(id)
+    } catch (e) {
+      // 查询失败不阻断流程：允许直接添加，主播名交给后端自己解析
+      ElMessage.warning('查询房间信息失败，可直接确认添加')
+      preview.value = {
+        ok: true,
+        room_id: id,
+        nickname: '',
+        avatar: '',
+        room_title: '',
+        is_live: false,
+        room_status: 'unknown',
+        has_room: false,
+        already_monitored: false,
+        name_source: 'none',
+      }
+    } finally {
+      looking.value = false
+    }
+  }
+
+  /** 第二步：确认后真正添加 */
   async function add() {
     const id = newRoomId.value.trim()
     if (!id) return
@@ -256,10 +387,8 @@
     try {
       await addRoom(id, newRoomName.value.trim())
       ElMessage.success('添加成功')
-      showAdd.value = false
-      newRoomId.value = ''
-      newRoomName.value = ''
-      refresh()
+      closeAdd()
+      await refresh()
     } finally {
       adding.value = false
     }

@@ -36,11 +36,26 @@ export interface Room {
   _connecting?: boolean
 }
 
+/** 「添加房间」预览查询的返回（后端 /api/rooms/lookup 返回单个对象） */
 export interface LookupResult {
+  ok: boolean
   room_id: string
-  name: string
-  avatar?: string
-  description?: string
+  real_room_id?: string
+  /** 主播昵称（可能为空：未开播且本地库里没有该房间） */
+  nickname: string
+  avatar: string
+  room_title: string
+  is_live: boolean
+  /** online=直播中 / offline=未开播 / unknown=上游暂时无法确认 */
+  room_status: 'online' | 'offline' | 'unknown'
+  /** 是否能确认该房间存在 */
+  has_room: boolean
+  /** 是否已经在监控列表里 */
+  already_monitored: boolean
+  /** 昵称来源，便于页面提示信息可信度 */
+  name_source: 'proxy' | 'db' | 'douyin-api' | 'search' | 'none'
+  unique_id?: string
+  sec_uid?: string
 }
 
 // ===================== Sessions =====================
@@ -238,8 +253,11 @@ export function fetchRooms() {
   return request.get<Room[]>({ url: '/api/rooms' })
 }
 
-export function lookupRoom(query: string) {
-  return request.get<LookupResult[]>({ url: `/api/rooms/lookup?q=${encodeURIComponent(query)}` })
+/** 预览某个房间号的信息（添加房间前确认用，不产生任何副作用） */
+export function lookupRoom(roomId: string) {
+  return request.get<LookupResult>({
+    url: `/api/rooms/lookup?room_id=${encodeURIComponent(roomId)}`
+  })
 }
 
 export function addRoom(roomId: string, name: string) {

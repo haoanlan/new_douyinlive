@@ -6,6 +6,32 @@
 
 ---
 
+## 〇、先读这三个文件
+
+| 文件 | 内容 |
+| --- | --- |
+| `docs/HANDOFF.md`（本文件） | 项目现状、服务启动方式、环境坑、待办 |
+| `PRODUCT.md` | 产品事实与设计原则（impeccable init 的产物，重设计前必读） |
+| `docs/DESIGN-REVIEW.md` | 全站 UI/UX 评审报告：8 页、平均 4.8 分、按 P0/P1/P2 分级、每条带行号与改法 |
+
+**当前优先级：先修 `DESIGN-REVIEW.md` 的 P0 —— 那 5 条是真 bug，不修会持续误导使用者，
+不要先做视觉打磨。** 摘要：
+
+1. sessions「下载报告」是**死按钮**：`window.open` 不带 `Authorization` 头，
+   而 `web-dashboard.js` 对**所有** `/api/*` 走 `checkAuth`。
+2. status 危险操作无授权边界：「快速重启」一点即整体重启且无二次确认；
+   「重连」实际执行的是守护进程 restart（会中断全部房间连接与正在进行的录制）。
+3. **「失败」被伪装成「空」或「正常」**——6 个页面都有（dashboard 静默吞异常、
+   trends 失败后蒙层永久盖住整页、sessions 无 hostId 时永久转圈、search 失败渲染成
+   「没有匹配的用户」、status 数据未到就显示红色「未运行」）。
+4. rooms 轮询失败每 10s 弹一次错误提示（`fetchRooms` 没关 `showErrorMessage`）。
+5. rooms 搜索框写「搜索房间号或主播名」，实际只是跳转、`search` ref 从未参与过滤。
+
+P1 是 7 条跨页系统性问题（对比度 token、数字格式、键盘可达性、长列表截断、
+共用件重复实现等）——**改一处、8 页同时受益**，性价比比逐页打磨高。
+
+---
+
 ## 一、项目现状
 
 | 项 | 值 |

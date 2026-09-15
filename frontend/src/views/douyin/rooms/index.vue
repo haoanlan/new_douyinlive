@@ -287,15 +287,6 @@
   const preview = ref<LookupResult | null>(null)
   const looking = ref(false)
 
-  /**
-   * 恢复监控 / 刚添加房间后，处于"已连接但抓取代理还没确认开播"的过渡态。
-   * 这段时间播放器侧不会推弹幕，房间也不会开始录制，状态必须显示"连接中"而不是
-   * "监控中" —— 否则用户会以为在正常录制（实测代理重新确认开播要约 1 分钟）。
-   * 值 = 进入该状态的时刻，用于超时兜底。
-   */
-  const connectingSince = ref<Record<string, number>>({})
-  const CONNECTING_MAX_MS = 120000
-
   const connectedCount = computed(() => rooms.value.filter((r) => r.connected).length)
   const pausedCount = computed(() => rooms.value.filter((r) => !r.enabled).length)
 
@@ -315,15 +306,25 @@
     return 'bg-warning'
   })
 
-  /** 恢复/添加后、抓取代理尚未确认直播状态的过渡期 */
+  /**
+   * 判断「已连接但抓取代理还没确认开播」的过渡态。
+   *
+   * 这段时间 WebSocket 是连上的（所以后端 connected=true、旧逻辑会显示"监控中"），
+   * 但代理还没判定出直播状态，因此不会推弹幕、也不会开始录制 —— 实测重新确认
+   * 开播要约 1 分钟。若显示"监控中"，用户会以为正在正常录制。
+   *
+   * 完全依据后端状态码判断（不依赖前端本地标记）：
+   *   代理已给出明确结论（ONLINE/OFFLINE/ENDED）→ 不是过渡态
+   *   否则（null 或 ROOM_STATUS_UNKNOWN）→ 连接中
+   * 好处：刷新页面、换设备、从别的客户端恢复，判断都一样准确。
+   */
+  const CONCLUSIVE_STATUS = new Set(['ROOM_ONLINE', 'ROOM_OFFLINE', 'ROOM_ENDED'])
+
   function isConnecting(row: Room) {
-    const since = connectingSince.value[String(row.room_id)]
-    if (!since) return false
-    if (row.recording) return false
-    // 代理已给出明确结论（true=直播中 / false=未开播）即结束过渡态；
-    // liveStatus 为 null 表示上游还没确认（代理返回 ROOM_STATUS_UNKNOWN）
-    if (row.liveStatus === true || row.liveStatus === false) return false
-    return Date.now() - since < CONNECTING_MAX_MS
+    if (row.recording) return false // 已在录制，状态由"录制中"接管
+    if (!row.enabled) return false // 已被暂停，状态由"已暂停"接管
+    if (!row.connected) return false // 还没连上，交给后面的分支
+    return !CONCLUSIVE_STATUS.has(String(row.statusCode || ''))
   }
 
   /** 主播名还在解析中（配置里已添加，但 streamers 表还没有记录） */
@@ -347,18 +348,18 @@
 
   function statusText(row: Room) {
     if (row.recording) return '录制中'
+    if (!row.enabled) return '已暂停' // 已暂停优先于任何连接状态
     if (isConnecting(row)) return '连接中'
     if (row.connected) return '监控中'
-    if (row.enabled) return '连接中'
-    return '已暂停'
+    return '连接中' // 已启用但尚未连接
   }
 
   function dotClass(row: Room) {
     if (row.recording) return 'bg-theme'
+    if (!row.enabled) return 'bg-g-400'
     if (isConnecting(row)) return 'bg-warning'
     if (row.connected) return 'bg-success'
-    if (row.enabled) return 'bg-warning'
-    return 'bg-g-400'
+    return 'bg-warning'
   }
 
   function goSessions(row: Room) {
@@ -382,18 +383,6 @@
         return old
       })
       rooms.value = merged
-
-      // 清理已经不需要的"连接中"标记
-      const next: Record<string, number> = {}
-      for (const [id, since] of Object.entries(connectingSince.value)) {
-        const row = merged.find((r) => String(r.room_id) === id)
-        if (!row) continue // 房间已被删除
-        if (row.recording) continue // 已经开始录制
-        if (row.liveStatus === true || row.liveStatus === false) continue // 代理已给出结论
-        if (Date.now() - since > CONNECTING_MAX_MS) continue // 超时兜底
-        next[id] = since
-      }
-      connectingSince.value = next
     } finally {
       loading.value = false
     }
@@ -465,8 +454,6 @@
     try {
       await addRoom(id, newRoomName.value.trim())
       ElMessage.success('添加成功，正在等待代理确认开播…')
-      // 新房间同样要进入"连接中"过渡态：代理确认开播前不会录制
-      connectingSince.value = { ...connectingSince.value, [id]: Date.now() }
       closeAdd()
       await refresh()
     } finally {
@@ -511,7 +498,6 @@
         ElMessage.error((r as { error?: string }).error || '恢复失败')
         return
       }
-      connectingSince.value = { ...connectingSince.value, [String(row.room_id)]: Date.now() }
       ElMessage.success('已恢复，正在等待代理确认开播…')
       refresh()
     } catch (e: unknown) {

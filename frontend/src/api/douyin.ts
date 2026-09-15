@@ -35,6 +35,11 @@ export interface Room {
   recording: boolean
   /** 代理对直播状态的判定：true=直播中 / false=未开播 / null=上游尚未确认 */
   liveStatus?: boolean | null
+  /**
+   * 代理对「本次连接」的状态判定码：
+   * ROOM_ONLINE / ROOM_OFFLINE / ROOM_ENDED / ROOM_STATUS_UNKNOWN，null = 刚连上还没结论
+   */
+  statusCode?: string | null
   /** 直播间标题 */
   roomTitle?: string
   /** true = 配置里已添加但 streamers 表还没记录，主播名仍在解析中 */

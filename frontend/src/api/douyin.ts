@@ -280,10 +280,12 @@ export function lookupRoom(roomId: string) {
  * 而后端返回的 body 里有真正的原因（如「房间 X 已在监控」「监控 worker 未运行」）。
  * 关掉自动提示后，由调用方用 isHttpError(e).data.error 展示真实原因，且不会弹两次。
  */
-export function addRoom(roomId: string, name: string) {
+export function addRoom(roomId: string, name: string, avatar = '') {
   return request.post<{ ok: boolean; message?: string }>({
     url: '/api/rooms/add',
-    data: { room_id: roomId, name },
+    // 把预览已经查到的昵称/头像一起交给后端落库，
+    // 否则添加后卡片只能显示房间号、没有头像（预览查到的东西白查了）
+    data: { room_id: roomId, name, avatar },
     showErrorMessage: false
   })
 }

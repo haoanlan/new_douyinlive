@@ -224,7 +224,9 @@
             </label>
             <el-input
               v-model="newRoomName"
-              :placeholder="preview.nickname || '留空则自动获取'"
+              :placeholder="
+                preview.nickname ? `留空则用「${preview.nickname}」` : '留空则自动获取'
+              "
               clearable
             >
               <template #prefix>
@@ -472,13 +474,16 @@
   async function add() {
     const id = newRoomId.value.trim()
     if (!id) return
-    const name = newRoomName.value.trim()
+    // 主播名：用户填了就用用户填的；没填就用预览已经查到的那一个。
+    // 头像直接用预览查到的 —— 这样添加后卡片立刻就有头像和名字。
+    const name = newRoomName.value.trim() || preview.value?.nickname || ''
+    const avatar = preview.value?.avatar || ''
     // 先关弹窗：用户已经点了「确认添加」，界面要立刻响应。
     // （之前失败时 addRoom 抛异常，closeAdd() 不会执行 → 弹窗卡住、又看不到原因）
     closeAdd()
     adding.value = true
     try {
-      await addRoom(id, name)
+      await addRoom(id, name, avatar)
       ElMessage.success('添加成功')
     } catch (e: unknown) {
       // 常见失败：房间已在监控中（409）、房间号格式不合法（400）、worker 未运行（503）

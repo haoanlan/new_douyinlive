@@ -191,30 +191,59 @@ export interface AnonymousLookup {
 
 // ===================== Users =====================
 
+/**
+ * 用户画像（对应后端 GET /api/users/{sec_uid} 的真实返回）
+ * 注意：字段名必须与后端一致 —— 之前这里写的是一套理想化字段名
+ * （fans_count / gift_profile / top_anchors …），后端一个都没返回，
+ * 导致画像页除了头像和昵称全是空的。
+ */
 export interface UserProfile {
-  sec_uid: string
   nickname: string
   avatar?: string
-  signature?: string
-  gender?: string
-  age?: number
-  douyin_id?: string
-  is_private?: boolean
-  fans_count?: number
-  following_count?: number
-  ip_location?: string
-  aliases?: string[]
+  /** 累计钻石 */
+  total_diamonds?: number
+  /** 累计送礼次数（连击去重后） */
+  gift_count?: number
+  gift_types_count?: number
+  /** 逗号分隔的礼物名串 */
+  gift_types?: string
+  /** 送礼风格判定，如「重度粉丝（专注型）」 */
+  giftStyle?: string
+  /** 场均消费钻石 */
+  avgPerSession?: number
+  /** 活跃高峰时段，如「21:00」 */
+  peakHour?: string
+  danmakuCount?: number
+  /** 弹幕风格标签，如「表情丰富·热情互动」 */
+  danmakuStyle?: string
+  danmakuSamples?: { content: string; create_time: number | string }[]
+  favoriteStreamer?: string
+  activeSessionCount?: number
+  activeSessions?: {
+    id: number
+    start_time: string
+    end_time: string | null
+    streamer_name?: string
+    session_diamonds?: number
+  }[]
+  /** 各小时送礼次数 */
+  hourStats?: { hour: string; count: number }[]
+  /** 礼物明细（按钻石降序） */
+  giftBreakdown?: { gift_name: string; total_diamonds: number; count: number }[]
+  /** 常送主播（按钻石降序 top5） */
+  topStreamers?: { name: string; diamonds: number; count: number }[]
+  /** 常用礼物（按次数降序 top5，含图标） */
+  topGiftsByCount?: {
+    gift_name: string
+    total_diamonds: number
+    count: number
+    icon_url?: string | null
+  }[]
+  /** 近期行为（弹幕+送礼合并，按时间倒序） */
   recent_actions?: UserAction[]
-  active_sessions?: UserSession[]
-  gift_profile?: {
-    style?: string[]
-    avg_diamonds?: number
-    peak_hour?: number
-  }
-  top_anchors?: { name: string; diamonds: number }[]
-  top_gifts?: { name: string; icon?: string; count: number }[]
-  danmaku_style?: { tags?: string[]; samples?: string[] }
-  activity_hours?: number[]
+  /** 首次/末次送礼时间（毫秒时间戳或原值） */
+  firstSeen?: number | string
+  lastSeen?: number | string
 }
 
 export interface UserAction {

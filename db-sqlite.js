@@ -213,7 +213,18 @@ async function init() {
   // 回填已结束场次的聚合数据
   try {
     const { comboDedupGifts } = require('./lib/gift-utils.js');
-    const pending = d.prepare("SELECT id FROM sessions WHERE end_time IS NOT NULL AND (agg_gifts IS NULL OR agg_gifts = 0)").all();
+    // 需要回填的两种情形：
+    //   1) agg_* 还没算过（agg_gifts IS NULL 或 0）
+    //   2) 有弹幕但 session_timeline 为空 —— 历史 bug：弹幕 create_time 存的是毫秒，
+    //      却被当作秒传给 strftime，算出 NULL，插入违反 NOT NULL 导致整段聚合回滚，
+    //      于是所有场次的时间线都是空的。修好后在这里把历史场次补建回来。
+    const pending = d.prepare(`
+      SELECT id FROM sessions
+      WHERE end_time IS NOT NULL
+        AND (agg_gifts IS NULL OR agg_gifts = 0
+             OR ((SELECT COUNT(*) FROM danmaku WHERE session_id = sessions.id) > 0
+                 AND (SELECT COUNT(*) FROM session_timeline WHERE session_id = sessions.id) = 0))
+    `).all();
     if (pending.length > 0) {
       console.log(`[db] 回填 ${pending.length} 个场次的聚合数据...`);
       for (const { id: sid } of pending) {
@@ -227,6 +238,9 @@ async function init() {
         const agg_users = new Set([...giftUsers, ...danmakuUsers]).size;
         d.prepare('UPDATE sessions SET agg_gifts=?, agg_diamonds=?, agg_danmaku=?, agg_users=? WHERE id=?')
           .run(agg_gifts, agg_diamonds, dmRow.cnt, agg_users, sid);
+        // 预聚合表（含时间线）：补建历史场次
+        try { await buildPrecomputed(d, sid, deduped); }
+        catch (e) { console.error(`[db] 回填 session ${sid} 预聚合失败:`, e.message); }
       }
       console.log(`[db] 聚合数据回填完成`);
     }
@@ -424,25 +438,48 @@ async function buildPrecomputed(d, sessionId, dedupedGifts) {
   for (const dt of details) insGD.run(sessionId, dt.nickname, dt.user_sec_uid, dt.gift_name, dt.to_nickname, dt.total_diamonds, dt.count, dt.avatar_url, dt.gift_icon, dt.create_time);
 
   // 时间线
+  //
+  // 注意：create_time 存的是**毫秒**时间戳（13 位），而 SQLite 的 'unixepoch'
+  // 按「秒」解析 —— 直接传毫秒会超出可表示日期范围而返回 NULL。
+  // 历史上这里就是直接传的，导致 session_timeline.time 违反 NOT NULL，
+  // 每场直播结束都报「聚合计算失败」，所有场次的时间线全是空的。
+  // 这里统一按毫秒/秒自适应，并且时间解析不出来时跳过该点而不是整段失败。
+  const toMinuteKey = (ts) => {
+    const n = typeof ts === 'number' ? ts : Number(ts);
+    if (!Number.isFinite(n) || n <= 0) return null;
+    const dd = new Date(n > 1e12 ? n : n * 1000);
+    if (Number.isNaN(dd.getTime())) return null;
+    const p = (x) => String(x).padStart(2, '0');
+    return `${dd.getFullYear()}-${p(dd.getMonth() + 1)}-${p(dd.getDate())} ${p(dd.getHours())}:${p(dd.getMinutes())}:00`;
+  };
+
   const timeLineMap = {};
   for (const g of dedupedGifts) {
-    const ts = g.create_time; if (!ts) continue;
-    let timeKey;
-    if (typeof ts === 'number') {
-      const dd = new Date(ts > 1e12 ? ts : ts * 1000);
-      timeKey = `${dd.getFullYear()}-${String(dd.getMonth()+1).padStart(2,'0')}-${String(dd.getDate()).padStart(2,'0')} ${String(dd.getHours()).padStart(2,'0')}:${String(dd.getMinutes()).padStart(2,'0')}:00`;
-    } else { timeKey = String(ts).slice(0, 16) + ':00'; }
+    const timeKey = toMinuteKey(g.create_time);
+    if (!timeKey) continue;
     if (!timeLineMap[timeKey]) timeLineMap[timeKey] = { time: timeKey, gifts: 0, diamonds: 0 };
     timeLineMap[timeKey].gifts += g.repeat_count || 1;
     timeLineMap[timeKey].diamonds += g.total_diamonds || 0;
   }
-  const danmakuTimeline = d.prepare(`SELECT strftime('%Y-%m-%d %H:%M:00', create_time, 'unixepoch', 'localtime') as time, COUNT(*) as danmaku FROM danmaku WHERE session_id = ? GROUP BY time ORDER BY time`).all(sessionId);
-  for (const t of danmakuTimeline) { if (!timeLineMap[t.time]) timeLineMap[t.time] = { time: t.time, gifts: 0, diamonds: 0 }; timeLineMap[t.time].danmaku = t.danmaku; }
+  const danmakuTimeline = d.prepare(`
+    SELECT strftime('%Y-%m-%d %H:%M:00',
+             CASE WHEN create_time > 1000000000000 THEN create_time / 1000.0 ELSE create_time END,
+             'unixepoch', 'localtime') AS time,
+           COUNT(*) AS danmaku
+    FROM danmaku WHERE session_id = ?
+    GROUP BY time HAVING time IS NOT NULL ORDER BY time
+  `).all(sessionId);
+  for (const t of danmakuTimeline) {
+    if (!t.time) continue;
+    if (!timeLineMap[t.time]) timeLineMap[t.time] = { time: t.time, gifts: 0, diamonds: 0 };
+    timeLineMap[t.time].danmaku = t.danmaku;
+  }
   const insTL = d.prepare('INSERT INTO session_timeline (session_id, time, gifts, diamonds, danmaku) VALUES (?,?,?,?,?)');
   for (const t of Object.values(timeLineMap).sort((a, b) => (a.time || '').localeCompare(b.time || ''))) {
+    if (!t || !t.time) continue;   // 兜底：时间算不出来就跳过，不让整段聚合失败
     insTL.run(sessionId, t.time, t.gifts, t.diamonds, t.danmaku || 0);
   }
-  console.log(`[endSession] 预聚合写入完成, session=${sessionId}`);
+  console.log(`[endSession] 预聚合写入完成, session=${sessionId}（时间线 ${Object.keys(timeLineMap).length} 个点）`);
 }
 
 /** 更新 session 统计（增量） */

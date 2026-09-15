@@ -1,123 +1,147 @@
 # 交接摘要（会话上下文过大，用于新会话续接）
 
-> 生成时间：2026-09-14
-> 原因：原会话累计上下文 4.4MB（含十几张截图），DeepSeek API 调用频繁失败、重试延迟升高。
-> 新会话读这一份即可接管，**不要再重新读整份大文件**。
+> 生成时间：2026-09-15
+> 原因：本会话上下文堆到 5.5MB（含多张截图），与上次导致 API 频繁失败的会话同量级。
+> 新会话读这一份即可接管，**不要再重新读整份大文件、不要随便读截图**（图片 token 极贵）。
 
 ---
 
-## 一、项目现状（已完成并验证）
-
-### 仓库与分支
+## 一、项目现状
 
 | 项 | 值 |
 | --- | --- |
 | 项目路径 | `D:\desktop\vibe coding\new_douyinlive` |
-| 远程 | `origin` = https://github.com/haoanlan/new_douyinlive.git（直连可用，TLS 偶发重置需重试） |
-| 当前分支 | `vue`（已推送到远程，commit `51850f5`） |
-| 默认分支 | `master` |
-| 另一分支 | `refactor/pinia-vue-router`（同样推了 `51850f5`） |
+| 远程 | `origin` = https://github.com/haoanlan/new_douyinlive.git（网络经常抽，需重试） |
+| 当前分支 | `vue`（已全部推送，最新 `e54474c`） |
 | Go 代理源码 | `D:\desktop\vibe coding\douyinLive-proxy`（jwwsjlm/douyinLive v2.2.1） |
 
-**推送注意**：`git push` 需要放宽沙箱（凭据助手 `gh` 需要命名管道，workspace-write 下报 `couldn't create signal pipe`）。
+### 三个服务（加前端共四个进程）
 
-### 三个服务都能跑
-
-| 服务 | 端口 | 启动方式 | 当前状态 |
+| 服务 | 端口 | 启动方式 | 说明 |
 | --- | --- | --- | --- |
-| Go 抓取代理 | 1088 | `./douyinLive-win-amd64.exe --config proxy-config.yaml --port 1088` | ✅ v2.2.1，`/health` 正常 |
-| 监控脚本 | 无 | `node monitor.js --daemon` | ✅ 3 个房间已连接 |
-| 仪表盘 | 9871 | `node web-dashboard.js` | ✅ |
-| 前端 Vite | 5173 | `npm run dev`（需放宽沙箱，esbuild spawn） | ✅ |
+| Go 抓取代理 | 1088 | `.\douyinLive-win-amd64.exe --config proxy-config.yaml --port 1088` | 必须**先起**，否则 worker 会尝试 spawn 它（沙箱里会 EPERM） |
+| 后端 + 监控 worker | 9871 | `node web-dashboard.js` | **同一个进程**，worker 内嵌 |
+| 前端 Vite | 5173 | `frontend` 目录下 `node node_modules\vite\bin\vite.js` | 需放宽沙箱（esbuild spawn） |
 
-一键启动脚本：`bash start-all.sh`（start/stop/status）。
-
-### 关键事实（踩过的坑，别再重复踩）
-
-1. **cookie 不是必须的**：Go 代理匿名即可解析房间、查直播状态、拿主播资料
-   （`/api/v1/rooms/{id}/status`、`/api/v1/rooms/{id}/anchor`、`POST /api/v1/rooms/status:batch`）。
-   WebSocket 也连得上。cookie 只影响弹幕/礼物消息流，**尚未验证**（需要房间开播）。
-2. **代理配置必须独立**：Go 代理 schema 与 Node 端不同，不能共用 `config.yaml`
-   （会报 `field dashboard not found`）。项目自动生成 `proxy-config.yaml`（含 cookie 同步）。
-3. **`monitor.sock` 在 DSH 沙箱内建不出来**（`listen EACCES`，禁命名管道）。
-   导致「房间管理」的增删/暂停/恢复、页面「快速重启」在本环境不可用，
-   **在用户自己的终端里运行则正常**。
-4. **前端 `.env` 必须有 `VITE_ACCESS_MODE = frontend`**，否则登录后请求
-   `/api/v3/system/menus`（后端没有）→ 路由守卫跳 500 页面。
-5. **不要用 PowerShell 改 UTF-8 中文文件**（`Set-Content` 默认 ANSI 会写坏），一律用文件工具。
+**浏览器访问 http://localhost:5173**（登录 admin / 123456）。
+**不要开 `:9871` 看页面** —— `frontend/dist` 没构建，9871 只提供 API，打开是 404。
 
 ---
 
-## 二、代码审查结论（已完成，未修复）
+## 二、本会话做完的事（都已提交推送）
 
-### 🔴 严重（已实测验证）
+1. **`6f65768` 监控 worker 并入仪表盘进程，移除控制管道**
+   原来房间增删改查走 `monitor.sock` 命名管道；受限环境建不出管道 → 四个接口全 500。
+   现在同进程函数调用，管道彻底删掉。新增 `lib/worker-control.js` 作为唯一调用入口。
 
-1. **token 可伪造 = 认证形同虚设**
-   `lib/routes/auth.js:20` 发 `base64(userName:Date.now())`，无签名；
-   `web-dashboard.js:48` 只取 `split(':')[0]` 查库，**不验时间戳、不验过期**。
-   实测：`Authorization: Bearer YWRtaW46MQ==`（= base64("admin:1")）→ **200 + 全部数据**。
-   验证脚本：`node scripts/audit-auth.js`
-2. **`/api/user/list` 完全免认证**（`web-dashboard.js:45` 直接放行），泄露账号列表。
-3. **没有全局异常兜底**：`web-dashboard.js` 无 `uncaughtException`/`unhandledRejection`。
-   之前那次 500 崩溃（未构建前端时请求 `/` 触发 readStream ENOENT）只是症状，根因还在；
-   且 `web-dashboard.js:272` 的 `serveStatic(req, res)` 是 async 却未 await/catch。
-4. **`.db-wal` / `.db-shm` 可被下载**：屏蔽名单 `['.yaml','.yml','.bak','.db','.db-journal','.jsonl']`
-   漏了这两个。实测 `GET /db/douyin.db-wal` → 200。
+2. **`b21cc6e` monitor.js 按职责拆成 11 个模块**（1937 行 → 195 行）
+   `lib/worker/` 下：context / logger / config / time / room-state / proxy-process /
+   session / message-handler / connection / commands / lifecycle。
+   函数体按 AST 精确边界逐字搬运；只有 3 个布尔值需改写（`ctx.isShuttingDown`
+   / `ctx.workerRunning` / `ctx.isStandalone`）。
 
-### 🟠 中等
+3. **`bc18ec3` 房间管理三处体验修复**
+   添加前先预览确认、添加后立即可见、录制绿点位置偏移（`el-avatar` 基线间隙把容器
+   撑高 6px，外层加 `flex` 修复）。
 
-5. `/api/summary` 与 `/api/overview` **口径不同**（前者只算有活动的场次，后者算所有已结束场次），实测 120 vs 121。
-6. overview 缓存 300s 无主动失效（`lib/routes/overview.js:6`），下播落库后总览最长滞后 5 分钟。
-7. `monitor.js` 代理崩溃计数**只增不减**（`:1022` 自增，`:1047` 的重置已成死代码），累计 10 次后永久放弃自愈。
-8. 密码无盐 sha256（`auth.js:3`）、登录无限流、token 存 localStorage。
-9. `/api/rooms/lookup` 未配 cookie 时返回 500（应为 4xx）。
-10. 图片报告功能依赖 Playwright 浏览器但未安装，该接口每次 500（死功能）。
-11. 数据库 2 行 `start_time = "1781281920.0"`（带小数点的秒串），JS 解析为 `Invalid Date`。
+4. **`670ca0d` 修复两个真 bug**
+   - 场次时间线聚合**一直失败**：`create_time` 是毫秒时间戳却按秒传给
+     `strftime(..., 'unixepoch')` → 返回 NULL → 违反 `time TEXT NOT NULL` →
+     整段预聚合回滚。实测 276540/276540 条弹幕算不出时间，**所有场次时间线都是 0 行**。
+     已修复并一次性重建 66 个历史场次。
+   - `/api/rooms/lookup` 受代理限流影响（实测同一房间连续请求约一半返回 503），已加重试。
 
-### 📌 未跑通的验证
+5. **`4373aac` 补回 art-design-pro 重写时丢失的交互**
+   暂停确认框、删除数据警告、「解析中...」占位、轮询仅在页面可见时进行 + 合并更新。
 
-- **弹幕/礼物落库链路**：需要一个房间真正开播才能验证（当前 5 个房间全 offline）。
+6. **`60a41e4` → `ecc72ce` 状态语义最终版**
+   试过用「代理未确认开播」显示"连接中"，但会持续一分多钟、反而像卡住，
+   **已按用户直觉改回**：录制中 / 监控中（WebSocket 连上）/ 连接中（未连上）/ 已暂停。
 
----
+7. **`2a934f7` 添加房间时把预览查到的主播名和头像一起落库**
+   原来后端只在填了主播名时才写 streamers 表、且不存头像 → 加完卡片没头像没名字。
 
-## 三、最近一次改动（房间状态逻辑归并）
+8. **`e54474c` 修复用户画像页**
+   前后端字段名**完全不匹配**（前端期望 `gift_profile`/`top_anchors`/`top_gifts`/
+   `recent_actions`/`fans_count`，后端返回 `giftStyle`/`topStreamers`/
+   `topGiftsByCount`/`danmakuSamples`）→ 页面只剩头像和昵称。
+   已对齐字段、后端新增合并的 `recent_actions`、前端重写并补上活跃时段柱状图等。
 
-用户指出「房间状态原来的代码就有相关逻辑（改用 art-design 前）」，核实属实：
-
-- **老前端**（`87be3e7^:frontend/src/views/HomeView.vue`）的 `pollRoomStatus()` 每 15s 调
-  `fetchRooms()` 轮询，房间状态来自后端 `/api/rooms`
-- 而 `/api/rooms` 只从 `monitor.sock` 取状态，**socket 不可用时返回 `{}`**，导致所有房间显示未连接
-
-**已做的修正**：抽出唯一实现 `lib/room-status.js`
-（socket 优先 + daemon 日志兜底 + 逐房间新鲜度判定，超 5 分钟视为陈旧），
-`/api/rooms` 与 `/api/service/status` 共用。
-
-验证：`node scripts/check-room-status.js` → `source=log rooms=3`，3 个房间 `connected=true` 且带真实房间标题。
-
-**待办**：把这次改动提交（尚未 commit）。
+9. **装了 21 个设计类 skill**（用户级，全局可用）
+   `C:\Users\haoti\AppData\Roaming\dsh-desktop\harness\skills\`
+   Impeccable（1）、UI/UX Pro Max（7）、Emil Kowalski Skills（12）、
+   Taste Skill（1：`taste`，需 Playwright MCP，当前环境未配，只能用其分析框架）。
+   已做安全审查（prompt injection / 危险命令 / 外传通道），命中项逐条核实**全是误报**。
 
 ---
 
-## 四、建议的下一步
+## 三、环境坑（重要，别再踩）
 
-1. 提交房间状态归并的改动
-2. 修 🔴 四条安全问题（每条都很短，不动核心功能）
-3. 等有房间开播，验证弹幕/礼物落库（那时才知道 cookie 到底需不需要）
-4. 在用户自己终端跑 `bash start-all.sh`，验证 socket 相关功能（房间增删/暂停）
+1. **沙箱禁命名管道**：`monitor.sock`、git push 的凭据助手、Playwright 启动浏览器
+   （`--remote-debugging-pipe`）都会失败。这三件事需要 `danger-full-access`。
+2. **`bash start-all.sh` 在 Windows 上跑不通**：`pick_proxy()` 候选列表漏了
+   `douyinLive-win-amd64.exe`，而仓库里存在 `douyinLive-linux-amd64`，会选中 Linux ELF。
+   **分别起三个服务**才对。
+3. **不要用 PowerShell 改含中文的 UTF-8 文件**（`Set-Content` 会写坏成双重编码）。
+   一律用文件工具。
+4. **每条 pwsh 命令的 `$env:TEMP` 是私有目录**（`dsh-XXXX`），放宽权限后又是另一个路径。
+   跨命令共享的临时文件要放在工作区里。
+5. **写 `DSH_HOME`（用户目录下）需要放宽沙箱**；workspace-write 只覆盖会话工作区。
+6. **网络极不稳定**：GitHub 反复连接重置。`codeload` / `raw.githubusercontent.com` /
+   `api.github.com` 在 shell 里基本不通（但 harness 的 web_fetch 走另一条代理，通）。
+   下大仓库用 `git clone --filter=blob:none --sparse` 只拉需要的文件，成功率高得多。
+7. **`Get-NetTCPConnection` 在沙箱里不可用**（CIM 被拒），探测端口要用 `TcpClient`
+   或直接发 HTTP 请求。
+8. **`monitor.js status` 在管道下无输出**（`process.exit(0)` 截断异步 stdout），
+   看状态请用 `node scripts/service-status.js`。
+9. **不要用 `read_image` 随便看截图** —— 一张图的 token 相当于几千字，是上次和这次
+   上下文爆掉的直接原因。
 
 ---
 
-## 五、常用脚本（scripts/ 目录，共 40 个）
+## 四、待办 / 已知问题
+
+1. **前端硬编码 `delete_data: true`**（`frontend/src/api/douyin.ts` 的 `removeRoom`）
+   —— 删房间一定连历史数据一起删。目前靠删除确认框明确警告，未改成可选。
+2. **暂停正在录制的房间会**结束当前场次**并丢掉约 1 分钟数据**（恢复后要等抓取代理
+   重新确认开播，实测 64 秒；这段时间代理不推弹幕）。既有设计，未改。
+3. **`Fire苏江009`（room_id = `sjcm009`）不是合法数字房间号**，代理永远无法确认，
+   会一直显示"连接中"且不会录制。没必要的话建议删掉。
+4. **`/anchor` 与 `status:batch` 被上游限流**（约一半请求失败），lookup 已加重试；
+   以后若又"查不到信息"，先怀疑代理被限流。
+5. **cookie 未配置** —— 弹幕/礼物链路正常（走代理 WS），但 `lib/douyin-api.js`
+   那套（部分主播资料）拿不到数据。
+
+---
+
+## 五、常用命令
+
+```bash
+# 启服务（顺序重要，分别起）
+.\douyinLive-win-amd64.exe --config proxy-config.yaml --port 1088   # 终端 A
+node web-dashboard.js                                              # 终端 B
+cd frontend && node node_modules\vite\bin\vite.js                   # 终端 C（需放宽沙箱）
+```
 
 | 脚本 | 用途 |
 | --- | --- |
-| `service-status.js` | 打印状态快照（代理/监控/房间/异常） |
-| `check-room-status.js` | 直接验证共享房间状态模块 |
-| `rooms-dump.js` / `rooms-ranked.js` | 房间列表 / 按场次排序 |
-| `probe-proxy-anon.js` | 探测代理匿名能力边界 |
-| `probe-rooms-live.js` | 批量查房间是否在播 |
-| `audit-auth.js` | 验证 token 伪造漏洞 |
-| `db-overview.js` / `db-diagnose.js` / `db-recover.js` | 数据库概览 / 诊断 / 恢复 |
-| `e2e-dom-assert.js` | 26 项页面结构断言 |
-| `e2e-toolbar-align.js` / `e2e-size-audit.js` | 尺寸与对齐体检 |
-| `fetch-proxy-binary.js` | 下载官方代理二进制（走镜像） |
+| `node scripts/service-status.js` | 状态快照（代理/监控/房间/异常）。默认打 5173，可设 `CHECK_FRONT=http://127.0.0.1:9871` |
+| `node scripts/check-room-status.js` | 直接验证共享房间状态模块 |
+| `node scripts/audit-auth.js` | 验证 token 伪造漏洞 |
+| `node scripts/db-overview.js` / `db-diagnose.js` | 数据库概览 / 诊断 |
+
+---
+
+## 六、仍未修的安全问题
+
+`web-dashboard.js` 里这几条还在：
+
+1. token 可伪造（`lib/routes/auth.js` 发 `base64(user:timestamp)`，`web-dashboard.js`
+   只取 `split(':')[0]`，不验签名/过期）
+2. `/api/user/list` 免认证
+3. `.db-wal` / `.db-shm` 未加入静态文件屏蔽名单
+4. `serveStatic(req, res)` 是 async 却未 await/catch
+5. 仪表盘侧缺全局 `uncaughtException` / `unhandledRejection` 兜底（worker 侧有）
+
+另：`api/douyin-http.ts` 的错误拦截器已修好（会展示后端返回的真实原因，
+并支持 `showErrorMessage: false`）。

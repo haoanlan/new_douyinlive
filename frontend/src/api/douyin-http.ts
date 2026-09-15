@@ -26,13 +26,23 @@ douyinRequest.interceptors.request.use((config) => {
 douyinRequest.interceptors.response.use(
   (response) => response.data,
   (error) => {
-    if (error.response?.status === 401) {
+    const cfg = (error.config || {}) as { showErrorMessage?: boolean }
+    const status = error.response?.status
+    // 后端 web-dashboard.js 的失败响应体里带着真正的原因
+    // （例如 {"ok":false,"error":"房间 65209552987 已在监控"}）。
+    // 原来只按状态码提示「请求失败：HTTP 409」，把最有用的信息丢掉了。
+    const backendMsg =
+      error.response?.data?.error || error.response?.data?.message || ''
+    if (backendMsg) (error as { backendMessage?: string }).backendMessage = backendMsg
+
+    if (status === 401) {
       ElMessage.error('认证失败，请重新登录')
       useUserStore().logOut()
-    } else if (error.response?.status) {
-      ElMessage.error(`请求失败：HTTP ${error.response.status}`)
-    } else {
-      ElMessage.error(error.message || '请求失败')
+    } else if (cfg.showErrorMessage !== false) {
+      // 优先展示后端给的真实原因，没有才退回状态码文案
+      ElMessage.error(
+        backendMsg || (status ? `请求失败：HTTP ${status}` : error.message || '请求失败')
+      )
     }
     return Promise.reject(error)
   }
@@ -52,25 +62,18 @@ export interface DouyinRequest {
   del<T = any>(config: AxiosRequestConfig | string): Promise<T>
 }
 
+/**
+ * 统一走 douyinRequest.request({...cfg, method})，把整份 config 透传下去。
+ * 原来只转发 url/data/params/headers，会丢掉自定义选项（例如 showErrorMessage），
+ * 导致「关掉自动错误提示」这类配置静默失效。
+ */
 export default {
-  get: (config: AxiosRequestConfig | string) => {
-    const cfg = toConfig(config)
-    return douyinRequest.get(cfg.url!, { params: cfg.params, headers: cfg.headers })
-  },
-  post: (config: AxiosRequestConfig | string) => {
-    const cfg = toConfig(config)
-    return douyinRequest.post(cfg.url!, cfg.data, { params: cfg.params, headers: cfg.headers })
-  },
-  put: (config: AxiosRequestConfig | string) => {
-    const cfg = toConfig(config)
-    return douyinRequest.put(cfg.url!, cfg.data, { params: cfg.params, headers: cfg.headers })
-  },
-  del: (config: AxiosRequestConfig | string) => {
-    const cfg = toConfig(config)
-    return douyinRequest.delete(cfg.url!, {
-      params: cfg.params,
-      data: cfg.data,
-      headers: cfg.headers
-    })
-  }
+  get: (config: AxiosRequestConfig | string) =>
+    douyinRequest.request({ ...toConfig(config), method: 'GET' }),
+  post: (config: AxiosRequestConfig | string) =>
+    douyinRequest.request({ ...toConfig(config), method: 'POST' }),
+  put: (config: AxiosRequestConfig | string) =>
+    douyinRequest.request({ ...toConfig(config), method: 'PUT' }),
+  del: (config: AxiosRequestConfig | string) =>
+    douyinRequest.request({ ...toConfig(config), method: 'DELETE' })
 } as unknown as DouyinRequest

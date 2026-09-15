@@ -274,25 +274,41 @@ export function lookupRoom(roomId: string) {
   })
 }
 
+/**
+ * 房间管理这几个写操作统一关掉请求层的自动错误提示（showErrorMessage: false）。
+ * 原因：请求层只会按 HTTP 状态码给出「请求失败：HTTP 409」这类通用文案，
+ * 而后端返回的 body 里有真正的原因（如「房间 X 已在监控」「监控 worker 未运行」）。
+ * 关掉自动提示后，由调用方用 isHttpError(e).data.error 展示真实原因，且不会弹两次。
+ */
 export function addRoom(roomId: string, name: string) {
   return request.post<{ ok: boolean; message?: string }>({
     url: '/api/rooms/add',
-    data: { room_id: roomId, name }
+    data: { room_id: roomId, name },
+    showErrorMessage: false
   })
 }
 
 export function pauseRoom(roomId: string) {
-  return request.post<{ ok: boolean }>({ url: '/api/rooms/pause', data: { room_id: roomId } })
+  return request.post<{ ok: boolean }>({
+    url: '/api/rooms/pause',
+    data: { room_id: roomId },
+    showErrorMessage: false
+  })
 }
 
 export function resumeRoom(roomId: string) {
-  return request.post<{ ok: boolean }>({ url: '/api/rooms/resume', data: { room_id: roomId } })
+  return request.post<{ ok: boolean }>({
+    url: '/api/rooms/resume',
+    data: { room_id: roomId },
+    showErrorMessage: false
+  })
 }
 
 export function removeRoom(roomId: string) {
   return request.post<{ ok: boolean }>({
     url: '/api/rooms/remove',
-    data: { room_id: roomId, delete_data: true }
+    data: { room_id: roomId, delete_data: true },
+    showErrorMessage: false
   })
 }
 

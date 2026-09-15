@@ -69,7 +69,8 @@
               <div class="flex-1 min-w-0">
                 <div
                   class="text-[17px] font-medium truncate leading-snug"
-                  :class="isNamePending(row) ? 'text-g-400 italic' : 'text-g-900'"
+                  :class="isNamePending(row) ? 'text-g-400' : 'text-g-900'"
+                  :title="isNamePending(row) ? '主播名解析中（开播或解析成功后会更新）' : displayName(row)"
                 >
                   {{ displayName(row) }}
                 </div>
@@ -256,6 +257,7 @@
   import { computed, onActivated, onDeactivated, onMounted, onUnmounted, ref } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { ElMessage, ElMessageBox } from 'element-plus'
+  import { isHttpError } from '@/utils/http/error'
   import {
     fetchRooms,
     addRoom,
@@ -307,37 +309,45 @@
   })
 
   /**
-   * 判断「已连接但抓取代理还没确认开播」的过渡态。
-   *
-   * 这段时间 WebSocket 是连上的（所以后端 connected=true、旧逻辑会显示"监控中"），
-   * 但代理还没判定出直播状态，因此不会推弹幕、也不会开始录制 —— 实测重新确认
-   * 开播要约 1 分钟。若显示"监控中"，用户会以为正在正常录制。
-   *
-   * 完全依据后端状态码判断（不依赖前端本地标记）：
-   *   代理已给出明确结论（ONLINE/OFFLINE/ENDED）→ 不是过渡态
-   *   否则（null 或 ROOM_STATUS_UNKNOWN）→ 连接中
-   * 好处：刷新页面、换设备、从别的客户端恢复，判断都一样准确。
+   * 状态语义（与用户直觉一致）：
+   *   录制中 —— 已经开播并在记录弹幕/礼物
+   *   监控中 —— WebSocket 已连上，正在盯着这个房间（连上就算监控中）
+   *   连接中 —— 已启用但还没连上
+   *   已暂停 —— 用户主动暂停
+   * 注意：代理确认开播需要时间（实测约 1 分钟），这段时间显示"监控中"是正确的 ——
+   * 它确实在监控、也确实还没开始记录；录起来会自动变成"录制中"。
    */
-  const CONCLUSIVE_STATUS = new Set(['ROOM_ONLINE', 'ROOM_OFFLINE', 'ROOM_ENDED'])
-
-  function isConnecting(row: Room) {
-    if (row.recording) return false // 已在录制，状态由"录制中"接管
-    if (!row.enabled) return false // 已被暂停，状态由"已暂停"接管
-    if (!row.connected) return false // 还没连上，交给后面的分支
-    return !CONCLUSIVE_STATUS.has(String(row.statusCode || ''))
+  function statusText(row: Room) {
+    if (row.recording) return '录制中'
+    if (!row.enabled) return '已暂停'
+    if (row.connected) return '监控中'
+    return '连接中'
   }
 
-  /** 主播名还在解析中（配置里已添加，但 streamers 表还没有记录） */
+  function dotClass(row: Room) {
+    if (row.recording) return 'bg-theme'
+    if (!row.enabled) return 'bg-g-400'
+    if (row.connected) return 'bg-success'
+    return 'bg-warning'
+  }
+
+  /**
+   * 主播名是否还没解析出来（配置里已添加，但 streamers 表还没有记录）。
+   *
+   * 注意：离线房间拿不到主播资料时，这个名字可能长时间解析不出来，所以界面
+   * 不能只显示"解析中..." —— 那样根本认不出是哪个房间。这里照常显示房间号，
+   * 只用浅色斜体 + 悬浮提示表达"名字还没出来"，保证卡片始终可辨认。
+   */
   function isNamePending(row: Room) {
     return Boolean(row.pending) || !row.name || row.name === row.room_id
   }
 
   function displayName(row: Room) {
-    return isNamePending(row) ? '解析中...' : row.name
+    return row.name || row.room_id
   }
 
   function avatarLetter(row: Room) {
-    return isNamePending(row) ? '' : (row.name || row.room_id)?.[0] || ''
+    return (row.name || row.room_id)?.[0] || ''
   }
 
   function escapeHtml(s: string) {
@@ -346,20 +356,32 @@
     )
   }
 
-  function statusText(row: Room) {
-    if (row.recording) return '录制中'
-    if (!row.enabled) return '已暂停' // 已暂停优先于任何连接状态
-    if (isConnecting(row)) return '连接中'
-    if (row.connected) return '监控中'
-    return '连接中' // 已启用但尚未连接
-  }
-
-  function dotClass(row: Room) {
-    if (row.recording) return 'bg-theme'
-    if (!row.enabled) return 'bg-g-400'
-    if (isConnecting(row)) return 'bg-warning'
-    if (row.connected) return 'bg-success'
-    return 'bg-warning'
+  /**
+   * 取出后端返回的真实失败原因。
+   * 请求层按 HTTP 状态码只会给出「请求失败：HTTP 409」这类通用文案，而后端 body 里
+   * 有真正的原因（如「房间 X 已在监控」「监控 worker 未运行」），对用户有用得多。
+   * 房间管理的写操作已在 API 层关掉自动提示，统一由这里展示。
+   */
+  function apiErrorMessage(e: unknown, fallback: string) {
+    // 模板自带的 @/utils/http 抛的是 HttpError，后端 body 在 .data 里
+    if (isHttpError(e)) {
+      const data = e.data as { error?: string; message?: string } | undefined
+      return data?.error || data?.message || e.message || fallback
+    }
+    // 抖音接口走的是 api/douyin-http，抛的是 axios 原始错误
+    // （该客户端的拦截器已把后端的 error 字段挂到 backendMessage）
+    const ax = e as {
+      backendMessage?: string
+      response?: { data?: { error?: string; message?: string } }
+      message?: string
+    }
+    return (
+      ax?.backendMessage ||
+      ax?.response?.data?.error ||
+      ax?.response?.data?.message ||
+      ax?.message ||
+      fallback
+    )
   }
 
   function goSessions(row: Room) {
@@ -450,14 +472,21 @@
   async function add() {
     const id = newRoomId.value.trim()
     if (!id) return
+    const name = newRoomName.value.trim()
+    // 先关弹窗：用户已经点了「确认添加」，界面要立刻响应。
+    // （之前失败时 addRoom 抛异常，closeAdd() 不会执行 → 弹窗卡住、又看不到原因）
+    closeAdd()
     adding.value = true
     try {
-      await addRoom(id, newRoomName.value.trim())
-      ElMessage.success('添加成功，正在等待代理确认开播…')
-      closeAdd()
-      await refresh()
+      await addRoom(id, name)
+      ElMessage.success('添加成功')
+    } catch (e: unknown) {
+      // 常见失败：房间已在监控中（409）、房间号格式不合法（400）、worker 未运行（503）
+      ElMessage.error(apiErrorMessage(e, '添加失败'))
     } finally {
       adding.value = false
+      // 无论成功失败都刷新：若该房间其实已在监控中，列表里能直接看到它
+      await refresh()
     }
   }
 
@@ -487,7 +516,7 @@
       ElMessage.success('已暂停')
       refresh()
     } catch (e: unknown) {
-      ElMessage.error((e as Error)?.message || '暂停失败')
+      ElMessage.error(apiErrorMessage(e, '暂停失败'))
     }
   }
 
@@ -498,10 +527,10 @@
         ElMessage.error((r as { error?: string }).error || '恢复失败')
         return
       }
-      ElMessage.success('已恢复，正在等待代理确认开播…')
+      ElMessage.success('已恢复')
       refresh()
     } catch (e: unknown) {
-      ElMessage.error((e as Error)?.message || '恢复失败')
+      ElMessage.error(apiErrorMessage(e, '恢复失败'))
     }
   }
 
@@ -532,7 +561,7 @@
       ElMessage.success('已删除')
       refresh()
     } catch (e: unknown) {
-      ElMessage.error((e as Error)?.message || '删除失败')
+      ElMessage.error(apiErrorMessage(e, '删除失败'))
     }
   }
 

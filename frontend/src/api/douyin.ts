@@ -23,7 +23,7 @@ export interface Summary {
 // ===================== Rooms =====================
 
 export interface Room {
-  id?: number
+  id?: number | null
   room_id: string
   name: string
   avatar?: string
@@ -33,6 +33,15 @@ export interface Room {
   enabled: boolean
   connected: boolean
   recording: boolean
+  /** 代理对直播状态的判定：true=直播中 / false=未开播 / null=上游尚未确认 */
+  liveStatus?: boolean | null
+  /** 直播间标题 */
+  roomTitle?: string
+  /** true = 配置里已添加但 streamers 表还没记录，主播名仍在解析中 */
+  pending?: boolean
+  /** 运行状态来源：memory / socket / log */
+  statusSource?: string
+  /** 前端本地标记：恢复/添加后等待代理确认开播的过渡态 */
   _connecting?: boolean
 }
 

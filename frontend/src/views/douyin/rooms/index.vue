@@ -58,9 +58,7 @@
               <!-- 头像（flex 消除 el-avatar 作为 inline 元素的基线间隙：
                    否则外层容器会比头像高 6px，导致录制绿点下坠到头像之外） -->
               <div class="relative shrink-0 flex">
-                <el-avatar :size="48" :src="row.avatar">{{
-                  (row.name || row.room_id)?.[0]
-                }}</el-avatar>
+                <el-avatar :size="48" :src="row.avatar">{{ avatarLetter(row) }}</el-avatar>
                 <span
                   v-if="row.recording"
                   class="absolute -bottom-0.5 -right-0.5 size-3 rounded-full bg-success ring-2 ring-white"
@@ -69,8 +67,11 @@
 
               <!-- 主播名 + 状态 -->
               <div class="flex-1 min-w-0">
-                <div class="text-[17px] font-medium text-g-900 truncate leading-snug">
-                  {{ row.name || row.room_id }}
+                <div
+                  class="text-[17px] font-medium truncate leading-snug"
+                  :class="isNamePending(row) ? 'text-g-400 italic' : 'text-g-900'"
+                >
+                  {{ displayName(row) }}
                 </div>
                 <div class="flex items-center gap-1.5 mt-1">
                   <span class="size-1.5 rounded-full shrink-0" :class="dotClass(row)" />
@@ -82,30 +83,28 @@
               <div class="flex items-center gap-1.5 shrink-0" @click.stop>
                 <template v-if="isAdmin">
                   <el-tooltip
-                    :content="row.connected ? '暂停监控' : '恢复监控'"
+                    :content="row.enabled ? '暂停监控' : '恢复监控'"
                     placement="top"
                     :hide-after="0"
                   >
                     <button
                       class="size-8 rounded-lg flex-cc bg-g-100/70 text-g-500 hover:bg-theme/10 hover:text-theme transition-colors"
-                      @click="row.connected ? pause(row) : resume(row)"
+                      @click="row.enabled ? pause(row) : resume(row)"
                     >
                       <ArtSvgIcon
-                        :icon="row.connected ? 'ri:pause-line' : 'ri:play-line'"
+                        :icon="row.enabled ? 'ri:pause-line' : 'ri:play-line'"
                         class="text-base"
                       />
                     </button>
                   </el-tooltip>
-                  <el-popconfirm title="确认删除该房间及数据？" @confirm="remove(row)">
-                    <template #reference>
-                      <button
-                        class="size-8 rounded-lg flex-cc bg-g-100/70 text-g-500 hover:bg-danger/10 hover:text-danger transition-colors"
-                        @click.stop
-                      >
-                        <ArtSvgIcon icon="ri:delete-bin-7-line" class="text-base" />
-                      </button>
-                    </template>
-                  </el-popconfirm>
+                  <el-tooltip content="删除房间（含历史数据）" placement="top" :hide-after="0">
+                    <button
+                      class="size-8 rounded-lg flex-cc bg-g-100/70 text-g-500 hover:bg-danger/10 hover:text-danger transition-colors"
+                      @click.stop="remove(row)"
+                    >
+                      <ArtSvgIcon icon="ri:delete-bin-7-line" class="text-base" />
+                    </button>
+                  </el-tooltip>
                 </template>
               </div>
             </div>
@@ -254,9 +253,9 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, onUnmounted, ref } from 'vue'
-  import { useRouter } from 'vue-router'
-  import { ElMessage } from 'element-plus'
+  import { computed, onActivated, onDeactivated, onMounted, onUnmounted, ref } from 'vue'
+  import { useRoute, useRouter } from 'vue-router'
+  import { ElMessage, ElMessageBox } from 'element-plus'
   import {
     fetchRooms,
     addRoom,
@@ -276,6 +275,7 @@
   const isAdmin = computed(() => userStore.info.roles?.includes('R_SUPER') ?? false)
 
   const router = useRouter()
+  const route = useRoute()
   const rooms = ref<Room[]>([])
   const loading = ref(true)
   const search = ref('')
@@ -286,6 +286,15 @@
   // 「添加房间」改为两步：先查询预览确认，再真正添加
   const preview = ref<LookupResult | null>(null)
   const looking = ref(false)
+
+  /**
+   * 恢复监控 / 刚添加房间后，处于"已连接但抓取代理还没确认开播"的过渡态。
+   * 这段时间播放器侧不会推弹幕，房间也不会开始录制，状态必须显示"连接中"而不是
+   * "监控中" —— 否则用户会以为在正常录制（实测代理重新确认开播要约 1 分钟）。
+   * 值 = 进入该状态的时刻，用于超时兜底。
+   */
+  const connectingSince = ref<Record<string, number>>({})
+  const CONNECTING_MAX_MS = 120000
 
   const connectedCount = computed(() => rooms.value.filter((r) => r.connected).length)
   const pausedCount = computed(() => rooms.value.filter((r) => !r.enabled).length)
@@ -306,8 +315,39 @@
     return 'bg-warning'
   })
 
+  /** 恢复/添加后、抓取代理尚未确认直播状态的过渡期 */
+  function isConnecting(row: Room) {
+    const since = connectingSince.value[String(row.room_id)]
+    if (!since) return false
+    if (row.recording) return false
+    // 代理已给出明确结论（true=直播中 / false=未开播）即结束过渡态；
+    // liveStatus 为 null 表示上游还没确认（代理返回 ROOM_STATUS_UNKNOWN）
+    if (row.liveStatus === true || row.liveStatus === false) return false
+    return Date.now() - since < CONNECTING_MAX_MS
+  }
+
+  /** 主播名还在解析中（配置里已添加，但 streamers 表还没有记录） */
+  function isNamePending(row: Room) {
+    return Boolean(row.pending) || !row.name || row.name === row.room_id
+  }
+
+  function displayName(row: Room) {
+    return isNamePending(row) ? '解析中...' : row.name
+  }
+
+  function avatarLetter(row: Room) {
+    return isNamePending(row) ? '' : (row.name || row.room_id)?.[0] || ''
+  }
+
+  function escapeHtml(s: string) {
+    return String(s ?? '').replace(/[&<>"']/g, (c) =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string
+    )
+  }
+
   function statusText(row: Room) {
     if (row.recording) return '录制中'
+    if (isConnecting(row)) return '连接中'
     if (row.connected) return '监控中'
     if (row.enabled) return '连接中'
     return '已暂停'
@@ -315,6 +355,7 @@
 
   function dotClass(row: Room) {
     if (row.recording) return 'bg-theme'
+    if (isConnecting(row)) return 'bg-warning'
     if (row.connected) return 'bg-success'
     if (row.enabled) return 'bg-warning'
     return 'bg-g-400'
@@ -324,14 +365,51 @@
     router.push({ path: '/douyin/sessions', query: { hostId: row.room_id } })
   }
 
+  /**
+   * 拉取房间列表并**合并**进现有数据：
+   * 复用已有对象的引用（配合 :key="row.room_id"），卡片不会被整体重建 —— 不闪烁、不重排。
+   */
   async function refresh() {
     const isFirst = !rooms.value.length
     if (isFirst) loading.value = true
     try {
-      rooms.value = await fetchRooms()
+      const incoming = await fetchRooms()
+      const prev = new Map(rooms.value.map((r) => [String(r.room_id), r]))
+      const merged: Room[] = incoming.map((n) => {
+        const old = prev.get(String(n.room_id))
+        if (!old) return n
+        Object.assign(old, n)
+        return old
+      })
+      rooms.value = merged
+
+      // 清理已经不需要的"连接中"标记
+      const next: Record<string, number> = {}
+      for (const [id, since] of Object.entries(connectingSince.value)) {
+        const row = merged.find((r) => String(r.room_id) === id)
+        if (!row) continue // 房间已被删除
+        if (row.recording) continue // 已经开始录制
+        if (row.liveStatus === true || row.liveStatus === false) continue // 代理已给出结论
+        if (Date.now() - since > CONNECTING_MAX_MS) continue // 超时兜底
+        next[id] = since
+      }
+      connectingSince.value = next
     } finally {
       loading.value = false
     }
+  }
+
+  /**
+   * 只在页面真正可见时轮询：
+   * 切到别的页签、或浏览器标签页被隐藏时都不发请求（旧版就是这个策略，省资源）
+   */
+  function isPageActive() {
+    return route.name === 'DouyinRooms' && document.visibilityState === 'visible'
+  }
+
+  function pollTick() {
+    if (!isPageActive()) return
+    refresh()
   }
 
   function doSearch() {
@@ -386,7 +464,9 @@
     adding.value = true
     try {
       await addRoom(id, newRoomName.value.trim())
-      ElMessage.success('添加成功')
+      ElMessage.success('添加成功，正在等待代理确认开播…')
+      // 新房间同样要进入"连接中"过渡态：代理确认开播前不会录制
+      connectingSince.value = { ...connectingSince.value, [id]: Date.now() }
       closeAdd()
       await refresh()
     } finally {
@@ -395,29 +475,118 @@
   }
 
   async function pause(row: Room) {
-    await pauseRoom(row.room_id)
-    ElMessage.success('已暂停')
-    refresh()
+    const recording = row.recording
+    const html = recording
+      ? '该房间<b>正在录制</b>，暂停会立即结束当前场次，并停止记录弹幕 / 礼物 / 进场。'
+        + '<br><br>恢复后需要等抓取代理重新确认开播（实测约 1 分钟），这段时间的数据不会记录。'
+        + '<br><br>历史数据不会被删除。'
+      : '暂停后将停止监控该房间。<br><br>历史数据会保留，随时可以恢复监控。'
+    try {
+      await ElMessageBox.confirm(html, recording ? '暂停正在录制的房间？' : '确认暂停监控', {
+        confirmButtonText: '暂停监控',
+        cancelButtonText: '取消',
+        type: recording ? 'warning' : 'info',
+        dangerouslyUseHTMLString: true,
+      })
+    } catch {
+      return // 用户取消
+    }
+    try {
+      const r = await pauseRoom(row.room_id)
+      if (r && (r as { ok?: boolean }).ok === false) {
+        ElMessage.error((r as { error?: string }).error || '暂停失败')
+        return
+      }
+      ElMessage.success('已暂停')
+      refresh()
+    } catch (e: unknown) {
+      ElMessage.error((e as Error)?.message || '暂停失败')
+    }
   }
 
   async function resume(row: Room) {
-    await resumeRoom(row.room_id)
-    ElMessage.success('已恢复')
-    refresh()
+    try {
+      const r = await resumeRoom(row.room_id)
+      if (r && (r as { ok?: boolean }).ok === false) {
+        ElMessage.error((r as { error?: string }).error || '恢复失败')
+        return
+      }
+      connectingSince.value = { ...connectingSince.value, [String(row.room_id)]: Date.now() }
+      ElMessage.success('已恢复，正在等待代理确认开播…')
+      refresh()
+    } catch (e: unknown) {
+      ElMessage.error((e as Error)?.message || '恢复失败')
+    }
   }
 
   async function remove(row: Room) {
-    await removeRoom(row.room_id)
-    ElMessage.success('已删除')
-    refresh()
+    try {
+      await ElMessageBox.confirm(
+        `确定删除 <b>${escapeHtml(displayName(row))}</b>？`
+          + '<br><br><b>会同时删除该房间的全部历史数据</b>（场次、弹幕、礼物、进场记录），'
+          + '<b>删除后无法恢复</b>。'
+          + '<br><br>如果只想停止监控、保留历史数据，请改用「暂停」。',
+        '删除房间及历史数据',
+        {
+          confirmButtonText: '删除房间和历史数据',
+          cancelButtonText: '取消',
+          type: 'warning',
+          dangerouslyUseHTMLString: true,
+        }
+      )
+    } catch {
+      return // 用户取消
+    }
+    try {
+      const r = await removeRoom(row.room_id)
+      if (r && (r as { ok?: boolean }).ok === false) {
+        ElMessage.error((r as { error?: string }).error || '删除失败')
+        return
+      }
+      ElMessage.success('已删除')
+      refresh()
+    } catch (e: unknown) {
+      ElMessage.error((e as Error)?.message || '删除失败')
+    }
   }
 
   let timer: number | undefined
+  let onVisibility: (() => void) | undefined
+
+  function startPolling() {
+    stopPolling()
+    timer = window.setInterval(pollTick, 10000)
+  }
+
+  function stopPolling() {
+    if (timer) {
+      clearInterval(timer)
+      timer = undefined
+    }
+  }
+
   onMounted(() => {
     refresh()
-    timer = window.setInterval(refresh, 10000)
+    startPolling()
+    // 浏览器标签页切回来时立即补一次刷新
+    onVisibility = () => {
+      if (document.visibilityState === 'visible') refresh()
+    }
+    document.addEventListener('visibilitychange', onVisibility)
   })
-  onUnmounted(() => clearInterval(timer))
+
+  // keep-alive 场景：切回本页时刷新并恢复轮询，切走时停掉
+  onActivated(() => {
+    refresh()
+    startPolling()
+  })
+
+  onDeactivated(() => stopPolling())
+
+  onUnmounted(() => {
+    stopPolling()
+    if (onVisibility) document.removeEventListener('visibilitychange', onVisibility)
+  })
 </script>
 
 <style>

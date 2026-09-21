@@ -679,9 +679,9 @@ body{background:${CU.bg};color:${CU.ink};font-family:'Noto Sans SC',system-ui,sa
 .foot{display:flex;justify-content:space-between;align-items:center;position:relative;z-index:2}
 .big{font-family:'ZCOOL KuaiLe',sans-serif}`;
 }
-function cuRow(u, rank, av, fs) {
+function cuRow(u, rank, av, fs, pad) {
   const c = rank === 1 ? ' rk1' : rank === 2 ? ' rk2' : rank === 3 ? ' rk3' : '';
-  return `<div class="cell"><span class="rk${c}">${rank}</span>${tbAv(u.avatar, av, false)}<span class="nm" style="font-size:${fs}px">${magName(u)}</span></div>`;
+  return `<div class="cell"${pad ? ` style="padding:${pad}"` : ''}><span class="rk${c}">${rank}</span>${tbAv(u.avatar, av, false)}<span class="nm" style="font-size:${fs}px">${magName(u)}</span></div>`;
 }
 function cuStickers() {
   const star = assetB64('assets/kitty-star.png'), heart = assetB64('assets/kitty-heart.png');
@@ -717,17 +717,21 @@ function cuTopHTML(users, meta) {
 }
 function cuListHTML(users, meta, pageLabel) {
   const half = Math.ceil(users.length / 2);
-  const col = (arr, off, av, fs, gap) => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:${gap}px">${arr.map((u, i) => cuRow(u, off + i, av, fs)).join('')}</div>`;
-  const n = users.length;
-  const av = n > 30 ? 20 : 24, fs = n > 30 ? 11.5 : 13, gap = n > 30 ? 5 : 8;
+  const n = users.length, rows = Math.max(1, half);
+  const avail = 508;                                  // 名次页去掉页头页脚后的可用高度（留出页脚 15px + 底边距）
+  const gap = rows > 13 ? 4 : 7;
+  const cardH = Math.floor((avail - gap * (rows - 1)) / rows);
+  const av = Math.max(15, Math.min(26, cardH - 16)), fs = av >= 22 ? 13 : av >= 18 ? 12 : 11;
+  const pad = `${Math.max(3, Math.floor((cardH - Math.max(av, fs * 1.45)) / 2))}px 11px`;
+  const col = (arr, off) => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:${gap}px">${arr.map((u, i) => cuRow(u, off + i, av, fs, pad)).join('')}</div>`;
   return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${cuFont()}<style>${cuCSS()}</style></head><body>
   <div class="page">
     <div class="blob" style="width:300px;height:300px;background:#FFE4EE;right:-120px;top:-140px"></div>
-    <div class="blob" style="width:240px;height:240px;background:#E2F7F0;left:-110px;bottom:-90px"></div>
+    <div class="blob" style="width:230px;height:230px;background:#E2F7F0;left:-100px;bottom:-60px"></div>
     <div class="hd" style="display:flex;justify-content:space-between;align-items:baseline">
       <div class="ttl" style="font-size:22px">园区充电榜</div><div class="mt" style="font-weight:700">${esc(pageLabel)}</div></div>
     <div class="mt" style="margin-top:10px;position:relative;z-index:2">${esc(meta.target)} · ${rankDate(meta.dateStr)} · 共 ${meta.gifters} 位送礼人</div>
-    <div style="display:flex;gap:11px;margin-top:12px;position:relative;z-index:2">${col(users.slice(0, half), users[0] ? users[0]._rank : 1, av, fs, gap)}${col(users.slice(half), users[half] ? users[half]._rank : 1, av, fs, gap)}</div>
+    <div style="display:flex;gap:11px;margin-top:12px;position:relative;z-index:2">${col(users.slice(0, half), users[0] ? users[0]._rank : 1)}${col(users.slice(half), users[half] ? users[half]._rank : 1)}</div>
     <div style="flex:1"></div>
     <div class="foot"><span class="mt">${esc(meta.sessionStr)}</span><span class="mt">感谢每一份心意</span></div>
   </div></body></html>`;

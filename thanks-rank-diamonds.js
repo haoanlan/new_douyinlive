@@ -145,7 +145,7 @@ const MAG = {
   accent: '#8A2B2B',
   serif: "'Noto Serif SC','Songti SC',serif",
 };
-const MAG_THEME_NAMES = ['magazine-v1', 'magazine-v2', 'noir', 'typegrid', 'cute', 'news', 'energy', 'cute-journal', 'cute-candy', 'cute-story', 'cute-chibi', 'ghost', 'faces', 'ruler', 'monolith', 'chroma-bar', 'chroma-tile'];
+const MAG_THEME_NAMES = ['magazine-v1', 'magazine-v2', 'noir', 'typegrid', 'cute', 'news', 'energy', 'cute-journal', 'cute-candy', 'cute-story', 'cute-chibi', 'ghost', 'faces', 'ruler', 'monolith', 'chroma-bar', 'chroma-tile', 'chroma-refined', 'chroma-photo'];
 const MAG_VARIANT = MAG_THEME_NAMES.includes(THEME_ARG) ? THEME_ARG : null;
 // 是否显示钻石数：提名榜（thanks-rank.js）不显示，钻石榜显示
 const MAG_AMOUNT = true;
@@ -318,6 +318,8 @@ function magTopHTML(variant, users, meta) {
   if (variant === 'cute-story') return csTopHTML(users, meta);
   if (variant === 'ghost') return ghTopHTML(users, meta);
   if (variant === 'chroma-bar') return cbTopHTML(users, meta);
+  if (variant === 'chroma-refined') return crTopHTML(users, meta);
+  if (variant === 'chroma-photo') return cpTopHTML(users, meta);
   if (variant === 'chroma-tile') return ctTopHTML(users, meta);
   if (variant === 'faces') return faTopHTML(users, meta);
   if (variant === 'ruler') return ruTopHTML(users, meta);
@@ -402,6 +404,8 @@ function rankListHTML(variant, users, meta, pageLabel) {
   if (variant === 'cute-story') return csListHTML(users, meta, pageLabel);
   if (variant === 'ghost') return ghListHTML(users, meta, pageLabel);
   if (variant === 'chroma-bar') return cbListHTML(users, meta, pageLabel);
+  if (variant === 'chroma-refined') return crListHTML(users, meta, pageLabel);
+  if (variant === 'chroma-photo') return cpListHTML(users, meta, pageLabel);
   if (variant === 'chroma-tile') return ctListHTML(users, meta, pageLabel);
   if (variant === 'faces') return faListHTML(users, meta, pageLabel);
   if (variant === 'ruler') return ruListHTML(users, meta, pageLabel);
@@ -1490,7 +1494,126 @@ function ctListHTML(users, meta, pageLabel) {
   </div></body></html>`;
 }
 
-async function render(html,outPath){const br=await chromium.launch({headless:true,executablePath:chromiumExe()});const page=await br.newPage({viewport:{width:600,height:2000},deviceScaleFactor:2});await page.setContent(html,{waitUntil:'domcontentloaded',timeout:30000});await page.evaluate(()=>new Promise(r=>{const imgs=document.querySelectorAll('img');let loaded=0;const check=()=>{loaded++;if(loaded>=imgs.length)r()};imgs.forEach(img=>{if(img.complete)check();else{img.onload=check;img.onerror=check}});if(!imgs.length)r();setTimeout(r,8000)}));await new Promise(r=>setTimeout(r,1000));const bodyHeight=await page.evaluate(()=>document.body.scrollHeight);const y=Math.max(0,Math.floor((bodyHeight-800)/2));await page.screenshot({path:outPath,clip:{x:0,y,width:600,height:800},type:'jpeg',quality:92});await br.close();console.log(`  ✅ ${path.basename(outPath)}`);}
+/* ==================== 低饱和色块·精修两案：chroma-refined 精修 / chroma-photo 柔焦头像 ==================== */
+const CX = { bg: '#F4F2EE', paper: '#F6F4F0', ink: '#23262A', soft: 'rgba(35,38,42,0.50)', faint: 'rgba(35,38,42,0.16)',
+  hair: 'rgba(35,38,42,0.055)', mark: '#4A5D52' };
+function grainCSS(op) {
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/></filter><rect width='180' height='180' filter='url(%23n)' opacity='${op}'/></svg>`;
+  return `background-image:url("data:image/svg+xml,${encodeURIComponent(svg).replace(/%2523/g, '%23')}");background-size:180px 180px;`;
+}
+function cxFontLink() {
+  return '<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Roboto+Mono:wght@300;400;500&display=swap" rel="stylesheet">';
+}
+function cxHead(meta, smallLabel) {
+  return `<div style="display:flex;justify-content:space-between;align-items:baseline;padding-bottom:9px;border-bottom:1px solid ${CX.hair}">
+      <span class="lbl">${smallLabel}</span><span class="lbl">${rankDate(meta.dateStr)}</span></div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:14px">
+      <span class="ttl">园区充电榜</span><span class="lbl" style="padding-bottom:5px">${esc(meta.sessionStr)}</span></div>
+    <div class="mt" style="margin-top:9px">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</div>`;
+}
+/* ---------- 1. chroma-refined 精修 ---------- */
+function crCSS() {
+  return `*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:540px;height:720px;overflow:hidden}
+body{background:${CX.bg};color:${CX.ink};font-family:'Noto Sans SC',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.page{position:relative;width:540px;height:720px;overflow:hidden;padding:34px 38px 26px;display:flex;flex-direction:column}
+.grain{position:absolute;inset:0;opacity:.42;pointer-events:none;${grainCSS(0.16)}}
+.grid{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(to bottom, ${CX.hair} 1px, transparent 1px);background-size:100% 13px}
+.ttl{font-size:30px;font-weight:900;letter-spacing:1.5px;line-height:1.06}
+.lbl{font-size:9.5px;letter-spacing:2.6px;color:${CX.soft};font-weight:500}
+.mt{font-size:10.5px;letter-spacing:0.8px;color:${CX.soft}}
+.bar{position:relative;flex:1;min-height:0;display:flex;align-items:center;padding:0 16px;border-radius:4px;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,0.34), 0 1px 2px rgba(35,38,42,0.055)}
+.rn{font-family:'Roboto Mono',monospace;font-size:10px;font-weight:400;letter-spacing:0.5px;opacity:.55;width:24px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums}
+.divider{width:1px;height:15px;background:rgba(35,38,42,0.16);margin:0 13px 0 11px;flex-shrink:0}
+.nm{font-size:15px;font-weight:500;letter-spacing:0.3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.av{border-radius:50%;object-fit:cover;flex-shrink:0;display:block;box-shadow:0 0 0 1.5px rgba(255,255,255,0.75)}
+.foot{display:flex;justify-content:space-between;align-items:baseline;margin-top:13px;padding-top:10px;border-top:1px solid ${CX.hair}}
+.pg{font-family:'Roboto Mono',monospace;font-size:9.5px;letter-spacing:1px;color:${CX.soft}}`;
+}
+function crBar(u, av, nmFs) {
+  return `<div class="bar" style="background:${chromaOf(u)}"><span class="rn">${String(u._rank).padStart(2, '0')}</span>
+    <span class="divider"></span>${tbAv(u.avatar, av, false)}<span class="nm" style="font-size:${nmFs}px;margin-left:11px">${magName(u)}</span></div>`;
+}
+function crTopHTML(users, meta) {
+  const rows = users.slice(0, 10).map(u => crBar(u, 30, 15)).join('');
+  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${cxFontLink()}<style>${crCSS()}</style></head><body>
+  <div class="page"><span class="grain"></span><span class="grid"></span>
+    ${cxHead(meta, '心意榜 · 前十名')}
+    <div style="flex:1;display:flex;flex-direction:column;gap:6px;min-height:0;margin-top:16px">${rows}</div>
+    <div class="foot"><span class="lbl">${esc(meta.target)} · 感谢每一份心意</span><span class="pg">01 / 04</span></div>
+  </div></body></html>`;
+}
+function crListHTML(users, meta, pageLabel) {
+  const half = Math.ceil(users.length / 2);
+  const av = half > 14 ? 20 : 22, nmFs = half > 14 ? 11.5 : 12.5;
+  const col = arr => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;min-height:0">${arr.map(u => crBar(u, av, nmFs)).join('')}</div>`;
+  const pg = (pageLabel.match(/(\d+)\s*\/\s*(\d+)/) || [])[0] || pageLabel;
+  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${cxFontLink()}<style>${crCSS()}</style></head><body>
+  <div class="page"><span class="grain"></span><span class="grid"></span>
+    <div style="display:flex;justify-content:space-between;align-items:baseline;padding-bottom:9px;border-bottom:1px solid ${CX.hair}">
+      <span class="lbl">心意榜 · ${esc(pageLabel)}</span><span class="lbl">${rankDate(meta.dateStr)}</span></div>
+    <div class="mt" style="margin-top:10px">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</div>
+    <div style="flex:1;display:flex;gap:18px;margin-top:14px;min-height:0">${col(users.slice(0, half))}${col(users.slice(half))}</div>
+    <div class="foot"><span class="lbl">${esc(meta.sessionStr)}</span><span class="pg">${pg}</span></div>
+  </div></body></html>`;
+}
+/* ---------- 2. chroma-photo 柔焦头像 ---------- */
+function cpCSS() {
+  return `*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:540px;height:720px;overflow:hidden}
+body{background:${CX.bg};color:${CX.ink};font-family:'Noto Sans SC',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.page{position:relative;width:540px;height:720px;overflow:hidden;padding:34px 32px 26px;display:flex;flex-direction:column}
+.grain{position:absolute;inset:0;opacity:.45;pointer-events:none;${grainCSS(0.14)}}
+.ttl{font-size:30px;font-weight:900;letter-spacing:1.5px;line-height:1.06}
+.lbl{font-size:9.5px;letter-spacing:2.6px;color:${CX.soft};font-weight:500}
+.mt{font-size:10.5px;letter-spacing:0.8px;color:${CX.soft}}
+.mosaic{flex:1;min-height:0;display:grid}
+.tile{position:relative;border-radius:4px;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;min-width:0;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,0.30), 0 1px 3px rgba(35,38,42,0.07)}
+.blur{position:absolute;inset:-14px;width:auto;height:auto;object-fit:cover;filter:blur(15px) saturate(0.7);opacity:.92}
+.veil{position:absolute;inset:0}
+.tin{position:relative;z-index:2;padding:8px 9px;display:flex;align-items:center;gap:7px;min-width:0}
+.rn{font-family:'Roboto Mono',monospace;font-size:9.5px;letter-spacing:0.5px;opacity:.62;flex-shrink:0;font-variant-numeric:tabular-nums}
+.nm{font-size:12px;font-weight:600;letter-spacing:0.2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.av{border-radius:50%;object-fit:cover;flex-shrink:0;display:block;box-shadow:0 0 0 1.5px rgba(255,255,255,0.7)}
+.foot{display:flex;justify-content:space-between;align-items:baseline;margin-top:13px;padding-top:10px;border-top:1px solid ${CX.hair}}
+.pg{font-family:'Roboto Mono',monospace;font-size:9.5px;letter-spacing:1px;color:${CX.soft}}`;
+}
+function cpTile(u, av, nmFs, minH) {
+  const c = chromaOf(u), url = u.avatar || '';
+  return `<div class="tile" style="background:${c};min-height:${minH}px">
+    ${url ? `<img class="blur" src="${esc(url)}">` : ''}
+    <span class="veil" style="background:${c};opacity:.68"></span>
+    <span class="tin"><span class="rn">${String(u._rank).padStart(2, '0')}</span>${tbAv(url, av, false)}<span class="nm" style="font-size:${nmFs}px">${magName(u)}</span></span></div>`;
+}
+function cpTopHTML(users, meta) {
+  const tiles = users.slice(0, 10).map(u => cpTile(u, 30, 13.5)).join('');
+  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${cxFontLink()}<style>${cpCSS()}</style></head><body>
+  <div class="page"><span class="grain"></span>
+    ${cxHead(meta, '心意榜 · 前十名')}
+    <div class="mosaic" style="grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(5,1fr);gap:8px;margin-top:16px">${tiles}</div>
+    <div class="foot"><span class="lbl">${esc(meta.target)} · 感谢每一份心意</span><span class="pg">01 / 04</span></div>
+  </div></body></html>`;
+}
+function cpListHTML(users, meta, pageLabel) {
+  const tiles = users.map(u => cpTile(u, 22, 10.5)).join('');
+  const pg = (pageLabel.match(/(\d+)\s*\/\s*(\d+)/) || [])[0] || pageLabel;
+  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${cxFontLink()}<style>${cpCSS()}</style></head><body>
+  <div class="page"><span class="grain"></span>
+    <div style="display:flex;justify-content:space-between;align-items:baseline;padding-bottom:9px;border-bottom:1px solid ${CX.hair}">
+      <span class="lbl">心意榜 · ${esc(pageLabel)}</span><span class="lbl">${rankDate(meta.dateStr)}</span></div>
+    <div class="mt" style="margin-top:10px">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</div>
+    <div class="mosaic" style="grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(6,1fr);gap:6px;margin-top:14px">${tiles}</div>
+    <div class="foot"><span class="lbl">${esc(meta.sessionStr)}</span><span class="pg">${pg}</span></div>
+  </div></body></html>`;
+}
+
+async function render(html,outPath){const br=await chromium.launch({headless:true,executablePath:chromiumExe()});const page=await br.newPage({viewport:{width:600,height:2000},deviceScaleFactor:2});await page.setContent(html,{waitUntil:'domcontentloaded',timeout:30000});
+await page.evaluate(() => { const tail = ",'Noto Sans Egyptian Hieroglyphs','Unifont Upper'";
+  const re = /(sans-serif|serif|monospace|system-ui|cursive|fantasy|emoji)$/;
+  document.querySelectorAll('*').forEach(el => { const cs = getComputedStyle(el).fontFamily;
+    if (cs && !cs.includes('Hieroglyphs')) el.style.fontFamily = re.test(cs) ? cs.replace(re, m => tail + ',' + m) : cs + tail; }); });await page.evaluate(()=>new Promise(r=>{const imgs=document.querySelectorAll('img');let loaded=0;const check=()=>{loaded++;if(loaded>=imgs.length)r()};imgs.forEach(img=>{if(img.complete)check();else{img.onload=check;img.onerror=check}});if(!imgs.length)r();setTimeout(r,8000)}));await new Promise(r=>setTimeout(r,1000));const bodyHeight=await page.evaluate(()=>document.body.scrollHeight);const y=Math.max(0,Math.floor((bodyHeight-800)/2));await page.screenshot({path:outPath,clip:{x:0,y,width:600,height:800},type:'jpeg',quality:92});await br.close();console.log(`  ✅ ${path.basename(outPath)}`);}
 async function resolveAvatar(targetNickname) {
   // 已有 --avatar 则不查
   if (TARGET_AVATAR) return TARGET_AVATAR;

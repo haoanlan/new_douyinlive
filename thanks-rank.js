@@ -380,8 +380,8 @@ async function renderMagazine(variant, users, meta) {
   console.log(`📐 模板 ${variant} · ${n} 人${MAG_AMOUNT ? ' · 收礼合计 ' + fmtD(meta.total) : ''}`);
   await renderMag(magTopHTML(variant, users.slice(0, topN), meta), `${base}_p1.jpg`);
   if (restCount > 0) {
-    const listPages = Math.max(3, Math.ceil(restCount / 26));
-    const perPage = Math.ceil(restCount / listPages);
+    const listPages = 3;
+    const perPage = Math.ceil(restCount / 3);
     for (let i = 0; i < listPages; i++) {
       const start = topN + perPage * i, end = Math.min(topN + perPage * (i + 1), n);
       if (start >= end) continue;
@@ -1417,9 +1417,10 @@ function tgRuler(start, end, total, capped) {
 }
 function tgDensity(rows) {
   if (rows <= 13) return { av: 26, nm: 15.5, rk: 17, gap: 12 };
-  if (rows <= 17) return { av: 22, nm: 14, rk: 15, gap: 10 };
-  if (rows <= 21) return { av: 19, nm: 12.5, rk: 13.5, gap: 9 };
-  return { av: 16, nm: 11, rk: 12, gap: 8 };
+  if (rows <= 15) return { av: 19, nm: 12, rk: 13.5, gap: 8 };
+  if (rows <= 18) return { av: 17, nm: 11, rk: 12.5, gap: 7 };
+  if (rows <= 22) return { av: 15, nm: 10, rk: 11.5, gap: 6 };
+  return { av: 13, nm: 9.5, rk: 10.5, gap: 5 };
 }
 function tgTr(u, rank, big, d) {
   const top = rank <= 3;

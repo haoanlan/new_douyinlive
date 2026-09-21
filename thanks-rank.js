@@ -19,7 +19,11 @@ let TARGET_AVATAR = (() => {
 })();
 const sessionIds = process.argv.slice(2).filter(v => /^\d+$/.test(v)).map(Number);
 if (!sessionIds.length || !target) { console.error('用法: node thanks-rank.js <session_id> [session_id2 ...] --to "收礼人昵称" [--avatar URL]'); process.exit(1); }
-// 模板切换：--theme=magazine-v1|magazine-v2|magazine-v3（不传则沿用原有主题，行为不变）
+// 模板切换：--theme=<模板名>
+//   不传        → 默认模板（DEFAULT_THEME，当前为 depth-glass 高斯模糊版）
+//   --theme=classic → 老版暗紫渐变（原默认，行为与历史版本一致）
+//   可选模板见下方 MAG_THEME_NAMES；传未知名字会提示并回退默认
+const DEFAULT_THEME = 'depth-glass';
 const THEME_ARG = (() => {
   const eq = process.argv.find(a => a.startsWith('--theme='));
   if (eq) return eq.slice('--theme='.length);
@@ -177,7 +181,12 @@ const MAG = {
   serif: "'Noto Serif SC','Songti SC',serif",
 };
 const MAG_THEME_NAMES = ['magazine-v1', 'magazine-v2', 'noir', 'typegrid', 'cute', 'news', 'energy', 'cute-journal', 'cute-candy', 'cute-story', 'cute-chibi', 'ghost', 'faces', 'ruler', 'monolith', 'chroma-bar', 'chroma-tile', 'chroma-refined', 'chroma-photo', 'depth-glass', 'depth-stack'];
-const MAG_VARIANT = MAG_THEME_NAMES.includes(THEME_ARG) ? THEME_ARG : null;
+const IS_CLASSIC = THEME_ARG === 'classic';
+if (THEME_ARG && !IS_CLASSIC && !MAG_THEME_NAMES.includes(THEME_ARG)) {
+  console.warn(`⚠️  未知模板 "${THEME_ARG}" → 回退默认 ${DEFAULT_THEME}（可选：${MAG_THEME_NAMES.join(' / ')} / classic）`);
+}
+if (IS_CLASSIC) console.log('📐 模板 classic（老版暗紫渐变）');
+const MAG_VARIANT = IS_CLASSIC ? null : (MAG_THEME_NAMES.includes(THEME_ARG) ? THEME_ARG : DEFAULT_THEME);
 // 是否显示钻石数：提名榜（thanks-rank.js）不显示，钻石榜显示
 const MAG_AMOUNT = false;
 const MAG2_ROW_RULE = '1px dotted rgba(26,26,30,0.16)';
@@ -396,7 +405,7 @@ async function renderMagazine(variant, users, meta) {
   meta.total = magTotal(users);
   meta.topAvatars = users.slice(0, 3).map(u => u.avatar).filter(Boolean);      // 四页共用同一组色晕来源（榜主 + 总榜前三）
   const base = path.join(outputDir, `thanks_rank_${sessionIds.join('-')}_${suffix}`);
-  console.log(`📐 模板 ${variant} · ${n} 人${MAG_AMOUNT ? ' · 收礼合计 ' + fmtD(meta.total) : ''}`);
+  console.log(`📐 模板 ${variant}${THEME_ARG ? '' : '（默认）'} · ${n} 人${MAG_AMOUNT ? ' · 收礼合计 ' + fmtD(meta.total) : ''}`);
   console.log(`🎨 背景 ${BG.name} · 强度 ${BG.strength} · 饱和 ×${BG.sat} · 模糊 ×${BG.blur}${BG.on ? '' : '（无色场）'}`);
   await renderMag(magTopHTML(variant, users.slice(0, topN), meta), `${base}_p1.jpg`);
   if (restCount > 0) {

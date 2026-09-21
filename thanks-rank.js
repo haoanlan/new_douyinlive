@@ -145,7 +145,7 @@ const MAG = {
   accent: '#8A2B2B',
   serif: "'Noto Serif SC','Songti SC',serif",
 };
-const MAG_THEME_NAMES = ['magazine-v1', 'magazine-v2', 'noir', 'typegrid', 'cute', 'news', 'energy'];
+const MAG_THEME_NAMES = ['magazine-v1', 'magazine-v2', 'noir', 'typegrid', 'cute', 'news', 'energy', 'cute-journal', 'cute-candy'];
 const MAG_VARIANT = MAG_THEME_NAMES.includes(THEME_ARG) ? THEME_ARG : null;
 // 是否显示钻石数：提名榜（thanks-rank.js）不显示，钻石榜显示
 const MAG_AMOUNT = false;
@@ -314,6 +314,8 @@ function magTopHTML(variant, users, meta) {
   if (variant === 'noir') return nrTopHTML(users, meta);
   if (variant === 'typegrid') return tgTopHTML(users, meta);
   if (variant === 'cute') return cuTopHTML(users, meta);
+  if (variant === 'cute-journal') return cjTopHTML(users, meta);
+  if (variant === 'cute-candy') return ccTopHTML(users, meta);
   if (variant === 'news') return nwTopHTML(users, meta);
   if (variant === 'energy') return enTopHTML(users, meta);
   if (variant === 'magazine-v2') return magTopV2(users, meta);
@@ -388,6 +390,8 @@ function rankListHTML(variant, users, meta, pageLabel) {
   if (variant === 'noir') return nrListHTML(users, meta, pageLabel);
   if (variant === 'typegrid') return tgListHTML(users, meta, pageLabel);
   if (variant === 'cute') return cuListHTML(users, meta, pageLabel);
+  if (variant === 'cute-journal') return cjListHTML(users, meta, pageLabel);
+  if (variant === 'cute-candy') return ccListHTML(users, meta, pageLabel);
   if (variant === 'news') return nwListHTML(users, meta, pageLabel);
   if (variant === 'energy') return enListHTML(users, meta, pageLabel);
   return magListHTML(variant, users, meta, pageLabel);
@@ -888,6 +892,134 @@ function enListHTML(users, meta, pageLabel) {
     <div style="display:flex;gap:10px;margin-top:12px;flex:1">${col(users.slice(0, half), users[0] ? users[0]._rank : 1)}${col(users.slice(half), users[half] ? users[half]._rank : 1)}</div>
     <div style="border-top:1px solid ${EN.line};padding-top:8px;display:flex;justify-content:space-between">
       <span class="kick">${esc(meta.target)}</span><span class="kick">${esc(pageLabel)}</span></div>
+  </div></body></html>`;
+}
+
+/* ==================== 可爱风两案：cute-journal 手账拼贴 / cute-candy 糖果软糖 ==================== */
+const CJ = { paper: '#FFFDF6', ink: '#3A3532', soft: 'rgba(58,53,50,0.55)', dot: 'rgba(120,110,100,0.20)',
+  tapes: ['#FFD9E0', '#CDEBD8', '#FFF0BC', '#CFE3FF', '#FBD9F0'], marker: '#FFE58A', accent: '#E4698A' };
+const CC = { bg: '#FFF6F9', ink: '#4A3B44', soft: 'rgba(74,59,68,0.55)',
+  caps: ['#FFB3C8', '#A8E6CF', '#FFE0A3', '#B8D8FF'], accent: '#FF7BA9' };
+function cuteFontLink() {
+  return '<link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Noto+Sans+SC:wght@400;700;900&display=swap" rel="stylesheet">'
+       + '<link href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" rel="stylesheet">';
+}
+/* ---------- A. 手账拼贴 ---------- */
+function cjCSS() {
+  return `*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:540px;height:720px;overflow:hidden}
+body{background:${CJ.paper};color:${CJ.ink};font-family:'LXGW WenKai','Noto Sans SC',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.page{position:relative;width:540px;height:720px;overflow:hidden;padding:34px 34px 26px;display:flex;flex-direction:column}
+.grid{position:absolute;inset:0;background-image:radial-gradient(${CJ.dot} 1.1px, transparent 1.1px);background-size:16px 16px;opacity:.85}
+.hand{font-family:'LXGW WenKai',serif;font-weight:700}
+.ttl{font-family:'ZCOOL KuaiLe',sans-serif;font-size:36px;letter-spacing:2px;color:${CJ.ink};position:relative;z-index:2;display:inline-block;padding:4px 10px}
+.ttl i{position:absolute;left:2px;bottom:6px;height:15px;width:100%;background:${CJ.marker};z-index:-1;transform:rotate(-1.2deg);border-radius:3px}
+.mt{font-size:10.5px;color:${CJ.soft};letter-spacing:0.5px}
+.tape{display:flex;align-items:center;gap:8px;padding:0 12px;border-radius:3px;position:relative;height:100%;min-height:0}
+.tape::after{content:'';position:absolute;inset:0;border-radius:3px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.55)}
+.nm{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rk{font-family:'ZCOOL KuaiLe',sans-serif;font-size:12px;color:${CJ.accent};flex-shrink:0;width:18px;text-align:center}
+.av{border-radius:50%;object-fit:cover;flex-shrink:0;display:block;box-shadow:0 0 0 1.5px rgba(255,255,255,0.9)}
+.note{background:#FFFCF0;border-radius:8px;box-shadow:0 4px 10px rgba(120,104,88,0.13);position:relative}
+.sticker{position:absolute}
+.foot{display:flex;justify-content:space-between;align-items:center;position:relative;z-index:2;margin-top:11px}`;
+}
+function cjTape(u, rank, av, nmFs, pad) {
+  const col = CJ.tapes[(rank - 1) % CJ.tapes.length];
+  const rot = ((rank % 3) - 1) * 0.9;
+  return `<div class="tape" style="background:${col};transform:rotate(${rot.toFixed(1)}deg);padding:${pad}">
+    <span class="rk">${rank}</span>${tbAv(u.avatar, av, false)}<span class="nm" style="font-size:${nmFs}px">${magName(u)}</span></div>`;
+}
+function cjTopHTML(users, meta) {
+  const top = users.slice(0, 10);
+  const rows = top.map((u, i) => {
+    const r = i + 1, w = r % 3 === 0 ? 90 : r % 2 === 0 ? 96 : 100, off = r % 2 === 0 ? 12 : 0;
+    return `<div style="flex:1;min-height:0;display:flex;width:${w}%;margin-left:${off}px">${cjTape(u, r, 26, 14.5, '0 12px')}</div>`;
+  }).join('');
+  const stamp = `<svg viewBox="0 0 72 72" width="72" height="72"><circle cx="36" cy="36" r="34" fill="${CJ.accent}" opacity="0.14"/><circle cx="36" cy="36" r="28" fill="none" stroke="${CJ.accent}" stroke-width="1.4" stroke-dasharray="3 3"/><text x="36" y="34" text-anchor="middle" font-size="15" font-weight="700" fill="${CJ.accent}" font-family="LXGW WenKai,serif">感谢</text><text x="36" y="52" text-anchor="middle" font-size="13" font-weight="700" fill="${CJ.accent}" font-family="LXGW WenKai,serif">每一份心意</text></svg>`;
+  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${cuteFontLink()}<style>${cjCSS()}</style></head><body>
+  <div class="page"><div class="grid"></div>
+    <div style="position:relative;z-index:2"><span class="ttl"><i></i>园区充电榜</span>
+      <div class="mt" style="margin-top:10px">${rankMetaLine(meta)} · ${rankDate(meta.dateStr)}</div></div>
+    <div class="note" style="margin-top:16px;padding:14px 16px;display:flex;align-items:center;gap:14px;z-index:2">
+      ${tbAv(meta.avatar, 56, true)}
+      <div><div class="hand" style="font-size:18px">${esc(meta.target)}</div>
+        <div class="mt" style="margin-top:8px">收到 <span style="font-family:'ZCOOL KuaiLe',sans-serif;font-size:20px;color:${CJ.accent}">${meta.gifters}</span> 位送礼人的心意</div></div>
+      <span class="sticker" style="right:10px;top:-30px">${stamp}</span>
+    </div>
+    <div class="mt" style="margin:18px 0 10px 2px;font-size:11.5px;letter-spacing:2px;color:${CJ.ink};font-weight:700;position:relative;z-index:2">前十名</div>
+    <div style="flex:1;display:flex;flex-direction:column;gap:9px;position:relative;z-index:2;min-height:0">${rows}</div>
+    <div class="foot"><span class="mt">${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</span><span class="mt">— 记于 ${rankDate(meta.dateStr)} —</span></div>
+  </div></body></html>`;
+}
+function cjListHTML(users, meta, pageLabel) {
+  const half = Math.ceil(users.length / 2), rows = Math.max(1, half);
+  const av = rows > 14 ? 17 : 20, nmFs = rows > 14 ? 11.5 : 12.5;
+  const col = (arr, off) => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;min-height:0">${arr.map((u, i) => `<div style="flex:1;min-height:0;display:flex">${cjTape(u, off + i, av, nmFs, '0 10px')}</div>`).join('')}</div>`;
+  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${cuteFontLink()}<style>${cjCSS()}</style></head><body>
+  <div class="page"><div class="grid"></div>
+    <div style="position:relative;z-index:2;display:flex;justify-content:space-between;align-items:baseline">
+      <span class="ttl" style="font-size:22px"><i style="height:11px;bottom:3px"></i>园区充电榜</span>
+      <span class="mt" style="font-weight:700">${esc(pageLabel)}</span></div>
+    <div class="mt" style="margin-top:10px;position:relative;z-index:2">${esc(meta.target)} · ${rankDate(meta.dateStr)} · 共 ${meta.gifters} 位送礼人</div>
+    <div style="flex:1;display:flex;gap:13px;margin-top:12px;position:relative;z-index:2;min-height:0">${col(users.slice(0, half), users[0] ? users[0]._rank : 1)}${col(users.slice(half), users[half] ? users[half]._rank : 1)}</div>
+    <div class="foot"><span class="mt">${esc(meta.sessionStr)}</span><span class="mt">— 感谢每一份心意 —</span></div>
+  </div></body></html>`;
+}
+/* ---------- B. 糖果软糖 ---------- */
+function ccCSS() {
+  return `*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:540px;height:720px;overflow:hidden}
+body{background:${CC.bg};color:${CC.ink};font-family:'Noto Sans SC',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.page{position:relative;width:540px;height:720px;overflow:hidden;padding:34px 34px 26px;display:flex;flex-direction:column}
+.dot{position:absolute;border-radius:50%;z-index:0}
+.ttlcap{display:inline-flex;align-items:center;padding:12px 26px;border-radius:999px;background:${CC.accent};
+  box-shadow:0 0 0 3.5px #fff, 0 6px 14px rgba(255,123,169,0.28);position:relative;z-index:2}
+.ttlcap span{font-family:'ZCOOL KuaiLe',sans-serif;font-size:29px;color:#fff;letter-spacing:3px;line-height:1}
+.cap{display:flex;align-items:center;gap:9px;border-radius:999px;padding:0 14px 0 10px;height:100%;min-height:0;
+  box-shadow:0 0 0 3px #fff, 0 4px 10px rgba(180,140,160,0.18);position:relative;z-index:2}
+.rk{width:22px;height:22px;border-radius:50%;background:#fff;display:inline-flex;align-items:center;justify-content:center;
+  font-family:'ZCOOL KuaiLe',sans-serif;font-size:12px;color:${CC.accent};flex-shrink:0;line-height:1}
+.nm{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.av{border-radius:50%;object-fit:cover;flex-shrink:0;display:block;box-shadow:0 0 0 2px #fff}
+.mt{font-size:10.5px;color:${CC.soft};letter-spacing:0.5px}
+.foot{display:flex;justify-content:space-between;align-items:center;position:relative;z-index:2}`;
+}
+function ccCap(u, rank, av, nmFs, pad) {
+  const col = rank <= 3 ? CC.caps[rank - 1] : CC.caps[(rank - 1) % CC.caps.length];
+  return `<div class="cap" style="background:${col};padding:${pad}"><span class="rk">${rank}</span>${tbAv(u.avatar, av, false)}<span class="nm" style="font-size:${nmFs}px">${magName(u)}</span></div>`;
+}
+function ccTopHTML(users, meta) {
+  const top = users.slice(0, 10);
+  const rows = top.map((u, i) => `<div style="flex:1;min-height:0;display:flex">${ccCap(u, i + 1, 26, 14.5, '0 16px 0 10px')}</div>`).join('');
+  const dots = [[24, 22, 22, '#FFE0A3'], [500, 44, 16, '#A8E6CF'], [22, 150, 14, '#B8D8FF'], [508, 636, 18, '#FFB3C8'], [30, 700, 16, '#FFE0A3']]
+    .map(([x, y, s, c]) => `<span class="dot" style="left:${x}px;top:${y}px;width:${s}px;height:${s}px;background:${c};opacity:.85"></span>`).join('');
+  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${cuteFontLink()}<style>${ccCSS()}</style></head><body>
+  <div class="page">${dots}
+    <div style="position:relative;z-index:2"><span class="ttlcap"><span>园区充电榜</span></span>
+      <div class="mt" style="margin-top:14px">${rankMetaLine(meta)} · ${rankDate(meta.dateStr)}</div></div>
+    <div class="cap" style="margin-top:18px;background:#FFFFFF;padding:16px 18px;border-radius:24px;box-shadow:0 0 0 3px ${CC.caps[0]}, 0 6px 16px rgba(180,140,160,0.18)">
+      ${tbAv(meta.avatar, 58, true)}
+      <div><div style="font-size:18px;font-weight:900">${esc(meta.target)}</div>
+        <div class="mt" style="margin-top:8px">收到 <span style="font-family:'ZCOOL KuaiLe',sans-serif;font-size:22px;color:${CC.accent}">${meta.gifters}</span> 位送礼人的心意</div></div>
+    </div>
+    <div class="mt" style="margin:18px 0 10px 2px;font-size:11.5px;font-weight:900;color:${CC.accent};letter-spacing:2px;position:relative;z-index:2">前十名</div>
+    <div style="flex:1;display:flex;flex-direction:column;gap:9px;position:relative;z-index:2;min-height:0">${rows}</div>
+    <div class="foot"><span class="mt">${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</span><span class="mt">感谢每一份心意</span></div>
+  </div></body></html>`;
+}
+function ccListHTML(users, meta, pageLabel) {
+  const half = Math.ceil(users.length / 2), rows = Math.max(1, half);
+  const av = rows > 14 ? 17 : 20, nmFs = rows > 14 ? 11.5 : 12.5;
+  const col = (arr, off) => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;min-height:0">${arr.map((u, i) => `<div style="flex:1;min-height:0;display:flex">${ccCap(u, off + i, av, nmFs, '0 12px 0 8px')}</div>`).join('')}</div>`;
+  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${cuteFontLink()}<style>${ccCSS()}</style></head><body>
+  <div class="page">
+    <div style="position:relative;z-index:2;display:flex;justify-content:space-between;align-items:center">
+      <span class="ttlcap" style="padding:8px 18px"><span style="font-size:19px">园区充电榜</span></span>
+      <span class="mt" style="font-weight:700">${esc(pageLabel)}</span></div>
+    <div class="mt" style="margin-top:12px;position:relative;z-index:2">${esc(meta.target)} · ${rankDate(meta.dateStr)} · 共 ${meta.gifters} 位送礼人</div>
+    <div style="flex:1;display:flex;gap:13px;margin-top:12px;position:relative;z-index:2">${col(users.slice(0, half), users[0] ? users[0]._rank : 1)}${col(users.slice(half), users[half] ? users[half]._rank : 1)}</div>
+    <div class="foot"><span class="mt">${esc(meta.sessionStr)}</span><span class="mt">感谢每一份心意</span></div>
   </div></body></html>`;
 }
 

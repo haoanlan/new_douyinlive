@@ -382,7 +382,7 @@ async function renderMagazine(variant, users, meta) {
   if (restCount > 0) {
     const perPage = 30;                                  // 固定每页 30 人 = 两栏各 15 行
     const listPages = Math.max(1, Math.ceil(restCount / perPage));
-    meta.rowsPerCol = 15;                                // 所有名次页统一档位，不随人数变化
+    meta.rowsPerCol = Math.ceil(Math.min(restCount, perPage) / 2);        // 整批统一档位（每栏最大行数）
     for (let i = 0; i < listPages; i++) {
       const start = topN + perPage * i, end = Math.min(topN + perPage * (i + 1), n);
       if (start >= end) continue;
@@ -1459,9 +1459,9 @@ function tgListHTML(users, meta, pageLabel) {
   const total = meta.count || Number(String(meta.gifters).replace(/[^0-9]/g, '')) || end;
   const z = tgDensity(meta.rowsPerCol || half);
   const nd = String(meta.count || end).length;
-  const rh = Math.min(40, Math.floor(484 / Math.max(1, half)));   // 484 = 名单区高度
+  const rh = (meta.rowsPerCol || 15) >= 12 ? Math.floor(484 / 15) : 0;   // 大名单：固定 15 行节奏；小名单：撑满
   const col = (arr, off) => `<div class="col">
-    <div class="tbody list">${arr.map((u, i) => tgTr(u, off + i + 1, false, z, nd, rh)).join('')}</div></div>`;
+    <div class="tbody${rh ? ' list' : ''}">${arr.map((u, i) => tgTr(u, off + i + 1, false, z, nd, rh)).join('')}</div></div>`;
   return tgDoc('园区充电榜 · ' + pageLabel, `<div class="page">
     ${tgHead('园区充电榜', `${esc(pageLabel)} · ${rankMetaLine(meta)}`)}
     ${tgRuler(start, end, total, meta.capped)}

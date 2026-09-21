@@ -1394,7 +1394,7 @@ body{background:${TB.bg};color:${TB.ink};font-family:${TB.sans};-webkit-font-smo
 .tr{flex:1;min-height:0;display:grid;align-items:center;padding:0 6px;border-bottom:1px solid rgba(14,14,16,0.075)}
 .tr:last-child{border-bottom:none}
 .tr.top3{background:rgba(255,59,31,0.055)}
-.rk{font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:-0.5px;text-align:left;line-height:1}
+.rk{font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:-0.5px;text-align:right;line-height:1}
 .tr.top3 .rk{color:${TB.hot}}
 .av{width:26px;height:26px;border-radius:50%;object-fit:cover;flex-shrink:0;box-shadow:0 0 0 1px rgba(14,14,16,0.12)}
 .nm{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1422,10 +1422,13 @@ function tgDensity(rows) {
   if (rows <= 22) return { av: 15, nm: 10, rk: 11.5, gap: 6 };
   return { av: 13, nm: 9.5, rk: 10.5, gap: 5 };
 }
-function tgTr(u, rank, big, d) {
+function tgTr(u, rank, big, d, digits) {
   const top = rank <= 3;
   const z = d || tgDensity(big ? 10 : 13);
-  return `<div class="tr${top ? ' top3' : ''}" style="grid-template-columns:${big ? '54px 1fr' : '42px 1fr'}">
+  const nd = digits || 2;
+  const numW = Math.round(nd * z.rk * 0.62);          // 名次列：按最宽数字估宽
+  const numGap = Math.round(z.av * 0.85);             // 数字 → 头像 的固定气口
+  return `<div class="tr${top ? ' top3' : ''}" style="grid-template-columns:${numW}px 1fr;column-gap:${numGap}px">
     <span class="rk" style="font-size:${z.rk}px">${String(rank).padStart(2, '0')}</span>
     <span style="display:flex;align-items:center;gap:${z.gap}px;min-width:0">
       ${tbAv(u.avatar, z.av, false)}<span class="nm" style="font-size:${z.nm}px">${magName(u)}</span></span></div>`;
@@ -1441,7 +1444,7 @@ function tgTopHTML(users, meta) {
     ${tgHead('园区充电榜', `${rankMetaLine(meta)} · ${esc(rankDate(meta.dateStr))}`, true)}
     ${tgRuler(1, top.length, total, meta.capped)}
     <div class="tbl">
-      <div class="tbody">${top.map((u, i) => tgTr(u, i + 1, true)).join('')}</div>
+      <div class="tbody">${top.map((u, i) => tgTr(u, i + 1, true, null, 2)).join('')}</div>
     </div>
     <div class="foot"><span>前十名</span><span>共 ${meta.gifters} 位送礼人</span></div>
   </div>`);
@@ -1452,8 +1455,9 @@ function tgListHTML(users, meta, pageLabel) {
   const end = users.length ? users[users.length - 1]._rank : start;
   const total = meta.count || Number(String(meta.gifters).replace(/[^0-9]/g, '')) || end;
   const z = tgDensity(half);
+  const nd = String(end).length;
   const col = (arr, off) => `<div class="col">
-    <div class="tbody">${arr.map((u, i) => tgTr(u, off + i + 1, false, z)).join('')}</div></div>`;
+    <div class="tbody">${arr.map((u, i) => tgTr(u, off + i + 1, false, z, nd)).join('')}</div></div>`;
   return tgDoc('园区充电榜 · ' + pageLabel, `<div class="page">
     ${tgHead('园区充电榜', `${esc(pageLabel)} · ${rankMetaLine(meta)}`)}
     ${tgRuler(start, end, total, meta.capped)}

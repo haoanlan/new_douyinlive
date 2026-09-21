@@ -51,6 +51,12 @@ const BG_PRESETS = {
   grey: { veil: '240,240,238', sat: 0.22, blur: 1.10, on: true },
   none: { veil: '242,240,236', sat: 1.00, blur: 1.00, on: false },
 };
+const LEAD = (() => {
+  const eq = process.argv.find(a => a.startsWith('--lead='));
+  const v = eq ? eq.slice('--lead='.length) : (process.argv.includes('--lead') ? (process.argv[process.argv.indexOf('--lead') + 1] || 'dot') : 'dot');
+  if (!['dot', 'line', 'none'].includes(v)) { console.log(`  ⚠️  未知 --lead=${v}，可用：dot | line | none（按 dot 处理）`); return 'dot'; }
+  return v;
+})();
 const BG = (() => {
   const p = BG_PRESETS[BG_ARG] || BG_PRESETS.auto;
   if (!BG_PRESETS[BG_ARG] && BG_ARG !== 'auto') console.log(`  ⚠️  未知 --bg=${BG_ARG}，可用：${Object.keys(BG_PRESETS).join(' | ')}（按 auto 处理）`);
@@ -398,6 +404,7 @@ async function renderMagazine(variant, users, meta) {
   const base = path.join(outputDir, `thanks_rank_${sessionIds.join('-')}_dia_${suffix}`);
   console.log(`📐 模板 ${variant} · ${n} 人${MAG_AMOUNT ? ' · 收礼合计 ' + fmtD(meta.total) : ''}`);
   console.log(`🎨 背景 ${BG.name} · 强度 ${BG.strength} · 饱和 ×${BG.sat} · 模糊 ×${BG.blur}${BG.on ? '' : '（无色场）'}`);
+  console.log(`➖ 引线 ${LEAD}`);
   await renderMag(magTopHTML(variant, users.slice(0, topN), meta), `${base}_p1.jpg`);
   if (restCount > 0) {
     const perPage = 30;                                  // 固定每页 30 人 = 两栏各 15 行
@@ -1688,8 +1695,8 @@ function dpRow(u, av, nmFs, h) {
 function dpRowCover(u, av, nmFs) {
   const accent = u._rank <= 3;
   return `<div class="row${accent ? ' top' : ''}" style="padding:0 14px 0 12px">${tbAv(u.avatar, av, false)}
-    <span class="nm" style="font-size:${nmFs}px${accent ? ';font-weight:700' : ''}">${magName(u)}</span>
-    <span class="zright"><span class="rn rnBig${accent ? ' rnTop' : ''}">${String(u._rank).padStart(2, '0')}</span>
+    <span class="nm${LEAD === 'none' ? '' : ' nmLead'}" style="font-size:${nmFs}px${accent ? ';font-weight:700' : ''}">${magName(u)}</span>
+    <span class="zright"${LEAD === 'none' ? ' style="margin-left:auto"' : ''}><span class="rn rnBig${accent ? ' rnTop' : ''}">${String(u._rank).padStart(2, '0')}</span>
     <span class="dot" style="background:${chromaOf(u)};opacity:${accent ? 1 : 0.45}"></span></span></div>`;
 }
 function dgCSS() {
@@ -1719,7 +1726,8 @@ body{background:${DP.bg};color:${DP.ink};font-family:'Noto Sans SC',system-ui,sa
 .row.top{background:rgba(255,255,255,0.74);box-shadow:0 2px 7px rgba(34,38,42,0.075)}
 .dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;margin-left:auto}
 .rn{font-family:'Roboto Mono',monospace;font-size:10.5px;font-weight:400;letter-spacing:0.5px;opacity:.55;width:20px;text-align:left;flex-shrink:0;font-variant-numeric:tabular-nums}
-.zright{margin-left:auto;display:flex;align-items:center;gap:11px;padding-left:13px;border-left:1px solid rgba(255,255,255,0.5);height:58%}
+.zright{display:flex;align-items:center;gap:11px;padding-left:13px;border-left:1px solid rgba(255,255,255,0.5);height:58%;flex-shrink:0}
+.nmLead{flex:1;min-width:0;padding-bottom:4px;${LEAD === 'none' ? 'flex:0 1 auto;border-bottom:none' : LEAD === 'line' ? 'border-bottom:1px solid rgba(34,38,42,0.10)' : 'border-bottom:1px dotted rgba(34,38,42,0.16)'}}
 .rnBig{width:auto;font-size:17px;letter-spacing:1px;opacity:.40;text-align:right}
 .rnTop{opacity:.92;font-weight:500}
 .nm{font-size:14.5px;font-weight:500;letter-spacing:0.3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

@@ -820,9 +820,10 @@ body{background:${NW.paper};color:${NW.ink};font-family:${NW.serif};-webkit-font
 function nwListCol(arr, off) {
   return `<div style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">${arr.map((u, i) => `<div class="lrow"><span class="lnum">${off + i}</span><span class="lnm">${magName(u)}</span></div>`).join('')}</div>`;
 }
-function nwColTop(arr, off) {
+function nwColTop(arr, off, av, fs) {
+  const A = av || 22, F = fs || 14.5;
   return `<div style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">${arr.map((u, i) => `<div class="lrow" style="gap:9px">
-    <span class="lnum">${off + i}</span>${tbAv(u.avatar, 22, false)}<span class="lnm" style="font-size:14.5px">${magName(u)}</span></div>`).join('')}</div>`;
+    <span class="lnum">${u._rank}</span>${tbAv(u.avatar, A, false)}<span class="lnm" style="font-size:${F}px">${magName(u)}</span></div>`).join('')}</div>`;
 }
 function nwTopHTML(users, meta) {
   const top = users.slice(0, 10);
@@ -845,9 +846,6 @@ function nwTopHTML(users, meta) {
       <div class="hl">${esc(meta.target)}收到 <span style="color:${NW.red}">${meta.gifters}</span> 位送礼人的心意</div>
       <div class="sub" style="margin-top:7px">${esc(meta.sessionStr)} ｜ ${rankMetaLine(meta)}</div>
     </div>
-    <div style="border:1px solid ${NW.rule};padding:9px 12px;margin:12px 0 10px;font-size:11px;line-height:1.75;color:${NW.soft}">
-      本榜统计 <b style="color:${NW.ink}">${esc(meta.sessionStr)}</b> 内为 <b style="color:${NW.ink}">${esc(meta.target)}</b> 送出礼物的用户，按送礼人次排序；同一用户同一礼物的连击只计一次。
-    </div>
     <div style="display:flex;align-items:center;gap:10px;margin:6px 0 2px">
       <span class="kick" style="letter-spacing:2px">前十名</span>
       <div style="flex:1;height:1px;background:${NW.rule}"></div>
@@ -863,7 +861,7 @@ function nwTopHTML(users, meta) {
   </div></body></html>`;
 }
 function nwListHTML(users, meta, pageLabel) {
-  const nCol = users.length > 20 ? 3 : 2;                       // 人少时两栏：横线对齐、不留大空
+  const nCol = 2;                                               // 固定两栏（不要三栏）
   const per = Math.ceil(users.length / nCol);
   const cols = Array.from({ length: nCol }, (_, i) => users.slice(per * i, per * (i + 1)));
   return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${nwFont()}<style>${nwCSS()}</style></head><body>
@@ -874,7 +872,7 @@ function nwListHTML(users, meta, pageLabel) {
     </div>
     <div class="dr" style="margin-top:9px;height:4px;border-top:1px solid ${NW.ink}"></div>
     <div class="sub" style="margin:9px 0 4px">${esc(meta.target)} ｜ ${esc(meta.sessionStr)} ｜ ${rankDate(meta.dateStr)} ｜ 共 ${meta.gifters} 位送礼人</div>
-    <div class="cols" style="flex:1;margin-top:6px">${cols.map((c, k) => nwListCol(c, per * k + 1)).join('')}</div>
+    <div class="cols" style="flex:1;margin-top:8px">${cols.map((c, k) => nwColTop(c, per * k + 1, 20, 13)).join('')}</div>
     <div style="border-top:1px solid ${NW.rule};padding-top:7px;display:flex;justify-content:space-between;align-items:baseline">
       <span class="kick">本榜单按送礼人次排序</span><span class="kick">由 404 · 抖音直播监控 生成</span>
     </div>

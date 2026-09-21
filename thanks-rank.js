@@ -6,6 +6,7 @@ const db = require('./db-sqlite.js');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const { comboDedupGifts } = require('./lib/gift-utils.js');
 
 // 用法: node thanks-rank.js <session_id> [session_id2 ...] [--to "昵称"] [--avatar URL]
 const target = (() => {
@@ -18,6 +19,13 @@ let TARGET_AVATAR = (() => {
 })();
 const sessionIds = process.argv.slice(2).filter(v => /^\d+$/.test(v)).map(Number);
 if (!sessionIds.length || !target) { console.error('用法: node thanks-rank.js <session_id> [session_id2 ...] --to "收礼人昵称" [--avatar URL]'); process.exit(1); }
+// 模板切换：--theme=magazine-v1|magazine-v2|magazine-v3（不传则沿用原有主题，行为不变）
+const THEME_ARG = (() => {
+  const eq = process.argv.find(a => a.startsWith('--theme='));
+  if (eq) return eq.slice('--theme='.length);
+  const i = process.argv.indexOf('--theme');
+  return i >= 0 ? (process.argv[i + 1] || '') : '';
+})();
 const outputDir = path.join(__dirname, 'reports');
 let HEADER_DATE = 'Session ' + sessionIds.join('-');  // 动态计算
 
@@ -93,7 +101,26 @@ const THEMES = {
 };
 const activeTheme = THEMES.blue;
 
-async function getData(){const database=db.getDb();const ph=sessionIds.map(()=>'?').join(',');const raw=database.prepare(`SELECT * FROM gifts WHERE session_id IN (${ph}) AND to_nickname LIKE ? ORDER BY create_time ASC`).all(...sessionIds,'%'+target+'%');const groups={};for(const g of raw){const k=(g.user_display_id||g.nickname)+'|'+g.gift_name+'|'+(g.to_nickname||'');if(!groups[k])groups[k]=[];groups[k].push(g);}const deduped=[];for(const items of Object.values(groups)){items.sort((a,b)=>a.create_time-b.create_time);const combos=[];let cur=[items[0]];for(let i=1;i<items.length;i++){const p=items[i-1],c=items[i];const same=(c.combo_count===p.combo_count+1)||(c.combo_count===p.combo_count&&c.repeat_end===1);if(same)cur.push(c);else{combos.push(cur);cur=[c];}}combos.push(cur);for(const combo of combos){let best=combo[0];for(const item of combo){if(item.combo_count>best.combo_count||(item.combo_count===best.combo_count&&item.repeat_end===1&&best.repeat_end!==1))best=item;}deduped.push(best);}}const userMap={};for(const g of deduped){const k=g.user_display_id||g.nickname;if(!userMap[k])userMap[k]={nickname:g.nickname,displayId:g.user_display_id||'',avatar:g.avatar||'',diamonds:0};userMap[k].diamonds+=g.total_diamonds;if(g.nickname)userMap[k].nickname=g.nickname;if(g.avatar)userMap[k].avatar=g.avatar;}return Object.values(userMap).sort((a,b)=>b.diamonds-a.diamonds).slice(0,100);}
+async function getData(){
+  // 与仪表盘详情页同一套连击去重（lib/gift-utils）；多场次时各场分别去重后再合并
+  const database = db.getDb();
+  const ph = sessionIds.map(() => '?').join(',');
+  const raw = database.prepare(`SELECT * FROM gifts WHERE session_id IN (${ph}) AND to_nickname LIKE ? ORDER BY create_time ASC`).all(...sessionIds, '%' + target + '%');
+  const bySession = {};
+  for (const g of raw) { (bySession[g.session_id] = bySession[g.session_id] || []).push(g); }
+  const deduped = [];
+  for (const sid of Object.keys(bySession)) deduped.push(...comboDedupGifts(bySession[sid]));
+  const userMap = {};
+  for (const g of deduped) {
+    const k = g.user_display_id || g.nickname;
+    if (!userMap[k]) userMap[k] = { nickname: g.nickname, displayId: g.user_display_id || '', avatar: g.avatar || '', diamonds: 0 };
+    userMap[k].diamonds += g.total_diamonds;
+    if (g.nickname) userMap[k].nickname = g.nickname;
+    if (g.avatar) userMap[k].avatar = g.avatar;
+  }
+  return Object.values(userMap).sort((a, b) => b.diamonds - a.diamonds).slice(0, 100);
+}
+function fmtD(n){return (Number(n)||0).toLocaleString('en-US');}
 function cleanDisplayName(name){if(!name)return name;const r=[];let i=0;while(i<name.length){const c=name.codePointAt(i);const l=c>0xFFFF?2:1;if(c>=0x1D400&&c<=0x1D7FF){const b=c-0x1D400;const idx=b%52;if(idx<26)r.push(String.fromCharCode(65+idx));else r.push(String.fromCharCode(97+idx-26));}else if((c>=0x13000&&c<=0x1342F)||(c>=0x1F000&&c<=0x1FFFF)){}else{r.push(String.fromCodePoint(c));}i+=l;}const s=r.join('');return s||name;}
 function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function rankBadge(i){const t=activeTheme;if(i===0)return`<svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:middle"><circle cx="12" cy="12" r="11" fill="#FFD700"/><text x="12" y="17" text-anchor="middle" font-size="14" font-weight="bold" fill="${t.badgeText}">1</text></svg>`;if(i===1)return`<svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:middle"><circle cx="12" cy="12" r="11" fill="#C0C0C0"/><text x="12" y="17" text-anchor="middle" font-size="14" font-weight="bold" fill="${t.badgeText}">2</text></svg>`;if(i===2)return`<svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:middle"><circle cx="12" cy="12" r="11" fill="#CD7F32"/><text x="12" y="17" text-anchor="middle" font-size="14" font-weight="bold" fill="#fff">3</text></svg>`;const n=i+1;return`<svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:middle"><circle cx="12" cy="12" r="10" fill="${t.badgeFill}" stroke="${t.badgeStroke}" stroke-width="1"/><text x="12" y="16" text-anchor="middle" font-size="12" font-weight="bold" fill="${t.badgeTextMuted}">${n}</text></svg>`;}
@@ -107,7 +134,237 @@ function makeRowHTML(entries){return entries.map(([rankIdx,s])=>{const isTop3=ra
 function genHTML(users,pageLabel){const t=activeTheme;const perCol=Math.ceil(users.length/2);const left=users.slice(0,perCol).map(u=>[u._rank-1,{name:u.nickname,avatar:u.avatar}]);const right=users.slice(perCol).map(u=>[u._rank-1,{name:u.nickname,avatar:u.avatar}]);
 return`<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><style>@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;600;700;800;900&display=swap');*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Noto Sans SC',-apple-system,BlinkMacSystemFont,sans-serif;background:${t.bg};min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px;position:relative}.bg-pattern{position:fixed;top:0;left:0;width:100%;height:100%;background-image:radial-gradient(circle at 20% 30%,${t.pattern1} 0%,transparent 50%),radial-gradient(circle at 80% 70%,${t.pattern2} 0%,transparent 50%);pointer-events:none}.card{width:540px;max-width:100%;background:${t.cardBg};backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid ${t.cardBorder};border-radius:24px;padding:0;box-shadow:${t.boxShadow};overflow:visible;position:relative;z-index:2}${t.decor?`.card::after{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background-image:url(data:image/svg+xml;base64,${petalsB64});background-size:cover;opacity:0.18;pointer-events:none;z-index:0}`:''}table{width:100%;border-collapse:collapse;table-layout:fixed}tr{border-bottom:1px solid ${t.divider};height:38px}tr:last-child{border-bottom:none}td{padding:0 6px;font-size:15px;color:${t.rowText};vertical-align:middle!important;line-height:1.55}td.rank{width:34px;text-align:center;font-size:15px;font-weight:600;vertical-align:middle!important;line-height:1}.row-1st td.name{color:${t.top3Colors[0]}}.row-2nd td.name{color:${t.top3Colors[1]}}.row-3rd td.name{color:${t.top3Colors[2]}}.row-top3 td{padding:6px 4px;color:${t.top3Name}}td.name{white-space:nowrap;overflow:hidden;font-weight:700;vertical-align:middle!important}.name-wrap{display:inline-flex;align-items:center;gap:4px;height:100%}.name-text{vertical-align:middle;overflow:hidden;text-overflow:ellipsis;display:inline-block}.to-text{max-width:180px}.ranking-grid{display:grid;gap:10px;padding:0}.ranking-col td{padding:0 4px;font-size:15px;vertical-align:middle!important;height:38px}.ranking-col td.rank{width:30px;font-size:15px;vertical-align:middle!important;text-align:center;line-height:1}.ranking-col td.name{white-space:nowrap;overflow:hidden;font-size:15px;display:flex;align-items:center}.ranking-col td.name .name-wrap{display:contents}.ranking-col .name-text{overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}.ranking-col .row-top3 td{padding:0 4px}.footer{text-align:center;padding:10px 24px 14px;font-size:10px;color:${t.footerText};letter-spacing:0.5px}</style></head><body><div class="bg-pattern"></div><div class="card" style="padding:0!important"><div style="display:flex;align-items:center;gap:14px;padding:16px 20px;background:linear-gradient(180deg,${t.headerTint} 0%,transparent 100%);border-bottom:1px solid ${t.dividerHeader}"><div style="width:44px;height:44px;border-radius:50%;background:${t.avatarRing};display:flex;align-items:center;justify-content:center;flex-shrink:0"><img src="${TARGET_AVATAR}" style="width:40px;height:40px;border-radius:50%;object-fit:cover"/></div><div style="flex:1;min-width:0"><div style="font-size:18px;font-weight:700;color:${t.headerTitle};line-height:1.3">${esc(target)}</div><div style="font-size:12px;color:${t.headerDate};margin-top:4px">${HEADER_DATE}</div></div><div style="text-align:right;flex-shrink:0"><div style="font-size:15px;font-weight:800;color:${t.textSecondary};letter-spacing:0.5px">🔋 园区充电榜</div></div></div><div style="font-size:13px;font-weight:700;color:${t.sectionTitle};padding:14px 24px 6px;letter-spacing:0.5px;border-bottom:1px solid ${t.dividerSection}">🔋 园区充电榜 · ${pageLabel}</div><div style="padding:6px 24px 14px"><div class="ranking-grid" style="grid-template-columns:1fr 1fr;gap:10px"><div class="ranking-col"><table style="width:100%;table-layout:fixed"><tbody>${makeRowHTML(left)}</tbody></table></div><div class="ranking-col"><table style="width:100%;table-layout:fixed"><tbody>${makeRowHTML(right)}</tbody></table></div></div></div><div class="footer">由 404 · 抖音直播监控 生成</div></div></body></html>`;}
 
-async function render(html,outPath){const br=await chromium.launch({headless:true,executablePath:'/opt/hermes/.playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell'});const page=await br.newPage({viewport:{width:600,height:2000},deviceScaleFactor:2});await page.setContent(html,{waitUntil:'domcontentloaded',timeout:30000});await page.evaluate(()=>new Promise(r=>{const imgs=document.querySelectorAll('img');let loaded=0;const check=()=>{loaded++;if(loaded>=imgs.length)r()};imgs.forEach(img=>{if(img.complete)check();else{img.onload=check;img.onerror=check}});if(!imgs.length)r();setTimeout(r,8000)}));await new Promise(r=>setTimeout(r,1000));const bodyHeight=await page.evaluate(()=>document.body.scrollHeight);const y=Math.max(0,Math.floor((bodyHeight-800)/2));await page.screenshot({path:outPath,clip:{x:0,y,width:600,height:800},type:'jpeg',quality:92});await br.close();console.log(`  ✅ ${path.basename(outPath)}`);}
+// ==================== 杂志编辑风模板（magazine-v1/v2/v3）====================
+// 设计语言：浅色纸面 + 中文衬线 + 细线做结构；无卡片/无阴影/无渐变/无 emoji/无装饰英文
+// 强调色绛红 #8A2B2B，每套模板只用在一处（v1=第1名、v2=收礼总额、v3=刊头短线）
+const MAG = {
+  paper: '#FAFAF8', ink: '#1A1A1E',
+  inkSoft: 'rgba(26,26,30,0.62)', inkFaint: 'rgba(26,26,30,0.30)',
+  rule: 'rgba(26,26,30,0.20)', ruleLight: 'rgba(26,26,30,0.09)',
+  accent: '#8A2B2B',
+  serif: "'Noto Serif SC','Songti SC',serif",
+};
+const MAG_THEME_NAMES = ['magazine-v1', 'magazine-v2', 'magazine-v3'];
+const MAG_VARIANT = MAG_THEME_NAMES.includes(THEME_ARG) ? THEME_ARG : null;
+
+/** 自动探测 playwright 已装的 chromium headless shell（写死版本号会随升级失效） */
+function chromiumExe() {
+  const base = '/opt/hermes/.playwright';
+  try {
+    const dirs = fs.readdirSync(base).filter(d => d.startsWith('chromium_headless_shell-'))
+      .sort((a, b) => Number(a.split('-').pop()) - Number(b.split('-').pop()));
+    for (let i = dirs.length - 1; i >= 0; i--) {
+      const p = path.join(base, dirs[i], 'chrome-headless-shell-linux64', 'chrome-headless-shell');
+      if (fs.existsSync(p)) return p;
+    }
+  } catch (e) { /* 回退到 playwright 默认解析 */ }
+  return undefined;
+}
+
+const MAG_BASE_CSS = `*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:540px;height:720px;overflow:hidden}
+body{background:${MAG.paper};color:${MAG.ink};font-family:${MAG.serif};-webkit-font-smoothing:antialiased}
+.page{width:540px;height:720px;display:flex;flex-direction:column;padding:44px 40px 32px}
+.masthead{font-size:22px;font-weight:500;letter-spacing:5px;line-height:1}
+.meta{font-size:10.5px;letter-spacing:1px;color:${MAG.inkFaint}}
+.nm{font-size:15px;line-height:1.25}
+.amt{font-size:14px;font-variant-numeric:tabular-nums}
+.av{border-radius:50%;object-fit:cover;vertical-align:middle;flex-shrink:0}
+.rule{height:1px;background:${MAG.rule}}
+.rowrule{border-bottom:1px solid ${MAG.ruleLight}}
+.num{font-variant-numeric:tabular-nums;font-weight:300;line-height:1}`;
+
+function magFontLink() {
+  return `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;600;700&display=swap">`;
+}
+function magAvatar(url, size) {
+  if (!url) return `<span class="av" style="width:${size}px;height:${size}px;display:block;background:${MAG.ruleLight}"></span>`;
+  const u = url.startsWith('//') ? 'https:' + url : url;
+  return `<img class="av" src="${u}" style="width:${size}px;height:${size}px;display:block" />`;
+}
+function magName(u) { return esc(cleanDisplayName(u.nickname || '未知')); }
+function magDoc(title, css, body) {
+  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${magFontLink()}<title>${esc(title)}</title><style>${MAG_BASE_CSS}${css}</style></head><body>${body}</body></html>`;
+}
+function magTotalText(meta) {
+  return meta.capped ? 'TOP 100 合计' : '收礼合计';
+}
+function magTotal(users) {
+  return users.reduce((a, u) => a + (Number(u.diamonds) || 0), 0);
+}
+
+/** v1 刊物榜 · TOP 页：刊头 + 收礼人 + 单栏到底的名次表，超大细体序号 */
+function magTopV1(users, meta) {
+  const rows = users.map((u, i) => {
+    const lead = i === 0;
+    return `<div class="rowrule" style="display:flex;align-items:center;height:48px">
+      <div class="num" style="width:54px;font-size:${lead ? 30 : 23}px;color:${lead ? MAG.accent : MAG.inkFaint}">${String(i + 1).padStart(2, '0')}</div>
+      <div style="flex:1;min-width:0;display:flex;align-items:center;gap:10px">${magAvatar(u.avatar, 26)}<span class="nm" style="font-weight:${lead ? 600 : 400};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${magName(u)}</span></div>
+      <div class="amt" style="font-weight:${lead ? 600 : 400};color:${lead ? MAG.accent : MAG.ink}">${fmtD(u.diamonds)}</div>
+    </div>`;
+  }).join('');
+  return magDoc('园区充电榜', '', `<div class="page">
+    <div style="display:flex;justify-content:space-between;align-items:baseline">
+      <div class="masthead">园区充电榜</div>
+      <div class="meta">${esc(meta.dateStr)} · ${esc(meta.sessionStr)}</div>
+    </div>
+    <div class="rule" style="margin:13px 0 0"></div>
+    <div style="display:flex;align-items:center;gap:12px;margin:18px 0 8px">
+      ${magAvatar(meta.avatar, 42)}
+      <div style="flex:1;min-width:0">
+        <div style="font-size:19px;font-weight:500;line-height:1.2">${esc(meta.target)}</div>
+        <div class="meta" style="margin-top:3px">共 ${meta.gifters} 位送礼人</div>
+      </div>
+      <div style="text-align:right">
+        <div class="amt" style="font-size:19px;font-weight:600">${fmtD(meta.total)}</div>
+        <div class="meta" style="margin-top:3px">${magTotalText(meta)}</div>
+      </div>
+    </div>
+    <div class="rule"></div>
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:space-evenly">${rows}</div>
+  </div>`);
+}
+
+/** v2 封面特写 · TOP 页：冠军独占上半幅，2-10 名双栏在下 */
+function magTopV2(users, meta) {
+  const champ = users[0] || { nickname: '', avatar: '', diamonds: 0 };
+  const rest = users.slice(1, 10).map((u, i) => ({ u, rank: i + 2 }));
+  const half = Math.ceil(rest.length / 2);
+  const col = (arr) => `<div style="flex:1;min-width:0">${arr.map(({ u, rank }) => `
+    <div style="display:flex;align-items:center;height:44px;gap:8px;border-bottom:1px solid ${MAG.ruleLight}">
+      <span class="num" style="width:20px;font-size:12px;color:${MAG.inkFaint}">${rank}</span>
+      ${magAvatar(u.avatar, 20)}
+      <span style="flex:1;min-width:0;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${magName(u)}</span>
+      <span class="amt" style="font-size:12.5px;flex-shrink:0;margin-left:8px">${fmtD(u.diamonds)}</span>
+    </div>`).join('')}</div>`;
+  return magDoc('园区充电榜', '', `<div class="page" style="padding:42px 40px 30px;justify-content:space-between">
+    <div>
+      <div style="text-align:center"><span class="masthead" style="letter-spacing:7px;font-size:17px">园区充电榜</span></div>
+      <div class="rule" style="width:44px;margin:13px auto 0;background:${MAG.ink};height:2px"></div>
+    </div>
+    <div style="text-align:center">
+      <div style="display:flex;justify-content:center">${magAvatar(meta.avatar, 84)}</div>
+      <div style="font-size:18px;font-weight:500;margin-top:15px">${esc(meta.target)}</div>
+      <div class="meta" style="margin-top:11px">${magTotalText(meta)}</div>
+      <div style="font-size:38px;font-weight:300;letter-spacing:2px;color:${MAG.accent};margin-top:5px;font-variant-numeric:tabular-nums;line-height:1">${fmtD(meta.total)}</div>
+      <div class="meta" style="margin-top:10px">共 ${meta.gifters} 位送礼人 · ${esc(meta.sessionStr)}</div>
+    </div>
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+        <div style="flex:1;height:1px;background:${MAG.rule}"></div>
+        <span class="meta" style="letter-spacing:2px">前十名</span>
+        <div style="flex:1;height:1px;background:${MAG.rule}"></div>
+      </div>
+      <div style="display:flex;align-items:center;height:62px;gap:9px;border-bottom:1px solid ${MAG.rule}">
+        <span class="num" style="width:20px;font-size:13px;color:${MAG.ink}">1</span>
+        ${magAvatar(champ.avatar, 34)}
+        <span style="flex:1;min-width:0;font-size:16px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${magName(champ)}</span>
+        <span class="amt" style="font-size:15px;font-weight:600;flex-shrink:0">${fmtD(champ.diamonds)}</span>
+      </div>
+      <div style="display:flex;gap:22px;align-items:flex-start">${col(rest.slice(0, half))}${col(rest.slice(half))}</div>
+    </div>
+  </div>`);
+}
+
+/** v3 目录双栏 · TOP 页：杂志目录式，1-5 左栏 / 6-10 右栏 */
+function magTopV3(users, meta) {
+  const half = Math.ceil(users.length / 2);
+  const col = (arr, offset) => `<div style="flex:1;min-width:0">${arr.map((u, i) => `
+    <div class="rowrule" style="display:flex;align-items:center;gap:9px;padding:15px 0">
+      <span class="num" style="width:30px;font-size:25px;color:rgba(26,26,30,0.42)">${String(offset + i + 1).padStart(2, '0')}</span>
+      <span style="flex:1;min-width:0">
+        <span style="display:block;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${magName(u)}</span>
+        <span class="meta" style="display:block;font-size:11px;margin-top:3px">${fmtD(u.diamonds)} 钻</span>
+      </span>
+    </div>`).join('')}</div>`;
+  return magDoc('园区充电榜', '', `<div class="page" style="justify-content:space-between">
+    <div>
+      <div class="masthead" style="font-size:19px;letter-spacing:4px">园区充电榜</div>
+      <div style="width:34px;height:2px;background:${MAG.accent};margin:11px 0 0"></div>
+      <div class="meta" style="margin-top:12px">${esc(meta.dateStr)} · ${esc(meta.sessionStr)}</div>
+      <div style="font-size:15px;margin-top:7px">${esc(meta.target)}</div>
+      <div class="rule" style="margin:14px 0 0"></div>
+    </div>
+    <div style="display:flex;gap:26px;align-items:flex-start">${col(users.slice(0, half), 0)}${col(users.slice(half), half)}</div>
+    <div>
+      <div class="rule"></div>
+      <div class="meta" style="margin-top:11px">共 ${meta.gifters} 位送礼人 · ${magTotalText(meta)} ${fmtD(meta.total)} 钻</div>
+    </div>
+  </div>`);
+}
+
+/** 名次页（三套模板共用排版规则，只换刊头信息） */
+function magListHTML(variant, users, meta, pageLabel) {
+  const half = Math.ceil(users.length / 2);
+  const col = (arr, offset) => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:space-between">${arr.map((u, i) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid ${MAG.ruleLight}">
+      <span class="num" style="width:22px;font-size:12px;color:${MAG.inkFaint}">${offset + i + 1}</span>
+      ${magAvatar(u.avatar, 20)}
+      <span style="flex:1;min-width:0;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${magName(u)}</span>
+      <span class="amt" style="font-size:12.5px;flex-shrink:0;margin-left:8px">${fmtD(u.diamonds)}</span>
+    </div>`).join('')}</div>`;
+  return magDoc('园区充电榜 · ' + pageLabel, '', `<div class="page" style="padding:40px 40px 30px">
+    <div style="display:flex;justify-content:space-between;align-items:baseline">
+      <div class="masthead" style="font-size:16px;letter-spacing:4px">园区充电榜</div>
+      <div class="meta">${esc(pageLabel)}</div>
+    </div>
+    <div class="rule" style="margin:11px 0 4px"></div>
+    <div style="flex:1;display:flex;gap:26px;align-items:stretch">${col(users.slice(0, half), users.length ? users[0]._rank - 1 : 0)}${col(users.slice(half), users.length ? users[half]._rank - 1 : 0)}</div>
+    <div class="rule"></div>
+    <div class="meta" style="margin-top:10px">${esc(meta.target)} · ${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</div>
+  </div>`);
+}
+
+function magTopHTML(variant, users, meta) {
+  if (variant === 'magazine-v2') return magTopV2(users, meta);
+  if (variant === 'magazine-v3') return magTopV3(users, meta);
+  return magTopV1(users, meta);
+}
+
+/** 杂志风渲染：540×720 CSS px @2x = 1080×1440，等字体与头像加载完成再截图 */
+async function renderMag(html, outPath) {
+  const br = await chromium.launch({ headless: true, executablePath: chromiumExe() });
+  const page = await br.newPage({ viewport: { width: 540, height: 720 }, deviceScaleFactor: 2 });
+  await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  await page.evaluate(() => Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 8000))]));
+  await page.evaluate(() => new Promise(r => {
+    const imgs = document.querySelectorAll('img');
+    let loaded = 0;
+    const check = () => { loaded++; if (loaded >= imgs.length) r(); };
+    imgs.forEach(img => { if (img.complete) check(); else { img.onload = check; img.onerror = check; } });
+    if (!imgs.length) r();
+    setTimeout(r, 8000);
+  }));
+  await new Promise(r => setTimeout(r, 400));
+  await page.screenshot({ path: outPath, type: 'jpeg', quality: 94 });
+  await br.close();
+  console.log(`  ✅ ${path.basename(outPath)}`);
+}
+
+async function renderMagazine(variant, users, meta) {
+  const suffix = variant.replace('magazine-', '');
+  const n = users.length;
+  const topN = Math.min(10, n);
+  const restCount = n - topN;
+  meta.gifters = n >= 100 ? '100+' : String(n);
+  meta.capped = n >= 100;
+  meta.total = magTotal(users);
+  const base = path.join(outputDir, `thanks_rank_${sessionIds.join('-')}_${suffix}`);
+  console.log(`📐 模板 ${variant} · ${n} 人 · 收礼合计 ${fmtD(meta.total)}`);
+  await renderMag(magTopHTML(variant, users.slice(0, topN), meta), `${base}_p1.jpg`);
+  if (restCount > 0) {
+    const perPage = Math.ceil(restCount / 3);
+    for (let i = 0; i < 3; i++) {
+      const start = topN + perPage * i, end = Math.min(topN + perPage * (i + 1), n);
+      if (start >= end) continue;
+      const label = `第 ${start + 1}-${end} 名`;
+      console.log(`🖼️  名次页 ${i + 2}/4 (${label})`);
+      await renderMag(magListHTML(variant, users.slice(start, end), meta, label), `${base}_p${i + 2}.jpg`);
+    }
+  }
+}
+
+async function render(html,outPath){const br=await chromium.launch({headless:true,executablePath:chromiumExe()});const page=await br.newPage({viewport:{width:600,height:2000},deviceScaleFactor:2});await page.setContent(html,{waitUntil:'domcontentloaded',timeout:30000});await page.evaluate(()=>new Promise(r=>{const imgs=document.querySelectorAll('img');let loaded=0;const check=()=>{loaded++;if(loaded>=imgs.length)r()};imgs.forEach(img=>{if(img.complete)check();else{img.onload=check;img.onerror=check}});if(!imgs.length)r();setTimeout(r,8000)}));await new Promise(r=>setTimeout(r,1000));const bodyHeight=await page.evaluate(()=>document.body.scrollHeight);const y=Math.max(0,Math.floor((bodyHeight-800)/2));await page.screenshot({path:outPath,clip:{x:0,y,width:600,height:800},type:'jpeg',quality:92});await br.close();console.log(`  ✅ ${path.basename(outPath)}`);}
 async function resolveAvatar(targetNickname) {
   // 已有 --avatar 则不查
   if (TARGET_AVATAR) return TARGET_AVATAR;
@@ -151,5 +408,11 @@ async function main(){
   const sessionStr = sessionIds.length === 1 ? `Session ${sessionIds[0]}` : `Session ${sessionIds[0]}-${sessionIds[sessionIds.length-1]}`;
   HEADER_DATE = `${dateStr} · ${sessionStr}`;
 
-  console.log('📊 Loading data...');const users=await getData();console.log(`  ${users.length} users`);const total=users.slice(0,100);total.forEach((u,i)=>u._rank=i+1);const n=total.length;const topN=Math.min(10,n);const restCount=n-topN;const perPage=Math.ceil(restCount/3);console.log('🖼️  Image 1/4 (TOP '+topN+')...');await render(genTop10HTML(total.slice(0,topN),'TOP '+topN),path.join(outputDir,'thanks_rank_p1.jpg'));const pages=[{start:topN,end:Math.min(topN+perPage,n),label:`第${topN+1}-${Math.min(topN+perPage,n)}名`},{start:Math.min(topN+perPage,n),end:Math.min(topN+perPage*2,n),label:`第${Math.min(topN+perPage,n)+1}-${Math.min(topN+perPage*2,n)}名`},{start:Math.min(topN+perPage*2,n),end:n,label:`第${Math.min(topN+perPage*2,n)+1}-${n}名`}];for(let i=0;i<3;i++){const p=pages[i];if(p.start>=p.end)continue;console.log(`🖼️  Image ${i+2}/4 (${p.label})...`);await render(genHTML(total.slice(p.start,p.end),p.label),path.join(outputDir,`thanks_rank_p${i+2}.jpg`));}console.log('\n✅ Done!');}
+  console.log('📊 Loading data...');const users=await getData();console.log(`  ${users.length} users`);const total=users.slice(0,100);total.forEach((u,i)=>u._rank=i+1);
+  if (MAG_VARIANT) {
+    await renderMagazine(MAG_VARIANT, total, { target, avatar: TARGET_AVATAR, dateStr, sessionStr: `第 ${sessionIds.join('-')} 场` });
+    console.log(`\n✅ Done (${MAG_VARIANT})!`);
+    return;
+  }
+const n=total.length;const topN=Math.min(10,n);const restCount=n-topN;const perPage=Math.ceil(restCount/3);console.log('🖼️  Image 1/4 (TOP '+topN+')...');await render(genTop10HTML(total.slice(0,topN),'TOP '+topN),path.join(outputDir,'thanks_rank_p1.jpg'));const pages=[{start:topN,end:Math.min(topN+perPage,n),label:`第${topN+1}-${Math.min(topN+perPage,n)}名`},{start:Math.min(topN+perPage,n),end:Math.min(topN+perPage*2,n),label:`第${Math.min(topN+perPage,n)+1}-${Math.min(topN+perPage*2,n)}名`},{start:Math.min(topN+perPage*2,n),end:n,label:`第${Math.min(topN+perPage*2,n)+1}-${n}名`}];for(let i=0;i<3;i++){const p=pages[i];if(p.start>=p.end)continue;console.log(`🖼️  Image ${i+2}/4 (${p.label})...`);await render(genHTML(total.slice(p.start,p.end),p.label),path.join(outputDir,`thanks_rank_p${i+2}.jpg`));}console.log('\n✅ Done!');}
 main().catch(e=>{console.error(e);process.exit(1);});

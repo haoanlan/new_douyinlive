@@ -145,7 +145,7 @@ const MAG = {
   accent: '#8A2B2B',
   serif: "'Noto Serif SC','Songti SC',serif",
 };
-const MAG_THEME_NAMES = ['magazine-v1', 'magazine-v2', 'noir', 'typegrid'];
+const MAG_THEME_NAMES = ['magazine-v1', 'magazine-v2', 'noir', 'typegrid', 'cute', 'news', 'energy'];
 const MAG_VARIANT = MAG_THEME_NAMES.includes(THEME_ARG) ? THEME_ARG : null;
 // 是否显示钻石数：提名榜（thanks-rank.js）不显示，钻石榜显示
 const MAG_AMOUNT = true;
@@ -313,6 +313,9 @@ function magListHTML(variant, users, meta, pageLabel) {
 function magTopHTML(variant, users, meta) {
   if (variant === 'noir') return nrTopHTML(users, meta);
   if (variant === 'typegrid') return tgTopHTML(users, meta);
+  if (variant === 'cute') return cuTopHTML(users, meta);
+  if (variant === 'news') return nwTopHTML(users, meta);
+  if (variant === 'energy') return enTopHTML(users, meta);
   if (variant === 'magazine-v2') return magTopV2(users, meta);
   return magTopV1(users, meta);
 }
@@ -384,6 +387,9 @@ let _cnKey = null;
 function rankListHTML(variant, users, meta, pageLabel) {
   if (variant === 'noir') return nrListHTML(users, meta, pageLabel);
   if (variant === 'typegrid') return tgListHTML(users, meta, pageLabel);
+  if (variant === 'cute') return cuListHTML(users, meta, pageLabel);
+  if (variant === 'news') return nwListHTML(users, meta, pageLabel);
+  if (variant === 'energy') return enListHTML(users, meta, pageLabel);
   return magListHTML(variant, users, meta, pageLabel);
 }
 
@@ -633,6 +639,254 @@ function tgxHead(extra) {
 /* A. 阶梯条：条宽随名次递减，第 1 名橙色，条内写名字 */
 function sigW(name, fs) { return String(name).length * fs * 1.03 + 6; }
 /** 签名墙：每个名字一个槽位，大小随名次递减，微倾斜，x 抖动避免呆板，自动夹在画布内 */
+/* ==================== 三套新风格：cute 可爱风 / news 报纸头版 / energy 能量标签 ==================== */
+const CU = { bg: '#FFF4F7', card: '#FFFFFF', ink: '#4A3B3F', soft: 'rgba(74,59,63,0.55)',
+  pink: '#FF6FA5', mint: '#66D3B8', butter: '#FFD36E', peach: '#FFB38A' };
+const NW = { paper: '#F0EDE4', ink: '#17161A', soft: 'rgba(23,22,26,0.60)', faint: 'rgba(23,22,26,0.34)',
+  rule: 'rgba(23,22,26,0.35)', line: 'rgba(23,22,26,0.15)', red: '#B3121B',
+  serif: "'Noto Serif SC','Songti SC',serif" };
+const EN = { bg: '#F4F1E6', ink: '#14180F', green: '#0E3B2E', neon: '#C9F24D', orange: '#FF6A00',
+  soft: 'rgba(20,24,15,0.55)', line: 'rgba(20,24,15,0.13)' };
+
+function assetB64(rel) {
+  try { return 'data:image/png;base64,' + fs.readFileSync(path.join(__dirname, rel)).toString('base64'); }
+  catch (e) { return ''; }
+}
+function cuFont() { return '<link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet">'; }
+function nwFont() { return '<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;900&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">'; }
+function enFont() { return '<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">'; }
+
+/* ---------- ① cute 可爱风：奶油粉底 + 平涂小电车 + 圆角卡名单 ---------- */
+function cuCSS() {
+  return `*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:540px;height:720px;overflow:hidden}
+body{background:${CU.bg};color:${CU.ink};font-family:'Noto Sans SC',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.page{position:relative;width:540px;height:720px;overflow:hidden;padding:32px 32px 24px;display:flex;flex-direction:column}
+.blob{position:absolute;border-radius:50%;z-index:0}
+.mascot{position:absolute;z-index:1}
+.hd{position:relative;z-index:2}
+.ttl{font-family:'ZCOOL KuaiLe',sans-serif;font-size:37px;color:${CU.pink};letter-spacing:3px;line-height:1}
+.mt{font-size:10.5px;color:${CU.soft};letter-spacing:0.8px}
+.card{background:${CU.card};border-radius:18px;box-shadow:0 6px 16px rgba(255,155,182,0.16)}
+.cell{display:flex;align-items:center;gap:10px;background:${CU.card};border-radius:15px;padding:12px 13px;
+  box-shadow:0 3px 9px rgba(255,155,182,0.15)}
+.rk{width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+  font-family:'ZCOOL KuaiLe',sans-serif;font-size:11px;color:#fff;background:${CU.pink};flex-shrink:0;line-height:1}
+.rk1{background:${CU.butter};color:#8A6412}.rk2{background:${CU.mint};color:#0A5342}.rk3{background:${CU.peach};color:#7A3A12}
+.av{border-radius:50%;object-fit:cover;flex-shrink:0;display:block}
+.nm{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.big{font-family:'ZCOOL KuaiLe',sans-serif;font-size:26px;color:${CU.pink};line-height:1}
+.foot{display:flex;justify-content:space-between;align-items:center;position:relative;z-index:2}
+.big{font-family:'ZCOOL KuaiLe',sans-serif}`;
+}
+function cuRow(u, rank, av, fs) {
+  const c = rank === 1 ? ' rk1' : rank === 2 ? ' rk2' : rank === 3 ? ' rk3' : '';
+  return `<div class="cell"><span class="rk${c}">${rank}</span>${tbAv(u.avatar, av, false)}<span class="nm" style="font-size:${fs}px">${magName(u)}</span></div>`;
+}
+function cuStickers() {
+  const star = assetB64('assets/kitty-star.png'), heart = assetB64('assets/kitty-heart.png');
+  return heart ? `<img class="mascot" src="${heart}" style="left:74px;top:463px;width:20px;opacity:.95">` : '';
+}
+function cuTopHTML(users, meta) {
+  const top = users.slice(0, 10);
+  const ev = assetB64('assets/cute-ev.png');
+  const half = Math.ceil(top.length / 2);
+  const col = (arr, off) => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:16px">${arr.map((u, i) => cuRow(u, off + i, 31, 14.5)).join('')}</div>`;
+  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${cuFont()}<style>${cuCSS()}</style></head><body>
+  <div class="page">
+    <div class="blob" style="width:330px;height:330px;background:#FFE4EE;left:-110px;top:-120px"></div>
+    <div class="blob" style="width:210px;height:210px;background:#E2F7F0;right:-70px;bottom:120px;opacity:.42"></div>
+    ${ev ? `<img class="mascot" src="${ev}" style="right:16px;top:20px;width:156px">` : ''}
+    <div class="hd"><div class="ttl">园区充电榜</div>
+      <div class="mt" style="margin-top:9px">${rankMetaLine(meta)} · ${rankDate(meta.dateStr)}</div></div>
+    <div class="card" style="margin-top:12px;padding:15px 18px;display:flex;align-items:center;gap:14px;position:relative;z-index:2">
+      ${tbAv(meta.avatar, 60, true)}
+      <div><div style="font-size:18px;font-weight:900">${esc(meta.target)}</div>
+        <div class="mt" style="margin-top:7px">收到 <span class="big" style="font-size:23px">${meta.gifters}</span> 位送礼人的心意</div></div>
+    </div>
+    <div style="margin:15px 0 9px 3px;font-size:12px;font-weight:900;color:${CU.pink};letter-spacing:2px;position:relative;z-index:2">前十名</div>
+    <div style="flex:1;display:flex;align-items:flex-start;gap:14px;position:relative;z-index:2;margin-top:14px">${col(top.slice(0, half), 1)}${col(top.slice(half), half + 1)}</div>
+    <div style="display:flex;gap:9px;position:relative;z-index:2;margin-bottom:12px">
+      ${[['场次', meta.sessionStr], ['日期', rankDate(meta.dateStr)], ['榜单主', meta.target], ['上榜', meta.gifters + ' 人']]
+        .map(([k, v]) => `<div style="flex:1;background:#FFFFFF;border-radius:14px;padding:9px 8px;text-align:center;box-shadow:0 3px 8px rgba(255,155,182,0.14)"><div class="mt" style="font-size:9.5px">${k}</div><div style="font-family:'ZCOOL KuaiLe',sans-serif;font-size:13px;color:${CU.pink};margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(v)}</div></div>`).join('')}
+    </div>
+    <div class="foot"><span class="mt">${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</span>
+      <span class="mt">感谢每一份心意</span></div>
+    ${cuStickers()}
+  </div></body></html>`;
+}
+function cuListHTML(users, meta, pageLabel) {
+  const half = Math.ceil(users.length / 2);
+  const col = (arr, off, av, fs, gap) => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:${gap}px">${arr.map((u, i) => cuRow(u, off + i, av, fs)).join('')}</div>`;
+  const n = users.length;
+  const av = n > 30 ? 20 : 24, fs = n > 30 ? 11.5 : 13, gap = n > 30 ? 5 : 8;
+  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${cuFont()}<style>${cuCSS()}</style></head><body>
+  <div class="page">
+    <div class="blob" style="width:300px;height:300px;background:#FFE4EE;right:-120px;top:-140px"></div>
+    <div class="blob" style="width:240px;height:240px;background:#E2F7F0;left:-110px;bottom:-90px"></div>
+    <div class="hd" style="display:flex;justify-content:space-between;align-items:baseline">
+      <div class="ttl" style="font-size:22px">园区充电榜</div><div class="mt" style="font-weight:700">${esc(pageLabel)}</div></div>
+    <div class="mt" style="margin-top:10px;position:relative;z-index:2">${esc(meta.target)} · ${rankDate(meta.dateStr)} · 共 ${meta.gifters} 位送礼人</div>
+    <div style="display:flex;gap:11px;margin-top:12px;position:relative;z-index:2">${col(users.slice(0, half), users[0] ? users[0]._rank : 1, av, fs, gap)}${col(users.slice(half), users[half] ? users[half]._rank : 1, av, fs, gap)}</div>
+    <div style="flex:1"></div>
+    <div class="foot"><span class="mt">${esc(meta.sessionStr)}</span><span class="mt">感谢每一份心意</span></div>
+  </div></body></html>`;
+}
+
+/* ---------- ② news 报纸头版：报头双线 + 号外红块 + 头条 + 三栏小字 ---------- */
+function nwCSS() {
+  return `*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:540px;height:720px;overflow:hidden}
+body{background:${NW.paper};color:${NW.ink};font-family:${NW.serif};-webkit-font-smoothing:antialiased}
+.page{position:relative;width:540px;height:720px;padding:28px 32px 24px;display:flex;flex-direction:column}
+.kick{font-size:9.5px;letter-spacing:3px;color:${NW.soft};font-family:'Noto Sans SC',sans-serif}
+.np{font-size:47px;font-weight:900;letter-spacing:12px;line-height:1;text-align:center;text-indent:12px}
+.dr{height:6px;border-top:2px solid ${NW.ink};border-bottom:1px solid ${NW.rule}}
+.hl{font-size:22px;font-weight:900;line-height:1.4;letter-spacing:0.5px}
+.sub{font-size:11px;color:${NW.soft};font-family:'Noto Sans SC',sans-serif;letter-spacing:0.5px}
+.cols{display:flex;gap:16px}
+.lrow{display:flex;align-items:baseline;gap:7px;padding:13px 0;border-bottom:1px solid ${NW.line}}
+.lnum{font-size:12px;font-weight:900;font-variant-numeric:tabular-nums;width:18px;flex-shrink:0;text-align:right;color:${NW.red}}
+.lnm{font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.av{border-radius:50%;object-fit:cover;flex-shrink:0;display:block}
+.seal{display:inline-block;background:${NW.red};color:${NW.paper};font-size:12px;font-weight:900;letter-spacing:4px;padding:5px 9px 5px 13px}`;
+}
+function nwListCol(arr, off) {
+  return `<div style="flex:1;min-width:0">${arr.map((u, i) => `<div class="lrow"><span class="lnum">${off + i}</span><span class="lnm">${magName(u)}</span></div>`).join('')}</div>`;
+}
+function nwTopHTML(users, meta) {
+  const top = users.slice(0, 10);
+  const parts = String(meta.sessionStr || '').match(/\d+/g) || [];
+  const sn = parts[0] || '';
+  const bounds = top.length >= 10 ? [0, 4, 7, top.length]
+                                  : [0, Math.ceil(top.length / 3), Math.ceil(top.length / 3) * 2, top.length];
+  const cols = [top.slice(bounds[0], bounds[1]), top.slice(bounds[1], bounds[2]), top.slice(bounds[2], bounds[3])];
+  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${nwFont()}<style>${nwCSS()}</style></head><body>
+  <div class="page">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;padding-bottom:6px;border-bottom:1px solid ${NW.line}">
+      <span class="kick">园区充电榜 · 号外</span>
+      <span class="kick">第 ${sn ? String(sn).padStart(3, '0') : '—'} 期 · ${rankDate(meta.dateStr)}</span>
+    </div>
+    <div style="position:relative;margin-top:12px">
+      <span class="seal" style="position:absolute;left:0;top:4px">号外</span>
+      <div class="np">园区充电榜</div>
+    </div>
+    <div class="dr" style="margin-top:13px"></div>
+    <div style="margin-top:12px">
+      <div class="hl">${esc(meta.target)}收到 <span style="color:${NW.red}">${meta.gifters}</span> 位送礼人的心意</div>
+      <div class="sub" style="margin-top:7px">${esc(meta.sessionStr)} ｜ ${rankMetaLine(meta)}</div>
+    </div>
+    <div style="border:1px solid ${NW.rule};padding:9px 12px;margin:12px 0 10px;font-size:11px;line-height:1.75;color:${NW.soft}">
+      本榜统计 <b style="color:${NW.ink}">${esc(meta.sessionStr)}</b> 内为 <b style="color:${NW.ink}">${esc(meta.target)}</b> 送出礼物的用户，按送礼人次排序；同一用户同一礼物的连击只计一次。共 <b style="color:${NW.ink}">${meta.gifters}</b> 位上榜，以下为前十名。
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0 2px">
+      <span class="kick" style="letter-spacing:2px">前十名</span>
+      <div style="flex:1;height:1px;background:${NW.rule}"></div>
+    </div>
+    <div class="cols">${cols.map((c, k) => nwListCol(c, bounds[k] + 1)).join('')}</div>
+    <div style="flex:1"></div>
+    <div style="display:flex;border-top:1px solid ${NW.rule};padding-top:10px">
+      ${[['场次', meta.sessionStr], ['日期', rankDate(meta.dateStr)], ['榜单主', meta.target], ['上榜人数', meta.gifters + ' 人']]
+        .map(([k, v], i) => `<div style="flex:1;padding-left:${i ? 12 : 0}px;border-left:${i ? '1px solid ' + NW.line : 'none'}"><div class="kick">${k}</div><div style="font-size:15px;font-weight:900;margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(v)}</div></div>`).join('')}
+    </div>
+    <div style="border-top:2px solid ${NW.ink};margin-top:12px;padding-top:7px;display:flex;justify-content:space-between;align-items:baseline">
+      <span class="kick">本榜单按送礼人次排序</span><span class="kick">由 404 · 抖音直播监控 生成</span>
+    </div>
+  </div></body></html>`;
+}
+function nwListHTML(users, meta, pageLabel) {
+  const per = Math.ceil(users.length / 3);
+  const cols = [users.slice(0, per), users.slice(per, per * 2), users.slice(per * 2)];
+  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${nwFont()}<style>${nwCSS()}</style></head><body>
+  <div class="page">
+    <div style="display:flex;justify-content:space-between;align-items:baseline">
+      <span class="np" style="font-size:19px;letter-spacing:6px;text-indent:6px">园区充电榜</span>
+      <span class="kick" style="letter-spacing:2px">${esc(pageLabel)}</span>
+    </div>
+    <div class="dr" style="margin-top:9px;height:4px;border-top:1px solid ${NW.ink}"></div>
+    <div class="sub" style="margin:9px 0 4px">${esc(meta.target)} ｜ ${esc(meta.sessionStr)} ｜ ${rankDate(meta.dateStr)} ｜ 共 ${meta.gifters} 位送礼人</div>
+    <div class="cols" style="flex:1;margin-top:6px">${cols.map((c, k) => nwListCol(c, per * k + 1)).join('')}</div>
+    <div style="border-top:1px solid ${NW.rule};padding-top:6px;display:flex;justify-content:space-between;align-items:baseline">
+      <span class="kick">园区充电榜</span><span class="kick">${esc(pageLabel)}</span>
+    </div>
+  </div></body></html>`;
+}
+
+/* ---------- ③ energy 能量标签：米白底 + 刻度环徽标 + 能量条按名次递减 ---------- */
+function enCSS() {
+  return `*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:540px;height:720px;overflow:hidden}
+body{background:${EN.bg};color:${EN.ink};font-family:'Noto Sans SC',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.page{position:relative;width:540px;height:720px;padding:30px 32px 24px;display:flex;flex-direction:column}
+.ttl{font-size:24px;font-weight:900;letter-spacing:3px;color:${EN.green};line-height:1}
+.kick{font-size:9.5px;letter-spacing:3px;color:${EN.soft}}
+.mono{font-family:'Roboto Mono',monospace;font-variant-numeric:tabular-nums}
+.bar{display:flex;align-items:center;gap:9px;height:31px;border-radius:4px;padding:0 10px;
+  background:${EN.green};color:#F4F1E6;position:relative;overflow:hidden}
+.bar.hot{background:${EN.neon};color:${EN.green}}
+.bar .n{flex:1;min-width:0;font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar .v{font-size:11px;opacity:.85;flex-shrink:0}
+.av{border-radius:50%;object-fit:cover;flex-shrink:0;display:block}
+.lbl{display:flex;justify-content:space-between;border-bottom:1px solid ${EN.line};padding:5px 0;font-size:10.5px}
+.dial{position:relative;width:126px;height:126px;border-radius:50%;border:1.5px solid ${EN.green};
+  display:flex;flex-direction:column;align-items:center;justify-content:center;background:#FBFAF4}`;
+}
+function enRow(u, rank, fs, av, maxW) {
+  const hot = rank <= 3;
+  const w = Math.max(46, 100 - (rank - 1) * (maxW / 12));
+  return `<div class="bar${hot ? ' hot' : ''}" style="width:${w.toFixed(1)}%">
+    <span class="mono" style="font-size:12.5px;font-weight:700">${String(rank).padStart(2, '0')}</span>
+    ${tbAv(u.avatar, av, false)}<span class="n" style="font-size:${fs}px">${magName(u)}</span></div>`;
+}
+function enTopHTML(users, meta) {
+  const top = users.slice(0, 10);
+  const parts = String(meta.sessionStr || '').match(/\d+/g) || [];
+  const sn = parts[0] || '';
+  const bolt = `<svg viewBox="0 0 24 24" width="34" height="34"><path d="M13 2 4 14h6l-1 8 9-12h-6z" fill="${EN.orange}"/></svg>`;
+  const ticks = Array.from({ length: 28 }, (_, i) => {
+    const a = (i / 28) * Math.PI * 2 - Math.PI / 2, long = i % 7 === 0;
+    const r1 = 55, r2 = long ? 46 : 50, cx = 63, cy = 63;
+    return `<line x1="${(cx + Math.cos(a) * r1).toFixed(1)}" y1="${(cy + Math.sin(a) * r1).toFixed(1)}" x2="${(cx + Math.cos(a) * r2).toFixed(1)}" y2="${(cy + Math.sin(a) * r2).toFixed(1)}" stroke="${EN.green}" stroke-width="${long ? 2 : 1}" opacity="${long ? 0.9 : 0.45}"/>`;
+  }).join('');
+  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${enFont()}<style>${enCSS()}</style></head><body>
+  <div class="page">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div><div class="ttl">园区充电榜</div>
+        <div class="kick" style="margin-top:9px">第 ${sn ? String(sn).padStart(3, '0') : '—'} 期 · ${rankDate(meta.dateStr)}</div></div>
+      <div style="text-align:right"><span class="kick">能量标签</span>
+        <div class="mono" style="font-size:26px;font-weight:700;color:${EN.orange};margin-top:6px">${meta.gifters}</div>
+        <div class="kick" style="margin-top:3px">位送礼人</div></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:18px;margin:16px 0 14px">
+      <div class="dial"><svg style="position:absolute;inset:0" viewBox="0 0 126 126">${ticks}</svg>${bolt}
+        <div class="kick" style="margin-top:6px;letter-spacing:2px">充电榜</div></div>
+      <div style="flex:1">
+        <div class="lbl"><span>收礼人</span><b>${esc(meta.target)}</b></div>
+        <div class="lbl"><span>场次</span><b>${esc(meta.sessionStr)}</b></div>
+        <div class="lbl"><span>日期</span><b>${rankDate(meta.dateStr)}</b></div>
+        <div class="lbl" style="border-bottom:none"><span>共</span><b>${meta.gifters} 位送礼人</b></div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px">${top.map((u, i) => enRow(u, i + 1, 13, 20, 54)).join('')}</div>
+    <div style="flex:1"></div>
+    <div style="border-top:1px solid ${EN.line};padding-top:8px;display:flex;justify-content:space-between">
+      <span class="kick">${esc(meta.target)} · ${esc(meta.sessionStr)}</span><span class="kick">感谢每一份心意</span></div>
+  </div></body></html>`;
+}
+function enListHTML(users, meta, pageLabel) {
+  const half = Math.ceil(users.length / 2);
+  const col = (arr, off) => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px">${arr.map((u, i) => enRow(u, off + i, 11, 17, 30)).join('')}</div>`;
+  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${enFont()}<style>${enCSS()}</style></head><body>
+  <div class="page">
+    <div style="display:flex;justify-content:space-between;align-items:baseline">
+      <div class="ttl" style="font-size:18px">园区充电榜</div><span class="kick">${esc(pageLabel)}</span></div>
+    <div class="kick" style="margin-top:9px">第 ${(String(meta.sessionStr || '').match(/\d+/g) || ['—'])[0]} 期 · ${rankDate(meta.dateStr)} · 共 ${meta.gifters} 位送礼人</div>
+    <div style="display:flex;gap:10px;margin-top:12px;flex:1">${col(users.slice(0, half), users[0] ? users[0]._rank : 1)}${col(users.slice(half), users[half] ? users[half]._rank : 1)}</div>
+    <div style="border-top:1px solid ${EN.line};padding-top:8px;display:flex;justify-content:space-between">
+      <span class="kick">${esc(meta.target)}</span><span class="kick">${esc(pageLabel)}</span></div>
+  </div></body></html>`;
+}
+
 async function render(html,outPath){const br=await chromium.launch({headless:true,executablePath:chromiumExe()});const page=await br.newPage({viewport:{width:600,height:2000},deviceScaleFactor:2});await page.setContent(html,{waitUntil:'domcontentloaded',timeout:30000});await page.evaluate(()=>new Promise(r=>{const imgs=document.querySelectorAll('img');let loaded=0;const check=()=>{loaded++;if(loaded>=imgs.length)r()};imgs.forEach(img=>{if(img.complete)check();else{img.onload=check;img.onerror=check}});if(!imgs.length)r();setTimeout(r,8000)}));await new Promise(r=>setTimeout(r,1000));const bodyHeight=await page.evaluate(()=>document.body.scrollHeight);const y=Math.max(0,Math.floor((bodyHeight-800)/2));await page.screenshot({path:outPath,clip:{x:0,y,width:600,height:800},type:'jpeg',quality:92});await br.close();console.log(`  ✅ ${path.basename(outPath)}`);}
 async function resolveAvatar(targetNickname) {
   // 已有 --avatar 则不查

@@ -363,6 +363,7 @@ async function renderMagazine(variant, users, meta) {
   meta.count = n;
   meta.capped = n >= 100;
   meta.total = magTotal(users);
+  meta.topAvatars = users.slice(0, 3).map(u => u.avatar).filter(Boolean);      // 四页共用同一组色晕来源（榜主 + 总榜前三）
   const base = path.join(outputDir, `thanks_rank_${sessionIds.join('-')}_${suffix}`);
   console.log(`📐 模板 ${variant} · ${n} 人${MAG_AMOUNT ? ' · 收礼合计 ' + fmtD(meta.total) : ''}`);
   await renderMag(magTopHTML(variant, users.slice(0, topN), meta), `${base}_p1.jpg`);
@@ -1625,7 +1626,8 @@ function dpBgLayers(meta, blurPx, veilOp) {
     <span class="veil" style="background:rgba(242,240,236,${veilOp})"></span>`;
 }
 function dpBgBlobs(users, meta, blurPx, veilOp) {
-  const picks = [meta.avatar, (users[0] || {}).avatar, (users[1] || {}).avatar, (users[2] || {}).avatar].filter(Boolean).slice(0, 3);
+  const base = (meta.topAvatars && meta.topAvatars.length) ? meta.topAvatars : users.slice(0, 3).map(u => u.avatar);
+  const picks = [meta.avatar, ...base].filter(Boolean).slice(0, 3);
   const pos = [[-130, -110, 440], [290, -80, 400], [-70, 410, 430]];
   const blobs = picks.map((u, i) => `<span class="blob" style="background-image:url('${esc(u)}');left:${pos[i][0]}px;top:${pos[i][1]}px;width:${pos[i][2]}px;height:${pos[i][2]}px;filter:blur(${blurPx}px) saturate(1.3)"></span>`).join('');
   return `<span class="blob-base"></span>${blobs}<span class="veil" style="background:rgba(242,240,236,${veilOp})"></span>`;

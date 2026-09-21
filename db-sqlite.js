@@ -413,8 +413,8 @@ async function buildPrecomputed(d, sessionId, dedupedGifts) {
     timeLineMap[timeKey].gifts += g.repeat_count || 1;
     timeLineMap[timeKey].diamonds += g.total_diamonds || 0;
   }
-  const danmakuTimeline = d.prepare(`SELECT strftime('%Y-%m-%d %H:%M:00', create_time, 'unixepoch', 'localtime') as time, COUNT(*) as danmaku FROM danmaku WHERE session_id = ? GROUP BY time ORDER BY time`).all(sessionId);
-  for (const t of danmakuTimeline) { if (!timeLineMap[t.time]) timeLineMap[t.time] = { time: t.time, gifts: 0, diamonds: 0 }; timeLineMap[t.time].danmaku = t.danmaku; }
+  const danmakuTimeline = d.prepare(`SELECT strftime('%Y-%m-%d %H:%M:00', CASE WHEN create_time > 100000000000 THEN create_time/1000 ELSE create_time END, 'unixepoch') as time, COUNT(*) as danmaku FROM danmaku WHERE session_id = ? GROUP BY time ORDER BY time`).all(sessionId);
+  for (const t of danmakuTimeline) { if (!t.time) continue; if (!timeLineMap[t.time]) timeLineMap[t.time] = { time: t.time, gifts: 0, diamonds: 0 }; timeLineMap[t.time].danmaku = t.danmaku; }
   const insTL = d.prepare('INSERT INTO session_timeline (session_id, time, gifts, diamonds, danmaku) VALUES (?,?,?,?,?)');
   for (const t of Object.values(timeLineMap).sort((a, b) => (a.time || '').localeCompare(b.time || ''))) {
     insTL.run(sessionId, t.time, t.gifts, t.diamonds, t.danmaku || 0);
@@ -678,5 +678,6 @@ module.exports = {
   insertDanmaku, insertGifts, insertMembers,
   getGiftRanking, getDanmaku, getWordCloud, getMemberRanking,
   getStreamers, getSessions, getSession, close,
-  updateStreamerName, updateStreamerAvatar
+  updateStreamerName, updateStreamerAvatar,
+  buildPrecomputed
 };

@@ -705,6 +705,7 @@ function handleMessage(room, data) {
         '御风飞机': 9000, '钻石邮轮': 7200,
         '青绿典藏版嘉年华': 36000, '凌霄战机': 18000,
         '无界超跑': 36000, '星际战舰': 36000,
+        '繁花飞驰': 12000,
       };
       const fixedPrice = GIFT_PRICE_MAP[giftName];
       if (fixedPrice !== undefined) diamondPerUnit = fixedPrice;

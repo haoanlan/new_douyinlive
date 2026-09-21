@@ -1453,7 +1453,8 @@ function tgTopHTML(users, meta) {
   </div>`);
 }
 function tgListHTML(users, meta, pageLabel) {
-  const half = Math.ceil(users.length / 2);
+  const cap = meta.rowsPerCol || 15;                                    // 每栏容量
+  const half = users.length > cap ? cap : Math.ceil(users.length / 2);   // 左栏排满再起右栏
   const start = users.length ? users[0]._rank : 1;
   const end = users.length ? users[users.length - 1]._rank : start;
   const total = meta.count || Number(String(meta.gifters).replace(/[^0-9]/g, '')) || end;

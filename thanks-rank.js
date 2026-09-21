@@ -380,7 +380,7 @@ async function renderMagazine(variant, users, meta) {
   console.log(`📐 模板 ${variant} · ${n} 人${MAG_AMOUNT ? ' · 收礼合计 ' + fmtD(meta.total) : ''}`);
   await renderMag(magTopHTML(variant, users.slice(0, topN), meta), `${base}_p1.jpg`);
   if (restCount > 0) {
-    const listPages = Math.max(3, Math.ceil(restCount / 48));
+    const listPages = Math.max(3, Math.ceil(restCount / 26));
     const perPage = Math.ceil(restCount / listPages);
     for (let i = 0; i < listPages; i++) {
       const start = topN + perPage * i, end = Math.min(topN + perPage * (i + 1), n);

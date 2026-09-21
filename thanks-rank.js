@@ -739,7 +739,7 @@ function cuTopHTML(users, meta) {
         .map(([k, v]) => `<div style="flex:1;background:#FFFFFF;border-radius:14px;padding:9px 8px;text-align:center;box-shadow:0 3px 8px rgba(255,155,182,0.14)"><div class="mt" style="font-size:9.5px">${k}</div><div style="font-family:'ZCOOL KuaiLe',sans-serif;font-size:13px;color:${CU.pink};margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(v)}</div></div>`).join('')}
     </div>
     <div class="foot"><span class="mt">${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</span>
-      <span class="mt">感谢每一份心意</span></div>
+      <span class="mt">${rankDate(meta.dateStr)}</span></div>
     ${cuStickers()}
   </div></body></html>`;
 }
@@ -761,7 +761,7 @@ function cuListHTML(users, meta, pageLabel) {
     <div class="mt" style="margin-top:10px;position:relative;z-index:2">${esc(meta.target)} · ${rankDate(meta.dateStr)} · 共 ${meta.gifters} 位送礼人</div>
     <div style="display:flex;gap:11px;margin-top:12px;position:relative;z-index:2">${col(users.slice(0, half), users[0] ? users[0]._rank : 1)}${col(users.slice(half), users[half] ? users[half]._rank : 1)}</div>
     <div style="flex:1"></div>
-    <div class="foot"><span class="mt">${esc(meta.sessionStr)}</span><span class="mt">感谢每一份心意</span></div>
+    <div class="foot"><span class="mt">${esc(meta.sessionStr)}</span><span class="mt">${rankDate(meta.dateStr)}</span></div>
   </div></body></html>`;
 }
 
@@ -902,7 +902,7 @@ function enTopHTML(users, meta) {
     <div style="display:flex;flex-direction:column;gap:6px">${top.map((u, i) => enRow(u, i + 1, 13, 20, 54)).join('')}</div>
     <div style="flex:1"></div>
     <div style="border-top:1px solid ${EN.line};padding-top:8px;display:flex;justify-content:space-between">
-      <span class="kick">${esc(meta.target)} · ${esc(meta.sessionStr)}</span><span class="kick">感谢每一份心意</span></div>
+      <span class="kick">${esc(meta.target)} · ${esc(meta.sessionStr)}</span><span class="kick">${rankDate(meta.dateStr)}</span></div>
   </div></body></html>`;
 }
 function enListHTML(users, meta, pageLabel) {
@@ -973,7 +973,7 @@ function cjTopHTML(users, meta) {
     </div>
     <div class="mt" style="margin:18px 0 10px 2px;font-size:11.5px;letter-spacing:2px;color:${CJ.ink};font-weight:700;position:relative;z-index:2">前十名</div>
     <div style="flex:1;display:flex;flex-direction:column;gap:9px;position:relative;z-index:2;min-height:0">${rows}</div>
-    <div class="foot"><span class="mt">${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</span><span class="mt">— 记于 ${rankDate(meta.dateStr)} —</span></div>
+    <div class="foot"><span class="mt">${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</span><span class="mt">${rankDate(meta.dateStr)}</span></div>
   </div></body></html>`;
 }
 function cjListHTML(users, meta, pageLabel) {
@@ -987,7 +987,7 @@ function cjListHTML(users, meta, pageLabel) {
       <span class="mt" style="font-weight:700">${esc(pageLabel)}</span></div>
     <div class="mt" style="margin-top:10px;position:relative;z-index:2">${esc(meta.target)} · ${rankDate(meta.dateStr)} · 共 ${meta.gifters} 位送礼人</div>
     <div style="flex:1;display:flex;gap:13px;margin-top:12px;position:relative;z-index:2;min-height:0">${col(users.slice(0, half), users[0] ? users[0]._rank : 1)}${col(users.slice(half), users[half] ? users[half]._rank : 1)}</div>
-    <div class="foot"><span class="mt">${esc(meta.sessionStr)}</span><span class="mt">— 感谢每一份心意 —</span></div>
+    <div class="foot"><span class="mt">${esc(meta.sessionStr)}</span><span class="mt">${rankDate(meta.dateStr)}</span></div>
   </div></body></html>`;
 }
 /* ---------- B. 糖果软糖 ---------- */
@@ -1030,7 +1030,7 @@ function ccTopHTML(users, meta) {
     </div>
     <div class="mt" style="margin:18px 0 10px 2px;font-size:11.5px;font-weight:900;color:${CC.accent};letter-spacing:2px;position:relative;z-index:2">前十名</div>
     <div style="flex:1;display:flex;flex-direction:column;gap:9px;position:relative;z-index:2;min-height:0">${rows}</div>
-    <div class="foot"><span class="mt">${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</span><span class="mt">感谢每一份心意</span></div>
+    <div class="foot"><span class="mt">${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</span><span class="mt">${rankDate(meta.dateStr)}</span></div>
   </div></body></html>`;
 }
 function ccListHTML(users, meta, pageLabel) {
@@ -1044,7 +1044,7 @@ function ccListHTML(users, meta, pageLabel) {
       <span class="mt" style="font-weight:700">${esc(pageLabel)}</span></div>
     <div class="mt" style="margin-top:12px;position:relative;z-index:2">${esc(meta.target)} · ${rankDate(meta.dateStr)} · 共 ${meta.gifters} 位送礼人</div>
     <div style="flex:1;display:flex;gap:13px;margin-top:12px;position:relative;z-index:2">${col(users.slice(0, half), users[0] ? users[0]._rank : 1)}${col(users.slice(half), users[half] ? users[half]._rank : 1)}</div>
-    <div class="foot"><span class="mt">${esc(meta.sessionStr)}</span><span class="mt">感谢每一份心意</span></div>
+    <div class="foot"><span class="mt">${esc(meta.sessionStr)}</span><span class="mt">${rankDate(meta.dateStr)}</span></div>
   </div></body></html>`;
 }
 
@@ -1100,7 +1100,7 @@ function csTopHTML(users, meta) {
       </div>
       <div class="mt" style="margin:16px 0 6px 2px;font-weight:700;color:${CS.ink};letter-spacing:2px;font-size:11.5px">前十名</div>
       <div style="flex:1;display:flex;flex-direction:column;min-height:0">${rows}</div>
-      <div class="foot"><span class="mt">${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</span><span class="mt">感谢每一份心意</span></div>
+      <div class="foot"><span class="mt">${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</span><span class="mt">${rankDate(meta.dateStr)}</span></div>
     </div>
   </div></body></html>`;
 }
@@ -1120,7 +1120,7 @@ function csListHTML(users, meta, pageLabel) {
         <span class="ttl" style="font-size:22px">园区充电榜</span><span class="mt" style="font-weight:700">${esc(pageLabel)}</span></div>
       <div class="mt" style="margin-top:9px">${esc(meta.target)} · ${rankDate(meta.dateStr)} · 共 ${meta.gifters} 位送礼人</div>
       <div style="flex:1;display:flex;gap:14px;margin-top:12px;min-height:0">${col(users.slice(0, half), users[0] ? users[0]._rank : 1)}${col(users.slice(half), users[half] ? users[half]._rank : 1)}</div>
-      <div class="foot"><span class="mt">${esc(meta.sessionStr)}</span><span class="mt">感谢每一份心意</span></div>
+      <div class="foot"><span class="mt">${esc(meta.sessionStr)}</span><span class="mt">${rankDate(meta.dateStr)}</span></div>
     </div>
   </div></body></html>`;
 }
@@ -1166,7 +1166,7 @@ function chTopHTML(users, meta) {
       </div>
       <div class="mt" style="margin:12px 0 5px 2px;font-size:11.5px;font-weight:900;color:${CH.pink};letter-spacing:2px">前十名</div>
       <div style="flex:1;display:flex;flex-direction:column;gap:7px;min-height:0">${rows}</div>
-      <div class="foot"><span class="mt">${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</span><span class="mt">感谢每一份心意</span></div>
+      <div class="foot"><span class="mt">${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</span><span class="mt">${rankDate(meta.dateStr)}</span></div>
     </div>
   </div></body></html>`;
 }
@@ -1185,7 +1185,7 @@ function chListHTML(users, meta, pageLabel) {
         <span class="ttl" style="font-size:22px">园区充电榜</span><span class="mt" style="font-weight:700">${esc(pageLabel)}</span></div>
       <div class="mt" style="margin-top:9px">${esc(meta.target)} · ${rankDate(meta.dateStr)} · 共 ${meta.gifters} 位送礼人</div>
       <div style="flex:1;display:flex;gap:13px;margin-top:12px;min-height:0">${col(users.slice(0, half), users[0] ? users[0]._rank : 1)}${col(users.slice(half), users[half] ? users[half]._rank : 1)}</div>
-      <div class="foot"><span class="mt">${esc(meta.sessionStr)}</span><span class="mt">感谢每一份心意</span></div>
+      <div class="foot"><span class="mt">${esc(meta.sessionStr)}</span><span class="mt">${rankDate(meta.dateStr)}</span></div>
     </div>
   </div></body></html>`;
 }
@@ -1232,7 +1232,7 @@ function ghTopHTML(users, meta) {
     <div class="mt" style="margin-top:11px">${rankMetaLine(meta)} · ${rankDate(meta.dateStr)}</div>
     <div class="mt" style="margin-top:16px">${esc(meta.target)} · 前 十 名</div>
     <div style="flex:1;display:flex;flex-direction:column;min-height:0">${rows}</div>
-    <div class="foot"><span class="mt">${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</span><span class="mt">感谢每一份心意</span></div>
+    <div class="foot"><span class="mt">${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</span><span class="mt">${rankDate(meta.dateStr)}</span></div>
   </div></body></html>`;
 }
 function ghListHTML(users, meta, pageLabel) {
@@ -1247,7 +1247,7 @@ function ghListHTML(users, meta, pageLabel) {
     <div class="ttl" style="font-size:24px">园区<i>充电</i>榜</div>
     <div class="mt" style="margin-top:9px">${esc(meta.target)} · ${rankDate(meta.dateStr)} · ${esc(pageLabel)}</div>
     <div style="flex:1;display:flex;gap:26px;margin-top:12px;min-height:0">${col(users.slice(0, half), users[0] ? users[0]._rank : 1)}${col(users.slice(half), users[half] ? users[half]._rank : 1)}</div>
-    <div class="foot"><span class="mt">${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</span><span class="mt">感谢每一份心意</span></div>
+    <div class="foot"><span class="mt">${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</span><span class="mt">${rankDate(meta.dateStr)}</span></div>
   </div></body></html>`;
 }
 /* ---------- 2. faces 人脸墙 ---------- */
@@ -1292,7 +1292,7 @@ function faTopHTML(users, meta) {
       <span style="font-size:19px;font-weight:900">${esc(meta.target)}</span>
       <span class="mt">收到 ${meta.gifters} 位送礼人的心意</span></div>
     <div class="wall" style="grid-template-columns:repeat(5,1fr);row-gap:30px;align-content:center;margin-top:6px">${cells}</div>
-    <div class="foot"><span class="mt">${esc(meta.sessionStr)}</span><span class="mt">感谢每一份心意</span></div>
+    <div class="foot"><span class="mt">${esc(meta.sessionStr)}</span><span class="mt">${rankDate(meta.dateStr)}</span></div>
   </div></body></html>`;
 }
 function faListHTML(users, meta, pageLabel) {
@@ -1307,7 +1307,7 @@ function faListHTML(users, meta, pageLabel) {
     <div class="ttl" style="font-size:23px">园区充电榜</div>
     <div class="mt" style="margin-top:9px">${esc(meta.target)} · ${rankDate(meta.dateStr)} · ${esc(pageLabel)}</div>
     <div class="wall" style="grid-template-columns:repeat(5,1fr);row-gap:${rows > 5 ? 12 : 16}px;margin-top:14px">${cells}</div>
-    <div class="foot"><span class="mt">${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</span><span class="mt">感谢每一份心意</span></div>
+    <div class="foot"><span class="mt">${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</span><span class="mt">${rankDate(meta.dateStr)}</span></div>
   </div></body></html>`;
 }
 /* ---------- 3. ruler 全页刻度尺 ---------- */
@@ -1346,7 +1346,7 @@ function ruTopHTML(users, meta) {
     <div style="margin-top:18px;display:flex;align-items:baseline;gap:10px">
       <span style="font-size:19px;font-weight:900">${esc(meta.target)}</span><span class="mt">前十名 · 共 ${meta.gifters} 位送礼人</span></div>
     <div class="ruler"><span class="axis"></span>${ruRows(users.slice(0, 10), 30, 15.5)}</div>
-    <div class="foot"><span class="mt">${esc(meta.sessionStr)}</span><span class="mt">感谢每一份心意</span></div>
+    <div class="foot"><span class="mt">${esc(meta.sessionStr)}</span><span class="mt">${rankDate(meta.dateStr)}</span></div>
   </div></body></html>`;
 }
 function ruListHTML(users, meta, pageLabel) {
@@ -1357,7 +1357,7 @@ function ruListHTML(users, meta, pageLabel) {
     <div class="ttl" style="font-size:23px">园区充电榜</div>
     <div class="mt" style="margin-top:9px">${esc(meta.target)} · ${rankDate(meta.dateStr)} · ${esc(pageLabel)}</div>
     <div style="flex:1;display:flex;gap:34px;margin-top:14px;min-height:0;position:relative">${col(users.slice(0, half))}${col(users.slice(half))}</div>
-    <div class="foot"><span class="mt">${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</span><span class="mt">感谢每一份心意</span></div>
+    <div class="foot"><span class="mt">${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</span><span class="mt">${rankDate(meta.dateStr)}</span></div>
   </div></body></html>`;
 }
 /* ---------- 4. monolith 巨型名字 ---------- */
@@ -1397,7 +1397,7 @@ function moListHTML(users, meta, pageLabel) {
     <div class="ttl" style="font-size:23px">园区<i>充电</i>榜</div>
     <div class="mt" style="margin-top:9px">${esc(meta.target)} · ${rankDate(meta.dateStr)} · ${esc(pageLabel)}</div>
     <div style="flex:1;display:flex;gap:22px;margin-top:14px;min-height:0">${col(users.slice(0, half), users[0] ? users[0]._rank : 1)}${col(users.slice(half), users[half] ? users[half]._rank : 1)}</div>
-    <div class="foot"><span class="mt">${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</span><span class="mt">感谢每一份心意</span></div>
+    <div class="foot"><span class="mt">${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</span><span class="mt">${rankDate(meta.dateStr)}</span></div>
   </div></body></html>`;
 }
 
@@ -1441,7 +1441,7 @@ function cbTopHTML(users, meta) {
     <div class="mt" style="margin-top:11px">${rankMetaLine(meta)} · ${rankDate(meta.dateStr)}</div>
     <div class="mt" style="margin-top:16px;color:${CB.mark};font-weight:700;letter-spacing:2px">前 十 名</div>
     <div style="flex:1;display:flex;flex-direction:column;gap:7px;min-height:0;margin-top:10px">${rows}</div>
-    <div class="foot"><span class="mt">${esc(meta.sessionStr)}</span><span class="mt">感谢每一份心意</span></div>
+    <div class="foot"><span class="mt">${esc(meta.sessionStr)}</span><span class="mt">${rankDate(meta.dateStr)}</span></div>
   </div></body></html>`;
 }
 function cbListHTML(users, meta, pageLabel) {
@@ -1453,7 +1453,7 @@ function cbListHTML(users, meta, pageLabel) {
     <div class="ttl" style="font-size:23px">园区<i>充电</i>榜</div>
     <div class="mt" style="margin-top:9px">${esc(meta.target)} · ${rankDate(meta.dateStr)} · ${esc(pageLabel)}</div>
     <div style="flex:1;display:flex;gap:16px;margin-top:12px;min-height:0">${col(users.slice(0, half))}${col(users.slice(half))}</div>
-    <div class="foot"><span class="mt">${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</span><span class="mt">感谢每一份心意</span></div>
+    <div class="foot"><span class="mt">${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</span><span class="mt">${rankDate(meta.dateStr)}</span></div>
   </div></body></html>`;
 }
 /* ---------- 2. chroma-tile 色块砖 ---------- */
@@ -1484,7 +1484,7 @@ function ctTopHTML(users, meta) {
     <div class="mt" style="margin-top:11px">${rankMetaLine(meta)} · ${rankDate(meta.dateStr)}</div>
     <div class="mt" style="margin-top:16px;color:${CB.mark};font-weight:700;letter-spacing:2px">前 十 名</div>
     <div class="mosaic" style="grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(5,1fr);gap:9px;margin-top:10px">${tiles}</div>
-    <div class="foot"><span class="mt">${esc(meta.sessionStr)}</span><span class="mt">感谢每一份心意</span></div>
+    <div class="foot"><span class="mt">${esc(meta.sessionStr)}</span><span class="mt">${rankDate(meta.dateStr)}</span></div>
   </div></body></html>`;
 }
 function ctListHTML(users, meta, pageLabel) {
@@ -1494,7 +1494,7 @@ function ctListHTML(users, meta, pageLabel) {
     <div class="ttl" style="font-size:23px">园区<i>充电</i>榜</div>
     <div class="mt" style="margin-top:9px">${esc(meta.target)} · ${rankDate(meta.dateStr)} · ${esc(pageLabel)}</div>
     <div class="mosaic" style="grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(6,1fr);gap:7px;margin-top:12px">${tiles}</div>
-    <div class="foot"><span class="mt">${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</span><span class="mt">感谢每一份心意</span></div>
+    <div class="foot"><span class="mt">${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</span><span class="mt">${rankDate(meta.dateStr)}</span></div>
   </div></body></html>`;
 }
 
@@ -1543,9 +1543,9 @@ function crTopHTML(users, meta) {
   const rows = users.slice(0, 10).map(u => crBar(u, 30, 15)).join('');
   return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${cxFontLink()}<style>${crCSS()}</style></head><body>
   <div class="page"><span class="grain"></span><span class="grid"></span>
-    ${cxHead(meta, '心意榜 · 前十名')}
+    ${cxHead(meta, '前十名')}
     <div style="flex:1;display:flex;flex-direction:column;gap:6px;min-height:0;margin-top:16px">${rows}</div>
-    <div class="foot"><span class="lbl">${esc(meta.target)} · 感谢每一份心意</span><span class="pg">01 / 04</span></div>
+    <div class="foot"><span class="lbl">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</span><span class="pg">01 / 04</span></div>
   </div></body></html>`;
 }
 function crListHTML(users, meta, pageLabel) {
@@ -1556,7 +1556,7 @@ function crListHTML(users, meta, pageLabel) {
   return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${cxFontLink()}<style>${crCSS()}</style></head><body>
   <div class="page"><span class="grain"></span><span class="grid"></span>
     <div style="display:flex;justify-content:space-between;align-items:baseline;padding-bottom:9px;border-bottom:1px solid ${CX.hair}">
-      <span class="lbl">心意榜 · ${esc(pageLabel)}</span><span class="lbl">${rankDate(meta.dateStr)}</span></div>
+      <span class="lbl">${esc(pageLabel)}</span><span class="lbl">${rankDate(meta.dateStr)}</span></div>
     <div class="mt" style="margin-top:10px">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</div>
     <div style="flex:1;display:flex;gap:18px;margin-top:14px;min-height:0">${col(users.slice(0, half))}${col(users.slice(half))}</div>
     <div class="foot"><span class="lbl">${esc(meta.sessionStr)}</span><span class="pg">${pg}</span></div>
@@ -1595,9 +1595,9 @@ function cpTopHTML(users, meta) {
   const tiles = users.slice(0, 10).map(u => cpTile(u, 30, 13.5)).join('');
   return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${cxFontLink()}<style>${cpCSS()}</style></head><body>
   <div class="page"><span class="grain"></span>
-    ${cxHead(meta, '心意榜 · 前十名')}
+    ${cxHead(meta, '前十名')}
     <div class="mosaic" style="grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(5,1fr);gap:8px;margin-top:16px">${tiles}</div>
-    <div class="foot"><span class="lbl">${esc(meta.target)} · 感谢每一份心意</span><span class="pg">01 / 04</span></div>
+    <div class="foot"><span class="lbl">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</span><span class="pg">01 / 04</span></div>
   </div></body></html>`;
 }
 function cpListHTML(users, meta, pageLabel) {
@@ -1606,7 +1606,7 @@ function cpListHTML(users, meta, pageLabel) {
   return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${cxFontLink()}<style>${cpCSS()}</style></head><body>
   <div class="page"><span class="grain"></span>
     <div style="display:flex;justify-content:space-between;align-items:baseline;padding-bottom:9px;border-bottom:1px solid ${CX.hair}">
-      <span class="lbl">心意榜 · ${esc(pageLabel)}</span><span class="lbl">${rankDate(meta.dateStr)}</span></div>
+      <span class="lbl">${esc(pageLabel)}</span><span class="lbl">${rankDate(meta.dateStr)}</span></div>
     <div class="mt" style="margin-top:10px">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</div>
     <div class="mosaic" style="grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(6,1fr);gap:6px;margin-top:14px">${tiles}</div>
     <div class="foot"><span class="lbl">${esc(meta.sessionStr)}</span><span class="pg">${pg}</span></div>
@@ -1681,9 +1681,9 @@ function dgTopHTML(users, meta) {
   return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${dpFontLink()}<style>${dgCSS()}</style></head><body>
   <div class="page">${dpBgBlobs(users, meta, 62, 0.42)}<span class="watermark">${meta.count || meta.gifters}</span>
     <div class="inner">
-      ${dpHead(meta, '心意榜 · 前十名')}
+      ${dpHead(meta, '前十名')}
       <div class="glass"><div class="rows">${rows}</div></div>
-      <div class="foot"><span class="lbl">${esc(meta.target)} · 感谢每一份心意</span><span class="pg">01 / 04</span></div>
+      <div class="foot"><span class="lbl">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</span><span class="pg">01 / 04</span></div>
     </div>
   </div></body></html>`;
 }
@@ -1696,7 +1696,7 @@ function dgListHTML(users, meta, pageLabel) {
   <div class="page">${dpBgBlobs(users, meta, 58, 0.40)}
     <div class="inner">
       <div style="display:flex;justify-content:space-between;align-items:baseline;padding-bottom:10px;border-bottom:1px solid ${DP.hair}">
-        <span class="lbl">心意榜 · ${esc(pageLabel)}</span><span class="lbl">${rankDate(meta.dateStr)}</span></div>
+        <span class="lbl">${esc(pageLabel)}</span><span class="lbl">${rankDate(meta.dateStr)}</span></div>
       <div class="mt" style="margin-top:11px">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</div>
       <div class="glass" style="padding:12px 14px">
         <div class="rows" style="flex-direction:row;gap:14px">${col(users.slice(0, half))}${col(users.slice(half))}</div>
@@ -1747,11 +1747,11 @@ function dsTopHTML(users, meta) {
   return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${dpFontLink()}<style>${dsCSS()}</style></head><body>
   <div class="page">${dpBgBlobs(users, meta, 70, 0.48)}
     <div class="inner">
-      ${dpHead(meta, '心意榜 · 前十名')}
+      ${dpHead(meta, '前十名')}
       <div class="stack">
         <div class="card c3"></div><div class="card c2"></div><div class="card c1"><div class="rows">${rows}</div></div>
       </div>
-      <div class="foot"><span class="lbl">${esc(meta.target)} · 感谢每一份心意</span><span class="pg">01 / 04</span></div>
+      <div class="foot"><span class="lbl">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</span><span class="pg">01 / 04</span></div>
     </div>
   </div></body></html>`;
 }
@@ -1764,7 +1764,7 @@ function dsListHTML(users, meta, pageLabel) {
   <div class="page">${dpBgBlobs(users, meta, 66, 0.46)}
     <div class="inner">
       <div style="display:flex;justify-content:space-between;align-items:baseline;padding-bottom:10px;border-bottom:1px solid ${DP.hair}">
-        <span class="lbl">心意榜 · ${esc(pageLabel)}</span><span class="lbl">${rankDate(meta.dateStr)}</span></div>
+        <span class="lbl">${esc(pageLabel)}</span><span class="lbl">${rankDate(meta.dateStr)}</span></div>
       <div class="mt" style="margin-top:11px">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</div>
       <div class="stack">
         <div class="card c3"></div><div class="card c2"></div>

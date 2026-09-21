@@ -1545,14 +1545,13 @@ function crTopHTML(users, meta) {
   <div class="page"><span class="grain"></span><span class="grid"></span>
     ${cxHead(meta, '前十名')}
     <div style="flex:1;display:flex;flex-direction:column;gap:6px;min-height:0;margin-top:16px">${rows}</div>
-    <div class="foot"><span class="lbl">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</span><span class="pg">01 / 04</span></div>
+    <div class="foot"><span class="lbl">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</span><span class="pg">${rankPageCode(meta)}</span></div>
   </div></body></html>`;
 }
 function crListHTML(users, meta, pageLabel) {
   const half = Math.ceil(users.length / 2);
   const av = half > 14 ? 20 : 22, nmFs = half > 14 ? 11.5 : 12.5;
   const col = arr => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;min-height:0">${arr.map(u => crBar(u, av, nmFs)).join('')}</div>`;
-  const pg = (pageLabel.match(/(\d+)\s*\/\s*(\d+)/) || [])[0] || pageLabel;
   return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${cxFontLink()}<style>${crCSS()}</style></head><body>
   <div class="page"><span class="grain"></span><span class="grid"></span>
     <div style="display:flex;justify-content:space-between;align-items:baseline;padding-bottom:9px;border-bottom:1px solid ${CX.hair}">
@@ -1597,12 +1596,11 @@ function cpTopHTML(users, meta) {
   <div class="page"><span class="grain"></span>
     ${cxHead(meta, '前十名')}
     <div class="mosaic" style="grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(5,1fr);gap:8px;margin-top:16px">${tiles}</div>
-    <div class="foot"><span class="lbl">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</span><span class="pg">01 / 04</span></div>
+    <div class="foot"><span class="lbl">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</span><span class="pg">${rankPageCode(meta)}</span></div>
   </div></body></html>`;
 }
 function cpListHTML(users, meta, pageLabel) {
   const tiles = users.map(u => cpTile(u, 22, 10.5)).join('');
-  const pg = (pageLabel.match(/(\d+)\s*\/\s*(\d+)/) || [])[0] || pageLabel;
   return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${cxFontLink()}<style>${cpCSS()}</style></head><body>
   <div class="page"><span class="grain"></span>
     <div style="display:flex;justify-content:space-between;align-items:baseline;padding-bottom:9px;border-bottom:1px solid ${CX.hair}">
@@ -1616,6 +1614,8 @@ function cpListHTML(users, meta, pageLabel) {
 /* ==================== 空间感 · 高斯模糊两案：depth-glass 磨砂玻璃 / depth-stack 层叠景深 ==================== */
 const DP = { bg: '#F2F0EC', ink: '#22262A', soft: 'rgba(34,38,42,0.52)', hair: 'rgba(34,38,42,0.10)',
   white: 'rgba(255,255,255,0.58)', mark: '#3E5B4E' };
+function rankPageTotal(meta) { const n = Math.min(100, (meta.count || 0)); return 1 + Math.max(0, Math.ceil((n - 10) / 30)); }
+function rankPageCode(meta) { const t = rankPageTotal(meta); return '01 / ' + String(t).padStart(2, '0'); }
 function dpFontLink() {
   return '<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Roboto+Mono:wght@300;400;500&display=swap" rel="stylesheet">';
 }
@@ -1683,7 +1683,7 @@ function dgTopHTML(users, meta) {
     <div class="inner">
       ${dpHead(meta, '前十名')}
       <div class="glass"><div class="rows">${rows}</div></div>
-      <div class="foot"><span class="lbl">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</span><span class="pg">01 / 04</span></div>
+      <div class="foot"><span class="lbl">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</span><span class="pg">${rankPageCode(meta)}</span></div>
     </div>
   </div></body></html>`;
 }
@@ -1691,17 +1691,16 @@ function dgListHTML(users, meta, pageLabel) {
   const half = Math.ceil(users.length / 2);
   const av = half > 14 ? 20 : 22, nmFs = half > 14 ? 11.5 : 12.5;
   const col = arr => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;min-height:0">${arr.map(u => dpRow(u, av, nmFs)).join('')}</div>`;
-  const pg = (pageLabel.match(/(\d+)\s*\/\s*(\d+)/) || [])[0] || pageLabel;
   return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${dpFontLink()}<style>${dgCSS()}</style></head><body>
   <div class="page">${dpBgBlobs(users, meta, 58, 0.40)}
     <div class="inner">
       <div style="display:flex;justify-content:space-between;align-items:baseline;padding-bottom:10px;border-bottom:1px solid ${DP.hair}">
-        <span class="lbl">${esc(pageLabel)}</span><span class="lbl">${rankDate(meta.dateStr)}</span></div>
-      <div class="mt" style="margin-top:11px">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</div>
+        <span class="lbl">园区充电榜</span><span class="lbl">${esc(pageLabel)}</span></div>
+      <div class="mt" style="margin-top:11px">${esc(meta.sessionStr)}</div>
       <div class="glass" style="padding:12px 14px">
         <div class="rows" style="flex-direction:row;gap:14px">${col(users.slice(0, half))}${col(users.slice(half))}</div>
       </div>
-      <div class="foot"><span class="lbl">${esc(meta.sessionStr)}</span><span class="pg">${pg}</span></div>
+      <div class="foot"><span class="lbl">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</span><span class="lbl">${rankDate(meta.dateStr)}</span></div>
     </div>
   </div></body></html>`;
 }
@@ -1751,7 +1750,7 @@ function dsTopHTML(users, meta) {
       <div class="stack">
         <div class="card c3"></div><div class="card c2"></div><div class="card c1"><div class="rows">${rows}</div></div>
       </div>
-      <div class="foot"><span class="lbl">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</span><span class="pg">01 / 04</span></div>
+      <div class="foot"><span class="lbl">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</span><span class="pg">${rankPageCode(meta)}</span></div>
     </div>
   </div></body></html>`;
 }
@@ -1759,18 +1758,17 @@ function dsListHTML(users, meta, pageLabel) {
   const half = Math.ceil(users.length / 2);
   const av = half > 14 ? 20 : 22, nmFs = half > 14 ? 11.5 : 12.5;
   const col = arr => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;min-height:0">${dsRowsHTML(arr, av, nmFs)}</div>`;
-  const pg = (pageLabel.match(/(\d+)\s*\/\s*(\d+)/) || [])[0] || pageLabel;
   return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${dpFontLink()}<style>${dsCSS()}</style></head><body>
   <div class="page">${dpBgBlobs(users, meta, 66, 0.46)}
     <div class="inner">
       <div style="display:flex;justify-content:space-between;align-items:baseline;padding-bottom:10px;border-bottom:1px solid ${DP.hair}">
-        <span class="lbl">${esc(pageLabel)}</span><span class="lbl">${rankDate(meta.dateStr)}</span></div>
-      <div class="mt" style="margin-top:11px">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</div>
+        <span class="lbl">园区充电榜</span><span class="lbl">${esc(pageLabel)}</span></div>
+      <div class="mt" style="margin-top:11px">${esc(meta.sessionStr)}</div>
       <div class="stack">
         <div class="card c3"></div><div class="card c2"></div>
         <div class="card c1" style="padding:12px 14px"><div class="rows" style="flex-direction:row;gap:14px">${col(users.slice(0, half))}${col(users.slice(half))}</div></div>
       </div>
-      <div class="foot"><span class="lbl">${esc(meta.sessionStr)}</span><span class="pg">${pg}</span></div>
+      <div class="foot"><span class="lbl">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</span><span class="lbl">${rankDate(meta.dateStr)}</span></div>
     </div>
   </div></body></html>`;
 }

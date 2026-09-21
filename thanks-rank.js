@@ -856,7 +856,7 @@ function nwTopHTML(users, meta) {
         .map(([k, v], i) => `<div style="flex:1;padding-left:${i ? 12 : 0}px;border-left:${i ? '1px solid ' + NW.line : 'none'}"><div class="kick">${k}</div><div style="font-size:15px;font-weight:900;margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(v)}</div></div>`).join('')}
     </div>
     <div style="border-top:2px solid ${NW.ink};margin-top:12px;padding-top:7px;display:flex;justify-content:space-between;align-items:baseline">
-      <span class="kick">本榜单按送礼人次排序</span><span class="kick">由 404 · 抖音直播监控 生成</span>
+      <span class="kick">${rankPageCodeOf(pageLabel, meta)}</span><span class="kick">由 404 · 抖音直播监控 生成</span>
     </div>
   </div></body></html>`;
 }
@@ -874,7 +874,7 @@ function nwListHTML(users, meta, pageLabel) {
     <div class="sub" style="margin:9px 0 4px">${esc(meta.target)} ｜ ${esc(meta.sessionStr)} ｜ ${rankDate(meta.dateStr)} ｜ 共 ${meta.gifters} 位送礼人</div>
     <div class="cols" style="flex:1;margin-top:8px">${cols.map((c, k) => nwColTop(c, per * k + 1, 20, 13)).join('')}</div>
     <div style="border-top:1px solid ${NW.rule};padding-top:7px;display:flex;justify-content:space-between;align-items:baseline">
-      <span class="kick">本榜单按送礼人次排序</span><span class="kick">由 404 · 抖音直播监控 生成</span>
+      <span class="kick">${rankPageCode(meta)}</span><span class="kick">由 404 · 抖音直播监控 生成</span>
     </div>
   </div></body></html>`;
 }

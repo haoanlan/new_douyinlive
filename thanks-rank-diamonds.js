@@ -228,16 +228,21 @@ function magTopV1(users, meta) {
 /** v2 封面特写 · TOP 页：冠军独占上半幅，2-10 名双栏在下 */
 function magTopV2(users, meta) {
   const A = MAG_AMOUNT;
-  const champ = users[0] || { nickname: '', avatar: '', diamonds: 0 };
-  const rest = users.slice(1, 10).map((u, i) => ({ u, rank: i + 2 }));
-  const half = Math.ceil(rest.length / 2);
-  const col = (arr) => `<div style="flex:1;min-width:0">${arr.map(({ u, rank }) => `
-    <div style="display:flex;align-items:center;height:${A ? 44 : 50}px;gap:8px;border-bottom:1px solid ${MAG.ruleLight}">
-      <span class="num" style="width:20px;font-size:12px;color:${MAG.inkFaint}">${rank}</span>
-      ${magAvatar(u.avatar, A ? 20 : 26)}
-      <span style="flex:1;min-width:0;font-size:${A ? 13.5 : 14.5}px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${magName(u)}</span>
-      ${A ? `<span class="amt" style="font-size:12.5px;flex-shrink:0;margin-left:8px">${fmtD(u.diamonds)}</span>` : ''}
-    </div>`).join('')}</div>`;
+  const top = users.slice(0, 10);
+  const half = Math.ceil(top.length / 2);
+  const rowH = A ? 44 : 48;
+  const row = (u, rank) => `
+    <div style="display:flex;align-items:center;height:${rowH}px;gap:9px;border-bottom:1px solid ${MAG.ruleLight}">
+      <span class="num" style="width:20px;font-size:${rank === 1 ? 13 : 12}px;color:${rank === 1 ? MAG.ink : MAG.inkFaint}">${rank}</span>
+      ${magAvatar(u.avatar, rank === 1 ? (A ? 28 : 30) : (A ? 20 : 24))}
+      <span style="flex:1;min-width:0;font-size:${rank === 1 ? (A ? 15 : 16) : (A ? 13.5 : 14.5)}px;font-weight:${rank === 1 ? 600 : 400};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${magName(u)}</span>
+      ${A ? `<span class="amt" style="font-size:12.5px;flex-shrink:0;margin-left:8px;font-weight:${rank === 1 ? 600 : 400}">${fmtD(u.diamonds)}</span>` : ''}
+    </div>`;
+  // 两栏行数不等时（TOP 不足 10 人），把短的一栏垂直居中，避免底边参差
+  const col = (arr, startRank) => {
+    const gap = (half - arr.length) * rowH / 2;
+    return `<div style="flex:1;min-width:0;padding-top:${gap > 0 ? gap : 0}px">${arr.map((u, i) => row(u, startRank + i)).join('')}</div>`;
+  };
   return magDoc('园区充电榜', '', `<div class="page" style="padding:42px 40px 30px;justify-content:space-between">
     <div>
       <div style="text-align:center"><span class="masthead" style="letter-spacing:7px;font-size:17px">园区充电榜</span></div>
@@ -255,18 +260,12 @@ function magTopV2(users, meta) {
       <div class="meta" style="margin-top:10px">${esc(meta.dateStr)} · ${esc(meta.sessionStr)}</div>`}
     </div>
     <div>
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:2px">
         <div style="flex:1;height:1px;background:${MAG.rule}"></div>
         <span class="meta" style="letter-spacing:2px">前十名</span>
         <div style="flex:1;height:1px;background:${MAG.rule}"></div>
       </div>
-      <div style="display:flex;align-items:center;height:${A ? 62 : 68}px;gap:9px;border-bottom:1px solid ${MAG.rule}">
-        <span class="num" style="width:20px;font-size:13px;color:${MAG.ink}">1</span>
-        ${magAvatar(champ.avatar, A ? 34 : 42)}
-        <span style="flex:1;min-width:0;font-size:${A ? 16 : 18}px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${magName(champ)}</span>
-        ${A ? `<span class="amt" style="font-size:15px;font-weight:600;flex-shrink:0">${fmtD(champ.diamonds)}</span>` : ''}
-      </div>
-      <div style="display:flex;gap:22px;align-items:flex-start">${col(rest.slice(0, half))}${col(rest.slice(half))}</div>
+      <div style="display:flex;gap:22px;align-items:flex-start">${col(top.slice(0, half), 1)}${col(top.slice(half), half + 1)}</div>
     </div>
   </div>`);
 }

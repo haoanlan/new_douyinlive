@@ -145,7 +145,7 @@ const MAG = {
   accent: '#8A2B2B',
   serif: "'Noto Serif SC','Songti SC',serif",
 };
-const MAG_THEME_NAMES = ['magazine-v1', 'magazine-v2', 'magazine-v3', 'guofeng', 'record', 'cinema', 'panel', 'blocks', 'press', 'collage', 'ticket', 'sports', 'noir', 'doodle', 'typeblast', 'typegrid', 'rankbar', 'rankstack', 'rankvcol', 'radial', 'track', 'signwall'];
+const MAG_THEME_NAMES = ['magazine-v1', 'magazine-v2', 'magazine-v3', 'guofeng', 'record', 'cinema', 'panel', 'blocks', 'press', 'collage', 'noir', 'doodle', 'typegrid', 'rankbar', 'rankstack', 'rankvcol', 'radial', 'track', 'signwall'];
 const MAG_VARIANT = MAG_THEME_NAMES.includes(THEME_ARG) ? THEME_ARG : null;
 // 是否显示钻石数：提名榜（thanks-rank.js）不显示，钻石榜显示
 const MAG_AMOUNT = true;
@@ -330,11 +330,8 @@ function magTopHTML(variant, users, meta) {
   if (variant === 'blocks') return blDocTop(users, meta);
   if (variant === 'press') return prTopHTML(users, meta);
   if (variant === 'collage') return clTopHTML(users, meta);
-  if (variant === 'ticket') return tkTopHTML(users, meta);
-  if (variant === 'sports') return spTopHTML(users, meta);
   if (variant === 'noir') return nrTopHTML(users, meta);
   if (variant === 'doodle') return ddTopHTML(users, meta);
-  if (variant === 'typeblast') return tbTopHTML(users, meta);
   if (variant === 'typegrid') return tgTopHTML(users, meta);
   if (variant === 'rankbar') return tgBarTop(users, meta);
   if (variant === 'rankstack') return tgStackTop(users, meta);
@@ -759,11 +756,8 @@ function pnListHTML(users, meta, pageLabel) {
 
 /** 名次页统一分发（三套新模板 + 老主题走原路径） */
 function rankListHTML(variant, users, meta, pageLabel) {
-  if (variant === 'ticket') return tkListHTML(users, meta, pageLabel);
-  if (variant === 'sports') return spListHTML(users, meta, pageLabel);
   if (variant === 'noir') return nrListHTML(users, meta, pageLabel);
   if (variant === 'doodle') return ddListHTML(users, meta, pageLabel);
-  if (variant === 'typeblast') return tbListHTML(users, meta, pageLabel);
   if (variant === 'typegrid') return tgListHTML(users, meta, pageLabel);
   if (variant === 'rankbar') return tgBarList(users, meta, pageLabel);
   if (variant === 'rankstack') return tgStackList(users, meta, pageLabel);
@@ -1027,156 +1021,6 @@ function clListHTML(users, meta, pageLabel) {
 function rankMetaLine(meta) { return `${esc(meta.target)} · 共 ${meta.gifters} 位送礼人`; }
 
 /* ---------- ④ ticket：票据/凭证风（打孔票根 + 虚线撕口 + 流水号 + 盖章） ---------- */
-const TK = {
-  desk: '#E7E0D0', paper: '#F8F4EA', ink: '#1B2A2E', green: '#1F5D4C', red: '#BF3B2B', dim: 'rgba(27,42,46,0.55)',
-  mono: "'Roboto Mono',monospace", sans: "'Noto Sans SC',system-ui,sans-serif", serif: "'Noto Serif SC',serif",
-};
-function tkCSS() {
-  return `*{margin:0;padding:0;box-sizing:border-box}
-html,body{width:540px;height:720px;overflow:hidden}
-body{background:${TK.desk};color:${TK.ink};font-family:${TK.sans};-webkit-font-smoothing:antialiased}
-.page{position:relative;width:540px;height:720px}
-.tk{position:absolute;left:32px;right:32px;top:26px;bottom:26px;background:${TK.paper};border:2px solid ${TK.ink};
-  display:flex;flex-direction:column;overflow:hidden}
-.head{background:${TK.green};color:${TK.paper};padding:16px 22px 14px}
-.head .t{font-family:${TK.serif};font-weight:900;font-size:30px;letter-spacing:6px}
-.head .s{font-family:${TK.mono};font-size:10px;letter-spacing:2px;margin-top:8px;opacity:0.9}
-.mid{flex:1;min-height:0;display:flex;flex-direction:column;padding:16px 22px 8px}
-.row{flex:1;min-height:0;display:flex;align-items:center;gap:12px;border-bottom:1px dashed rgba(27,42,46,0.35)}
-.row:last-child{border-bottom:none}
-.idx{font-family:${TK.mono};font-weight:500;font-size:13px;color:${TK.green};width:26px;flex-shrink:0}
-.av{width:28px;height:28px;object-fit:cover;flex-shrink:0;border-radius:2px;border:1px solid rgba(27,42,46,0.6)}
-.nm{font-weight:700;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
-.tear{position:relative;height:26px;flex-shrink:0}
-.tear .dash{position:absolute;left:16px;right:16px;top:12px;border-top:2px dashed rgba(27,42,46,0.55)}
-.punch{position:absolute;top:1px;width:24px;height:24px;border-radius:50%;background:#E7E0D0}
-.stub{padding:10px 22px 20px;display:flex;align-items:flex-end;justify-content:space-between;flex-shrink:0}
-.stub .no{font-family:${TK.mono};font-size:11px;letter-spacing:1.5px;color:${TK.dim}}
-.stub .who{font-size:10.5px;letter-spacing:1.5px;color:${TK.dim};margin-top:7px}
-.stamp{width:96px;height:96px;border:3px solid ${TK.red};border-radius:50%;color:${TK.red};transform:rotate(-8deg);
-  display:flex;align-items:center;justify-content:center;font-family:${TK.serif};font-weight:900;font-size:17px;line-height:1.15;
-  text-align:center;box-shadow:inset 0 0 0 1px ${TK.red}}
-.lihead{display:flex;align-items:flex-end;justify-content:space-between;padding:16px 22px 10px}
-.lihead .t{font-family:${TK.serif};font-weight:900;font-size:22px;letter-spacing:4px}
-.lihead .p{font-family:${TK.mono};font-size:10.5px;color:${TK.red}}
-.grid{display:flex;gap:24px;flex:1;min-height:0;padding:0 22px}
-.col{flex:1;min-width:0;display:flex;flex-direction:column}
-.crow{flex:1;min-height:0;display:flex;align-items:center;gap:8px;border-bottom:1px dashed rgba(27,42,46,0.3)}
-.crow:last-child{border-bottom:none}
-.ci{font-family:${TK.mono};font-size:11px;color:${TK.green};width:22px;flex-shrink:0}
-.cn{font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}`;
-}
-function tkDoc(t, b) { return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${tkFont()}<title>${esc(t)}</title><style>${tkCSS()}</style></head><body>${b}</body></html>`; }
-function tkFont() { return `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&family=Noto+Serif+SC:wght@700;900&family=Noto+Sans+SC:wght@400;700&display=swap">`; }
-function tkAv(url, size) {
-  if (!url) return `<span class="av" style="width:${size}px;height:${size}px;display:block"></span>`;
-  const u = url.startsWith('//') ? 'https:' + url : url;
-  return `<img class="av" src="${u}" style="width:${size}px;height:${size}px" />`;
-}
-function tkPunches() {
-  return `<span class="punch" style="left:-13px"></span><span class="punch" style="right:-13px"></span>`;
-}
-function tkTopHTML(users, meta) {
-  const top = users.slice(0, 10);
-  return tkDoc('园区充电榜', `<div class="page"><div class="tk">
-    <div class="head"><div class="t">园区充电榜</div>
-      <div class="s">NO.${esc(String(sessionIds.join('-')))} · ${esc(rankDate(meta.dateStr))}</div></div>
-    <div class="mid">
-      ${top.map((u, i) => `<div class="row"><span class="idx">${String(i + 1).padStart(2, '0')}</span>${tkAv(u.avatar, 28)}<span class="nm">${magName(u)}</span></div>`).join('')}
-    </div>
-    <div class="tear"><span class="dash"></span>${tkPunches()}</div>
-    <div class="stub">
-      <div><div class="no">TICKET NO. ${esc(String(sessionIds.join('')))}-${String(users.length).padStart(2, '0')}</div>
-        <div class="who">${rankMetaLine(meta)} · 前十名</div></div>
-      <div class="stamp">前十名<br>凭证</div>
-    </div>
-  </div></div>`);
-}
-function tkListHTML(users, meta, pageLabel) {
-  const half = Math.ceil(users.length / 2);
-  const col = (arr, off) => `<div class="col">${arr.map((u, i) => `<div class="crow"><span class="ci">${off + i + 1}</span>${tkAv(u.avatar, 20)}<span class="cn">${magName(u)}</span></div>`).join('')}</div>`;
-  return tkDoc('园区充电榜 · ' + pageLabel, `<div class="page"><div class="tk">
-    <div class="head" style="padding:12px 22px 11px"><div class="t" style="font-size:22px;letter-spacing:4px">园区充电榜</div>
-      <div class="s">${esc(pageLabel)} · NO.${esc(String(sessionIds.join('-')))}</div></div>
-    <div class="grid">${col(users.slice(0, half), users.length ? users[0]._rank - 1 : 0)}${col(users.slice(half), users.length ? users[half]._rank - 1 : 0)}</div>
-    <div class="tear"><span class="dash"></span>${tkPunches()}</div>
-    <div class="stub" style="padding:8px 22px 14px"><div class="no">${rankMetaLine(meta)}</div>
-      <div class="who" style="margin:0">${esc(rankDate(meta.dateStr))}</div></div>
-  </div></div>`);
-}
-
-/* ---------- ⑤ sports：体育赛事转播风（深蓝 + 荧光绿，比分板排版） ---------- */
-const SP = {
-  bg: '#061528', bg2: '#0C2A4A', line: '#1D4E7E', neon: '#C6FF3D', text: '#EAF2FF', dim: 'rgba(234,242,255,0.62)',
-  sans: "'Noto Sans SC',system-ui,sans-serif", mono: "'Roboto Mono',monospace",
-};
-function spCSS() {
-  return `*{margin:0;padding:0;box-sizing:border-box}
-html,body{width:540px;height:720px;overflow:hidden}
-body{background:${SP.bg};color:${SP.text};font-family:${SP.sans};-webkit-font-smoothing:antialiased}
-.page{position:relative;width:540px;height:720px;overflow:hidden}
-.slash{position:absolute;background:${SP.neon}}
-.slash.a{left:-40px;top:112px;width:300px;height:9px;transform:skewX(-24deg)}
-.slash.b{left:-40px;top:126px;width:190px;height:9px;transform:skewX(-24deg);opacity:0.5}
-.glow{position:absolute;right:-90px;top:-90px;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,${SP.bg2} 0%,rgba(12,42,74,0) 70%)}
-.body{position:absolute;left:36px;right:36px;top:36px;bottom:56px;display:flex;flex-direction:column}
-.brand{font-weight:900;font-size:40px;letter-spacing:2px;line-height:1.06}
-.kick{font-family:${SP.mono};font-size:11px;letter-spacing:3px;color:${SP.neon};margin-top:12px}
-.meta{font-size:11px;letter-spacing:2px;color:${SP.dim};margin-top:8px}
-.hrule{height:2px;background:${SP.line};margin:16px 0 0}
-.rows{flex:1;min-height:0;display:flex;flex-direction:column;margin-top:4px}
-.row{flex:1;min-height:0;display:flex;align-items:center;gap:14px;border-bottom:1px solid ${SP.line}}
-.row:last-child{border-bottom:none}
-.idx{font-family:${SP.mono};font-weight:500;font-size:17px;color:${SP.neon};width:34px;flex-shrink:0;font-variant-numeric:tabular-nums}
-.av{width:34px;height:34px;object-fit:cover;flex-shrink:0;border:2px solid ${SP.line}}
-.nm{font-weight:900;font-size:18px;letter-spacing:0.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ticker{position:absolute;left:0;bottom:0;width:540px;height:40px;background:${SP.bg2};display:flex;align-items:center;padding:0 36px;justify-content:space-between}
-.ticker span{font-family:${SP.mono};font-size:10.5px;letter-spacing:2px;color:${SP.neon}}
-.lhead{display:flex;align-items:flex-end;justify-content:space-between}
-.lhead .t{font-weight:900;font-size:28px;letter-spacing:1px}
-.lhead .p{font-family:${SP.mono};font-size:12px;color:${SP.neon};letter-spacing:2px}
-.lgrid{display:flex;gap:26px;flex:1;min-height:0;margin-top:10px}
-.lcol{flex:1;min-width:0;display:flex;flex-direction:column}
-.lrow{flex:1;min-height:0;display:flex;align-items:center;gap:10px;border-bottom:1px solid ${SP.line}}
-.lrow:last-child{border-bottom:none}
-.li{font-family:${SP.mono};font-size:11.5px;color:${SP.neon};width:24px;flex-shrink:0}
-.ln{font-weight:700;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}`;
-}
-function spDoc(t, b) { return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${spFont()}<title>${esc(t)}</title><style>${spCSS()}</style></head><body>${b}</body></html>`; }
-function spFont() { return `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;700;900&display=swap">`; }
-function spAv(url, size) {
-  if (!url) return `<span class="av" style="width:${size}px;height:${size}px;display:block"></span>`;
-  const u = url.startsWith('//') ? 'https:' + url : url;
-  return `<img class="av" src="${u}" style="width:${size}px;height:${size}px" />`;
-}
-function spTopHTML(users, meta) {
-  const top = users.slice(0, 10);
-  return spDoc('园区充电榜', `<div class="page">
-    <div class="glow"></div><div class="slash a"></div><div class="slash b"></div>
-    <div class="body">
-      <div class="brand">园区充电榜</div>
-      <div class="kick">第 ${esc(String(sessionIds.join('-')))} 场</div>
-      <div class="meta">${rankMetaLine(meta)} · ${esc(rankDate(meta.dateStr))} · 前十名</div>
-      <div class="hrule"></div>
-      <div class="rows">${top.map((u, i) => `<div class="row"><span class="idx">${String(i + 1).padStart(2, '0')}</span>${spAv(u.avatar, 34)}<span class="nm">${magName(u)}</span></div>`).join('')}</div>
-    </div>
-    <div class="ticker"><span>园区充电榜</span><span>${esc(rankDate(meta.dateStr))}</span><span>前十名</span></div>
-  </div>`);
-}
-function spListHTML(users, meta, pageLabel) {
-  const half = Math.ceil(users.length / 2);
-  const col = (arr, off) => `<div class="lcol">${arr.map((u, i) => `<div class="lrow"><span class="li">${off + i + 1}</span>${spAv(u.avatar, 22)}<span class="ln">${magName(u)}</span></div>`).join('')}</div>`;
-  return spDoc('园区充电榜 · ' + pageLabel, `<div class="page">
-    <div class="glow"></div><div class="slash a" style="top:74px"></div>
-    <div class="body"><div class="lhead"><span class="t">园区充电榜</span><span class="p">${esc(pageLabel)}</span></div>
-      <div class="hrule" style="margin-top:12px"></div>
-      <div class="lgrid">${col(users.slice(0, half), users.length ? users[0]._rank - 1 : 0)}${col(users.slice(half), users.length ? users[half]._rank - 1 : 0)}</div>
-    </div>
-    <div class="ticker"><span>${rankMetaLine(meta)}</span><span>${esc(rankDate(meta.dateStr))}</span></div>
-  </div>`);
-}
-
-/* ---------- ⑥ noir：黑金夜场风（近黑 + 单一暖金线 + 极粗衬线） ---------- */
 const NR = {
   bg: '#0B0B0D', ink: '#F2EDE3', gold: '#C9A227', dim: 'rgba(242,237,227,0.55)', gline: 'rgba(201,162,39,0.42)',
   serif: "'Noto Serif SC','Songti SC',serif", sans: "'Noto Sans SC',system-ui,sans-serif",
@@ -1309,37 +1153,6 @@ const TB = {
   bg: '#F1EFE9', ink: '#0E0E10', hot: '#FF3B1F', soft: 'rgba(14,14,16,0.6)',
   sans: "'Noto Sans SC',system-ui,sans-serif",
 };
-function tbCSS() {
-  return `*{margin:0;padding:0;box-sizing:border-box}
-html,body{width:540px;height:720px;overflow:hidden}
-body{background:${TB.bg};color:${TB.ink};font-family:${TB.sans};-webkit-font-smoothing:antialiased}
-.page{position:relative;width:540px;height:720px;overflow:hidden}
-.mega{position:absolute;left:-6px;top:22px;width:560px;font-weight:900;font-size:104px;line-height:0.94;letter-spacing:-4px}
-.block{position:absolute;mix-blend-mode:multiply}
-.block.a{left:-40px;top:132px;width:420px;height:120px;background:${TB.hot};transform:skewX(-16deg)}
-.block.b{right:-70px;top:300px;width:240px;height:60px;background:rgba(14,14,16,0.88);transform:skewX(-16deg)}
-.wm{position:absolute;font-weight:900;font-size:132px;letter-spacing:-8px;color:rgba(14,14,16,0.07)}
-.list{position:absolute;left:0;right:0;top:352px;bottom:58px;display:flex;flex-direction:column}
-.row{flex:1;min-height:0;display:flex;align-items:center;gap:14px;padding:0 34px}
-.row.alt{background:rgba(14,14,16,0.065)}
-.idx{font-weight:900;font-size:19px;width:38px;flex-shrink:0;color:${TB.hot};font-variant-numeric:tabular-nums}
-.av{width:26px;height:26px;border-radius:50%;object-fit:cover;flex-shrink:0}
-.nm{font-weight:900;font-size:18px;letter-spacing:-0.2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.foot{position:absolute;left:0;bottom:0;width:540px;height:58px;background:${TB.ink};border-top:5px solid ${TB.hot};display:flex;align-items:center;justify-content:space-between;padding:0 34px}
-.foot span{color:${TB.bg};font-weight:700;font-size:10.5px;letter-spacing:3px}
-.hotline{position:absolute;left:0;top:0;width:540px;height:12px;background:${TB.hot}}
-.lhead{position:absolute;left:34px;top:34px;width:472px}
-.lhead .t{font-weight:900;font-size:52px;line-height:1;letter-spacing:-2px}
-.lhead .p{font-weight:900;font-size:13px;letter-spacing:3px;margin-top:10px;color:${TB.soft}}
-.lgrid{position:absolute;left:34px;right:34px;top:170px;bottom:74px;display:flex;gap:28px}
-.lcol{flex:1;min-width:0;display:flex;flex-direction:column}
-.lrow{flex:1;min-height:0;display:flex;align-items:center;gap:9px;border-bottom:1px solid rgba(14,14,16,0.14)}
-.lrow:nth-child(even){background:rgba(14,14,16,0.045)}
-.lrow:last-child{border-bottom:none}
-.li{font-weight:900;font-size:13px;width:26px;flex-shrink:0;color:${TB.hot};font-variant-numeric:tabular-nums}
-.ln{font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}`;
-}
-function tbDoc(t, b) { return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${tbFont()}<title>${esc(t)}</title><style>${tbCSS()}</style></head><body>${b}</body></html>`; }
 function tbFont() { return `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&display=swap">`; }
 function tbAv(url, size, sq) {
   const st = `width:${size}px;height:${size}px;`;
@@ -1347,31 +1160,6 @@ function tbAv(url, size, sq) {
   const u = url.startsWith('//') ? 'https:' + url : url;
   return `<img class="av" src="${u}" style="${st}" />`;
 }
-function tbTopHTML(users, meta) {
-  const top = users.slice(0, 10);
-  return tbDoc('园区充电榜', `<div class="page">
-    <div class="hotline"></div>
-    <div class="wm" style="right:-30px;top:-6px">榜</div>
-    <div class="mega">园区<br>充电榜</div>
-    <div class="block a"></div><div class="block b"></div>
-    <div style="position:absolute;left:34px;top:322px;font-weight:900;font-size:12px;letter-spacing:4px;color:#0E0E10;z-index:3">前十名</div>
-    <div class="list">${top.map((u, i) => `<div class="row${i % 2 ? '' : ' alt'}"><span class="idx">${String(i + 1).padStart(2, '0')}</span>${tbAv(u.avatar, 26, true)}<span class="nm" style="flex:1;min-width:0">${magName(u)}</span></div>`).join('')}</div>
-    <div class="foot"><span>${rankMetaLine(meta)}</span><span>${esc(rankDate(meta.dateStr))}</span></div>
-  </div>`);
-}
-function tbListHTML(users, meta, pageLabel) {
-  const half = Math.ceil(users.length / 2);
-  const col = (arr, off) => `<div class="lcol">${arr.map((u, i) => `<div class="lrow"><span class="li">${off + i + 1}</span>${tbAv(u.avatar, 22, true)}<span class="ln">${magName(u)}</span></div>`).join('')}</div>`;
-  return tbDoc('园区充电榜 · ' + pageLabel, `<div class="page">
-    <div class="hotline"></div>
-    <div class="wm" style="right:-20px;top:-20px;font-size:104px">名录</div>
-    <div class="lhead"><div class="t">园区充电榜</div><div class="p">${esc(pageLabel)} · ${esc(rankDate(meta.dateStr))}</div></div>
-    <div class="lgrid">${col(users.slice(0, half), users.length ? users[0]._rank - 1 : 0)}${col(users.slice(half), users.length ? users[half]._rank - 1 : 0)}</div>
-    <div class="foot"><span>${rankMetaLine(meta)}</span><span>前十名</span></div>
-  </div>`);
-}
-
-/* ---------- ⑨ typegrid：大字号双栏名录（构成派轻量版，圆头像 + 细线 + 超大字序） ---------- */
 function tgCSS() {
   return `*{margin:0;padding:0;box-sizing:border-box}
 html,body{width:540px;height:720px;overflow:hidden}

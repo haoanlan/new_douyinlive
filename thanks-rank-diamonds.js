@@ -145,7 +145,7 @@ const MAG = {
   accent: '#8A2B2B',
   serif: "'Noto Serif SC','Songti SC',serif",
 };
-const MAG_THEME_NAMES = ['magazine-v1', 'magazine-v2', 'noir', 'typegrid', 'cute', 'news', 'energy', 'cute-journal', 'cute-candy'];
+const MAG_THEME_NAMES = ['magazine-v1', 'magazine-v2', 'noir', 'typegrid', 'cute', 'news', 'energy', 'cute-journal', 'cute-candy', 'cute-story', 'cute-chibi'];
 const MAG_VARIANT = MAG_THEME_NAMES.includes(THEME_ARG) ? THEME_ARG : null;
 // 是否显示钻石数：提名榜（thanks-rank.js）不显示，钻石榜显示
 const MAG_AMOUNT = true;
@@ -315,6 +315,8 @@ function magTopHTML(variant, users, meta) {
   if (variant === 'typegrid') return tgTopHTML(users, meta);
   if (variant === 'cute') return cuTopHTML(users, meta);
   if (variant === 'cute-journal') return cjTopHTML(users, meta);
+  if (variant === 'cute-story') return csTopHTML(users, meta);
+  if (variant === 'cute-chibi') return chTopHTML(users, meta);
   if (variant === 'cute-candy') return ccTopHTML(users, meta);
   if (variant === 'news') return nwTopHTML(users, meta);
   if (variant === 'energy') return enTopHTML(users, meta);
@@ -391,6 +393,8 @@ function rankListHTML(variant, users, meta, pageLabel) {
   if (variant === 'typegrid') return tgListHTML(users, meta, pageLabel);
   if (variant === 'cute') return cuListHTML(users, meta, pageLabel);
   if (variant === 'cute-journal') return cjListHTML(users, meta, pageLabel);
+  if (variant === 'cute-story') return csListHTML(users, meta, pageLabel);
+  if (variant === 'cute-chibi') return chListHTML(users, meta, pageLabel);
   if (variant === 'cute-candy') return ccListHTML(users, meta, pageLabel);
   if (variant === 'news') return nwListHTML(users, meta, pageLabel);
   if (variant === 'energy') return enListHTML(users, meta, pageLabel);
@@ -1021,6 +1025,148 @@ function ccListHTML(users, meta, pageLabel) {
     <div class="mt" style="margin-top:12px;position:relative;z-index:2">${esc(meta.target)} · ${rankDate(meta.dateStr)} · 共 ${meta.gifters} 位送礼人</div>
     <div style="flex:1;display:flex;gap:13px;margin-top:12px;position:relative;z-index:2">${col(users.slice(0, half), users[0] ? users[0]._rank : 1)}${col(users.slice(half), users[half] ? users[half]._rank : 1)}</div>
     <div class="foot"><span class="mt">${esc(meta.sessionStr)}</span><span class="mt">感谢每一份心意</span></div>
+  </div></body></html>`;
+}
+
+/* ==================== 可爱风 C/D：cute-story 绘本童话 / cute-chibi Q版萱萱 ==================== */
+const CS = { sky: '#D6E8FF', cream: '#FFF9F0', ink: '#33456B', soft: 'rgba(51,69,107,0.62)',
+  pink: '#E98BA8', gold: '#F5B93F', line: 'rgba(51,69,107,0.15)' };
+const CH = { bg: '#FFF3F7', card: '#FFFFFF', ink: '#4A3B44', soft: 'rgba(74,59,68,0.56)',
+  pink: '#FF8FB1', blue: '#CFE4FF', soft2: '#FFE3EC' };
+const CS_STAR = (fill, size) => `<svg class="star" viewBox="0 0 24 24" style="width:${size}px;height:${size}px"><path d="M12 2.2l2.9 6.2 6.8.8-5 4.6 1.3 6.7L12 17.3 6 20.5l1.3-6.7-5-4.6 6.8-.8z" fill="${fill}"/></svg>`;
+const CH_HEART = (size, fill) => `<svg viewBox="0 0 24 24" style="width:${size}px;height:${size}px;flex-shrink:0"><path d="M12 21s-8.4-5.2-10.4-10C.3 7.6 2.6 4.2 6 4.2c2 0 3.5 1 4.6 2.6C11.7 5.2 13.2 4.2 15.2 4.2c3.4 0 5.7 3.4 4.4 6.8-2 4.8-7.6 10-7.6 10z" fill="${fill}"/></svg>`;
+/* ---------- C. 绘本童话 ---------- */
+function csCSS() {
+  return `*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:540px;height:720px;overflow:hidden}
+body{background:${CS.cream};color:${CS.ink};font-family:'LXGW WenKai','Noto Sans SC',serif;-webkit-font-smoothing:antialiased}
+.page{position:relative;width:540px;height:720px;overflow:hidden;display:flex;flex-direction:column}
+.sky{position:absolute;left:0;top:0;width:100%;height:322px;background:${CS.sky};
+  border-radius:0 0 48% 48% / 0 0 52px 52px;z-index:0}
+.art{position:absolute;z-index:1}
+.inner{position:relative;z-index:2;flex:1;display:flex;flex-direction:column;padding:28px 34px 24px;min-height:0}
+.ttl{font-family:'ZCOOL KuaiLe',sans-serif;font-size:33px;letter-spacing:2px;color:#2C4066;line-height:1.1}
+.mt{font-size:10.5px;color:${CS.soft}}
+.card{background:#FFFFFF;border-radius:20px;box-shadow:0 8px 18px rgba(51,69,107,0.10);border:1.5px solid rgba(255,255,255,0.9)}
+.nrow{display:flex;align-items:center;gap:9px;flex:1;min-height:0;border-bottom:1px dashed ${CS.line}}
+.nm{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rk{font-family:'ZCOOL KuaiLe',sans-serif;font-size:12px;color:${CS.pink};width:19px;flex-shrink:0;text-align:center}
+.av{border-radius:50%;object-fit:cover;flex-shrink:0;display:block;box-shadow:0 0 0 1.5px #FFFFFF}
+.star{flex-shrink:0;display:block}
+.foot{display:flex;justify-content:space-between;align-items:center;margin-top:11px}`;
+}
+function csTopHTML(users, meta) {
+  const cloud = assetB64('assets/story-cloud.png'), moon = assetB64('assets/story-moon.png');
+  const rows = users.slice(0, 10).map((u, i) => {
+    const r = i + 1;
+    return `<div class="nrow">${CS_STAR(r <= 3 ? CS.gold : 'none', r <= 3 ? 14 : 11)}
+      <span class="rk">${r}</span>${tbAv(u.avatar, 24, false)}<span class="nm" style="font-weight:${r <= 3 ? 700 : 400}">${magName(u)}</span></div>`;
+  }).join('');
+  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${cuteFontLink()}<style>${csCSS()}</style></head><body>
+  <div class="page"><div class="sky"></div>
+    <img class="art" src="${cloud}" style="left:-34px;top:14px;width:172px">
+    <img class="art" src="${cloud}" style="right:150px;top:22px;width:92px;opacity:.95">
+    <img class="art" src="${moon}" style="right:26px;top:22px;width:96px">
+    <span class="art" style="left:212px;top:34px">${CS_STAR('#FFE79A', 15)}</span>
+    <span class="art" style="left:64px;top:186px">${CS_STAR('#FFE79A', 12)}</span>
+    <span class="art" style="right:44px;top:150px">${CS_STAR('#FFE79A', 10)}</span>
+    <div class="inner">
+      <div class="ttl">园区充电榜</div>
+      <div class="mt" style="margin-top:11px">${rankMetaLine(meta)} · ${rankDate(meta.dateStr)}</div>
+      <div class="card" style="margin-top:18px;padding:15px 18px;display:flex;align-items:center;gap:14px">
+        ${tbAv(meta.avatar, 56, true)}
+        <div><div style="font-size:18px;font-weight:700">${esc(meta.target)}</div>
+          <div class="mt" style="margin-top:8px">收到 <span style="font-family:'ZCOOL KuaiLe',sans-serif;font-size:21px;color:${CS.pink}">${meta.gifters}</span> 位送礼人的心意</div></div>
+      </div>
+      <div class="mt" style="margin:16px 0 6px 2px;font-weight:700;color:${CS.ink};letter-spacing:2px;font-size:11.5px">前十名</div>
+      <div style="flex:1;display:flex;flex-direction:column;min-height:0">${rows}</div>
+      <div class="foot"><span class="mt">${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</span><span class="mt">感谢每一份心意</span></div>
+    </div>
+  </div></body></html>`;
+}
+function csListHTML(users, meta, pageLabel) {
+  const half = Math.ceil(users.length / 2), rows = Math.max(1, half);
+  const av = rows > 14 ? 17 : 20, nmFs = rows > 14 ? 11.5 : 12.5;
+  const col = (arr, off) => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">${arr.map((u, i) => {
+    const r = off + i;
+    return `<div class="nrow" style="gap:7px">${CS_STAR(r <= 3 ? CS.gold : 'none', r <= 3 ? 12 : 9)}
+      <span class="rk" style="font-size:11px;width:16px">${r}</span>${tbAv(u.avatar, av, false)}<span class="nm" style="font-size:${nmFs}px">${magName(u)}</span></div>`;
+  }).join('')}</div>`;
+  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${cuteFontLink()}<style>${csCSS()}</style></head><body>
+  <div class="page"><div class="sky" style="height:118px;border-radius:0 0 46% 46% / 0 0 26px 26px"></div>
+    <span class="art" style="left:30px;top:24px">${CS_STAR('#FFE79A', 11)}</span><span class="art" style="right:52px;top:20px">${CS_STAR('#FFE79A', 13)}</span>
+    <div class="inner">
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <span class="ttl" style="font-size:22px">园区充电榜</span><span class="mt" style="font-weight:700">${esc(pageLabel)}</span></div>
+      <div class="mt" style="margin-top:9px">${esc(meta.target)} · ${rankDate(meta.dateStr)} · 共 ${meta.gifters} 位送礼人</div>
+      <div style="flex:1;display:flex;gap:14px;margin-top:12px;min-height:0">${col(users.slice(0, half), users[0] ? users[0]._rank : 1)}${col(users.slice(half), users[half] ? users[half]._rank : 1)}</div>
+      <div class="foot"><span class="mt">${esc(meta.sessionStr)}</span><span class="mt">感谢每一份心意</span></div>
+    </div>
+  </div></body></html>`;
+}
+/* ---------- D. Q版萱萱 ---------- */
+function chCSS() {
+  return `*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:540px;height:720px;overflow:hidden}
+body{background:${CH.bg};color:${CH.ink};font-family:'Noto Sans SC',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.page{position:relative;width:540px;height:720px;overflow:hidden;display:flex;flex-direction:column}
+.blob{position:absolute;border-radius:50%;z-index:0}
+.art{position:absolute;z-index:1}
+.inner{position:relative;z-index:2;flex:1;display:flex;flex-direction:column;padding:32px 34px 24px;min-height:0}
+.ttl{font-family:'ZCOOL KuaiLe',sans-serif;font-size:32px;letter-spacing:2px;line-height:1.15;color:${CH.ink}}
+.mt{font-size:10.5px;color:${CH.soft}}
+.card{display:flex;align-items:center;gap:9px;flex:1;min-height:0;background:${CH.card};border-radius:15px;
+  padding:0 13px;box-shadow:0 4px 10px rgba(255,143,177,0.16)}
+.rk{width:22px;height:22px;border-radius:50%;background:${CH.soft2};color:${CH.pink};display:inline-flex;align-items:center;
+  justify-content:center;font-family:'ZCOOL KuaiLe',sans-serif;font-size:12px;flex-shrink:0;line-height:1}
+.rk.top{background:${CH.pink};color:#fff}
+.nm{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.av{border-radius:50%;object-fit:cover;flex-shrink:0;display:block;box-shadow:0 0 0 2px #FFFFFF}
+.foot{display:flex;justify-content:space-between;align-items:center;margin-top:11px}`;
+}
+function chTopHTML(users, meta) {
+  const girl = assetB64('assets/story-chibi.png');
+  const rows = users.slice(0, 10).map((u, i) => {
+    const r = i + 1;
+    return `<div class="card">${r <= 3 ? CH_HEART(13, CH.pink) : ''}<span class="rk${r <= 3 ? ' top' : ''}">${r}</span>${tbAv(u.avatar, 24, false)}<span class="nm" style="font-size:14px">${magName(u)}</span></div>`;
+  }).join('');
+  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${cuteFontLink()}<style>${chCSS()}</style></head><body>
+  <div class="page">
+    <span class="blob" style="width:250px;height:250px;background:${CH.blue};opacity:.5;left:-90px;top:150px"></span>
+    <span class="blob" style="width:190px;height:190px;background:${CH.soft2};right:-70px;top:-60px"></span>
+    <img class="art" src="${girl}" style="right:-4px;top:18px;width:172px">
+    <div class="inner">
+      <div class="ttl">园区充电榜</div>
+      <div class="mt" style="margin-top:10px">${rankMetaLine(meta)} · ${rankDate(meta.dateStr)}</div>
+      <div style="height:94px"></div>
+      <div style="background:${CH.card};border-radius:20px;padding:12px 17px;display:flex;align-items:center;gap:14px;box-shadow:0 8px 18px rgba(255,143,177,0.20);margin-top:5px">
+        ${tbAv(meta.avatar, 54, true)}
+        <div><div style="font-size:18px;font-weight:900">${esc(meta.target)}</div>
+          <div class="mt" style="margin-top:8px">收到 <span style="font-family:'ZCOOL KuaiLe',sans-serif;font-size:21px;color:${CH.pink}">${meta.gifters}</span> 位送礼人的心意</div></div>
+      </div>
+      <div class="mt" style="margin:12px 0 5px 2px;font-size:11.5px;font-weight:900;color:${CH.pink};letter-spacing:2px">前十名</div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:7px;min-height:0">${rows}</div>
+      <div class="foot"><span class="mt">${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</span><span class="mt">感谢每一份心意</span></div>
+    </div>
+  </div></body></html>`;
+}
+function chListHTML(users, meta, pageLabel) {
+  const half = Math.ceil(users.length / 2), rows = Math.max(1, half);
+  const av = rows > 14 ? 17 : 20, nmFs = rows > 14 ? 11.5 : 12.5;
+  const col = (arr, off) => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;min-height:0">${arr.map((u, i) => {
+    const r = off + i;
+    return `<div class="card" style="border-radius:12px;padding:0 11px">${r <= 3 ? CH_HEART(11, CH.pink) : ''}<span class="rk${r <= 3 ? ' top' : ''}" style="width:19px;height:19px;font-size:11px">${r}</span>${tbAv(u.avatar, av, false)}<span class="nm" style="font-size:${nmFs}px">${magName(u)}</span></div>`;
+  }).join('')}</div>`;
+  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${cuteFontLink()}<style>${chCSS()}</style></head><body>
+  <div class="page">
+    <span class="blob" style="width:200px;height:200px;background:${CH.blue};opacity:.45;right:-80px;top:-70px"></span>
+    <div class="inner">
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <span class="ttl" style="font-size:22px">园区充电榜</span><span class="mt" style="font-weight:700">${esc(pageLabel)}</span></div>
+      <div class="mt" style="margin-top:9px">${esc(meta.target)} · ${rankDate(meta.dateStr)} · 共 ${meta.gifters} 位送礼人</div>
+      <div style="flex:1;display:flex;gap:13px;margin-top:12px;min-height:0">${col(users.slice(0, half), users[0] ? users[0]._rank : 1)}${col(users.slice(half), users[half] ? users[half]._rank : 1)}</div>
+      <div class="foot"><span class="mt">${esc(meta.sessionStr)}</span><span class="mt">感谢每一份心意</span></div>
+    </div>
   </div></body></html>`;
 }
 

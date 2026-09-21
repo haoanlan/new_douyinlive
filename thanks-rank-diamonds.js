@@ -145,7 +145,7 @@ const MAG = {
   accent: '#8A2B2B',
   serif: "'Noto Serif SC','Songti SC',serif",
 };
-const MAG_THEME_NAMES = ['magazine-v1', 'magazine-v2', 'noir', 'typegrid', 'cute', 'news', 'energy', 'cute-journal', 'cute-candy', 'cute-story', 'cute-chibi'];
+const MAG_THEME_NAMES = ['magazine-v1', 'magazine-v2', 'noir', 'typegrid', 'cute', 'news', 'energy', 'cute-journal', 'cute-candy', 'cute-story', 'cute-chibi', 'ghost', 'faces', 'ruler', 'monolith'];
 const MAG_VARIANT = MAG_THEME_NAMES.includes(THEME_ARG) ? THEME_ARG : null;
 // 是否显示钻石数：提名榜（thanks-rank.js）不显示，钻石榜显示
 const MAG_AMOUNT = true;
@@ -316,6 +316,10 @@ function magTopHTML(variant, users, meta) {
   if (variant === 'cute') return cuTopHTML(users, meta);
   if (variant === 'cute-journal') return cjTopHTML(users, meta);
   if (variant === 'cute-story') return csTopHTML(users, meta);
+  if (variant === 'ghost') return ghTopHTML(users, meta);
+  if (variant === 'faces') return faTopHTML(users, meta);
+  if (variant === 'ruler') return ruTopHTML(users, meta);
+  if (variant === 'monolith') return moTopHTML(users, meta);
   if (variant === 'cute-chibi') return chTopHTML(users, meta);
   if (variant === 'cute-candy') return ccTopHTML(users, meta);
   if (variant === 'news') return nwTopHTML(users, meta);
@@ -394,6 +398,10 @@ function rankListHTML(variant, users, meta, pageLabel) {
   if (variant === 'cute') return cuListHTML(users, meta, pageLabel);
   if (variant === 'cute-journal') return cjListHTML(users, meta, pageLabel);
   if (variant === 'cute-story') return csListHTML(users, meta, pageLabel);
+  if (variant === 'ghost') return ghListHTML(users, meta, pageLabel);
+  if (variant === 'faces') return faListHTML(users, meta, pageLabel);
+  if (variant === 'ruler') return ruListHTML(users, meta, pageLabel);
+  if (variant === 'monolith') return moListHTML(users, meta, pageLabel);
   if (variant === 'cute-chibi') return chListHTML(users, meta, pageLabel);
   if (variant === 'cute-candy') return ccListHTML(users, meta, pageLabel);
   if (variant === 'news') return nwListHTML(users, meta, pageLabel);
@@ -1167,6 +1175,217 @@ function chListHTML(users, meta, pageLabel) {
       <div style="flex:1;display:flex;gap:13px;margin-top:12px;min-height:0">${col(users.slice(0, half), users[0] ? users[0]._rank : 1)}${col(users.slice(half), users[half] ? users[half]._rank : 1)}</div>
       <div class="foot"><span class="mt">${esc(meta.sessionStr)}</span><span class="mt">感谢每一份心意</span></div>
     </div>
+  </div></body></html>`;
+}
+
+/* ==================== 四种"名次为主角"的结构：ghost 幽灵数字 / faces 人脸墙 / ruler 全页刻度尺 / monolith 巨型名字 ==================== */
+function numFontLink() {
+  return '<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;600;700;900&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">';
+}
+const GH = { bg: '#F6F5F2', ink: '#16181D', ghost: 'rgba(22,24,29,0.085)', soft: 'rgba(22,24,29,0.55)',
+  line: 'rgba(22,24,29,0.09)', red: '#E2402F' };
+const FA = { bg: '#FFFDF8', ink: '#1A1A1C', soft: 'rgba(26,26,28,0.55)', line: 'rgba(26,26,28,0.10)',
+  accent: '#1F6FEB' };
+const RU = { bg: '#FBFBF9', ink: '#111214', soft: 'rgba(17,18,20,0.55)', tick: 'rgba(17,18,20,0.28)',
+  axis: '#111214', amber: '#E8A33D' };
+const MO = { bg: '#111214', ink: '#F3F0EA', soft: 'rgba(243,240,234,0.55)', line: 'rgba(243,240,234,0.14)',
+  orange: '#FF6A2B' };
+/* ---------- 1. ghost 幽灵数字 ---------- */
+function ghCSS() {
+  return `*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:540px;height:720px;overflow:hidden}
+body{background:${GH.bg};color:${GH.ink};font-family:'Noto Sans SC',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.page{position:relative;width:540px;height:720px;overflow:hidden;padding:32px 40px 24px;display:flex;flex-direction:column}
+.ttl{font-size:38px;font-weight:900;letter-spacing:1px;line-height:1.1}
+.ttl i{color:${GH.red};font-style:normal}
+.mt{font-size:10.5px;color:${GH.soft};letter-spacing:1px}
+.row{position:relative;flex:1;min-height:0;display:flex;align-items:center;border-bottom:1px solid ${GH.line}}
+.gn{position:absolute;left:-4px;font-family:'Roboto Mono',monospace;font-weight:700;color:${GH.ghost};
+  font-size:62px;line-height:1;letter-spacing:-2px;z-index:0}
+.rw{position:relative;z-index:1;display:flex;align-items:center;gap:11px;margin-left:74px}
+.nm{font-size:15.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.av{border-radius:50%;object-fit:cover;flex-shrink:0;display:block;box-shadow:0 0 0 1.5px ${GH.bg}}
+.top .nm{font-weight:900;font-size:16.5px}
+.foot{display:flex;justify-content:space-between;align-items:center;margin-top:11px}`;
+}
+function ghTopHTML(users, meta) {
+  const rows = users.slice(0, 10).map((u, i) => {
+    const r = i + 1;
+    return `<div class="row${r <= 3 ? ' top' : ''}"><span class="gn">${r < 10 ? '0' + r : r}</span>
+      <span class="rw">${tbAv(u.avatar, 30, false)}<span class="nm">${magName(u)}</span></span></div>`;
+  }).join('');
+  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${numFontLink()}<style>${ghCSS()}</style></head><body>
+  <div class="page">
+    <div class="ttl">园区<i>充电</i>榜</div>
+    <div class="mt" style="margin-top:11px">${rankMetaLine(meta)} · ${rankDate(meta.dateStr)}</div>
+    <div class="mt" style="margin-top:16px">${esc(meta.target)} · 前 十 名</div>
+    <div style="flex:1;display:flex;flex-direction:column;min-height:0">${rows}</div>
+    <div class="foot"><span class="mt">${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</span><span class="mt">感谢每一份心意</span></div>
+  </div></body></html>`;
+}
+function ghListHTML(users, meta, pageLabel) {
+  const half = Math.ceil(users.length / 2);
+  const col = (arr, off) => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">${arr.map((u, i) => {
+    const r = off + i;
+    return `<div class="row"><span class="gn" style="font-size:40px;left:-2px">${r < 10 ? '0' + r : r}</span>
+      <span class="rw" style="margin-left:52px;gap:9px">${tbAv(u.avatar, 21, false)}<span class="nm" style="font-size:12.5px">${magName(u)}</span></span></div>`;
+  }).join('')}</div>`;
+  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${numFontLink()}<style>${ghCSS()}</style></head><body>
+  <div class="page">
+    <div class="ttl" style="font-size:24px">园区<i>充电</i>榜</div>
+    <div class="mt" style="margin-top:9px">${esc(meta.target)} · ${rankDate(meta.dateStr)} · ${esc(pageLabel)}</div>
+    <div style="flex:1;display:flex;gap:26px;margin-top:12px;min-height:0">${col(users.slice(0, half), users[0] ? users[0]._rank : 1)}${col(users.slice(half), users[half] ? users[half]._rank : 1)}</div>
+    <div class="foot"><span class="mt">${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</span><span class="mt">感谢每一份心意</span></div>
+  </div></body></html>`;
+}
+/* ---------- 2. faces 人脸墙 ---------- */
+function faCSS() {
+  return `*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:540px;height:720px;overflow:hidden}
+body{background:${FA.bg};color:${FA.ink};font-family:'Noto Sans SC',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.page{position:relative;width:540px;height:720px;overflow:hidden;padding:32px 32px 24px;display:flex;flex-direction:column}
+.ttl{font-size:36px;font-weight:900;letter-spacing:1px}
+.mt{font-size:10.5px;color:${FA.soft};letter-spacing:1px}
+.wall{flex:1;min-height:0;display:grid;align-content:space-between}
+.cell{display:flex;flex-direction:column;align-items:center;gap:7px;min-width:0}
+.pic{position:relative}
+.av{border-radius:50%;object-fit:cover;display:block}
+.badge{position:absolute;left:-2px;bottom:-2px;width:22px;height:22px;border-radius:50%;background:${FA.ink};color:#fff;
+  font-family:'Roboto Mono',monospace;font-size:10.5px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid ${FA.bg}}
+.cell.top3 .badge{background:${FA.accent}}
+.nm{font-size:11.5px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;opacity:.92}
+.cell.top3 .nm{font-weight:700}
+.foot{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:10px;border-top:1px solid ${FA.line}}`;
+}
+function faGridHTML(users, meta, cols, av, nmFs, rowGap) {
+  const cell = (u, i) => {
+    const r = u._rank, t = r <= 3 ? ' top3' : '';
+    return `<div class="cell${t}"><span class="pic">${tbAv(u.avatar, av, false)}<span class="badge">${r}</span></span>
+      <span class="nm" style="font-size:${nmFs}px">${magName(u)}</span></div>`;
+  };
+  return { html: users.map(cell).join(''), cols };
+}
+function faTopHTML(users, meta) {
+  const top = users.slice(0, 10);
+  const cells = top.map(u => {
+    const r = u._rank, t = r <= 3 ? ' top3' : '';
+    return `<div class="cell${t}"><span class="pic">${tbAv(u.avatar, 88, false)}<span class="badge">${r}</span></span>
+      <span class="nm" style="font-size:12.5px">${magName(u)}</span></div>`;
+  }).join('');
+  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${numFontLink()}<style>${faCSS()}</style></head><body>
+  <div class="page">
+    <div class="ttl">园区充电榜</div>
+    <div class="mt" style="margin-top:10px">${rankMetaLine(meta)} · ${rankDate(meta.dateStr)}</div>
+    <div style="margin-top:20px;display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:19px;font-weight:900">${esc(meta.target)}</span>
+      <span class="mt">收到 ${meta.gifters} 位送礼人的心意</span></div>
+    <div class="wall" style="grid-template-columns:repeat(5,1fr);row-gap:30px;align-content:center;margin-top:6px">${cells}</div>
+    <div class="foot"><span class="mt">${esc(meta.sessionStr)}</span><span class="mt">感谢每一份心意</span></div>
+  </div></body></html>`;
+}
+function faListHTML(users, meta, pageLabel) {
+  const rows = Math.ceil(users.length / 5);
+  const cells = users.map(u => {
+    const r = u._rank, t = r <= 3 ? ' top3' : '';
+    return `<div class="cell${t}"><span class="pic">${tbAv(u.avatar, 54, false)}<span class="badge">${r}</span></span>
+      <span class="nm">${magName(u)}</span></div>`;
+  }).join('');
+  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${numFontLink()}<style>${faCSS()}</style></head><body>
+  <div class="page">
+    <div class="ttl" style="font-size:23px">园区充电榜</div>
+    <div class="mt" style="margin-top:9px">${esc(meta.target)} · ${rankDate(meta.dateStr)} · ${esc(pageLabel)}</div>
+    <div class="wall" style="grid-template-columns:repeat(5,1fr);row-gap:${rows > 5 ? 12 : 16}px;margin-top:14px">${cells}</div>
+    <div class="foot"><span class="mt">${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</span><span class="mt">感谢每一份心意</span></div>
+  </div></body></html>`;
+}
+/* ---------- 3. ruler 全页刻度尺 ---------- */
+function ruCSS() {
+  return `*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:540px;height:720px;overflow:hidden}
+body{background:${RU.bg};color:${RU.ink};font-family:'Noto Sans SC',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.page{position:relative;width:540px;height:720px;overflow:hidden;padding:30px 40px 24px;display:flex;flex-direction:column}
+.ttl{font-size:35px;font-weight:900;letter-spacing:0.5px}
+.mt{font-size:10.5px;color:${RU.soft};letter-spacing:1px}
+.ruler{position:relative;flex:1;min-height:0;display:flex;flex-direction:column;margin-top:14px}
+.axis{position:absolute;left:66px;top:0;bottom:0;width:2px;background:${RU.axis}}
+.rrow{position:relative;flex:1;min-height:0;display:flex;align-items:center}
+.tick{position:absolute;left:60px;top:50%;transform:translateY(-50%);width:14px;height:2px;background:${RU.tick}}
+.rnum{width:52px;text-align:right;font-family:'Roboto Mono',monospace;font-size:11.5px;font-weight:500;color:${RU.soft};
+  flex-shrink:0;font-variant-numeric:tabular-nums}
+.who{display:flex;align-items:center;gap:10px;margin-left:26px;min-width:0}
+.nm{font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.av{border-radius:50%;object-fit:cover;flex-shrink:0;display:block;box-shadow:0 0 0 2px ${RU.bg}}
+.marks{position:absolute;left:52px;top:0;bottom:0;width:22px}
+.mk{position:absolute;left:0;width:22px;height:1px;background:${RU.tick}}
+.foot{display:flex;justify-content:space-between;align-items:center;margin-top:11px}`;
+}
+function ruRows(users, av, nmFs) {
+  return users.map(u => {
+    const r = u._rank;
+    return `<div class="rrow"><span class="tick"></span><span class="rnum">${r}</span>
+      <span class="who">${tbAv(u.avatar, av, false)}<span class="nm" style="font-size:${nmFs}px${r <= 3 ? ';font-weight:700' : ''}">${magName(u)}</span></span></div>`;
+  }).join('');
+}
+function ruTopHTML(users, meta) {
+  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${numFontLink()}<style>${ruCSS()}</style></head><body>
+  <div class="page">
+    <div class="ttl">园区充电榜</div>
+    <div class="mt" style="margin-top:10px">${rankMetaLine(meta)} · ${rankDate(meta.dateStr)}</div>
+    <div style="margin-top:18px;display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:19px;font-weight:900">${esc(meta.target)}</span><span class="mt">前十名 · 共 ${meta.gifters} 位送礼人</span></div>
+    <div class="ruler"><span class="axis"></span>${ruRows(users.slice(0, 10), 30, 15.5)}</div>
+    <div class="foot"><span class="mt">${esc(meta.sessionStr)}</span><span class="mt">感谢每一份心意</span></div>
+  </div></body></html>`;
+}
+function ruListHTML(users, meta, pageLabel) {
+  const half = Math.ceil(users.length / 2);
+  const col = arr => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">${ruRows(arr, 20, 12.5)}</div>`;
+  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${numFontLink()}<style>${ruCSS()}</style></head><body>
+  <div class="page">
+    <div class="ttl" style="font-size:23px">园区充电榜</div>
+    <div class="mt" style="margin-top:9px">${esc(meta.target)} · ${rankDate(meta.dateStr)} · ${esc(pageLabel)}</div>
+    <div style="flex:1;display:flex;gap:34px;margin-top:14px;min-height:0;position:relative">${col(users.slice(0, half))}${col(users.slice(half))}</div>
+    <div class="foot"><span class="mt">${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</span><span class="mt">感谢每一份心意</span></div>
+  </div></body></html>`;
+}
+/* ---------- 4. monolith 巨型名字 ---------- */
+function moCSS() {
+  return `*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:540px;height:720px;overflow:hidden}
+body{background:${MO.bg};color:${MO.ink};font-family:'Noto Sans SC',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.page{position:relative;width:540px;height:720px;overflow:hidden;padding:34px 34px 24px;display:flex;flex-direction:column}
+.ttl{font-size:34px;font-weight:900;letter-spacing:1px;line-height:1.12}
+.ttl i{font-style:normal;color:${MO.orange}}
+.mt{font-size:10.5px;color:${MO.soft};letter-spacing:1px}
+.row{flex:1;min-height:0;display:flex;align-items:center;gap:12px;border-bottom:1px solid ${MO.line}}
+.nm{font-size:30px;font-weight:900;letter-spacing:-0.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.05}
+.rn{font-family:'Roboto Mono',monospace;font-size:12px;font-weight:500;color:${MO.soft};width:26px;flex-shrink:0;text-align:right;font-variant-numeric:tabular-nums}
+.av{border-radius:50%;object-fit:cover;flex-shrink:0;display:block}
+.row.top .nm{color:${MO.orange}}
+.foot{display:flex;justify-content:space-between;align-items:center;margin-top:11px}`;
+}
+function moTopHTML(users, meta) {
+  const rows = users.slice(0, 10).map((u, i) => `<div class="row${i < 3 ? ' top' : ''}">
+    <span class="rn">${u._rank}</span>${tbAv(u.avatar, 34, false)}<span class="nm">${magName(u)}</span></div>`).join('');
+  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${numFontLink()}<style>${moCSS()}</style></head><body>
+  <div class="page">
+    <div class="ttl">园区<i>充电</i>榜</div>
+    <div class="mt" style="margin-top:11px">${rankMetaLine(meta)} · ${rankDate(meta.dateStr)} · 前十名</div>
+    <div style="flex:1;display:flex;flex-direction:column;min-height:0;margin-top:14px">${rows}</div>
+    <div class="foot"><span class="mt">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</span><span class="mt">${esc(meta.sessionStr)}</span></div>
+  </div></body></html>`;
+}
+function moListHTML(users, meta, pageLabel) {
+  const half = Math.ceil(users.length / 2);
+  const fs = half > 20 ? 13 : half > 15 ? 15 : 17;
+  const col = (arr, off) => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">${arr.map((u, i) => `<div class="row">
+    <span class="rn" style="width:22px;font-size:11px">${u._rank}</span>${tbAv(u.avatar, fs + 6, false)}<span class="nm" style="font-size:${fs}px">${magName(u)}</span></div>`).join('')}</div>`;
+  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${numFontLink()}<style>${moCSS()}</style></head><body>
+  <div class="page">
+    <div class="ttl" style="font-size:23px">园区<i>充电</i>榜</div>
+    <div class="mt" style="margin-top:9px">${esc(meta.target)} · ${rankDate(meta.dateStr)} · ${esc(pageLabel)}</div>
+    <div style="flex:1;display:flex;gap:22px;margin-top:14px;min-height:0">${col(users.slice(0, half), users[0] ? users[0]._rank : 1)}${col(users.slice(half), users[half] ? users[half]._rank : 1)}</div>
+    <div class="foot"><span class="mt">${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</span><span class="mt">感谢每一份心意</span></div>
   </div></body></html>`;
 }
 

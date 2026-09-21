@@ -1556,10 +1556,10 @@ function crListHTML(users, meta, pageLabel) {
   return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${cxFontLink()}<style>${crCSS()}</style></head><body>
   <div class="page"><span class="grain"></span><span class="grid"></span>
     <div style="display:flex;justify-content:space-between;align-items:baseline;padding-bottom:9px;border-bottom:1px solid ${CX.hair}">
-      <span class="lbl">${esc(pageLabel)}</span><span class="lbl">${rankDate(meta.dateStr)}</span></div>
+      <span class="lbl">园区充电榜</span><span class="lbl">${esc(pageLabel)}</span></div>
     <div class="mt" style="margin-top:10px">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</div>
     <div style="flex:1;display:flex;gap:18px;margin-top:14px;min-height:0">${col(users.slice(0, half))}${col(users.slice(half))}</div>
-    <div class="foot"><span class="lbl">${esc(meta.sessionStr)}</span><span class="pg">${pg}</span></div>
+    <div class="foot"><span class="lbl">${rankDate(meta.dateStr)}</span><span class="pg">${rankPageCodeOf(pageLabel, meta)}</span></div>
   </div></body></html>`;
 }
 /* ---------- 2. chroma-photo 柔焦头像 ---------- */
@@ -1605,10 +1605,10 @@ function cpListHTML(users, meta, pageLabel) {
   return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${cxFontLink()}<style>${cpCSS()}</style></head><body>
   <div class="page"><span class="grain"></span>
     <div style="display:flex;justify-content:space-between;align-items:baseline;padding-bottom:9px;border-bottom:1px solid ${CX.hair}">
-      <span class="lbl">${esc(pageLabel)}</span><span class="lbl">${rankDate(meta.dateStr)}</span></div>
+      <span class="lbl">园区充电榜</span><span class="lbl">${esc(pageLabel)}</span></div>
     <div class="mt" style="margin-top:10px">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</div>
     <div class="mosaic" style="grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(6,1fr);gap:6px;margin-top:14px">${tiles}</div>
-    <div class="foot"><span class="lbl">${esc(meta.sessionStr)}</span><span class="pg">${pg}</span></div>
+    <div class="foot"><span class="lbl">${rankDate(meta.dateStr)}</span><span class="pg">${rankPageCodeOf(pageLabel, meta)}</span></div>
   </div></body></html>`;
 }
 
@@ -1617,6 +1617,9 @@ const DP = { bg: '#F2F0EC', ink: '#22262A', soft: 'rgba(34,38,42,0.52)', hair: '
   white: 'rgba(255,255,255,0.58)', mark: '#3E5B4E' };
 function rankPageTotal(meta) { const n = Math.min(100, (meta.count || 0)); return 1 + Math.max(0, Math.ceil((n - 10) / 30)); }
 function rankPageCode(meta) { const t = rankPageTotal(meta); return '01 / ' + String(t).padStart(2, '0'); }
+function rankPageIndexOf(pageLabel) { const m = String(pageLabel || '').match(/(\d+)/); const start = m ? Number(m[1]) : 11; return 1 + Math.max(0, Math.ceil((start - 10) / 30)); }
+function rankPageCodeOf(pageLabel, meta) { return String(rankPageIndexOf(pageLabel)).padStart(2, '0') + ' / ' + String(rankPageTotal(meta)).padStart(2, '0'); }
+
 function dpFontLink() {
   return '<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Roboto+Mono:wght@300;400;500&display=swap" rel="stylesheet">';
 }
@@ -1636,7 +1639,7 @@ function dpHead(meta, smallLabel) {
   return `<div style="display:flex;justify-content:space-between;align-items:baseline;padding-bottom:10px;border-bottom:1px solid ${DP.hair}">
       <span class="lbl">${smallLabel}</span><span class="lbl">${rankDate(meta.dateStr)}</span></div>
     <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-top:15px">
-      <span class="ttl">园区充电榜</span><span class="lbl" style="padding-bottom:6px">${esc(meta.sessionStr)}</span></div>
+      <span class="ttl">园区充电榜</span></div>
     <div class="mt" style="margin-top:10px">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</div>`;
 }
 function dpRow(u, av, nmFs) {
@@ -1698,11 +1701,11 @@ function dgListHTML(users, meta, pageLabel) {
     <div class="inner">
       <div style="display:flex;justify-content:space-between;align-items:baseline;padding-bottom:10px;border-bottom:1px solid ${DP.hair}">
         <span class="lbl">园区充电榜</span><span class="lbl">${esc(pageLabel)}</span></div>
-      <div class="mt" style="margin-top:11px">${esc(meta.sessionStr)}</div>
+      <div class="mt" style="margin-top:11px">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</div>
       <div class="glass" style="padding:12px 14px">
         <div class="rows" style="flex-direction:row;gap:14px">${col(users.slice(0, half))}${col(users.slice(half))}</div>
       </div>
-      <div class="foot"><span class="lbl">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</span><span class="lbl">${rankDate(meta.dateStr)}</span></div>
+      <div class="foot"><span class="lbl">${rankDate(meta.dateStr)}</span><span class="pg">${rankPageCodeOf(pageLabel, meta)}</span></div>
     </div>
   </div></body></html>`;
 }
@@ -1765,12 +1768,12 @@ function dsListHTML(users, meta, pageLabel) {
     <div class="inner">
       <div style="display:flex;justify-content:space-between;align-items:baseline;padding-bottom:10px;border-bottom:1px solid ${DP.hair}">
         <span class="lbl">园区充电榜</span><span class="lbl">${esc(pageLabel)}</span></div>
-      <div class="mt" style="margin-top:11px">${esc(meta.sessionStr)}</div>
+      <div class="mt" style="margin-top:11px">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</div>
       <div class="stack">
         <div class="card c3"></div><div class="card c2"></div>
         <div class="card c1" style="padding:12px 14px"><div class="rows" style="flex-direction:row;gap:14px">${col(users.slice(0, half))}${col(users.slice(half))}</div></div>
       </div>
-      <div class="foot"><span class="lbl">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</span><span class="lbl">${rankDate(meta.dateStr)}</span></div>
+      <div class="foot"><span class="lbl">${rankDate(meta.dateStr)}</span><span class="pg">${rankPageCodeOf(pageLabel, meta)}</span></div>
     </div>
   </div></body></html>`;
 }

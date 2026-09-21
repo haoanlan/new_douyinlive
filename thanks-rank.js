@@ -275,10 +275,16 @@ function magTopV2(users, meta) {
 function magListHTML(variant, users, meta, pageLabel) {
   const A = MAG_AMOUNT;
   const half = Math.ceil(users.length / 2);
+  // 行高按每栏行数算，保证整块装进 720 视口（100 人场次每栏 15 行，固定 45px 会溢出被裁）
+  const rows = Math.max(1, half);
+  const avail = A ? 556 : 566;
+  const rowH = Math.max(26, Math.min(A ? 40 : 45, Math.floor(avail / rows)));
+  const av = A ? 20 : 24;
+  const pad = Math.max(3, Math.floor((rowH - av - 1) / 2));
   const col = (arr, offset) => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:space-between">${arr.map((u, i) => `
-    <div style="display:flex;align-items:center;gap:8px;padding:${A ? 8 : 10}px 0;border-bottom:1px solid ${MAG.ruleLight}">
+    <div style="display:flex;align-items:center;gap:8px;height:${rowH}px;padding:${pad}px 0;border-bottom:1px solid ${MAG.ruleLight}">
       <span class="num" style="width:22px;font-size:12px;color:${MAG.inkFaint}">${offset + i + 1}</span>
-      ${magAvatar(u.avatar, A ? 20 : 24)}
+      ${magAvatar(u.avatar, av)}
       <span style="flex:1;min-width:0;font-size:${A ? 13.5 : 14.5}px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${magName(u)}</span>
       ${A ? `<span class="amt" style="font-size:12.5px;flex-shrink:0;margin-left:8px">${fmtD(u.diamonds)}</span>` : ''}
     </div>`).join('')}</div>`;

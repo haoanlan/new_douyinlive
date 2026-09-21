@@ -145,7 +145,7 @@ const MAG = {
   accent: '#8A2B2B',
   serif: "'Noto Serif SC','Songti SC',serif",
 };
-const MAG_THEME_NAMES = ['magazine-v1', 'magazine-v2', 'noir', 'typegrid', 'cute', 'news', 'energy', 'cute-journal', 'cute-candy', 'cute-story', 'cute-chibi', 'ghost', 'faces', 'ruler', 'monolith', 'chroma-bar', 'chroma-tile', 'chroma-refined', 'chroma-photo'];
+const MAG_THEME_NAMES = ['magazine-v1', 'magazine-v2', 'noir', 'typegrid', 'cute', 'news', 'energy', 'cute-journal', 'cute-candy', 'cute-story', 'cute-chibi', 'ghost', 'faces', 'ruler', 'monolith', 'chroma-bar', 'chroma-tile', 'chroma-refined', 'chroma-photo', 'depth-glass', 'depth-stack'];
 const MAG_VARIANT = MAG_THEME_NAMES.includes(THEME_ARG) ? THEME_ARG : null;
 // 是否显示钻石数：提名榜（thanks-rank.js）不显示，钻石榜显示
 const MAG_AMOUNT = false;
@@ -320,6 +320,8 @@ function magTopHTML(variant, users, meta) {
   if (variant === 'chroma-bar') return cbTopHTML(users, meta);
   if (variant === 'chroma-refined') return crTopHTML(users, meta);
   if (variant === 'chroma-photo') return cpTopHTML(users, meta);
+  if (variant === 'depth-glass') return dgTopHTML(users, meta);
+  if (variant === 'depth-stack') return dsTopHTML(users, meta);
   if (variant === 'chroma-tile') return ctTopHTML(users, meta);
   if (variant === 'faces') return faTopHTML(users, meta);
   if (variant === 'ruler') return ruTopHTML(users, meta);
@@ -406,6 +408,8 @@ function rankListHTML(variant, users, meta, pageLabel) {
   if (variant === 'chroma-bar') return cbListHTML(users, meta, pageLabel);
   if (variant === 'chroma-refined') return crListHTML(users, meta, pageLabel);
   if (variant === 'chroma-photo') return cpListHTML(users, meta, pageLabel);
+  if (variant === 'depth-glass') return dgListHTML(users, meta, pageLabel);
+  if (variant === 'depth-stack') return dsListHTML(users, meta, pageLabel);
   if (variant === 'chroma-tile') return ctListHTML(users, meta, pageLabel);
   if (variant === 'faces') return faListHTML(users, meta, pageLabel);
   if (variant === 'ruler') return ruListHTML(users, meta, pageLabel);
@@ -1606,6 +1610,164 @@ function cpListHTML(users, meta, pageLabel) {
     <div class="mt" style="margin-top:10px">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</div>
     <div class="mosaic" style="grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(6,1fr);gap:6px;margin-top:14px">${tiles}</div>
     <div class="foot"><span class="lbl">${esc(meta.sessionStr)}</span><span class="pg">${pg}</span></div>
+  </div></body></html>`;
+}
+
+/* ==================== 空间感 · 高斯模糊两案：depth-glass 磨砂玻璃 / depth-stack 层叠景深 ==================== */
+const DP = { bg: '#F2F0EC', ink: '#22262A', soft: 'rgba(34,38,42,0.52)', hair: 'rgba(34,38,42,0.10)',
+  white: 'rgba(255,255,255,0.58)', mark: '#3E5B4E' };
+function dpFontLink() {
+  return '<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Roboto+Mono:wght@300;400;500&display=swap" rel="stylesheet">';
+}
+function dpBgLayers(meta, blurPx, veilOp) {
+  const url = meta.avatar || '';
+  return `${url ? `<span class="bgimg" style="background-image:url('${esc(url)}');filter:blur(${blurPx}px) saturate(0.45) brightness(1.04)"></span>` : ''}
+    <span class="veil" style="background:rgba(242,240,236,${veilOp})"></span>`;
+}
+function dpBgBlobs(users, meta, blurPx, veilOp) {
+  const picks = [meta.avatar, (users[0] || {}).avatar, (users[1] || {}).avatar, (users[2] || {}).avatar].filter(Boolean).slice(0, 3);
+  const pos = [[-130, -110, 440], [290, -80, 400], [-70, 410, 430]];
+  const blobs = picks.map((u, i) => `<span class="blob" style="background-image:url('${esc(u)}');left:${pos[i][0]}px;top:${pos[i][1]}px;width:${pos[i][2]}px;height:${pos[i][2]}px;filter:blur(${blurPx}px) saturate(1.3)"></span>`).join('');
+  return `<span class="blob-base"></span>${blobs}<span class="veil" style="background:rgba(242,240,236,${veilOp})"></span>`;
+}
+function dpHead(meta, smallLabel) {
+  return `<div style="display:flex;justify-content:space-between;align-items:baseline;padding-bottom:10px;border-bottom:1px solid ${DP.hair}">
+      <span class="lbl">${smallLabel}</span><span class="lbl">${rankDate(meta.dateStr)}</span></div>
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-top:15px">
+      <span class="ttl">园区充电榜</span><span class="lbl" style="padding-bottom:6px">${esc(meta.sessionStr)}</span></div>
+    <div class="mt" style="margin-top:10px">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</div>`;
+}
+function dpRow(u, av, nmFs) {
+  const accent = u._rank <= 3;
+  return `<div class="row">${accent ? `<span class="dot" style="background:${chromaOf(u)}"></span>` : '<span class="dot" style="background:transparent"></span>'}
+    <span class="rn">${String(u._rank).padStart(2, '0')}</span>${tbAv(u.avatar, av, false)}
+    <span class="nm" style="font-size:${nmFs}px${accent ? ';font-weight:700' : ''}">${magName(u)}</span></div>`;
+}
+/* ---------- 1. depth-glass 磨砂玻璃 ---------- */
+function dgCSS() {
+  return `*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:540px;height:720px;overflow:hidden}
+body{background:${DP.bg};color:${DP.ink};font-family:'Noto Sans SC',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.page{position:relative;width:540px;height:720px;overflow:hidden;padding:34px 34px 26px;display:flex;flex-direction:column}
+.bgimg{position:absolute;inset:-80px;background-size:cover;background-position:center;z-index:0}
+.veil{position:absolute;inset:0;z-index:1}
+.blob-base{position:absolute;inset:0;background:#F2F0EC;z-index:0}
+.blob{position:absolute;border-radius:50%;background-size:cover;background-position:center;z-index:0;opacity:.92}
+.watermark{position:absolute;right:-58px;top:168px;font-family:'Roboto Mono',monospace;font-weight:700;font-size:300px;line-height:1;
+  color:rgba(34,38,42,0.30);filter:blur(14px);z-index:1;letter-spacing:-8px}
+.inner{position:relative;z-index:2;flex:1;display:flex;flex-direction:column;min-height:0}
+.ttl{font-size:31px;font-weight:900;letter-spacing:1.5px;line-height:1.06}
+.lbl{font-size:9.5px;letter-spacing:2.6px;color:${DP.soft};font-weight:500}
+.mt{font-size:10.5px;letter-spacing:0.8px;color:${DP.soft}}
+.glass{position:relative;flex:1;min-height:0;margin-top:18px;border-radius:22px;padding:12px 16px 8px;display:flex;flex-direction:column;
+  background:linear-gradient(158deg, rgba(255,255,255,0.30) 0%, rgba(255,255,255,0.11) 34%, rgba(255,255,255,0.05) 72%, rgba(255,255,255,0.12) 100%);
+  border:1px solid rgba(255,255,255,0.55);
+  box-shadow:0 22px 48px rgba(34,38,42,0.13), inset 0 1px 0 rgba(255,255,255,0.75),
+             inset 0 -1px 0 rgba(255,255,255,0.28);
+  -webkit-backdrop-filter:blur(34px) saturate(1.2);backdrop-filter:blur(34px) saturate(1.2)}
+.row{flex:1;min-height:0;display:flex;align-items:center;gap:11px;border-bottom:1px solid rgba(255,255,255,0.42)}
+.row:last-child{border-bottom:none}
+.dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.rn{font-family:'Roboto Mono',monospace;font-size:10.5px;font-weight:400;letter-spacing:0.5px;opacity:.55;width:24px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums}
+.nm{font-size:14.5px;font-weight:500;letter-spacing:0.3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.av{border-radius:50%;object-fit:cover;flex-shrink:0;display:block;box-shadow:0 2px 6px rgba(34,38,42,0.16), 0 0 0 1.5px rgba(255,255,255,0.85)}
+.foot{display:flex;justify-content:space-between;align-items:baseline;margin-top:14px}
+.pg{font-family:'Roboto Mono',monospace;font-size:9.5px;letter-spacing:1px;color:${DP.soft}}`;
+}
+function dgTopHTML(users, meta) {
+  const rows = users.slice(0, 10).map(u => dpRow(u, 30, 14.5)).join('');
+  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${dpFontLink()}<style>${dgCSS()}</style></head><body>
+  <div class="page">${dpBgBlobs(users, meta, 62, 0.42)}<span class="watermark">${meta.count || meta.gifters}</span>
+    <div class="inner">
+      ${dpHead(meta, '心意榜 · 前十名')}
+      <div class="glass">${rows}</div>
+      <div class="foot"><span class="lbl">${esc(meta.target)} · 感谢每一份心意</span><span class="pg">01 / 04</span></div>
+    </div>
+  </div></body></html>`;
+}
+function dgListHTML(users, meta, pageLabel) {
+  const half = Math.ceil(users.length / 2);
+  const av = half > 14 ? 20 : 22, nmFs = half > 14 ? 11.5 : 12.5;
+  const col = arr => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">${arr.map(u => dpRow(u, av, nmFs)).join('')}</div>`;
+  const pg = (pageLabel.match(/(\d+)\s*\/\s*(\d+)/) || [])[0] || pageLabel;
+  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${dpFontLink()}<style>${dgCSS()}</style></head><body>
+  <div class="page">${dpBgBlobs(users, meta, 58, 0.40)}
+    <div class="inner">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;padding-bottom:10px;border-bottom:1px solid ${DP.hair}">
+        <span class="lbl">心意榜 · ${esc(pageLabel)}</span><span class="lbl">${rankDate(meta.dateStr)}</span></div>
+      <div class="mt" style="margin-top:11px">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</div>
+      <div class="glass" style="padding:8px 14px 4px">
+        ${`<div style="flex:1;display:flex;gap:20px;min-height:0">${col(users.slice(0, half))}${col(users.slice(half))}</div>`}
+      </div>
+      <div class="foot"><span class="lbl">${esc(meta.sessionStr)}</span><span class="pg">${pg}</span></div>
+    </div>
+  </div></body></html>`;
+}
+/* ---------- 2. depth-stack 层叠景深 ---------- */
+function dsCSS() {
+  return `*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:540px;height:720px;overflow:hidden}
+body{background:${DP.bg};color:${DP.ink};font-family:'Noto Sans SC',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.page{position:relative;width:540px;height:720px;overflow:hidden;padding:34px 38px 26px;display:flex;flex-direction:column}
+.bgimg{position:absolute;inset:-90px;background-size:cover;background-position:center;z-index:0}
+.veil{position:absolute;inset:0;z-index:1}
+.blob-base{position:absolute;inset:0;background:#F2F0EC;z-index:0}
+.blob{position:absolute;border-radius:50%;background-size:cover;background-position:center;z-index:0;opacity:.92}
+.inner{position:relative;z-index:2;flex:1;display:flex;flex-direction:column;min-height:0}
+.ttl{font-size:31px;font-weight:900;letter-spacing:1.5px;line-height:1.06}
+.lbl{font-size:9.5px;letter-spacing:2.6px;color:${DP.soft};font-weight:500}
+.mt{font-size:10.5px;letter-spacing:0.8px;color:${DP.soft}}
+.stack{position:relative;flex:1;min-height:0;margin-top:20px}
+.card{position:absolute;left:0;right:0;top:0;bottom:0;border-radius:20px;padding:12px 16px 8px;display:flex;flex-direction:column}
+.c3{background:rgba(255,255,255,0.34);transform:translate(20px,-14px) scale(0.965);filter:blur(6px);opacity:.55}
+.c2{background:rgba(255,255,255,0.5);transform:translate(10px,-7px) scale(0.983);filter:blur(2.4px);opacity:.75}
+.c1{background:rgba(255,255,255,0.74);border:1px solid rgba(255,255,255,0.85);
+  box-shadow:0 26px 52px rgba(34,38,42,0.16), 0 2px 6px rgba(34,38,42,0.06);
+  -webkit-backdrop-filter:blur(18px) saturate(1.1);backdrop-filter:blur(18px) saturate(1.1)}
+.row{flex:1;min-height:0;display:flex;align-items:center;gap:11px;border-bottom:1px solid ${DP.hair}}
+.row:last-child{border-bottom:none}
+.rn{font-family:'Roboto Mono',monospace;font-size:10.5px;font-weight:400;letter-spacing:0.5px;opacity:.5;width:24px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums}
+.nm{font-size:14.5px;font-weight:500;letter-spacing:0.3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.av{border-radius:50%;object-fit:cover;flex-shrink:0;display:block;box-shadow:0 2px 6px rgba(34,38,42,0.18), 0 0 0 1.5px #FFFFFF}
+.foot{display:flex;justify-content:space-between;align-items:baseline;margin-top:16px}
+.pg{font-family:'Roboto Mono',monospace;font-size:9.5px;letter-spacing:1px;color:${DP.soft}}`;
+}
+function dsRowsHTML(users, av, nmFs) {
+  return users.map(u => `<div class="row">${u._rank <= 3 ? `<span class="chip" style="background:${chromaOf(u)}"></span>` : '<span class="chip" style="background:transparent"></span>'}
+    <span class="rn">${String(u._rank).padStart(2, '0')}</span>${tbAv(u.avatar, av, false)}
+    <span class="nm" style="font-size:${nmFs}px${u._rank <= 3 ? ';font-weight:700' : ''}">${magName(u)}</span></div>`).join('');
+}
+function dsTopHTML(users, meta) {
+  const rows = dsRowsHTML(users.slice(0, 10), 30, 14.5);
+  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${dpFontLink()}<style>${dsCSS()}</style></head><body>
+  <div class="page">${dpBgBlobs(users, meta, 70, 0.48)}
+    <div class="inner">
+      ${dpHead(meta, '心意榜 · 前十名')}
+      <div class="stack">
+        <div class="card c3"></div><div class="card c2"></div><div class="card c1">${rows}</div>
+      </div>
+      <div class="foot"><span class="lbl">${esc(meta.target)} · 感谢每一份心意</span><span class="pg">01 / 04</span></div>
+    </div>
+  </div></body></html>`;
+}
+function dsListHTML(users, meta, pageLabel) {
+  const half = Math.ceil(users.length / 2);
+  const av = half > 14 ? 20 : 22, nmFs = half > 14 ? 11.5 : 12.5;
+  const col = arr => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">${dsRowsHTML(arr, av, nmFs)}</div>`;
+  const pg = (pageLabel.match(/(\d+)\s*\/\s*(\d+)/) || [])[0] || pageLabel;
+  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${dpFontLink()}<style>${dsCSS()}</style></head><body>
+  <div class="page">${dpBgBlobs(users, meta, 66, 0.46)}
+    <div class="inner">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;padding-bottom:10px;border-bottom:1px solid ${DP.hair}">
+        <span class="lbl">心意榜 · ${esc(pageLabel)}</span><span class="lbl">${rankDate(meta.dateStr)}</span></div>
+      <div class="mt" style="margin-top:11px">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</div>
+      <div class="stack">
+        <div class="card c3"></div><div class="card c2"></div>
+        <div class="card c1" style="padding:8px 14px 4px"><div style="flex:1;display:flex;gap:20px;min-height:0">${col(users.slice(0, half))}${col(users.slice(half))}</div></div>
+      </div>
+      <div class="foot"><span class="lbl">${esc(meta.sessionStr)}</span><span class="pg">${pg}</span></div>
+    </div>
   </div></body></html>`;
 }
 

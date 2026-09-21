@@ -1086,7 +1086,7 @@ function ccListHTML(users, meta, pageLabel) {
   const col = (arr, off) => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;min-height:0">${arr.map((u, i) => `<div style="flex:1;min-height:0;display:flex">${ccCap(u, off + i, av, nmFs, '0 12px 0 8px')}</div>`).join('')}</div>`;
   return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${cuteFontLink()}<style>${ccCSS()}</style></head><body>
   <div class="page">
-    <div style="position:relative;z-index:2;display:flex;justify-content:space-between;align-items:center">
+    <div style="position:relative;z-index:2;display:flex;justify-content:space-between;align-items:${colAlign}">
       <span class="ttlcap" style="padding:8px 18px"><span style="font-size:19px">园区充电榜</span></span>
       <span class="mt" style="font-weight:700">${esc(pageLabel)}</span></div>
     <div class="mt" style="margin-top:12px;position:relative;z-index:2">${esc(meta.target)} · ${rankDate(meta.dateStr)} · 共 ${meta.gifters} 位送礼人</div>
@@ -1398,7 +1398,7 @@ function ruTopHTML(users, meta) {
 }
 function ruListHTML(users, meta, pageLabel) {
   const half = Math.ceil(users.length / 2);
-  const col = arr => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">${ruRows(arr, 20, 12.5)}</div>`;
+  const rightN = n - half; const colAlign = rightN < half ? "flex-start" : "center"; const col = arr => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">${ruRows(arr, 20, 12.5)}</div>`;
   return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${numFontLink()}<style>${ruCSS()}</style></head><body>
   <div class="page">
     <div class="ttl" style="font-size:23px">园区充电榜</div>
@@ -1494,7 +1494,7 @@ function cbTopHTML(users, meta) {
 function cbListHTML(users, meta, pageLabel) {
   const half = Math.ceil(users.length / 2);
   const av = half > 14 ? 19 : 22, nmFs = half > 14 ? 11.5 : 12.5, pd = half > 14 ? 10 : 11;
-  const col = arr => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;min-height:0">${arr.map(u => cbBar(u, av, nmFs, pd)).join('')}</div>`;
+  const rightN = n - half; const colAlign = rightN < half ? "flex-start" : "center"; const col = arr => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;min-height:0">${arr.map(u => cbBar(u, av, nmFs, pd)).join('')}</div>`;
   return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${chromaFontLink()}<style>${cbCSS()}</style></head><body>
   <div class="page">
     <div class="ttl" style="font-size:23px">园区<i>充电</i>榜</div>
@@ -1598,7 +1598,7 @@ function crTopHTML(users, meta) {
 function crListHTML(users, meta, pageLabel) {
   const half = Math.ceil(users.length / 2);
   const av = half > 14 ? 20 : 22, nmFs = half > 14 ? 11.5 : 12.5;
-  const col = arr => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;min-height:0">${arr.map(u => crBar(u, av, nmFs)).join('')}</div>`;
+  const rightN = n - half; const colAlign = rightN < half ? "flex-start" : "center"; const col = arr => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;min-height:0">${arr.map(u => crBar(u, av, nmFs)).join('')}</div>`;
   return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${cxFontLink()}<style>${crCSS()}</style></head><body>
   <div class="page"><span class="grain"></span><span class="grid"></span>
     <div style="display:flex;justify-content:space-between;align-items:baseline;padding-bottom:9px;border-bottom:1px solid ${CX.hair}">
@@ -1743,9 +1743,9 @@ function dgTopHTML(users, meta) {
   </div></body></html>`;
 }
 function dgListHTML(users, meta, pageLabel) {
-  const CAP = 15, n = users.length, dense = n > CAP;                       // 超过一栏容量：左栏先排满 15 行
+  const CAP = 15, n = users.length, dense = n > CAP;
   const half = dense ? CAP : Math.ceil(n / 2);
-  const rowH = dense ? Math.floor((522 - 5 * (CAP - 1)) / CAP) : 0;        // 固定行高，避免右栏一行被撑成巨条
+  const rowH = dense ? Math.floor((522 - 5 * (CAP - 1)) / CAP) : 0;
   const av = dense ? 20 : 22, nmFs = dense ? 11.5 : 12.5;
   const col = arr => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;min-height:0">${arr.map(u => dpRow(u, av, nmFs, rowH)).join('')}</div>`;
   return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${dpFontLink()}<style>${dgCSS()}</style></head><body>
@@ -1754,8 +1754,8 @@ function dgListHTML(users, meta, pageLabel) {
       <div style="display:flex;justify-content:space-between;align-items:baseline;padding-bottom:10px;border-bottom:1px solid ${DP.hair}">
         <span class="lbl">园区充电榜</span><span class="lbl">${esc(pageLabel)}</span></div>
       <div class="mt" style="margin-top:11px">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</div>
-      <div class="glass" style="padding:12px 14px">
-        <div class="rows" style="flex-direction:row;gap:14px">${col(users.slice(0, half))}${col(users.slice(half))}</div>
+      <div class="glass" style="padding:12px 14px;justify-content:center">
+        <div class="rows" style="flex:0 0 auto;flex-direction:row;gap:14px;align-items:flex-start">${col(users.slice(0, half))}${col(users.slice(half))}</div>
       </div>
       <div class="foot"><span class="lbl">${rankDate(meta.dateStr)}</span><span class="pg">${rankPageCodeOf(pageLabel, meta)}</span></div>
     </div>
@@ -1816,7 +1816,7 @@ function dsListHTML(users, meta, pageLabel) {
   const half = dense ? CAP : Math.ceil(n / 2);
   const rowH = dense ? Math.floor((516 - 5 * (CAP - 1)) / CAP) : 0;
   const av = dense ? 20 : 22, nmFs = dense ? 11.5 : 12.5;
-  const col = arr => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;min-height:0">${dsRowsHTML(arr, av, nmFs, rowH)}</div>`;
+  const rightN = n - half; const colAlign = rightN < half ? "flex-start" : "center"; const col = arr => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;min-height:0">${dsRowsHTML(arr, av, nmFs, rowH)}</div>`;
   return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${dpFontLink()}<style>${dsCSS()}</style></head><body>
   <div class="page">${dpBgBlobs(users, meta, 66, 0.46)}
     <div class="inner">
@@ -1825,7 +1825,7 @@ function dsListHTML(users, meta, pageLabel) {
       <div class="mt" style="margin-top:11px">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</div>
       <div class="stack">
         <div class="card c3"></div><div class="card c2"></div>
-        <div class="card c1" style="padding:12px 14px"><div class="rows" style="flex-direction:row;gap:14px">${col(users.slice(0, half))}${col(users.slice(half))}</div></div>
+        <div class="card c1" style="padding:12px 14px"><div class="rows" style="flex-direction:row;gap:14px;align-items:${colAlign}">${col(users.slice(0, half))}${col(users.slice(half))}</div></div>
       </div>
       <div class="foot"><span class="lbl">${rankDate(meta.dateStr)}</span><span class="pg">${rankPageCodeOf(pageLabel, meta)}</span></div>
     </div>

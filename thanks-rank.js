@@ -144,7 +144,7 @@ const MAG = {
   accent: '#8A2B2B',
   serif: "'Noto Serif SC','Songti SC',serif",
 };
-const MAG_THEME_NAMES = ['magazine-v1', 'magazine-v2', 'magazine-v3'];
+const MAG_THEME_NAMES = ['magazine-v1', 'magazine-v2', 'magazine-v3', 'guofeng'];
 const MAG_VARIANT = MAG_THEME_NAMES.includes(THEME_ARG) ? THEME_ARG : null;
 // 是否显示钻石数：提名榜（thanks-rank.js）不显示，钻石榜显示
 const MAG_AMOUNT = false;
@@ -322,6 +322,7 @@ function magListHTML(variant, users, meta, pageLabel) {
 }
 
 function magTopHTML(variant, users, meta) {
+  if (variant === 'guofeng') return gfTopHTML(users, meta);
   if (variant === 'magazine-v2') return magTopV2(users, meta);
   if (variant === 'magazine-v3') return magTopV3(users, meta);
   return magTopV1(users, meta);
@@ -365,9 +366,148 @@ async function renderMagazine(variant, users, meta) {
       if (start >= end) continue;
       const label = `第 ${start + 1}-${end} 名`;
       console.log(`🖼️  名次页 ${i + 2}/4 (${label})`);
-      await renderMag(magListHTML(variant, users.slice(start, end), meta, label), `${base}_p${i + 2}.jpg`);
+      const listHtml = variant === 'guofeng' ? gfListHTML(users.slice(start, end), meta, label) : magListHTML(variant, users.slice(start, end), meta, label);
+      await renderMag(listHtml, `${base}_p${i + 2}.jpg`);
     }
   }
+}
+
+// ==================== 古风模板（guofeng）====================
+// 语言：宣纸 + 墨 + 朱砂；毛笔楷（马善政）刊头、霞鹜文楷正文、宋体数字
+// 装饰只用三处且克制：右上墨竹（AI 素材，multiply 压进纸里）、底部淡墨远山、右下朱砂印章
+// 朱砂只出现在印章（强调色一处）
+const GF = {
+  paper: '#F5EFE1', paperWarm: '#EFE7D6', paperLight: '#FCF8F0',
+  ink: '#231F1A', ink2: 'rgba(35,31,26,0.66)', ink3: 'rgba(35,31,26,0.40)',
+  rule: 'rgba(35,31,26,0.30)', ruleLight: 'rgba(35,31,26,0.15)',
+  cinnabar: '#A32B22',
+  kai: "'Ma Shan Zheng','LXGW WenKai','Noto Serif SC',serif",
+  wenkai: "'LXGW WenKai','Noto Serif SC',serif",
+  serif: "'Noto Serif SC',serif",
+};
+const GF_SEAL_TEXT = '林语巷';   // 印章文字，改这里即可
+const GF_NUM = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
+
+let _gfAssets = null;
+function gfAssets() {
+  if (_gfAssets) return _gfAssets;
+  const read = (f) => {
+    try { return 'data:image/png;base64,' + fs.readFileSync(path.join(__dirname, 'assets', f)).toString('base64'); }
+    catch (e) { return ''; }
+  };
+  _gfAssets = { bamboo: read('guofeng-bamboo.png'), mountains: read('guofeng-mountains.png') };
+  return _gfAssets;
+}
+function gfFontLink() {
+  return `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@300;400;500;600;700&display=swap">`
+    + `<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css">`;
+}
+const GF_CSS = `*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:540px;height:720px;overflow:hidden}
+body{background:${GF.paper};color:${GF.ink};font-family:${GF.wenkai};-webkit-font-smoothing:antialiased}
+.page{position:relative;width:540px;height:720px;overflow:hidden;
+  background:
+    radial-gradient(120% 80% at 12% 8%, ${GF.paperLight} 0%, rgba(252,248,240,0) 55%),
+    radial-gradient(90% 70% at 88% 96%, ${GF.paperWarm} 0%, rgba(239,231,214,0) 60%),
+    ${GF.paper}}
+.frame{position:absolute;left:16px;top:16px;right:16px;bottom:16px;border:1px solid ${GF.rule};pointer-events:none}
+.deco{position:absolute;pointer-events:none;mix-blend-mode:multiply}
+.wrap{position:relative;z-index:3;height:100%;display:flex;flex-direction:column;padding:44px 40px 40px}
+.kai{font-family:${GF.kai}}
+.wk{font-family:${GF.wenkai}}
+.nm{font-size:15px;line-height:1.25}
+.amt{font-family:${GF.serif};font-variant-numeric:tabular-nums}
+.meta{font-size:10.5px;letter-spacing:2px;color:${GF.ink3}}
+.rule{height:1px;background:${GF.rule}}
+.rowrule{border-bottom:1px solid ${GF.ruleLight}}
+.av{border-radius:50%;object-fit:cover;vertical-align:middle;flex-shrink:0}`;
+
+function gfDoc(title, body) {
+  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${gfFontLink()}<title>${esc(title)}</title><style>${GF_CSS}</style></head><body>${body}</body></html>`;
+}
+function gfDeco(kind) {
+  const a = gfAssets();
+  if (kind === 'bamboo' && a.bamboo) return `<img class="deco" src="${a.bamboo}" style="right:-52px;top:-38px;width:236px;opacity:0.34" />`;
+  if (kind === 'mountains' && a.mountains) return `<img class="deco" src="${a.mountains}" style="left:0;bottom:0;width:540px;opacity:0.30" />`;
+  return '';
+}
+function gfSeal() {
+  return `<div style="position:absolute;right:34px;bottom:30px;z-index:4;width:40px;height:40px;border:2px solid ${GF.cinnabar};border-radius:3px;display:flex;align-items:center;justify-content:center">
+    <span class="wk" style="writing-mode:vertical-rl;color:${GF.cinnabar};font-size:11px;letter-spacing:1px;line-height:1.15">${esc(GF_SEAL_TEXT)}</span>
+  </div>`;
+}
+
+/** 古风 TOP 页：跟 magazine-v2 同一结构（刊头 / 收礼人封面 / 前十名 2x5 双栏） */
+function gfTopHTML(users, meta) {
+  const A = MAG_AMOUNT;
+  const top = users.slice(0, 10);
+  const half = Math.ceil(top.length / 2);
+  const rowH = A ? 44 : 48;
+  const row = (u, rank) => `
+    <div style="display:flex;align-items:center;height:${rowH}px;gap:9px;border-bottom:1px solid ${GF.ruleLight}">
+      <span class="kai" style="width:22px;font-size:${rank === 1 ? 17 : 15}px;color:${rank === 1 ? GF.ink : GF.ink3};line-height:1">${rank <= 10 ? GF_NUM[rank - 1] : rank}</span>
+      ${magAvatar(u.avatar, rank === 1 ? (A ? 28 : 32) : (A ? 20 : 24))}
+      <span class="nm" style="font-size:${rank === 1 ? (A ? 15.5 : 17) : (A ? 13.5 : 15)}px;color:${rank === 1 ? GF.ink : GF.ink2};font-weight:${rank === 1 ? 600 : 400};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${magName(u)}</span>
+      ${A ? `<span class="amt" style="font-size:12.5px;flex-shrink:0;margin-left:8px;color:${GF.ink2}">${fmtD(u.diamonds)}</span>` : ''}
+    </div>`;
+  const col = (arr, startRank) => {
+    const gap = (half - arr.length) * rowH / 2;
+    return `<div style="flex:1;min-width:0;padding-top:${gap > 0 ? gap : 0}px">${arr.map((u, i) => row(u, startRank + i)).join('')}</div>`;
+  };
+  return gfDoc('园区充电榜', `<div class="page">${gfDeco('bamboo')}${gfDeco('mountains')}<div class="frame"></div>${gfSeal()}
+    <div class="wrap">
+      <div style="text-align:center">
+        <div class="kai" style="font-size:26px;letter-spacing:6px;line-height:1">园区充电榜</div>
+        <div style="width:56px;height:1px;background:${GF.rule};margin:14px auto 0"></div>
+      </div>
+      <div style="text-align:center;flex:1;display:flex;flex-direction:column;justify-content:center;padding:6px 0">
+        <div style="display:flex;justify-content:center">
+          <img class="av" src="${meta.avatar.startsWith('//') ? 'https:' + meta.avatar : meta.avatar}" style="width:84px;height:84px;border:1px solid ${GF.rule}" />
+        </div>
+        <div class="wk" style="font-size:19px;letter-spacing:2px;margin-top:16px">${esc(meta.target)}</div>
+        ${A
+          ? `<div class="meta" style="margin-top:12px">${magTotalText(meta)}</div>
+        <div class="amt" style="font-size:40px;font-weight:400;color:${GF.ink};margin-top:4px;line-height:1">${fmtD(meta.total)}</div>
+        <div class="meta" style="margin-top:9px">共 ${meta.gifters} 位送礼人</div>`
+          : `<div class="amt" style="font-size:48px;font-weight:400;color:${GF.ink};margin-top:12px;line-height:1">${meta.gifters}</div>
+        <div class="meta" style="margin-top:9px;color:${GF.ink2};letter-spacing:4px">位 送 礼 人</div>`}
+        <div class="meta" style="margin-top:14px;color:${GF.ink2}">${esc(meta.dateStr)} · ${esc(meta.sessionStr)}</div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:2px">
+          <div style="flex:1;height:1px;background:${GF.ruleLight}"></div>
+          <span class="meta" style="letter-spacing:6px">前 十 名</span>
+          <div style="flex:1;height:1px;background:${GF.ruleLight}"></div>
+        </div>
+        <div style="display:flex;gap:22px;align-items:flex-start">${col(top.slice(0, half), 1)}${col(top.slice(half), half + 1)}</div>
+      </div>
+    </div>
+  </div>`);
+}
+
+/** 古风名次页 */
+function gfListHTML(users, meta, pageLabel) {
+  const A = MAG_AMOUNT;
+  const half = Math.ceil(users.length / 2);
+  const col = (arr, offset) => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:space-between">${arr.map((u, i) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:${A ? 8 : 10}px 0;border-bottom:1px solid ${GF.ruleLight}">
+      <span class="amt" style="width:24px;font-size:12px;color:${GF.ink3}">${offset + i + 1}</span>
+      ${magAvatar(u.avatar, A ? 20 : 24)}
+      <span class="nm" style="font-size:${A ? 13.5 : 14.5}px;color:${GF.ink2};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0">${magName(u)}</span>
+      ${A ? `<span class="amt" style="font-size:12.5px;flex-shrink:0;margin-left:8px;color:${GF.ink2}">${fmtD(u.diamonds)}</span>` : ''}
+    </div>`).join('')}</div>`;
+  return gfDoc('园区充电榜 · ' + pageLabel, `<div class="page">${gfDeco('mountains')}<div class="frame"></div>
+    <div class="wrap" style="padding:40px 40px 34px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <div class="kai" style="font-size:17px;letter-spacing:4px">园区充电榜</div>
+        <div class="meta">${esc(pageLabel)}</div>
+      </div>
+      <div class="rule" style="margin:12px 0 4px;background:${GF.ruleLight}"></div>
+      <div style="flex:1;display:flex;gap:26px;align-items:stretch">${col(users.slice(0, half), users.length ? users[0]._rank - 1 : 0)}${col(users.slice(half), users.length ? users[half]._rank - 1 : 0)}</div>
+      <div class="rule" style="background:${GF.ruleLight}"></div>
+      <div class="meta" style="margin-top:10px;color:${GF.ink2}">${esc(meta.target)} · ${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</div>
+    </div>
+  </div>`);
 }
 
 async function render(html,outPath){const br=await chromium.launch({headless:true,executablePath:chromiumExe()});const page=await br.newPage({viewport:{width:600,height:2000},deviceScaleFactor:2});await page.setContent(html,{waitUntil:'domcontentloaded',timeout:30000});await page.evaluate(()=>new Promise(r=>{const imgs=document.querySelectorAll('img');let loaded=0;const check=()=>{loaded++;if(loaded>=imgs.length)r()};imgs.forEach(img=>{if(img.complete)check();else{img.onload=check;img.onerror=check}});if(!imgs.length)r();setTimeout(r,8000)}));await new Promise(r=>setTimeout(r,1000));const bodyHeight=await page.evaluate(()=>document.body.scrollHeight);const y=Math.max(0,Math.floor((bodyHeight-800)/2));await page.screenshot({path:outPath,clip:{x:0,y,width:600,height:800},type:'jpeg',quality:92});await br.close();console.log(`  ✅ ${path.basename(outPath)}`);}

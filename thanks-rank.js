@@ -372,19 +372,15 @@ async function renderMagazine(variant, users, meta) {
   }
 }
 
-// ==================== 古风·夜色模板（guofeng）====================
-// 语言：靛青夜色 + 屏风榜面 + 灯笼暖光 + 银白字 + 朱砂印章
-// 结构：榜文告示式（榜头题字 → 屏风榜面内分栏排名次 → 印章压角）
-// 素材：灯笼（唯一发光元素，暖色柔光）、夜色远山、古绢质地，均由 gpt-image-2.5 生成
+// ==================== 古风·现代中式极简（guofeng）====================
+// 浅米纸 + 宋体排版 + 一条通栏白描插画带 + 一枚朱砂小印
+// 除印章的朱砂外，画面里没有任何彩色/发光/阴影/渐变
 const GF = {
-  night1: '#1A2740', night2: '#101A2E', night3: '#0A111F',
-  ink: 'rgba(233,239,250,0.94)', ink2: 'rgba(226,235,255,0.72)', ink3: 'rgba(226,235,255,0.42)',
-  rule: 'rgba(198,212,240,0.20)', ruleLite: 'rgba(198,212,240,0.10)',
-  wood: 'rgba(206,216,238,0.20)', panel: 'rgba(9,15,28,0.66)',
-  cinnabar: '#B23A2E',
-  kai: "'Ma Shan Zheng','LXGW WenKai','Noto Serif SC',serif",
-  wenkai: "'LXGW WenKai','Noto Serif SC',serif",
-  serif: "'Noto Serif SC',serif",
+  paper: '#FAF8F3', ink: '#1C1A17',
+  ink2: 'rgba(28,26,23,0.60)', ink3: 'rgba(28,26,23,0.34)',
+  rule: 'rgba(28,26,23,0.22)', ruleLite: 'rgba(28,26,23,0.10)',
+  cinnabar: '#A8372A',
+  serif: "'Noto Serif SC','Songti SC',serif",
 };
 const GF_SEAL_TEXT = '林语巷';
 const GF_NUM = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
@@ -396,124 +392,97 @@ function gfAssets() {
     try { return 'data:' + mime + ';base64,' + fs.readFileSync(path.join(__dirname, 'assets', f)).toString('base64'); }
     catch (e) { return ''; }
   };
-  _gfAssets = {
-    lantern: read('guofeng-lantern.png', 'image/png'),
-    mountains: read('guofeng-night-mountains.png', 'image/png'),
-    silk: read('guofeng-silk.jpg', 'image/jpeg'),
-  };
+  _gfAssets = { illustration: read('guofeng-illustration.png', 'image/png') };
   return _gfAssets;
 }
 function gfFontLink() {
-  return `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@300;400;500;600;700&display=swap">`
-    + `<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css">`;
+  return `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;600;700&display=swap">`;
 }
-function gfBaseCSS(silk) {
+function gfCSS() {
   return `*{margin:0;padding:0;box-sizing:border-box}
 html,body{width:540px;height:720px;overflow:hidden}
-body{background:${GF.night3};color:${GF.ink};font-family:${GF.wenkai};-webkit-font-smoothing:antialiased}
-.page{position:relative;width:540px;height:720px;overflow:hidden;display:flex;flex-direction:column;padding:26px 40px 30px;
-  background:
-    radial-gradient(120% 80% at 50% -12%, ${GF.night1} 0%, ${GF.night2} 46%, ${GF.night3} 100%)}
-.moon{position:absolute;right:52px;top:112px;width:104px;height:104px;border-radius:50%;
-  background:radial-gradient(circle, rgba(226,235,255,0.13) 0%, rgba(226,235,255,0.05) 40%, rgba(226,235,255,0) 70%)}
-.vignette{position:absolute;inset:0;background:radial-gradient(130% 110% at 50% 45%, rgba(0,0,0,0) 52%, rgba(0,0,0,0.55) 100%)}
-.deco{position:absolute;pointer-events:none}
-.kai{font-family:${GF.kai}}
-.wk{font-family:${GF.wenkai}}
-.nm{font-size:15px;line-height:1.25}
-.amt{font-family:${GF.serif};font-variant-numeric:tabular-nums}
-.meta{font-size:10.5px;letter-spacing:2px;color:${GF.ink3}}
+body{background:${GF.paper};color:${GF.ink};font-family:${GF.serif};-webkit-font-smoothing:antialiased}
+.page{position:relative;width:540px;height:720px;display:flex;flex-direction:column;padding:44px 0 38px}
+.inset{padding-left:40px;padding-right:40px}
+.masthead{font-size:26px;font-weight:400;letter-spacing:9px;line-height:1;text-indent:9px}
+.sub{font-size:13.5px;letter-spacing:1px;color:${GF.ink2}}
+.sub2{font-size:10.5px;letter-spacing:1.5px;color:${GF.ink3}}
+.label{font-size:11px;letter-spacing:4px;color:${GF.ink3}}
+.rule{height:1px;background:${GF.rule}}
+.rule-lite{height:1px;background:${GF.ruleLite}}
+.nm{font-size:15px;line-height:1.3}
+.amt{font-variant-numeric:tabular-nums;font-weight:500}
 .av{border-radius:50%;object-fit:cover;vertical-align:middle;flex-shrink:0}
-.screen{position:relative;display:flex;flex-direction:column;background:${GF.panel};
-  background-image:url(${silk});background-size:cover;background-position:center;
-  border:1px solid ${GF.rule};box-shadow:0 18px 44px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(198,212,240,0.06)}
-.screen::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg, rgba(8,14,26,0.66) 0%, rgba(8,14,26,0.75) 55%, rgba(8,14,26,0.82) 100%)}
-.beam{position:relative;height:11px;background:linear-gradient(180deg, ${GF.wood}, rgba(198,212,240,0.06));border-bottom:1px solid ${GF.ruleLite}}
-.base{position:relative;height:13px;background:linear-gradient(0deg, ${GF.wood}, rgba(198,212,240,0.05));border-top:1px solid ${GF.ruleLite}}
-.panels{position:relative;flex:1;display:flex;padding:14px 12px}
-.panel{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden}
-.hinge{width:9px;flex-shrink:0;display:flex;justify-content:center}
-.hinge i{display:block;width:2px;background:linear-gradient(180deg, rgba(198,212,240,0.05), rgba(198,212,240,0.22), rgba(198,212,240,0.05))}
-.row{display:flex;align-items:center;gap:8px;border-bottom:1px solid ${GF.ruleLite}}
+.row{display:flex;align-items:center;gap:10px;border-bottom:1px solid ${GF.ruleLite}}
 .row:last-child{border-bottom:none}`;
 }
 function gfDoc(title, body) {
-  const a = gfAssets();
-  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${gfFontLink()}<title>${esc(title)}</title>`
-    + `<style>${gfBaseCSS(a.silk)}</style></head><body>${body}</body></html>`;
+  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${gfFontLink()}<title>${esc(title)}</title><style>${gfCSS()}</style></head><body>${body}</body></html>`;
 }
-/** 背景层：月 + 远山 + 暗角 */
-function gfNight() {
+function gfIllustration() {
   const a = gfAssets();
-  const far = a.mountains ? `<img class="deco" src="${a.mountains}" style="left:0;bottom:0;width:540px;opacity:0.85" />` : '';
-  return `<div class="moon"></div>${far}<div class="vignette"></div>`;
-}
-/** 灯笼一对（唯一发光元素）；asset 自带暖光晕，再叠一层暖色柔光 */
-function gfLanterns() {
-  const a = gfAssets();
-  if (!a.lantern) return '';
-  const one = (side) => `<div class="deco" style="top:-4px;${side}:20px;width:76px;height:76px">
-      <div style="position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle, rgba(255,178,88,0.26) 0%, rgba(255,150,60,0.09) 46%, rgba(255,150,60,0) 70%)"></div>
-      <img src="${a.lantern}" style="position:relative;width:100%;height:100%;object-fit:contain;opacity:0.95" />
-    </div>`;
-  return one('left') + one('right');
+  if (!a.illustration) return '';
+  return `<img src="${a.illustration}" style="width:100%;display:block" />`;
 }
 function gfSeal() {
-  return `<div style="position:absolute;right:12px;bottom:20px;z-index:6;width:38px;height:38px;border:2px solid ${GF.cinnabar};border-radius:3px;display:flex;align-items:center;justify-content:center;background:rgba(10,16,30,0.55)">
-    <span class="wk" style="writing-mode:vertical-rl;color:${GF.cinnabar};font-size:10.5px;letter-spacing:1px;line-height:1.15">${esc(GF_SEAL_TEXT)}</span>
+  return `<div style="position:absolute;right:34px;bottom:34px;width:30px;height:30px;border:1.5px solid ${GF.cinnabar};border-radius:2px;display:flex;align-items:center;justify-content:center">
+    <span style="writing-mode:vertical-rl;color:${GF.cinnabar};font-size:9.5px;letter-spacing:0.5px;line-height:1.1">${esc(GF_SEAL_TEXT)}</span>
   </div>`;
 }
 function gfRow(u, label, opts) {
   const A = MAG_AMOUNT;
   const lead = opts.lead, big = opts.big;
   return `<div class="row" style="flex:1;min-height:0;height:auto">
-    <span class="${opts.kaiNum ? 'kai' : 'amt'}" style="width:${big ? 30 : 24}px;font-size:${lead ? (big ? 21 : 16) : (big ? 16 : 12)}px;color:${lead ? GF.ink : GF.ink3};line-height:1">${label}</span>
-    ${magAvatar(u.avatar, lead ? (big ? 40 : 28) : (big ? 32 : 22))}
-    <span class="nm" style="flex:1;min-width:0;font-size:${lead ? (big ? 19 : 16) : (big ? 17 : 14.5)}px;color:${lead ? GF.ink : GF.ink2};font-weight:${lead ? 600 : 400};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${magName(u)}</span>
+    <span class="${opts.kaiNum ? '' : ''}" style="width:${big ? 22 : 26}px;font-size:${big ? 13 : 11.5}px;color:${lead ? GF.ink : GF.ink3};text-align:center">${label}</span>
+    ${magAvatar(u.avatar, big ? 30 : 24)}
+    <span class="nm" style="flex:1;min-width:0;font-size:${lead ? (big ? 17 : 15) : (big ? 15.5 : 13.5)}px;font-weight:${lead ? 600 : 400};color:${GF.ink};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${magName(u)}</span>
     ${A ? `<span class="amt" style="font-size:${big ? 13.5 : 12.5}px;flex-shrink:0;color:${GF.ink2}">${fmtD(u.diamonds)}</span>` : ''}
   </div>`;
 }
-function gfScreen(inner, rowH, badge, seal) {
-  const badgeHtml = badge ? `<div style="position:relative;padding:13px 14px 0">
-      <div style="padding-bottom:9px;border-bottom:1px solid ${GF.rule}"><span class="meta" style="letter-spacing:5px;color:${GF.ink2}">${esc(badge)}</span></div>
-    </div>` : '';
-  return `<div class="screen" style="flex:1;margin-top:16px">
-    <div class="beam"></div>${badgeHtml}
-    <div class="panels"><div class="panel">${inner[0]}</div><div class="hinge"><i></i></div><div class="panel">${inner[1]}</div></div>
-    <div class="base"></div>${seal ? gfSeal() : ''}
-  </div>`;
-}
-/** 古风·夜色 TOP 页（榜文告示式：榜头 → 屏风内前十名两栏 → 印章压角） */
+/** 封面：榜头 → 通栏白描插画 → 前十名两栏 → 朱砂小印 */
 function gfTopHTML(users, meta) {
   const A = MAG_AMOUNT;
   const top = users.slice(0, 10);
   const half = Math.ceil(top.length / 2);
-  const rowH = A ? 52 : 58;
-  const col = (arr, startRank) => arr.map((u, i) => gfRow(u, GF_NUM[startRank + i - 1] || (startRank + i), { lead: startRank + i === 1, big: true, rowH, kaiNum: true })).join('');
+  const col = (arr, startRank) => arr.map((u, i) => gfRow(u, String(startRank + i).padStart(2, '0'), { lead: startRank + i === 1, big: true, kaiNum: false })).join('');
   return gfDoc('园区充电榜', `<div class="page">
-    ${gfNight()}${gfLanterns()}
-    <div style="position:relative;text-align:center">
-      <div class="kai" style="font-size:27px;letter-spacing:7px;line-height:1;color:${GF.ink};text-shadow:0 2px 14px rgba(0,0,0,0.5)">园区充电榜</div>
-      <div class="wk" style="font-size:14px;letter-spacing:2px;margin-top:14px;color:${GF.ink}">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</div>
-      <div class="meta" style="margin-top:8px">${esc(meta.dateStr)} · ${esc(meta.sessionStr)}</div>
-      ${A ? `<div class="meta" style="margin-top:6px">${magTotalText(meta)} <span class="amt" style="font-size:12px;color:${GF.ink2}">${fmtD(meta.total)}</span></div>` : ''}
+    <div class="inset" style="text-align:center">
+      <div class="masthead">园区充电榜</div>
+      <div class="sub" style="margin-top:18px">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</div>
+      <div class="sub2" style="margin-top:9px">${esc(meta.dateStr)} · ${esc(meta.sessionStr)}</div>
+      ${A ? `<div class="sub2" style="margin-top:7px">${magTotalText(meta)} <span class="amt" style="font-size:11.5px;color:${GF.ink2}">${fmtD(meta.total)}</span></div>` : ''}
     </div>
-    ${gfScreen([col(top.slice(0, half), 1), col(top.slice(half), half + 1)], rowH, '前十名', true)}
+    <div class="rule" style="margin:26px 40px 0"></div>
+    <div style="margin-top:0">${gfIllustration()}</div>
+    <div class="rule" style="margin:0 40px"></div>
+    <div class="inset" style="margin-top:18px;display:flex;align-items:baseline;justify-content:space-between">
+      <span class="label">前十名</span>
+      <span class="sub2">按送礼钻石排序</span>
+    </div>
+    <div class="inset" style="flex:1;display:flex;gap:26px;padding-top:8px;min-height:0">
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column">${col(top.slice(0, half), 1)}</div>
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column">${col(top.slice(half), half + 1)}</div>
+    </div>
+    ${gfSeal()}
   </div>`);
 }
-/** 古风·夜色 名次页 */
+/** 名次页：榜头 + 两栏紧凑名单 */
 function gfListHTML(users, meta, pageLabel) {
   const A = MAG_AMOUNT;
   const half = Math.ceil(users.length / 2);
-  const rowH = A ? 27 : 29;
-  const col = (arr, offset) => arr.map((u, i) => gfRow(u, offset + i + 1, { lead: false, rowH, kaiNum: false })).join('');
-  return gfDoc('园区充电榜 · ' + pageLabel, `<div class="page" style="padding:22px 40px 26px">
-    ${gfNight()}${gfLanterns()}
-    <div style="position:relative;text-align:center">
-      <div class="kai" style="font-size:20px;letter-spacing:6px;color:${GF.ink}">园区充电榜</div>
+  const col = (arr, offset) => arr.map((u, i) => gfRow(u, String(offset + i + 1), { lead: false, big: false, kaiNum: false })).join('');
+  return gfDoc('园区充电榜 · ' + pageLabel, `<div class="page" style="padding:40px 0 34px">
+    <div class="inset" style="display:flex;justify-content:space-between;align-items:baseline">
+      <div style="font-size:18px;letter-spacing:5px">园区充电榜</div>
+      <div class="sub2">${esc(pageLabel)}</div>
     </div>
-    ${gfScreen([col(users.slice(0, half), users.length ? users[0]._rank - 1 : 0), col(users.slice(half), users.length ? users[half]._rank - 1 : 0)], rowH, pageLabel, false)}
-    <div class="meta" style="position:relative;margin-top:12px;text-align:center;color:${GF.ink2}">${esc(meta.target)} · ${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</div>
+    <div class="rule" style="margin:16px 40px 0"></div>
+    <div class="inset" style="flex:1;display:flex;gap:26px;padding-top:10px;min-height:0">
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column">${col(users.slice(0, half), users.length ? users[0]._rank - 1 : 0)}</div>
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column">${col(users.slice(half), users.length ? users[half]._rank - 1 : 0)}</div>
+    </div>
+    <div class="sub2 inset" style="margin-top:14px;text-align:center">${esc(meta.target)} · ${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</div>
+    ${gfSeal()}
   </div>`);
 }
 

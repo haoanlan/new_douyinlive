@@ -380,9 +380,9 @@ async function renderMagazine(variant, users, meta) {
   console.log(`📐 模板 ${variant} · ${n} 人${MAG_AMOUNT ? ' · 收礼合计 ' + fmtD(meta.total) : ''}`);
   await renderMag(magTopHTML(variant, users.slice(0, topN), meta), `${base}_p1.jpg`);
   if (restCount > 0) {
-    const listPages = 3;
-    const perPage = Math.ceil(restCount / 3);
-    meta.rowsPerCol = Math.ceil(perPage / 2);
+    const perPage = 30;                                  // 固定每页 30 人 = 两栏各 15 行
+    const listPages = Math.max(1, Math.ceil(restCount / perPage));
+    meta.rowsPerCol = 15;                                // 所有名次页统一档位，不随人数变化
     for (let i = 0; i < listPages; i++) {
       const start = topN + perPage * i, end = Math.min(topN + perPage * (i + 1), n);
       if (start >= end) continue;
@@ -1392,6 +1392,8 @@ body{background:${TB.bg};color:${TB.ink};font-family:${TB.sans};-webkit-font-smo
 .tbl{position:absolute;left:34px;right:34px;top:178px;bottom:58px;display:flex;flex-direction:column}
 
 .tbody{flex:1;display:flex;flex-direction:column;min-height:0;border-top:1.5px solid rgba(14,14,16,0.85)}
+.tbody.list{justify-content:flex-start}
+.tbody.list .tr{flex:0 0 auto}
 .tr{flex:1;min-height:0;display:grid;align-items:center;padding:0 6px;border-bottom:1px solid rgba(14,14,16,0.075)}
 .tr:last-child{border-bottom:none}
 .tr.top3{background:rgba(255,59,31,0.055)}
@@ -1423,13 +1425,13 @@ function tgDensity(rows) {
   if (rows <= 22) return { av: 15, nm: 10, rk: 11.5, gap: 6 };
   return { av: 13, nm: 9.5, rk: 10.5, gap: 5 };
 }
-function tgTr(u, rank, big, d, digits) {
+function tgTr(u, rank, big, d, digits, rh) {
   const top = rank <= 3;
   const z = d || tgDensity(big ? 10 : 13);
   const nd = digits || 2;
   const numW = Math.round(nd * z.rk * 0.62);          // 名次列：按最宽数字估宽
   const numGap = Math.round(z.av * 0.85);             // 数字 → 头像 的固定气口
-  return `<div class="tr${top ? ' top3' : ''}" style="grid-template-columns:${numW}px 1fr;column-gap:${numGap}px">
+  return `<div class="tr${top ? ' top3' : ''}" style="grid-template-columns:${numW}px 1fr;column-gap:${numGap}px${rh ? `;height:${rh}px` : ''}">
     <span class="rk" style="font-size:${z.rk}px">${String(rank).padStart(2, '0')}</span>
     <span style="display:flex;align-items:center;gap:${z.gap}px;min-width:0">
       ${tbAv(u.avatar, z.av, false)}<span class="nm" style="font-size:${z.nm}px">${magName(u)}</span></span></div>`;
@@ -1457,8 +1459,9 @@ function tgListHTML(users, meta, pageLabel) {
   const total = meta.count || Number(String(meta.gifters).replace(/[^0-9]/g, '')) || end;
   const z = tgDensity(meta.rowsPerCol || half);
   const nd = String(meta.count || end).length;
+  const rh = Math.min(40, Math.floor(484 / Math.max(1, half)));   // 484 = 名单区高度
   const col = (arr, off) => `<div class="col">
-    <div class="tbody">${arr.map((u, i) => tgTr(u, off + i + 1, false, z, nd)).join('')}</div></div>`;
+    <div class="tbody list">${arr.map((u, i) => tgTr(u, off + i + 1, false, z, nd, rh)).join('')}</div></div>`;
   return tgDoc('园区充电榜 · ' + pageLabel, `<div class="page">
     ${tgHead('园区充电榜', `${esc(pageLabel)} · ${rankMetaLine(meta)}`)}
     ${tgRuler(start, end, total, meta.capped)}

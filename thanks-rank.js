@@ -145,7 +145,7 @@ const MAG = {
   accent: '#8A2B2B',
   serif: "'Noto Serif SC','Songti SC',serif",
 };
-const MAG_THEME_NAMES = ['magazine-v1', 'magazine-v2', 'noir', 'typegrid', 'cute', 'news', 'energy', 'cute-journal', 'cute-candy', 'cute-story', 'cute-chibi', 'ghost', 'faces', 'ruler', 'monolith'];
+const MAG_THEME_NAMES = ['magazine-v1', 'magazine-v2', 'noir', 'typegrid', 'cute', 'news', 'energy', 'cute-journal', 'cute-candy', 'cute-story', 'cute-chibi', 'ghost', 'faces', 'ruler', 'monolith', 'chroma-bar', 'chroma-tile'];
 const MAG_VARIANT = MAG_THEME_NAMES.includes(THEME_ARG) ? THEME_ARG : null;
 // 是否显示钻石数：提名榜（thanks-rank.js）不显示，钻石榜显示
 const MAG_AMOUNT = false;
@@ -317,6 +317,8 @@ function magTopHTML(variant, users, meta) {
   if (variant === 'cute-journal') return cjTopHTML(users, meta);
   if (variant === 'cute-story') return csTopHTML(users, meta);
   if (variant === 'ghost') return ghTopHTML(users, meta);
+  if (variant === 'chroma-bar') return cbTopHTML(users, meta);
+  if (variant === 'chroma-tile') return ctTopHTML(users, meta);
   if (variant === 'faces') return faTopHTML(users, meta);
   if (variant === 'ruler') return ruTopHTML(users, meta);
   if (variant === 'monolith') return moTopHTML(users, meta);
@@ -399,6 +401,8 @@ function rankListHTML(variant, users, meta, pageLabel) {
   if (variant === 'cute-journal') return cjListHTML(users, meta, pageLabel);
   if (variant === 'cute-story') return csListHTML(users, meta, pageLabel);
   if (variant === 'ghost') return ghListHTML(users, meta, pageLabel);
+  if (variant === 'chroma-bar') return cbListHTML(users, meta, pageLabel);
+  if (variant === 'chroma-tile') return ctListHTML(users, meta, pageLabel);
   if (variant === 'faces') return faListHTML(users, meta, pageLabel);
   if (variant === 'ruler') return ruListHTML(users, meta, pageLabel);
   if (variant === 'monolith') return moListHTML(users, meta, pageLabel);
@@ -1385,6 +1389,103 @@ function moListHTML(users, meta, pageLabel) {
     <div class="ttl" style="font-size:23px">园区<i>充电</i>榜</div>
     <div class="mt" style="margin-top:9px">${esc(meta.target)} · ${rankDate(meta.dateStr)} · ${esc(pageLabel)}</div>
     <div style="flex:1;display:flex;gap:22px;margin-top:14px;min-height:0">${col(users.slice(0, half), users[0] ? users[0]._rank : 1)}${col(users.slice(half), users[half] ? users[half]._rank : 1)}</div>
+    <div class="foot"><span class="mt">${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</span><span class="mt">感谢每一份心意</span></div>
+  </div></body></html>`;
+}
+
+/* ==================== 低饱和 · 色块区别人：chroma-bar 色块条 / chroma-tile 色块砖 ==================== */
+const CHROMA = ['#B8C4BB', '#C9BFAE', '#AEBCC9', '#CBB9BE', '#BFC3A8', '#C6B7C9', '#D2C0AC', '#A9BAB7', '#C4C0B4', '#BDC6D0'];
+const CB = { bg: '#F5F3EF', ink: '#262A27', soft: 'rgba(38,42,39,0.52)', line: 'rgba(38,42,39,0.10)', mark: '#3F5A4A' };
+function chromaOf(u, idx) {
+  const s = String((u && u.nickname) || idx);
+  let h = 7;
+  for (const ch of s) h = (h * 131 + ch.codePointAt(0)) % 1000003;
+  return CHROMA[h % CHROMA.length];
+}
+function chromaFontLink() {
+  return '<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">';
+}
+/* ---------- 1. chroma-bar 色块条 ---------- */
+function cbCSS() {
+  return `*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:540px;height:720px;overflow:hidden}
+body{background:${CB.bg};color:${CB.ink};font-family:'Noto Sans SC',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.page{position:relative;width:540px;height:720px;overflow:hidden;padding:32px 34px 24px;display:flex;flex-direction:column}
+.ttl{font-size:34px;font-weight:900;letter-spacing:0.5px;line-height:1.12}
+.ttl i{font-style:normal;color:${CB.mark}}
+.mt{font-size:10.5px;color:${CB.soft};letter-spacing:1px}
+.bar{flex:1;min-height:0;display:flex;align-items:center;gap:11px;padding:0 14px;border-radius:6px}
+.rn{font-family:'Roboto Mono',monospace;font-size:12px;font-weight:500;font-variant-numeric:tabular-nums;opacity:.62;
+  width:20px;flex-shrink:0;text-align:right}
+.nm{font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.av{border-radius:50%;object-fit:cover;flex-shrink:0;display:block;box-shadow:0 0 0 2px rgba(255,255,255,0.85)}
+.foot{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:10px;border-top:1px solid ${CB.line}}`;
+}
+function cbBar(u, av, nmFs, pad) {
+  const c = chromaOf(u);
+  return `<div class="bar" style="background:${c};padding:0 ${pad}px"><span class="rn">${u._rank}</span>${tbAv(u.avatar, av, false)}<span class="nm" style="font-size:${nmFs}px">${magName(u)}</span></div>`;
+}
+function cbTopHTML(users, meta) {
+  const rows = users.slice(0, 10).map(u => cbBar(u, 30, 15.5, 14)).join('');
+  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${chromaFontLink()}<style>${cbCSS()}</style></head><body>
+  <div class="page">
+    <div class="ttl">园区<i>充电</i>榜</div>
+    <div class="mt" style="margin-top:11px">${rankMetaLine(meta)} · ${rankDate(meta.dateStr)}</div>
+    <div class="mt" style="margin-top:16px;color:${CB.mark};font-weight:700;letter-spacing:2px">前 十 名</div>
+    <div style="flex:1;display:flex;flex-direction:column;gap:7px;min-height:0;margin-top:10px">${rows}</div>
+    <div class="foot"><span class="mt">${esc(meta.sessionStr)}</span><span class="mt">感谢每一份心意</span></div>
+  </div></body></html>`;
+}
+function cbListHTML(users, meta, pageLabel) {
+  const half = Math.ceil(users.length / 2);
+  const av = half > 14 ? 19 : 22, nmFs = half > 14 ? 11.5 : 12.5, pd = half > 14 ? 10 : 11;
+  const col = arr => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;min-height:0">${arr.map(u => cbBar(u, av, nmFs, pd)).join('')}</div>`;
+  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${chromaFontLink()}<style>${cbCSS()}</style></head><body>
+  <div class="page">
+    <div class="ttl" style="font-size:23px">园区<i>充电</i>榜</div>
+    <div class="mt" style="margin-top:9px">${esc(meta.target)} · ${rankDate(meta.dateStr)} · ${esc(pageLabel)}</div>
+    <div style="flex:1;display:flex;gap:16px;margin-top:12px;min-height:0">${col(users.slice(0, half))}${col(users.slice(half))}</div>
+    <div class="foot"><span class="mt">${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</span><span class="mt">感谢每一份心意</span></div>
+  </div></body></html>`;
+}
+/* ---------- 2. chroma-tile 色块砖 ---------- */
+function ctCSS() {
+  return `*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:540px;height:720px;overflow:hidden}
+body{background:${CB.bg};color:${CB.ink};font-family:'Noto Sans SC',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.page{position:relative;width:540px;height:720px;overflow:hidden;padding:32px 30px 24px;display:flex;flex-direction:column}
+.ttl{font-size:34px;font-weight:900;letter-spacing:0.5px;line-height:1.12}
+.ttl i{font-style:normal;color:${CB.mark}}
+.mt{font-size:10.5px;color:${CB.soft};letter-spacing:1px}
+.mosaic{flex:1;min-height:0;display:grid}
+.tile{position:relative;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-width:0}
+.rn{position:absolute;left:7px;top:5px;font-family:'Roboto Mono',monospace;font-size:10.5px;font-weight:500;opacity:.55;line-height:1}
+.nm{font-size:12px;font-weight:600;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 4px}
+.av{border-radius:50%;object-fit:cover;display:block;box-shadow:0 0 0 2px rgba(255,255,255,0.85)}
+.foot{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:10px;border-top:1px solid ${CB.line}}`;
+}
+function ctTile(u, av, nmFs) {
+  return `<div class="tile" style="background:${chromaOf(u)}"><span class="rn" style="${u._rank <= 3 ? 'opacity:1;font-weight:700;color:#262A27' : ''}">${u._rank}</span>
+    ${tbAv(u.avatar, av, false)}<span class="nm" style="font-size:${nmFs}px">${magName(u)}</span></div>`;
+}
+function ctTopHTML(users, meta) {
+  const tiles = users.slice(0, 10).map(u => ctTile(u, 58, 13)).join('');
+  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${chromaFontLink()}<style>${ctCSS()}</style></head><body>
+  <div class="page">
+    <div class="ttl">园区<i>充电</i>榜</div>
+    <div class="mt" style="margin-top:11px">${rankMetaLine(meta)} · ${rankDate(meta.dateStr)}</div>
+    <div class="mt" style="margin-top:16px;color:${CB.mark};font-weight:700;letter-spacing:2px">前 十 名</div>
+    <div class="mosaic" style="grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(5,1fr);gap:9px;margin-top:10px">${tiles}</div>
+    <div class="foot"><span class="mt">${esc(meta.sessionStr)}</span><span class="mt">感谢每一份心意</span></div>
+  </div></body></html>`;
+}
+function ctListHTML(users, meta, pageLabel) {
+  const tiles = users.map(u => ctTile(u, 34, 10.5)).join('');
+  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${chromaFontLink()}<style>${ctCSS()}</style></head><body>
+  <div class="page">
+    <div class="ttl" style="font-size:23px">园区<i>充电</i>榜</div>
+    <div class="mt" style="margin-top:9px">${esc(meta.target)} · ${rankDate(meta.dateStr)} · ${esc(pageLabel)}</div>
+    <div class="mosaic" style="grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(6,1fr);gap:7px;margin-top:12px">${tiles}</div>
     <div class="foot"><span class="mt">${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</span><span class="mt">感谢每一份心意</span></div>
   </div></body></html>`;
 }

@@ -149,6 +149,14 @@ const MAG_THEME_NAMES = ['magazine-v1', 'magazine-v2', 'noir', 'typegrid'];
 const MAG_VARIANT = MAG_THEME_NAMES.includes(THEME_ARG) ? THEME_ARG : null;
 // 是否显示钻石数：提名榜（thanks-rank.js）不显示，钻石榜显示
 const MAG_AMOUNT = true;
+const MAG2_ROW_RULE = '1px dotted rgba(26,26,30,0.16)';
+const MAG2_PAPER_CSS = `
+.page{position:relative}
+.page::before{content:'';position:absolute;inset:0;z-index:3;pointer-events:none;opacity:.45;
+  background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27180%27%20height%3D%27180%27%3E%3Cfilter%20id%3D%27g%27%3E%3CfeTurbulence%20type%3D%27fractalNoise%27%20baseFrequency%3D%270.85%27%20numOctaves%3D%272%27%20stitchTiles%3D%27stitch%27%2F%3E%3CfeColorMatrix%20type%3D%27saturate%27%20values%3D%270%27%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%27180%27%20height%3D%27180%27%20filter%3D%27url%28%23g%29%27%20opacity%3D%270.5%27%2F%3E%3C%2Fsvg%3E"),repeating-linear-gradient(0deg,rgba(26,26,30,.020) 0 1px,rgba(26,26,30,0) 1px 4px);}
+.page::after{content:'';position:absolute;inset:0;z-index:4;pointer-events:none;
+  background:radial-gradient(ellipse 82% 66% at 50% 42%,rgba(26,26,30,0) 54%,rgba(26,26,30,.055) 100%);}
+`;
 
 /** 自动探测 playwright 已装的 chromium headless shell（写死版本号会随升级失效） */
 function chromiumExe() {
@@ -233,7 +241,7 @@ function magTopV2(users, meta) {
   const half = Math.ceil(top.length / 2);
   const rowH = A ? 44 : 48;
   const row = (u, rank) => `
-    <div style="display:flex;align-items:center;height:${rowH}px;gap:9px;border-bottom:1px solid ${MAG.ruleLight}">
+    <div style="display:flex;align-items:center;height:${rowH}px;gap:9px;border-bottom:${MAG2_ROW_RULE}">
       <span class="num" style="width:20px;font-size:${rank === 1 ? 13 : 12}px;color:${rank === 1 ? MAG.ink : MAG.inkFaint}">${rank}</span>
       ${magAvatar(u.avatar, rank === 1 ? (A ? 28 : 30) : (A ? 20 : 24))}
       <span style="flex:1;min-width:0;font-size:${rank === 1 ? (A ? 15 : 16) : (A ? 13.5 : 14.5)}px;font-weight:${rank === 1 ? 600 : 400};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${magName(u)}</span>
@@ -244,10 +252,11 @@ function magTopV2(users, meta) {
     const gap = (half - arr.length) * rowH / 2;
     return `<div style="flex:1;min-width:0;padding-top:${gap > 0 ? gap : 0}px">${arr.map((u, i) => row(u, startRank + i)).join('')}</div>`;
   };
-  return magDoc('园区充电榜', '', `<div class="page" style="padding:42px 40px 30px;justify-content:space-between">
+  return magDoc('园区充电榜', MAG2_PAPER_CSS, `<div class="page" style="padding:42px 40px 30px;justify-content:space-between">
     <div>
       <div style="text-align:center"><span class="masthead" style="letter-spacing:7px;font-size:17px">园区充电榜</span></div>
-      <div class="rule" style="width:44px;margin:13px auto 0;background:${MAG.ink};height:2px"></div>
+      <div style="height:1px;background:rgba(26,26,30,0.24);margin-top:14px"></div>
+      <div style="height:1px;background:rgba(26,26,30,0.075);margin-top:4px"></div>
     </div>
     <div style="text-align:center">
       <div style="display:flex;justify-content:center">${magAvatar(meta.avatar, 84)}</div>
@@ -274,6 +283,7 @@ function magTopV2(users, meta) {
 /** v3 目录双栏 · TOP 页：杂志目录式，1-5 左栏 / 6-10 右栏 */
 function magListHTML(variant, users, meta, pageLabel) {
   const A = MAG_AMOUNT;
+  const V2 = variant === 'magazine-v2';
   const half = Math.ceil(users.length / 2);
   // 行高按每栏行数算，保证整块装进 720 视口（100 人场次每栏 15 行，固定 45px 会溢出被裁）
   const rows = Math.max(1, half);
@@ -282,18 +292,18 @@ function magListHTML(variant, users, meta, pageLabel) {
   const av = A ? 20 : 24;
   const pad = Math.max(3, Math.floor((rowH - av - 1) / 2));
   const col = (arr, offset) => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:space-between">${arr.map((u, i) => `
-    <div style="display:flex;align-items:center;gap:8px;height:${rowH}px;padding:${pad}px 0;border-bottom:1px solid ${MAG.ruleLight}">
+    <div style="display:flex;align-items:center;gap:8px;height:${rowH}px;padding:${pad}px 0;border-bottom:${V2 ? MAG2_ROW_RULE : '1px solid ' + MAG.ruleLight}">
       <span class="num" style="width:22px;font-size:12px;color:${MAG.inkFaint}">${offset + i + 1}</span>
       ${magAvatar(u.avatar, av)}
       <span style="flex:1;min-width:0;font-size:${A ? 13.5 : 14.5}px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${magName(u)}</span>
       ${A ? `<span class="amt" style="font-size:12.5px;flex-shrink:0;margin-left:8px">${fmtD(u.diamonds)}</span>` : ''}
     </div>`).join('')}</div>`;
-  return magDoc('园区充电榜 · ' + pageLabel, '', `<div class="page" style="padding:40px 40px 30px">
+  return magDoc('园区充电榜 · ' + pageLabel, variant === 'magazine-v2' ? MAG2_PAPER_CSS : '', `<div class="page" style="padding:40px 40px 30px">
     <div style="display:flex;justify-content:space-between;align-items:baseline">
       <div class="masthead" style="font-size:16px;letter-spacing:4px">园区充电榜</div>
       <div class="meta">${esc(pageLabel)}</div>
     </div>
-    <div class="rule" style="margin:11px 0 4px"></div>
+    ${V2 ? `<div style="height:1px;background:rgba(26,26,30,0.24);margin:11px 0 4px"></div><div style="height:1px;background:rgba(26,26,30,0.075);margin-bottom:6px"></div>` : `<div class="rule" style="margin:11px 0 4px"></div>`}
     <div style="flex:1;display:flex;gap:26px;align-items:stretch">${col(users.slice(0, half), users.length ? users[0]._rank - 1 : 0)}${col(users.slice(half), users.length ? users[half]._rank - 1 : 0)}</div>
     <div class="rule"></div>
     <div class="meta" style="margin-top:10px">${esc(meta.target)} · ${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</div>

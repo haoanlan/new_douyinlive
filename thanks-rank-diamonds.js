@@ -820,10 +820,13 @@ body{background:${NW.paper};color:${NW.ink};font-family:${NW.serif};-webkit-font
 function nwListCol(arr, off) {
   return `<div style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">${arr.map((u, i) => `<div class="lrow"><span class="lnum">${off + i}</span><span class="lnm">${magName(u)}</span></div>`).join('')}</div>`;
 }
-function nwColTop(arr, off, av, fs, big) {
+function nwColTop(arr, off, av, fs, big, gridRows) {
   const A = av || 22, F = fs || 14.5;
-  const rs = big ? 'gap:12px;max-height:none' : 'gap:9px';
-  return `<div style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">${arr.map((u, i) => `<div class="lrow" style="${rs}">
+  const rs = big ? 'gap:12px;max-height:none' : 'gap:9px;max-height:none';
+  const cs = gridRows
+    ? `flex:1;min-width:0;min-height:0;display:grid;grid-template-rows:repeat(${gridRows},1fr)`   // 等高网格：行位严格对齐
+    : 'flex:1;min-width:0;display:flex;flex-direction:column;min-height:0';
+  return `<div style="${cs}">${arr.map((u, i) => `<div class="lrow" style="${rs}">
     <span class="lnum">${u._rank}</span>${tbAv(u.avatar, A, false)}<span class="lnm" style="font-size:${F}px">${magName(u)}</span></div>`).join('')}</div>`;
 }
 function nwTopHTML(users, meta) {
@@ -872,7 +875,7 @@ function nwListHTML(users, meta, pageLabel) {
     </div>
     <div class="dr" style="margin-top:9px;height:4px;border-top:1px solid ${NW.ink}"></div>
     <div class="sub" style="margin:9px 0 4px">${esc(meta.target)} ｜ ${esc(meta.sessionStr)} ｜ ${rankDate(meta.dateStr)} ｜ 共 ${meta.gifters} 位送礼人</div>
-    <div class="cols" style="flex:1;margin-top:8px">${cols.map((c, k) => nwColTop(c, per * k + 1, 20, 13)).join('')}</div>
+    <div class="cols" style="flex:1;margin-top:8px">${cols.map((c, k) => nwColTop(c, per * k + 1, 20, 13, false, 15)).join('')}</div>
     <div style="border-top:1px solid ${NW.rule};padding-top:7px;display:flex;justify-content:space-between;align-items:baseline">
       <span class="kick">${rankPageCodeOf(pageLabel, meta)}</span><span class="kick">由 404 · 抖音直播监控 生成</span>
     </div>

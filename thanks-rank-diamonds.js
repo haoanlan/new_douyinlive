@@ -1685,6 +1685,13 @@ function dpRow(u, av, nmFs, h) {
     <span class="dot" style="background:${chromaOf(u)};opacity:${accent ? 1 : 0.5}"></span></div>`;
 }
 /* ---------- 1. depth-glass 磨砂玻璃 ---------- */
+function dpRowCover(u, av, nmFs) {
+  const accent = u._rank <= 3;
+  return `<div class="row${accent ? ' top' : ''}" style="padding:0 14px 0 12px">${tbAv(u.avatar, av, false)}
+    <span class="nm" style="font-size:${nmFs}px${accent ? ';font-weight:700' : ''}">${magName(u)}</span>
+    <span class="zright"><span class="rn rnBig${accent ? ' rnTop' : ''}">${String(u._rank).padStart(2, '0')}</span>
+    <span class="dot" style="background:${chromaOf(u)};opacity:${accent ? 1 : 0.45}"></span></span></div>`;
+}
 function dgCSS() {
   return `*{margin:0;padding:0;box-sizing:border-box}
 html,body{width:540px;height:720px;overflow:hidden}
@@ -1712,13 +1719,16 @@ body{background:${DP.bg};color:${DP.ink};font-family:'Noto Sans SC',system-ui,sa
 .row.top{background:rgba(255,255,255,0.74);box-shadow:0 2px 7px rgba(34,38,42,0.075)}
 .dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;margin-left:auto}
 .rn{font-family:'Roboto Mono',monospace;font-size:10.5px;font-weight:400;letter-spacing:0.5px;opacity:.55;width:20px;text-align:left;flex-shrink:0;font-variant-numeric:tabular-nums}
+.zright{margin-left:auto;display:flex;align-items:center;gap:11px;padding-left:13px;border-left:1px solid rgba(255,255,255,0.5);height:58%}
+.rnBig{width:auto;font-size:17px;letter-spacing:1px;opacity:.40;text-align:right}
+.rnTop{opacity:.92;font-weight:500}
 .nm{font-size:14.5px;font-weight:500;letter-spacing:0.3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .av{border-radius:50%;object-fit:cover;flex-shrink:0;display:block;box-shadow:0 2px 6px rgba(34,38,42,0.16), 0 0 0 1.5px rgba(255,255,255,0.85)}
 .foot{display:flex;justify-content:space-between;align-items:baseline;margin-top:14px}
 .pg{font-family:'Roboto Mono',monospace;font-size:9.5px;letter-spacing:1px;color:${DP.soft}}`;
 }
 function dgTopHTML(users, meta) {
-  const rows = users.slice(0, 10).map(u => dpRow(u, 30, 14.5)).join('');
+  const rows = users.slice(0, 10).map(u => dpRowCover(u, 34, 16.5)).join('');
   return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${dpFontLink()}<style>${dgCSS()}</style></head><body>
   <div class="page">${dpBgBlobs(users, meta, 62, 0.42)}<span class="watermark">${meta.count || meta.gifters}</span>
     <div class="inner">

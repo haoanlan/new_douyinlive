@@ -1545,7 +1545,7 @@ function crTopHTML(users, meta) {
   <div class="page"><span class="grain"></span><span class="grid"></span>
     ${cxHead(meta, '前十名')}
     <div style="flex:1;display:flex;flex-direction:column;gap:6px;min-height:0;margin-top:16px">${rows}</div>
-    <div class="foot"><span class="lbl">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</span><span class="pg">${rankPageCode(meta)}</span></div>
+    <div class="foot"><span class="lbl"></span><span class="pg">${rankPageCode(meta)}</span></div>
   </div></body></html>`;
 }
 function crListHTML(users, meta, pageLabel) {
@@ -1596,7 +1596,7 @@ function cpTopHTML(users, meta) {
   <div class="page"><span class="grain"></span>
     ${cxHead(meta, '前十名')}
     <div class="mosaic" style="grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(5,1fr);gap:8px;margin-top:16px">${tiles}</div>
-    <div class="foot"><span class="lbl">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</span><span class="pg">${rankPageCode(meta)}</span></div>
+    <div class="foot"><span class="lbl"></span><span class="pg">${rankPageCode(meta)}</span></div>
   </div></body></html>`;
 }
 function cpListHTML(users, meta, pageLabel) {
@@ -1683,7 +1683,7 @@ function dgTopHTML(users, meta) {
     <div class="inner">
       ${dpHead(meta, '前十名')}
       <div class="glass"><div class="rows">${rows}</div></div>
-      <div class="foot"><span class="lbl">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</span><span class="pg">${rankPageCode(meta)}</span></div>
+      <div class="foot"><span class="lbl"></span><span class="pg">${rankPageCode(meta)}</span></div>
     </div>
   </div></body></html>`;
 }
@@ -1750,7 +1750,7 @@ function dsTopHTML(users, meta) {
       <div class="stack">
         <div class="card c3"></div><div class="card c2"></div><div class="card c1"><div class="rows">${rows}</div></div>
       </div>
-      <div class="foot"><span class="lbl">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</span><span class="pg">${rankPageCode(meta)}</span></div>
+      <div class="foot"><span class="lbl"></span><span class="pg">${rankPageCode(meta)}</span></div>
     </div>
   </div></body></html>`;
 }

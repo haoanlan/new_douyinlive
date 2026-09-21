@@ -1639,9 +1639,9 @@ function dpHead(meta, smallLabel) {
 }
 function dpRow(u, av, nmFs) {
   const accent = u._rank <= 3;
-  return `<div class="row${accent ? ' top' : ''}">${accent ? `<span class="dot" style="background:${chromaOf(u)}"></span>` : '<span class="dot" style="background:transparent"></span>'}
-    <span class="rn">${String(u._rank).padStart(2, '0')}</span>${tbAv(u.avatar, av, false)}
-    <span class="nm" style="font-size:${nmFs}px${accent ? ';font-weight:700' : ''}">${magName(u)}</span></div>`;
+  return `<div class="row${accent ? ' top' : ''}"><span class="rn">${String(u._rank).padStart(2, '0')}</span>${tbAv(u.avatar, av, false)}
+    <span class="nm" style="font-size:${nmFs}px${accent ? ';font-weight:700' : ''}">${magName(u)}</span>
+    <span class="dot" style="background:${chromaOf(u)};opacity:${accent ? 1 : 0.5}"></span></div>`;
 }
 /* ---------- 1. depth-glass 磨砂玻璃 ---------- */
 function dgCSS() {
@@ -1666,11 +1666,11 @@ body{background:${DP.bg};color:${DP.ink};font-family:'Noto Sans SC',system-ui,sa
              inset 0 -1px 0 rgba(255,255,255,0.28);
   -webkit-backdrop-filter:blur(34px) saturate(1.2);backdrop-filter:blur(34px) saturate(1.2)}
 .rows{flex:1;min-height:0;display:flex;flex-direction:column;gap:9px}
-.row{flex:1;min-height:0;display:flex;align-items:center;gap:11px;border-radius:12px;padding:0 12px;
+.row{flex:1;min-height:0;display:flex;align-items:center;gap:9px;border-radius:12px;padding:0 10px;
   background:rgba(255,255,255,0.42);box-shadow:0 1px 3px rgba(34,38,42,0.04)}
 .row.top{background:rgba(255,255,255,0.74);box-shadow:0 2px 7px rgba(34,38,42,0.075)}
-.dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
-.rn{font-family:'Roboto Mono',monospace;font-size:10.5px;font-weight:400;letter-spacing:0.5px;opacity:.55;width:24px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums}
+.dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;margin-left:auto}
+.rn{font-family:'Roboto Mono',monospace;font-size:10.5px;font-weight:400;letter-spacing:0.5px;opacity:.55;width:20px;text-align:left;flex-shrink:0;font-variant-numeric:tabular-nums}
 .nm{font-size:14.5px;font-weight:500;letter-spacing:0.3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .av{border-radius:50%;object-fit:cover;flex-shrink:0;display:block;box-shadow:0 2px 6px rgba(34,38,42,0.16), 0 0 0 1.5px rgba(255,255,255,0.85)}
 .foot{display:flex;justify-content:space-between;align-items:baseline;margin-top:14px}
@@ -1726,10 +1726,10 @@ body{background:${DP.bg};color:${DP.ink};font-family:'Noto Sans SC',system-ui,sa
   box-shadow:0 26px 52px rgba(34,38,42,0.16), 0 2px 6px rgba(34,38,42,0.06);
   -webkit-backdrop-filter:blur(18px) saturate(1.1);backdrop-filter:blur(18px) saturate(1.1)}
 .rows{flex:1;min-height:0;display:flex;flex-direction:column;gap:6px}
-.row{flex:1;min-height:0;display:flex;align-items:center;gap:11px;border-radius:12px;padding:0 12px;
+.row{flex:1;min-height:0;display:flex;align-items:center;gap:9px;border-radius:12px;padding:0 10px;
   background:rgba(244,243,241,0.66);box-shadow:0 1px 3px rgba(34,38,42,0.045)}
 .row.top{background:rgba(255,255,255,0.95);box-shadow:0 2px 7px rgba(34,38,42,0.08)}
-.rn{font-family:'Roboto Mono',monospace;font-size:10.5px;font-weight:400;letter-spacing:0.5px;opacity:.5;width:24px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums}
+.rn{font-family:'Roboto Mono',monospace;font-size:10.5px;font-weight:400;letter-spacing:0.5px;opacity:.5;width:20px;text-align:left;flex-shrink:0;font-variant-numeric:tabular-nums}
 .nm{font-size:14.5px;font-weight:500;letter-spacing:0.3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .chip{width:5px;height:5px;border-radius:50%;flex-shrink:0}
 .av{border-radius:50%;object-fit:cover;flex-shrink:0;display:block;box-shadow:0 2px 6px rgba(34,38,42,0.18), 0 0 0 1.5px #FFFFFF}
@@ -1737,9 +1737,9 @@ body{background:${DP.bg};color:${DP.ink};font-family:'Noto Sans SC',system-ui,sa
 .pg{font-family:'Roboto Mono',monospace;font-size:9.5px;letter-spacing:1px;color:${DP.soft}}`;
 }
 function dsRowsHTML(users, av, nmFs) {
-  return users.map(u => `<div class="row${u._rank <= 3 ? ' top' : ''}">${u._rank <= 3 ? `<span class="chip" style="background:${chromaOf(u)}"></span>` : '<span class="chip" style="background:transparent"></span>'}
-    <span class="rn">${String(u._rank).padStart(2, '0')}</span>${tbAv(u.avatar, av, false)}
-    <span class="nm" style="font-size:${nmFs}px${u._rank <= 3 ? ';font-weight:700' : ''}">${magName(u)}</span></div>`).join('');
+  return users.map(u => `<div class="row${u._rank <= 3 ? ' top' : ''}"><span class="rn">${String(u._rank).padStart(2, '0')}</span>${tbAv(u.avatar, av, false)}
+    <span class="nm" style="font-size:${nmFs}px${u._rank <= 3 ? ';font-weight:700' : ''}">${magName(u)}</span>
+    <span class="chip" style="background:${chromaOf(u)};margin-left:auto;opacity:${u._rank <= 3 ? 1 : 0.5}"></span></div>`).join('');
 }
 function dsTopHTML(users, meta) {
   const rows = dsRowsHTML(users.slice(0, 10), 30, 14.5);

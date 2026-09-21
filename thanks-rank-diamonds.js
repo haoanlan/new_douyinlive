@@ -820,9 +820,10 @@ body{background:${NW.paper};color:${NW.ink};font-family:${NW.serif};-webkit-font
 function nwListCol(arr, off) {
   return `<div style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">${arr.map((u, i) => `<div class="lrow"><span class="lnum">${off + i}</span><span class="lnm">${magName(u)}</span></div>`).join('')}</div>`;
 }
-function nwColTop(arr, off, av, fs) {
+function nwColTop(arr, off, av, fs, big) {
   const A = av || 22, F = fs || 14.5;
-  return `<div style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">${arr.map((u, i) => `<div class="lrow" style="gap:9px">
+  const rs = big ? 'gap:12px;max-height:none' : 'gap:9px';
+  return `<div style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">${arr.map((u, i) => `<div class="lrow" style="${rs}">
     <span class="lnum">${u._rank}</span>${tbAv(u.avatar, A, false)}<span class="lnm" style="font-size:${F}px">${magName(u)}</span></div>`).join('')}</div>`;
 }
 function nwTopHTML(users, meta) {
@@ -850,7 +851,7 @@ function nwTopHTML(users, meta) {
       <span class="kick" style="letter-spacing:2px">前十名</span>
       <div style="flex:1;height:1px;background:${NW.rule}"></div>
     </div>
-    <div class="cols" style="margin-top:4px">${cols.map((c, k) => nwColTop(c, (k ? halfTop : 0) + 1)).join('')}</div>
+    <div class="cols" style="margin-top:4px">${cols.map((c, k) => nwColTop(c, (k ? halfTop : 0) + 1, 30, 17, true)).join('')}</div>
     <div style="display:flex;border-top:1px solid ${NW.rule};padding-top:10px">
       ${[['场次', meta.sessionStr], ['日期', rankDate(meta.dateStr)], ['榜单主', meta.target], ['上榜人数', meta.gifters + ' 人']]
         .map(([k, v], i) => `<div style="flex:1;padding-left:${i ? 12 : 0}px;border-left:${i ? '1px solid ' + NW.line : 'none'}"><div class="kick">${k}</div><div style="font-size:15px;font-weight:900;margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(v)}</div></div>`).join('')}
@@ -861,9 +862,8 @@ function nwTopHTML(users, meta) {
   </div></body></html>`;
 }
 function nwListHTML(users, meta, pageLabel) {
-  const nCol = 2;                                               // 固定两栏（不要三栏）
-  const per = Math.ceil(users.length / nCol);
-  const cols = Array.from({ length: nCol }, (_, i) => users.slice(per * i, per * (i + 1)));
+  const per = 15;                                               // 左栏排满 15 行再起右栏
+  const cols = [users.slice(0, per), users.slice(per)];
   return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${nwFont()}<style>${nwCSS()}</style></head><body>
   <div class="page">
     <div style="display:flex;justify-content:space-between;align-items:baseline">

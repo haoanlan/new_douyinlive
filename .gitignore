@@ -44,3 +44,5 @@ gift_debug.json
 # 主播配置（含 sec_uid，敏感）
 streamers.json
 assets/_raw/
+assets/_raw/
+assets/_unused/

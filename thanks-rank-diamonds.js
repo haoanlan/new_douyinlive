@@ -976,18 +976,19 @@ body{background:${CC.bg};color:${CC.ink};font-family:'Noto Sans SC',system-ui,sa
 .ttlcap{display:inline-flex;align-items:center;padding:12px 26px;border-radius:999px;background:${CC.accent};
   box-shadow:0 0 0 3.5px #fff, 0 6px 14px rgba(255,123,169,0.28);position:relative;z-index:2}
 .ttlcap span{font-family:'ZCOOL KuaiLe',sans-serif;font-size:29px;color:#fff;letter-spacing:3px;line-height:1}
-.cap{display:flex;align-items:center;gap:9px;border-radius:999px;padding:0 14px 0 10px;height:100%;min-height:0;
+.caprow{height:100%;min-height:0;padding:0 14px 0 10px}
+.cap{display:flex;align-items:center;gap:9px;border-radius:999px;padding:8px 14px 8px 10px;
   box-shadow:0 0 0 3px #fff, 0 4px 10px rgba(180,140,160,0.18);position:relative;z-index:2}
 .rk{width:22px;height:22px;border-radius:50%;background:#fff;display:inline-flex;align-items:center;justify-content:center;
   font-family:'ZCOOL KuaiLe',sans-serif;font-size:12px;color:${CC.accent};flex-shrink:0;line-height:1}
 .nm{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .av{border-radius:50%;object-fit:cover;flex-shrink:0;display:block;box-shadow:0 0 0 2px #fff}
 .mt{font-size:10.5px;color:${CC.soft};letter-spacing:0.5px}
-.foot{display:flex;justify-content:space-between;align-items:center;position:relative;z-index:2}`;
+.foot{display:flex;justify-content:space-between;align-items:center;position:relative;z-index:2;margin-top:11px}`;
 }
 function ccCap(u, rank, av, nmFs, pad) {
   const col = rank <= 3 ? CC.caps[rank - 1] : CC.caps[(rank - 1) % CC.caps.length];
-  return `<div class="cap" style="background:${col};padding:${pad}"><span class="rk">${rank}</span>${tbAv(u.avatar, av, false)}<span class="nm" style="font-size:${nmFs}px">${magName(u)}</span></div>`;
+  return `<div class="cap caprow" style="background:${col};padding:${pad}"><span class="rk">${rank}</span>${tbAv(u.avatar, av, false)}<span class="nm" style="font-size:${nmFs}px">${magName(u)}</span></div>`;
 }
 function ccTopHTML(users, meta) {
   const top = users.slice(0, 10);

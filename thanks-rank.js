@@ -372,18 +372,18 @@ async function renderMagazine(variant, users, meta) {
   }
 }
 
-// ==================== 古风·现代中式极简（guofeng）====================
-// 浅米纸 + 宋体排版 + 一条通栏白描插画带 + 一枚朱砂小印
-// 除印章的朱砂外，画面里没有任何彩色/发光/阴影/渐变
+// ==================== 古风·国风插画版（guofeng）====================
+// 浅米纸 + 工笔国风插画（梅枝/丝带/玉牌/流苏，唯一彩色来源）+ 宋体排版 + 朱砂小印
+// 文字只用墨色，青绿只做小面积点题（序号/标签），避免花
 const GF = {
-  paper: '#FAF8F3', ink: '#1C1A17',
-  ink2: 'rgba(28,26,23,0.60)', ink3: 'rgba(28,26,23,0.34)',
-  rule: 'rgba(28,26,23,0.22)', ruleLite: 'rgba(28,26,23,0.10)',
+  paper: '#FCFAF5', ink: '#1F1C17',
+  ink2: 'rgba(31,28,23,0.62)', ink3: 'rgba(31,28,23,0.34)',
+  jade: '#4F8A72', jadeLite: 'rgba(79,138,114,0.62)',
+  rule: 'rgba(31,28,23,0.18)', ruleLite: 'rgba(31,28,23,0.09)',
   cinnabar: '#A8372A',
   serif: "'Noto Serif SC','Songti SC',serif",
 };
 const GF_SEAL_TEXT = '林语巷';
-const GF_NUM = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
 
 let _gfAssets = null;
 function gfAssets() {
@@ -392,7 +392,7 @@ function gfAssets() {
     try { return 'data:' + mime + ';base64,' + fs.readFileSync(path.join(__dirname, 'assets', f)).toString('base64'); }
     catch (e) { return ''; }
   };
-  _gfAssets = { illustration: read('guofeng-illustration.png', 'image/png') };
+  _gfAssets = { blossom: read('guofeng-blossom.jpg', 'image/jpeg') };
   return _gfAssets;
 }
 function gfFontLink() {
@@ -402,15 +402,18 @@ function gfCSS() {
   return `*{margin:0;padding:0;box-sizing:border-box}
 html,body{width:540px;height:720px;overflow:hidden}
 body{background:${GF.paper};color:${GF.ink};font-family:${GF.serif};-webkit-font-smoothing:antialiased}
-.page{position:relative;width:540px;height:720px;display:flex;flex-direction:column;padding:44px 0 38px}
-.inset{padding-left:40px;padding-right:40px}
+.page{position:relative;width:540px;height:720px;display:flex;flex-direction:column;padding:0 0 34px}
+.inset{padding-left:42px;padding-right:42px}
+.art{position:relative;width:540px;height:252px;overflow:hidden;flex-shrink:0}
+.art img{width:100%;height:100%;object-fit:cover;object-position:66% 36%;
+  -webkit-mask-image:linear-gradient(180deg,#000 58%,rgba(0,0,0,0) 100%);
+  mask-image:linear-gradient(180deg,#000 58%,rgba(0,0,0,0) 100%)}
 .masthead{font-size:26px;font-weight:400;letter-spacing:9px;line-height:1;text-indent:9px}
-.sub{font-size:13.5px;letter-spacing:1px;color:${GF.ink2}}
+.sub{font-size:13px;letter-spacing:1px;color:${GF.ink2}}
 .sub2{font-size:10.5px;letter-spacing:1.5px;color:${GF.ink3}}
-.label{font-size:11px;letter-spacing:4px;color:${GF.ink3}}
+.label{font-size:11px;letter-spacing:4px;color:${GF.jade}}
 .rule{height:1px;background:${GF.rule}}
-.rule-lite{height:1px;background:${GF.ruleLite}}
-.nm{font-size:15px;line-height:1.3}
+.nm{font-size:15.5px;line-height:1.3}
 .amt{font-variant-numeric:tabular-nums;font-weight:500}
 .av{border-radius:50%;object-fit:cover;vertical-align:middle;flex-shrink:0}
 .row{display:flex;align-items:center;gap:10px;border-bottom:1px solid ${GF.ruleLite}}
@@ -419,70 +422,71 @@ body{background:${GF.paper};color:${GF.ink};font-family:${GF.serif};-webkit-font
 function gfDoc(title, body) {
   return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${gfFontLink()}<title>${esc(title)}</title><style>${gfCSS()}</style></head><body>${body}</body></html>`;
 }
-function gfIllustration() {
+function gfArt() {
   const a = gfAssets();
-  if (!a.illustration) return '';
-  return `<img src="${a.illustration}" style="width:100%;display:block" />`;
+  if (!a.blossom) return '';
+  return `<div class="art"><img src="${a.blossom}" /></div>`;
 }
-function gfSeal() {
-  return `<div style="position:absolute;right:34px;bottom:34px;width:30px;height:30px;border:1.5px solid ${GF.cinnabar};border-radius:2px;display:flex;align-items:center;justify-content:center">
-    <span style="writing-mode:vertical-rl;color:${GF.cinnabar};font-size:9.5px;letter-spacing:0.5px;line-height:1.1">${esc(GF_SEAL_TEXT)}</span>
+function gfSeal(size) {
+  const s = size || 30;
+  return `<div style="position:absolute;right:38px;bottom:32px;width:${s}px;height:${s}px;border:1.5px solid ${GF.cinnabar};border-radius:2px;display:flex;align-items:center;justify-content:center">
+    <span style="writing-mode:vertical-rl;color:${GF.cinnabar};font-size:${s * 0.32}px;letter-spacing:0.5px;line-height:1.1">${esc(GF_SEAL_TEXT)}</span>
   </div>`;
 }
 function gfRow(u, label, opts) {
   const A = MAG_AMOUNT;
   const lead = opts.lead, big = opts.big;
   return `<div class="row" style="flex:1;min-height:0;height:auto">
-    <span class="${opts.kaiNum ? '' : ''}" style="width:${big ? 22 : 26}px;font-size:${big ? 13 : 11.5}px;color:${lead ? GF.ink : GF.ink3};text-align:center">${label}</span>
+    <span class="amt" style="width:${big ? 24 : 26}px;font-size:${big ? 12.5 : 11.5}px;color:${lead ? GF.jade : GF.jadeLite};font-weight:500">${label}</span>
     ${magAvatar(u.avatar, big ? 30 : 24)}
     <span class="nm" style="flex:1;min-width:0;font-size:${lead ? (big ? 17 : 15) : (big ? 15.5 : 13.5)}px;font-weight:${lead ? 600 : 400};color:${GF.ink};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${magName(u)}</span>
     ${A ? `<span class="amt" style="font-size:${big ? 13.5 : 12.5}px;flex-shrink:0;color:${GF.ink2}">${fmtD(u.diamonds)}</span>` : ''}
   </div>`;
 }
-/** 封面：榜头 → 通栏白描插画 → 前十名两栏 → 朱砂小印 */
+/** 封面：国风插画带 → 榜头 → 前十名两栏 → 朱砂小印 */
 function gfTopHTML(users, meta) {
   const A = MAG_AMOUNT;
   const top = users.slice(0, 10);
   const half = Math.ceil(top.length / 2);
-  const col = (arr, startRank) => arr.map((u, i) => gfRow(u, String(startRank + i).padStart(2, '0'), { lead: startRank + i === 1, big: true, kaiNum: false })).join('');
+  const col = (arr, startRank) => arr.map((u, i) => gfRow(u, String(startRank + i).padStart(2, '0'), { lead: startRank + i === 1, big: true })).join('');
   return gfDoc('园区充电榜', `<div class="page">
-    <div class="inset" style="text-align:center">
+    ${gfArt()}
+    <div class="inset" style="text-align:center;margin-top:6px">
       <div class="masthead">园区充电榜</div>
-      <div class="sub" style="margin-top:18px">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</div>
+      <div class="sub" style="margin-top:16px">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</div>
       <div class="sub2" style="margin-top:9px">${esc(meta.dateStr)} · ${esc(meta.sessionStr)}</div>
       ${A ? `<div class="sub2" style="margin-top:7px">${magTotalText(meta)} <span class="amt" style="font-size:11.5px;color:${GF.ink2}">${fmtD(meta.total)}</span></div>` : ''}
     </div>
-    <div class="rule" style="margin:26px 40px 0"></div>
-    <div style="margin-top:0">${gfIllustration()}</div>
-    <div class="rule" style="margin:0 40px"></div>
-    <div class="inset" style="margin-top:18px;display:flex;align-items:baseline;justify-content:space-between">
+    <div class="inset" style="margin-top:20px;display:flex;align-items:baseline;justify-content:space-between">
       <span class="label">前十名</span>
-      <span class="sub2">按送礼钻石排序</span>
+      <span class="sub2">${esc(meta.dateStr)}</span>
     </div>
-    <div class="inset" style="flex:1;display:flex;gap:26px;padding-top:8px;min-height:0">
+    <div class="rule" style="margin:10px 42px 0"></div>
+    <div class="inset" style="flex:1;display:flex;gap:26px;padding-top:6px;min-height:0">
       <div style="flex:1;min-width:0;display:flex;flex-direction:column">${col(top.slice(0, half), 1)}</div>
       <div style="flex:1;min-width:0;display:flex;flex-direction:column">${col(top.slice(half), half + 1)}</div>
     </div>
     ${gfSeal()}
   </div>`);
 }
-/** 名次页：榜头 + 两栏紧凑名单 */
+/** 名次页：小榜头 + 两栏紧凑名单（沿用同一套字色，插画只保留顶部一条淡影） */
 function gfListHTML(users, meta, pageLabel) {
   const A = MAG_AMOUNT;
   const half = Math.ceil(users.length / 2);
-  const col = (arr, offset) => arr.map((u, i) => gfRow(u, String(offset + i + 1), { lead: false, big: false, kaiNum: false })).join('');
-  return gfDoc('园区充电榜 · ' + pageLabel, `<div class="page" style="padding:40px 0 34px">
-    <div class="inset" style="display:flex;justify-content:space-between;align-items:baseline">
-      <div style="font-size:18px;letter-spacing:5px">园区充电榜</div>
-      <div class="sub2">${esc(pageLabel)}</div>
+  const col = (arr, offset) => arr.map((u, i) => gfRow(u, String(offset + i + 1), { lead: false, big: false })).join('');
+  return gfDoc('园区充电榜 · ' + pageLabel, `<div class="page" style="padding-top:0">
+    <div class="art" style="height:132px;opacity:0.9"><img src="${(gfAssets().blossom || '')}" style="object-position:70% 30%" /></div>
+    <div class="inset" style="display:flex;justify-content:space-between;align-items:baseline;margin-top:2px">
+      <div style="font-size:19px;letter-spacing:5px">园区充电榜</div>
+      <div class="sub2" style="color:${GF.jade}">${esc(pageLabel)}</div>
     </div>
-    <div class="rule" style="margin:16px 40px 0"></div>
-    <div class="inset" style="flex:1;display:flex;gap:26px;padding-top:10px;min-height:0">
+    <div class="rule" style="margin:14px 42px 0"></div>
+    <div class="inset" style="flex:1;display:flex;gap:26px;padding-top:8px;min-height:0">
       <div style="flex:1;min-width:0;display:flex;flex-direction:column">${col(users.slice(0, half), users.length ? users[0]._rank - 1 : 0)}</div>
       <div style="flex:1;min-width:0;display:flex;flex-direction:column">${col(users.slice(half), users.length ? users[half]._rank - 1 : 0)}</div>
     </div>
-    <div class="sub2 inset" style="margin-top:14px;text-align:center">${esc(meta.target)} · ${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</div>
-    ${gfSeal()}
+    <div class="sub2 inset" style="margin-top:12px;text-align:center">${esc(meta.target)} · ${esc(meta.sessionStr)} · 共 ${meta.gifters} 位送礼人</div>
+    ${gfSeal(26)}
   </div>`);
 }
 

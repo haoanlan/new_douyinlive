@@ -146,6 +146,8 @@ const MAG = {
 };
 const MAG_THEME_NAMES = ['magazine-v1', 'magazine-v2', 'magazine-v3'];
 const MAG_VARIANT = MAG_THEME_NAMES.includes(THEME_ARG) ? THEME_ARG : null;
+// 是否显示钻石数：提名榜（thanks-rank.js）不显示，钻石榜显示
+const MAG_AMOUNT = false;
 
 /** 自动探测 playwright 已装的 chromium headless shell（写死版本号会随升级失效） */
 function chromiumExe() {
@@ -195,12 +197,13 @@ function magTotal(users) {
 
 /** v1 刊物榜 · TOP 页：刊头 + 收礼人 + 单栏到底的名次表，超大细体序号 */
 function magTopV1(users, meta) {
+  const A = MAG_AMOUNT;
   const rows = users.map((u, i) => {
     const lead = i === 0;
-    return `<div class="rowrule" style="display:flex;align-items:center;height:48px">
-      <div class="num" style="width:54px;font-size:${lead ? 30 : 23}px;color:${lead ? MAG.accent : MAG.inkFaint}">${String(i + 1).padStart(2, '0')}</div>
-      <div style="flex:1;min-width:0;display:flex;align-items:center;gap:10px">${magAvatar(u.avatar, 26)}<span class="nm" style="font-weight:${lead ? 600 : 400};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${magName(u)}</span></div>
-      <div class="amt" style="font-weight:${lead ? 600 : 400};color:${lead ? MAG.accent : MAG.ink}">${fmtD(u.diamonds)}</div>
+    return `<div class="rowrule" style="display:flex;align-items:center;height:${A ? 48 : 56}px">
+      <div class="num" style="width:58px;font-size:${lead ? (A ? 30 : 34) : (A ? 23 : 27)}px;color:${lead ? MAG.accent : MAG.inkFaint}">${String(i + 1).padStart(2, '0')}</div>
+      <div style="flex:1;min-width:0;display:flex;align-items:center;gap:12px">${magAvatar(u.avatar, A ? 26 : 34)}<span class="nm" style="font-size:${A ? 15 : 17}px;font-weight:${lead ? 600 : 400};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${magName(u)}</span></div>
+      ${A ? `<div class="amt" style="font-weight:${lead ? 600 : 400};color:${lead ? MAG.accent : MAG.ink}">${fmtD(u.diamonds)}</div>` : ''}
     </div>`;
   }).join('');
   return magDoc('园区充电榜', '', `<div class="page">
@@ -215,10 +218,7 @@ function magTopV1(users, meta) {
         <div style="font-size:19px;font-weight:500;line-height:1.2">${esc(meta.target)}</div>
         <div class="meta" style="margin-top:3px">共 ${meta.gifters} 位送礼人</div>
       </div>
-      <div style="text-align:right">
-        <div class="amt" style="font-size:19px;font-weight:600">${fmtD(meta.total)}</div>
-        <div class="meta" style="margin-top:3px">${magTotalText(meta)}</div>
-      </div>
+      ${A ? `<div style="text-align:right"><div class="amt" style="font-size:19px;font-weight:600">${fmtD(meta.total)}</div><div class="meta" style="margin-top:3px">${magTotalText(meta)}</div></div>` : ''}
     </div>
     <div class="rule"></div>
     <div style="flex:1;display:flex;flex-direction:column;justify-content:space-evenly">${rows}</div>
@@ -227,15 +227,16 @@ function magTopV1(users, meta) {
 
 /** v2 封面特写 · TOP 页：冠军独占上半幅，2-10 名双栏在下 */
 function magTopV2(users, meta) {
+  const A = MAG_AMOUNT;
   const champ = users[0] || { nickname: '', avatar: '', diamonds: 0 };
   const rest = users.slice(1, 10).map((u, i) => ({ u, rank: i + 2 }));
   const half = Math.ceil(rest.length / 2);
   const col = (arr) => `<div style="flex:1;min-width:0">${arr.map(({ u, rank }) => `
-    <div style="display:flex;align-items:center;height:44px;gap:8px;border-bottom:1px solid ${MAG.ruleLight}">
+    <div style="display:flex;align-items:center;height:${A ? 44 : 50}px;gap:8px;border-bottom:1px solid ${MAG.ruleLight}">
       <span class="num" style="width:20px;font-size:12px;color:${MAG.inkFaint}">${rank}</span>
-      ${magAvatar(u.avatar, 20)}
-      <span style="flex:1;min-width:0;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${magName(u)}</span>
-      <span class="amt" style="font-size:12.5px;flex-shrink:0;margin-left:8px">${fmtD(u.diamonds)}</span>
+      ${magAvatar(u.avatar, A ? 20 : 26)}
+      <span style="flex:1;min-width:0;font-size:${A ? 13.5 : 14.5}px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${magName(u)}</span>
+      ${A ? `<span class="amt" style="font-size:12.5px;flex-shrink:0;margin-left:8px">${fmtD(u.diamonds)}</span>` : ''}
     </div>`).join('')}</div>`;
   return magDoc('园区充电榜', '', `<div class="page" style="padding:42px 40px 30px;justify-content:space-between">
     <div>
@@ -245,9 +246,13 @@ function magTopV2(users, meta) {
     <div style="text-align:center">
       <div style="display:flex;justify-content:center">${magAvatar(meta.avatar, 84)}</div>
       <div style="font-size:18px;font-weight:500;margin-top:15px">${esc(meta.target)}</div>
-      <div class="meta" style="margin-top:11px">${magTotalText(meta)}</div>
+      ${A
+        ? `<div class="meta" style="margin-top:11px">${magTotalText(meta)}</div>
       <div style="font-size:38px;font-weight:300;letter-spacing:2px;color:${MAG.accent};margin-top:5px;font-variant-numeric:tabular-nums;line-height:1">${fmtD(meta.total)}</div>
-      <div class="meta" style="margin-top:10px">共 ${meta.gifters} 位送礼人 · ${esc(meta.sessionStr)}</div>
+      <div class="meta" style="margin-top:10px">共 ${meta.gifters} 位送礼人 · ${esc(meta.sessionStr)}</div>`
+        : `<div style="font-size:48px;font-weight:300;color:${MAG.accent};margin-top:12px;font-variant-numeric:tabular-nums;line-height:1">${meta.gifters}</div>
+      <div class="meta" style="margin-top:8px">位送礼人</div>
+      <div class="meta" style="margin-top:10px">${esc(meta.dateStr)} · ${esc(meta.sessionStr)}</div>`}
     </div>
     <div>
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
@@ -255,11 +260,11 @@ function magTopV2(users, meta) {
         <span class="meta" style="letter-spacing:2px">前十名</span>
         <div style="flex:1;height:1px;background:${MAG.rule}"></div>
       </div>
-      <div style="display:flex;align-items:center;height:62px;gap:9px;border-bottom:1px solid ${MAG.rule}">
+      <div style="display:flex;align-items:center;height:${A ? 62 : 68}px;gap:9px;border-bottom:1px solid ${MAG.rule}">
         <span class="num" style="width:20px;font-size:13px;color:${MAG.ink}">1</span>
-        ${magAvatar(champ.avatar, 34)}
-        <span style="flex:1;min-width:0;font-size:16px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${magName(champ)}</span>
-        <span class="amt" style="font-size:15px;font-weight:600;flex-shrink:0">${fmtD(champ.diamonds)}</span>
+        ${magAvatar(champ.avatar, A ? 34 : 42)}
+        <span style="flex:1;min-width:0;font-size:${A ? 16 : 18}px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${magName(champ)}</span>
+        ${A ? `<span class="amt" style="font-size:15px;font-weight:600;flex-shrink:0">${fmtD(champ.diamonds)}</span>` : ''}
       </div>
       <div style="display:flex;gap:22px;align-items:flex-start">${col(rest.slice(0, half))}${col(rest.slice(half))}</div>
     </div>
@@ -268,13 +273,14 @@ function magTopV2(users, meta) {
 
 /** v3 目录双栏 · TOP 页：杂志目录式，1-5 左栏 / 6-10 右栏 */
 function magTopV3(users, meta) {
+  const A = MAG_AMOUNT;
   const half = Math.ceil(users.length / 2);
   const col = (arr, offset) => `<div style="flex:1;min-width:0">${arr.map((u, i) => `
-    <div class="rowrule" style="display:flex;align-items:center;gap:9px;padding:15px 0">
-      <span class="num" style="width:30px;font-size:25px;color:rgba(26,26,30,0.42)">${String(offset + i + 1).padStart(2, '0')}</span>
+    <div class="rowrule" style="display:flex;align-items:center;gap:9px;padding:${A ? 15 : 25}px 0">
+      <span class="num" style="width:30px;font-size:${A ? 25 : 28}px;color:rgba(26,26,30,0.42)">${String(offset + i + 1).padStart(2, '0')}</span>
       <span style="flex:1;min-width:0">
-        <span style="display:block;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${magName(u)}</span>
-        <span class="meta" style="display:block;font-size:11px;margin-top:3px">${fmtD(u.diamonds)} 钻</span>
+        <span style="display:block;font-size:${A ? 14.5 : 15.5}px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${magName(u)}</span>
+        ${A ? `<span class="meta" style="display:block;font-size:11px;margin-top:3px">${fmtD(u.diamonds)} 钻</span>` : ''}
       </span>
     </div>`).join('')}</div>`;
   return magDoc('园区充电榜', '', `<div class="page" style="justify-content:space-between">
@@ -288,20 +294,21 @@ function magTopV3(users, meta) {
     <div style="display:flex;gap:26px;align-items:flex-start">${col(users.slice(0, half), 0)}${col(users.slice(half), half)}</div>
     <div>
       <div class="rule"></div>
-      <div class="meta" style="margin-top:11px">共 ${meta.gifters} 位送礼人 · ${magTotalText(meta)} ${fmtD(meta.total)} 钻</div>
+      <div class="meta" style="margin-top:11px">${A ? `共 ${meta.gifters} 位送礼人 · ${magTotalText(meta)} ${fmtD(meta.total)} 钻` : `共 ${meta.gifters} 位送礼人`}</div>
     </div>
   </div>`);
 }
 
 /** 名次页（三套模板共用排版规则，只换刊头信息） */
 function magListHTML(variant, users, meta, pageLabel) {
+  const A = MAG_AMOUNT;
   const half = Math.ceil(users.length / 2);
   const col = (arr, offset) => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:space-between">${arr.map((u, i) => `
-    <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid ${MAG.ruleLight}">
+    <div style="display:flex;align-items:center;gap:8px;padding:${A ? 8 : 10}px 0;border-bottom:1px solid ${MAG.ruleLight}">
       <span class="num" style="width:22px;font-size:12px;color:${MAG.inkFaint}">${offset + i + 1}</span>
-      ${magAvatar(u.avatar, 20)}
-      <span style="flex:1;min-width:0;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${magName(u)}</span>
-      <span class="amt" style="font-size:12.5px;flex-shrink:0;margin-left:8px">${fmtD(u.diamonds)}</span>
+      ${magAvatar(u.avatar, A ? 20 : 24)}
+      <span style="flex:1;min-width:0;font-size:${A ? 13.5 : 14.5}px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${magName(u)}</span>
+      ${A ? `<span class="amt" style="font-size:12.5px;flex-shrink:0;margin-left:8px">${fmtD(u.diamonds)}</span>` : ''}
     </div>`).join('')}</div>`;
   return magDoc('园区充电榜 · ' + pageLabel, '', `<div class="page" style="padding:40px 40px 30px">
     <div style="display:flex;justify-content:space-between;align-items:baseline">
@@ -350,7 +357,7 @@ async function renderMagazine(variant, users, meta) {
   meta.capped = n >= 100;
   meta.total = magTotal(users);
   const base = path.join(outputDir, `thanks_rank_${sessionIds.join('-')}_${suffix}`);
-  console.log(`📐 模板 ${variant} · ${n} 人 · 收礼合计 ${fmtD(meta.total)}`);
+  console.log(`📐 模板 ${variant} · ${n} 人${MAG_AMOUNT ? ' · 收礼合计 ' + fmtD(meta.total) : ''}`);
   await renderMag(magTopHTML(variant, users.slice(0, topN), meta), `${base}_p1.jpg`);
   if (restCount > 0) {
     const perPage = Math.ceil(restCount / 3);

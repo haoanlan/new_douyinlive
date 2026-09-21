@@ -406,14 +406,14 @@ async function buildPrecomputed(d, sessionId, dedupedGifts) {
     const ts = g.create_time; if (!ts) continue;
     let timeKey;
     if (typeof ts === 'number') {
-      const dd = new Date(ts > 1e12 ? ts : ts * 1000);
-      timeKey = `${dd.getFullYear()}-${String(dd.getMonth()+1).padStart(2,'0')}-${String(dd.getDate()).padStart(2,'0')} ${String(dd.getHours()).padStart(2,'0')}:${String(dd.getMinutes()).padStart(2,'0')}:00`;
+      const dd = new Date((ts > 1e12 ? ts : ts * 1000) + 8 * 3600 * 1000);
+      timeKey = `${dd.getUTCFullYear()}-${String(dd.getUTCMonth()+1).padStart(2,'0')}-${String(dd.getUTCDate()).padStart(2,'0')} ${String(dd.getUTCHours()).padStart(2,'0')}:${String(dd.getUTCMinutes()).padStart(2,'0')}:00`;
     } else { timeKey = String(ts).slice(0, 16) + ':00'; }
     if (!timeLineMap[timeKey]) timeLineMap[timeKey] = { time: timeKey, gifts: 0, diamonds: 0 };
     timeLineMap[timeKey].gifts += g.repeat_count || 1;
     timeLineMap[timeKey].diamonds += g.total_diamonds || 0;
   }
-  const danmakuTimeline = d.prepare(`SELECT strftime('%Y-%m-%d %H:%M:00', CASE WHEN create_time > 100000000000 THEN create_time/1000 ELSE create_time END, 'unixepoch') as time, COUNT(*) as danmaku FROM danmaku WHERE session_id = ? GROUP BY time ORDER BY time`).all(sessionId);
+  const danmakuTimeline = d.prepare(`SELECT strftime('%Y-%m-%d %H:%M:00', CASE WHEN create_time > 100000000000 THEN create_time/1000 ELSE create_time END, 'unixepoch', '+8 hours') as time, COUNT(*) as danmaku FROM danmaku WHERE session_id = ? GROUP BY time ORDER BY time`).all(sessionId);
   for (const t of danmakuTimeline) { if (!t.time) continue; if (!timeLineMap[t.time]) timeLineMap[t.time] = { time: t.time, gifts: 0, diamonds: 0 }; timeLineMap[t.time].danmaku = t.danmaku; }
   const insTL = d.prepare('INSERT INTO session_timeline (session_id, time, gifts, diamonds, danmaku) VALUES (?,?,?,?,?)');
   for (const t of Object.values(timeLineMap).sort((a, b) => (a.time || '').localeCompare(b.time || ''))) {

@@ -1639,7 +1639,7 @@ function dpHead(meta, smallLabel) {
 }
 function dpRow(u, av, nmFs) {
   const accent = u._rank <= 3;
-  return `<div class="row">${accent ? `<span class="dot" style="background:${chromaOf(u)}"></span>` : '<span class="dot" style="background:transparent"></span>'}
+  return `<div class="row${accent ? ' top' : ''}">${accent ? `<span class="dot" style="background:${chromaOf(u)}"></span>` : '<span class="dot" style="background:transparent"></span>'}
     <span class="rn">${String(u._rank).padStart(2, '0')}</span>${tbAv(u.avatar, av, false)}
     <span class="nm" style="font-size:${nmFs}px${accent ? ';font-weight:700' : ''}">${magName(u)}</span></div>`;
 }
@@ -1659,14 +1659,16 @@ body{background:${DP.bg};color:${DP.ink};font-family:'Noto Sans SC',system-ui,sa
 .ttl{font-size:31px;font-weight:900;letter-spacing:1.5px;line-height:1.06}
 .lbl{font-size:9.5px;letter-spacing:2.6px;color:${DP.soft};font-weight:500}
 .mt{font-size:10.5px;letter-spacing:0.8px;color:${DP.soft}}
-.glass{position:relative;flex:1;min-height:0;margin-top:18px;border-radius:22px;padding:12px 16px 8px;display:flex;flex-direction:column;
+.glass{position:relative;flex:1;min-height:0;margin-top:18px;border-radius:24px;padding:12px 14px;display:flex;flex-direction:column;
   background:linear-gradient(158deg, rgba(255,255,255,0.30) 0%, rgba(255,255,255,0.11) 34%, rgba(255,255,255,0.05) 72%, rgba(255,255,255,0.12) 100%);
   border:1px solid rgba(255,255,255,0.55);
   box-shadow:0 22px 48px rgba(34,38,42,0.13), inset 0 1px 0 rgba(255,255,255,0.75),
              inset 0 -1px 0 rgba(255,255,255,0.28);
   -webkit-backdrop-filter:blur(34px) saturate(1.2);backdrop-filter:blur(34px) saturate(1.2)}
-.row{flex:1;min-height:0;display:flex;align-items:center;gap:11px;border-bottom:1px solid rgba(255,255,255,0.42)}
-.row:last-child{border-bottom:none}
+.rows{flex:1;min-height:0;display:flex;flex-direction:column;gap:9px}
+.row{flex:1;min-height:0;display:flex;align-items:center;gap:11px;border-radius:12px;padding:0 12px;
+  background:rgba(255,255,255,0.42);box-shadow:0 1px 3px rgba(34,38,42,0.04)}
+.row.top{background:rgba(255,255,255,0.74);box-shadow:0 2px 7px rgba(34,38,42,0.075)}
 .dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
 .rn{font-family:'Roboto Mono',monospace;font-size:10.5px;font-weight:400;letter-spacing:0.5px;opacity:.55;width:24px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums}
 .nm{font-size:14.5px;font-weight:500;letter-spacing:0.3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1680,7 +1682,7 @@ function dgTopHTML(users, meta) {
   <div class="page">${dpBgBlobs(users, meta, 62, 0.42)}<span class="watermark">${meta.count || meta.gifters}</span>
     <div class="inner">
       ${dpHead(meta, '心意榜 · 前十名')}
-      <div class="glass">${rows}</div>
+      <div class="glass"><div class="rows">${rows}</div></div>
       <div class="foot"><span class="lbl">${esc(meta.target)} · 感谢每一份心意</span><span class="pg">01 / 04</span></div>
     </div>
   </div></body></html>`;
@@ -1688,7 +1690,7 @@ function dgTopHTML(users, meta) {
 function dgListHTML(users, meta, pageLabel) {
   const half = Math.ceil(users.length / 2);
   const av = half > 14 ? 20 : 22, nmFs = half > 14 ? 11.5 : 12.5;
-  const col = arr => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">${arr.map(u => dpRow(u, av, nmFs)).join('')}</div>`;
+  const col = arr => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;min-height:0">${arr.map(u => dpRow(u, av, nmFs)).join('')}</div>`;
   const pg = (pageLabel.match(/(\d+)\s*\/\s*(\d+)/) || [])[0] || pageLabel;
   return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${dpFontLink()}<style>${dgCSS()}</style></head><body>
   <div class="page">${dpBgBlobs(users, meta, 58, 0.40)}
@@ -1696,8 +1698,8 @@ function dgListHTML(users, meta, pageLabel) {
       <div style="display:flex;justify-content:space-between;align-items:baseline;padding-bottom:10px;border-bottom:1px solid ${DP.hair}">
         <span class="lbl">心意榜 · ${esc(pageLabel)}</span><span class="lbl">${rankDate(meta.dateStr)}</span></div>
       <div class="mt" style="margin-top:11px">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</div>
-      <div class="glass" style="padding:8px 14px 4px">
-        ${`<div style="flex:1;display:flex;gap:20px;min-height:0">${col(users.slice(0, half))}${col(users.slice(half))}</div>`}
+      <div class="glass" style="padding:12px 14px">
+        <div class="rows" style="flex-direction:row;gap:14px">${col(users.slice(0, half))}${col(users.slice(half))}</div>
       </div>
       <div class="foot"><span class="lbl">${esc(meta.sessionStr)}</span><span class="pg">${pg}</span></div>
     </div>
@@ -1724,8 +1726,10 @@ body{background:${DP.bg};color:${DP.ink};font-family:'Noto Sans SC',system-ui,sa
 .c1{background:rgba(255,255,255,0.74);border:1px solid rgba(255,255,255,0.85);
   box-shadow:0 26px 52px rgba(34,38,42,0.16), 0 2px 6px rgba(34,38,42,0.06);
   -webkit-backdrop-filter:blur(18px) saturate(1.1);backdrop-filter:blur(18px) saturate(1.1)}
-.row{flex:1;min-height:0;display:flex;align-items:center;gap:11px;border-bottom:1px solid ${DP.hair}}
-.row:last-child{border-bottom:none}
+.rows{flex:1;min-height:0;display:flex;flex-direction:column;gap:6px}
+.row{flex:1;min-height:0;display:flex;align-items:center;gap:11px;border-radius:12px;padding:0 12px;
+  background:rgba(244,243,241,0.66);box-shadow:0 1px 3px rgba(34,38,42,0.045)}
+.row.top{background:rgba(255,255,255,0.95);box-shadow:0 2px 7px rgba(34,38,42,0.08)}
 .rn{font-family:'Roboto Mono',monospace;font-size:10.5px;font-weight:400;letter-spacing:0.5px;opacity:.5;width:24px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums}
 .nm{font-size:14.5px;font-weight:500;letter-spacing:0.3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .chip{width:5px;height:5px;border-radius:50%;flex-shrink:0}
@@ -1734,7 +1738,7 @@ body{background:${DP.bg};color:${DP.ink};font-family:'Noto Sans SC',system-ui,sa
 .pg{font-family:'Roboto Mono',monospace;font-size:9.5px;letter-spacing:1px;color:${DP.soft}}`;
 }
 function dsRowsHTML(users, av, nmFs) {
-  return users.map(u => `<div class="row">${u._rank <= 3 ? `<span class="chip" style="background:${chromaOf(u)}"></span>` : '<span class="chip" style="background:transparent"></span>'}
+  return users.map(u => `<div class="row${u._rank <= 3 ? ' top' : ''}">${u._rank <= 3 ? `<span class="chip" style="background:${chromaOf(u)}"></span>` : '<span class="chip" style="background:transparent"></span>'}
     <span class="rn">${String(u._rank).padStart(2, '0')}</span>${tbAv(u.avatar, av, false)}
     <span class="nm" style="font-size:${nmFs}px${u._rank <= 3 ? ';font-weight:700' : ''}">${magName(u)}</span></div>`).join('');
 }
@@ -1745,7 +1749,7 @@ function dsTopHTML(users, meta) {
     <div class="inner">
       ${dpHead(meta, '心意榜 · 前十名')}
       <div class="stack">
-        <div class="card c3"></div><div class="card c2"></div><div class="card c1">${rows}</div>
+        <div class="card c3"></div><div class="card c2"></div><div class="card c1"><div class="rows">${rows}</div></div>
       </div>
       <div class="foot"><span class="lbl">${esc(meta.target)} · 感谢每一份心意</span><span class="pg">01 / 04</span></div>
     </div>
@@ -1754,7 +1758,7 @@ function dsTopHTML(users, meta) {
 function dsListHTML(users, meta, pageLabel) {
   const half = Math.ceil(users.length / 2);
   const av = half > 14 ? 20 : 22, nmFs = half > 14 ? 11.5 : 12.5;
-  const col = arr => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">${dsRowsHTML(arr, av, nmFs)}</div>`;
+  const col = arr => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;min-height:0">${dsRowsHTML(arr, av, nmFs)}</div>`;
   const pg = (pageLabel.match(/(\d+)\s*\/\s*(\d+)/) || [])[0] || pageLabel;
   return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${dpFontLink()}<style>${dsCSS()}</style></head><body>
   <div class="page">${dpBgBlobs(users, meta, 66, 0.46)}
@@ -1764,7 +1768,7 @@ function dsListHTML(users, meta, pageLabel) {
       <div class="mt" style="margin-top:11px">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</div>
       <div class="stack">
         <div class="card c3"></div><div class="card c2"></div>
-        <div class="card c1" style="padding:8px 14px 4px"><div style="flex:1;display:flex;gap:20px;min-height:0">${col(users.slice(0, half))}${col(users.slice(half))}</div></div>
+        <div class="card c1" style="padding:12px 14px"><div class="rows" style="flex-direction:row;gap:14px">${col(users.slice(0, half))}${col(users.slice(half))}</div></div>
       </div>
       <div class="foot"><span class="lbl">${esc(meta.sessionStr)}</span><span class="pg">${pg}</span></div>
     </div>

@@ -26,6 +26,37 @@ const THEME_ARG = (() => {
   const i = process.argv.indexOf('--theme');
   return i >= 0 ? (process.argv[i + 1] || '') : '';
 })();
+
+// 背景色场控制：--bg=auto|warm|cool|rose|sage|grey|none
+//   微调：--bg-strength=1.5（色场强度，0=无→纯底色） --bg-sat=1.3（饱和度倍数） --bg-blur=1.2（模糊倍数）
+const BG_ARG = (() => {
+  const eq = process.argv.find(a => a.startsWith('--bg='));
+  if (eq) return eq.slice('--bg='.length);
+  const i = process.argv.indexOf('--bg');
+  return i >= 0 ? (process.argv[i + 1] || 'auto') : 'auto';
+})();
+const numArg = (name, dflt) => {
+  const eq = process.argv.find(a => a.startsWith('--' + name + '='));
+  const i = process.argv.indexOf('--' + name);
+  const raw = eq ? eq.split('=')[1] : (i >= 0 ? process.argv[i + 1] : undefined);
+  const v = Number(raw);
+  return Number.isFinite(v) ? v : dflt;
+};
+const BG_PRESETS = {
+  auto: { veil: '242,240,236', sat: 1.30, blur: 1.00, on: true },
+  warm: { veil: '245,236,221', sat: 1.20, blur: 1.00, on: true },
+  cool: { veil: '231,238,248', sat: 1.05, blur: 1.05, on: true },
+  rose: { veil: '247,236,242', sat: 1.20, blur: 1.00, on: true },
+  sage: { veil: '235,240,232', sat: 1.05, blur: 1.00, on: true },
+  grey: { veil: '240,240,238', sat: 0.22, blur: 1.10, on: true },
+  none: { veil: '242,240,236', sat: 1.00, blur: 1.00, on: false },
+};
+const BG = (() => {
+  const p = BG_PRESETS[BG_ARG] || BG_PRESETS.auto;
+  if (!BG_PRESETS[BG_ARG] && BG_ARG !== 'auto') console.log(`  ⚠️  未知 --bg=${BG_ARG}，可用：${Object.keys(BG_PRESETS).join(' | ')}（按 auto 处理）`);
+  return { name: BG_ARG, on: p.on, veil: p.veil, sat: +(p.sat * numArg('bg-sat', 1)).toFixed(3),
+           blur: +(p.blur * numArg('bg-blur', 1)).toFixed(3), strength: numArg('bg-strength', 1) };
+})();
 const outputDir = path.join(__dirname, 'reports');
 let HEADER_DATE = 'Session ' + sessionIds.join('-');  // 动态计算
 
@@ -366,6 +397,7 @@ async function renderMagazine(variant, users, meta) {
   meta.topAvatars = users.slice(0, 3).map(u => u.avatar).filter(Boolean);      // 四页共用同一组色晕来源（榜主 + 总榜前三）
   const base = path.join(outputDir, `thanks_rank_${sessionIds.join('-')}_dia_${suffix}`);
   console.log(`📐 模板 ${variant} · ${n} 人${MAG_AMOUNT ? ' · 收礼合计 ' + fmtD(meta.total) : ''}`);
+  console.log(`🎨 背景 ${BG.name} · 强度 ${BG.strength} · 饱和 ×${BG.sat} · 模糊 ×${BG.blur}${BG.on ? '' : '（无色场）'}`);
   await renderMag(magTopHTML(variant, users.slice(0, topN), meta), `${base}_p1.jpg`);
   if (restCount > 0) {
     const perPage = 30;                                  // 固定每页 30 人 = 两栏各 15 行
@@ -1629,17 +1661,21 @@ function dpBgLayers(meta, blurPx, veilOp) {
     <span class="veil" style="background:rgba(242,240,236,${veilOp})"></span>`;
 }
 function dpBgBlobs(users, meta, blurPx, veilOp) {
+  const ve = Math.min(0.95, Math.max(0, 1 - (1 - veilOp) * BG.strength));       // strength 越大 = 色场越明显
+  const veil = `<span class="veil" style="background:rgba(${BG.veil},${ve.toFixed(3)})"></span>`;
+  const baseLayer = `<span class="blob-base" style="background:rgb(${BG.veil})"></span>`;
+  if (!BG.on) return baseLayer + veil;
   const base = (meta.topAvatars && meta.topAvatars.length) ? meta.topAvatars : users.slice(0, 3).map(u => u.avatar);
   const picks = [meta.avatar, ...base].filter(Boolean).slice(0, 3);
   const pos = [[-130, -110, 440], [290, -80, 400], [-70, 410, 430]];
-  const blobs = picks.map((u, i) => `<span class="blob" style="background-image:url('${esc(u)}');left:${pos[i][0]}px;top:${pos[i][1]}px;width:${pos[i][2]}px;height:${pos[i][2]}px;filter:blur(${blurPx}px) saturate(1.3)"></span>`).join('');
-  return `<span class="blob-base"></span>${blobs}<span class="veil" style="background:rgba(242,240,236,${veilOp})"></span>`;
+  const blobs = picks.map((u, i) => `<span class="blob" style="background-image:url('${esc(u)}');left:${pos[i][0]}px;top:${pos[i][1]}px;width:${pos[i][2]}px;height:${pos[i][2]}px;filter:blur(${Math.round(blurPx * BG.blur)}px) saturate(${BG.sat})"></span>`).join('');
+  return baseLayer + blobs + veil;
 }
 function dpHead(meta, smallLabel) {
   return `<div style="display:flex;justify-content:space-between;align-items:baseline;padding-bottom:10px;border-bottom:1px solid ${DP.hair}">
       <span class="lbl">${smallLabel}</span><span class="lbl">${rankDate(meta.dateStr)}</span></div>
     <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-top:15px">
-      <span class="ttl">园区充电榜</span></div>
+      <span class="ttl">园区充电榜</span><span class="lbl" style="padding-bottom:6px">${esc(meta.sessionStr)}</span></div>
     <div class="mt" style="margin-top:10px">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</div>`;
 }
 function dpRow(u, av, nmFs) {

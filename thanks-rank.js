@@ -1678,9 +1678,9 @@ function dpHead(meta, smallLabel) {
       <span class="ttl">园区充电榜</span><span class="lbl" style="padding-bottom:6px">${esc(meta.sessionStr)}</span></div>
     <div class="mt" style="margin-top:10px">${esc(meta.target)} · 共 ${meta.gifters} 位送礼人</div>`;
 }
-function dpRow(u, av, nmFs) {
+function dpRow(u, av, nmFs, h) {
   const accent = u._rank <= 3;
-  return `<div class="row${accent ? ' top' : ''}"><span class="rn">${String(u._rank).padStart(2, '0')}</span>${tbAv(u.avatar, av, false)}
+  return `<div class="row${accent ? ' top' : ''}"${h ? ` style="flex:0 0 ${h}px"` : ''}><span class="rn">${String(u._rank).padStart(2, '0')}</span>${tbAv(u.avatar, av, false)}
     <span class="nm" style="font-size:${nmFs}px${accent ? ';font-weight:700' : ''}">${magName(u)}</span>
     <span class="dot" style="background:${chromaOf(u)};opacity:${accent ? 1 : 0.5}"></span></div>`;
 }
@@ -1729,9 +1729,11 @@ function dgTopHTML(users, meta) {
   </div></body></html>`;
 }
 function dgListHTML(users, meta, pageLabel) {
-  const half = Math.ceil(users.length / 2);
-  const av = half > 14 ? 20 : 22, nmFs = half > 14 ? 11.5 : 12.5;
-  const col = arr => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;min-height:0">${arr.map(u => dpRow(u, av, nmFs)).join('')}</div>`;
+  const CAP = 15, n = users.length, dense = n > CAP;                       // 超过一栏容量：左栏先排满 15 行
+  const half = dense ? CAP : Math.ceil(n / 2);
+  const rowH = dense ? Math.floor((522 - 5 * (CAP - 1)) / CAP) : 0;        // 固定行高，避免右栏一行被撑成巨条
+  const av = dense ? 20 : 22, nmFs = dense ? 11.5 : 12.5;
+  const col = arr => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;min-height:0">${arr.map(u => dpRow(u, av, nmFs, rowH)).join('')}</div>`;
   return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${dpFontLink()}<style>${dgCSS()}</style></head><body>
   <div class="page">${dpBgBlobs(users, meta, 58, 0.40)}
     <div class="inner">
@@ -1777,8 +1779,8 @@ body{background:${DP.bg};color:${DP.ink};font-family:'Noto Sans SC',system-ui,sa
 .foot{display:flex;justify-content:space-between;align-items:baseline;margin-top:16px}
 .pg{font-family:'Roboto Mono',monospace;font-size:9.5px;letter-spacing:1px;color:${DP.soft}}`;
 }
-function dsRowsHTML(users, av, nmFs) {
-  return users.map(u => `<div class="row${u._rank <= 3 ? ' top' : ''}"><span class="rn">${String(u._rank).padStart(2, '0')}</span>${tbAv(u.avatar, av, false)}
+function dsRowsHTML(users, av, nmFs, h) {
+  return users.map(u => `<div class="row${u._rank <= 3 ? ' top' : ''}"${h ? ` style="flex:0 0 ${h}px"` : ''}><span class="rn">${String(u._rank).padStart(2, '0')}</span>${tbAv(u.avatar, av, false)}
     <span class="nm" style="font-size:${nmFs}px${u._rank <= 3 ? ';font-weight:700' : ''}">${magName(u)}</span>
     <span class="chip" style="background:${chromaOf(u)};margin-left:auto;opacity:${u._rank <= 3 ? 1 : 0.5}"></span></div>`).join('');
 }
@@ -1796,9 +1798,11 @@ function dsTopHTML(users, meta) {
   </div></body></html>`;
 }
 function dsListHTML(users, meta, pageLabel) {
-  const half = Math.ceil(users.length / 2);
-  const av = half > 14 ? 20 : 22, nmFs = half > 14 ? 11.5 : 12.5;
-  const col = arr => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;min-height:0">${dsRowsHTML(arr, av, nmFs)}</div>`;
+  const CAP = 15, n = users.length, dense = n > CAP;
+  const half = dense ? CAP : Math.ceil(n / 2);
+  const rowH = dense ? Math.floor((516 - 5 * (CAP - 1)) / CAP) : 0;
+  const av = dense ? 20 : 22, nmFs = dense ? 11.5 : 12.5;
+  const col = arr => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;min-height:0">${dsRowsHTML(arr, av, nmFs, rowH)}</div>`;
   return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${dpFontLink()}<style>${dsCSS()}</style></head><body>
   <div class="page">${dpBgBlobs(users, meta, 66, 0.46)}
     <div class="inner">

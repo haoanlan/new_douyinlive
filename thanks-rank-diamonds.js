@@ -382,6 +382,7 @@ async function renderMagazine(variant, users, meta) {
   if (restCount > 0) {
     const listPages = 3;
     const perPage = Math.ceil(restCount / 3);
+    meta.rowsPerCol = Math.ceil(perPage / 2);
     for (let i = 0; i < listPages; i++) {
       const start = topN + perPage * i, end = Math.min(topN + perPage * (i + 1), n);
       if (start >= end) continue;
@@ -1454,8 +1455,8 @@ function tgListHTML(users, meta, pageLabel) {
   const start = users.length ? users[0]._rank : 1;
   const end = users.length ? users[users.length - 1]._rank : start;
   const total = meta.count || Number(String(meta.gifters).replace(/[^0-9]/g, '')) || end;
-  const z = tgDensity(half);
-  const nd = String(end).length;
+  const z = tgDensity(meta.rowsPerCol || half);
+  const nd = String(meta.count || end).length;
   const col = (arr, off) => `<div class="col">
     <div class="tbody">${arr.map((u, i) => tgTr(u, off + i + 1, false, z, nd)).join('')}</div></div>`;
   return tgDoc('园区充电榜 · ' + pageLabel, `<div class="page">

@@ -809,23 +809,27 @@ body{background:${NW.paper};color:${NW.ink};font-family:${NW.serif};-webkit-font
 .dr{height:6px;border-top:2px solid ${NW.ink};border-bottom:1px solid ${NW.rule}}
 .hl{font-size:22px;font-weight:900;line-height:1.4;letter-spacing:0.5px}
 .sub{font-size:11px;color:${NW.soft};font-family:'Noto Sans SC',sans-serif;letter-spacing:0.5px}
-.cols{display:flex;gap:16px}
-.lrow{display:flex;align-items:baseline;gap:7px;padding:13px 0;border-bottom:1px solid ${NW.line}}
+.cols{display:flex;gap:16px;flex:1;min-height:0}
+.lrow{flex:1 1 auto;max-height:64px;min-height:0;display:flex;align-items:center;gap:7px;border-bottom:1px solid ${NW.line}}
+.lrow:last-child{border-bottom:none}
 .lnum{font-size:12px;font-weight:900;font-variant-numeric:tabular-nums;width:18px;flex-shrink:0;text-align:right;color:${NW.red}}
 .lnm{font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .av{border-radius:50%;object-fit:cover;flex-shrink:0;display:block}
 .seal{display:inline-block;background:${NW.red};color:${NW.paper};font-size:12px;font-weight:900;letter-spacing:4px;padding:5px 9px 5px 13px}`;
 }
 function nwListCol(arr, off) {
-  return `<div style="flex:1;min-width:0">${arr.map((u, i) => `<div class="lrow"><span class="lnum">${off + i}</span><span class="lnm">${magName(u)}</span></div>`).join('')}</div>`;
+  return `<div style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">${arr.map((u, i) => `<div class="lrow"><span class="lnum">${off + i}</span><span class="lnm">${magName(u)}</span></div>`).join('')}</div>`;
+}
+function nwColTop(arr, off) {
+  return `<div style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">${arr.map((u, i) => `<div class="lrow" style="gap:9px">
+    <span class="lnum">${off + i}</span>${tbAv(u.avatar, 22, false)}<span class="lnm" style="font-size:14.5px">${magName(u)}</span></div>`).join('')}</div>`;
 }
 function nwTopHTML(users, meta) {
   const top = users.slice(0, 10);
   const parts = String(meta.sessionStr || '').match(/\d+/g) || [];
   const sn = parts[0] || '';
-  const bounds = top.length >= 10 ? [0, 4, 7, top.length]
-                                  : [0, Math.ceil(top.length / 3), Math.ceil(top.length / 3) * 2, top.length];
-  const cols = [top.slice(bounds[0], bounds[1]), top.slice(bounds[1], bounds[2]), top.slice(bounds[2], bounds[3])];
+  const halfTop = Math.ceil(top.length / 2);
+  const cols = [top.slice(0, halfTop), top.slice(halfTop)];
   return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${nwFont()}<style>${nwCSS()}</style></head><body>
   <div class="page">
     <div style="display:flex;justify-content:space-between;align-items:baseline;padding-bottom:6px;border-bottom:1px solid ${NW.line}">
@@ -842,14 +846,13 @@ function nwTopHTML(users, meta) {
       <div class="sub" style="margin-top:7px">${esc(meta.sessionStr)} ｜ ${rankMetaLine(meta)}</div>
     </div>
     <div style="border:1px solid ${NW.rule};padding:9px 12px;margin:12px 0 10px;font-size:11px;line-height:1.75;color:${NW.soft}">
-      本榜统计 <b style="color:${NW.ink}">${esc(meta.sessionStr)}</b> 内为 <b style="color:${NW.ink}">${esc(meta.target)}</b> 送出礼物的用户，按送礼人次排序；同一用户同一礼物的连击只计一次。共 <b style="color:${NW.ink}">${meta.gifters}</b> 位上榜，以下为前十名。
+      本榜统计 <b style="color:${NW.ink}">${esc(meta.sessionStr)}</b> 内为 <b style="color:${NW.ink}">${esc(meta.target)}</b> 送出礼物的用户，按送礼人次排序；同一用户同一礼物的连击只计一次。
     </div>
     <div style="display:flex;align-items:center;gap:10px;margin:6px 0 2px">
       <span class="kick" style="letter-spacing:2px">前十名</span>
       <div style="flex:1;height:1px;background:${NW.rule}"></div>
     </div>
-    <div class="cols">${cols.map((c, k) => nwListCol(c, bounds[k] + 1)).join('')}</div>
-    <div style="flex:1"></div>
+    <div class="cols" style="margin-top:4px">${cols.map((c, k) => nwColTop(c, (k ? halfTop : 0) + 1)).join('')}</div>
     <div style="display:flex;border-top:1px solid ${NW.rule};padding-top:10px">
       ${[['场次', meta.sessionStr], ['日期', rankDate(meta.dateStr)], ['榜单主', meta.target], ['上榜人数', meta.gifters + ' 人']]
         .map(([k, v], i) => `<div style="flex:1;padding-left:${i ? 12 : 0}px;border-left:${i ? '1px solid ' + NW.line : 'none'}"><div class="kick">${k}</div><div style="font-size:15px;font-weight:900;margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(v)}</div></div>`).join('')}
@@ -860,8 +863,9 @@ function nwTopHTML(users, meta) {
   </div></body></html>`;
 }
 function nwListHTML(users, meta, pageLabel) {
-  const per = Math.ceil(users.length / 3);
-  const cols = [users.slice(0, per), users.slice(per, per * 2), users.slice(per * 2)];
+  const nCol = users.length > 20 ? 3 : 2;                       // 人少时两栏：横线对齐、不留大空
+  const per = Math.ceil(users.length / nCol);
+  const cols = Array.from({ length: nCol }, (_, i) => users.slice(per * i, per * (i + 1)));
   return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">${nwFont()}<style>${nwCSS()}</style></head><body>
   <div class="page">
     <div style="display:flex;justify-content:space-between;align-items:baseline">
@@ -871,8 +875,8 @@ function nwListHTML(users, meta, pageLabel) {
     <div class="dr" style="margin-top:9px;height:4px;border-top:1px solid ${NW.ink}"></div>
     <div class="sub" style="margin:9px 0 4px">${esc(meta.target)} ｜ ${esc(meta.sessionStr)} ｜ ${rankDate(meta.dateStr)} ｜ 共 ${meta.gifters} 位送礼人</div>
     <div class="cols" style="flex:1;margin-top:6px">${cols.map((c, k) => nwListCol(c, per * k + 1)).join('')}</div>
-    <div style="border-top:1px solid ${NW.rule};padding-top:6px;display:flex;justify-content:space-between;align-items:baseline">
-      <span class="kick">园区充电榜</span><span class="kick">${esc(pageLabel)}</span>
+    <div style="border-top:1px solid ${NW.rule};padding-top:7px;display:flex;justify-content:space-between;align-items:baseline">
+      <span class="kick">本榜单按送礼人次排序</span><span class="kick">由 404 · 抖音直播监控 生成</span>
     </div>
   </div></body></html>`;
 }

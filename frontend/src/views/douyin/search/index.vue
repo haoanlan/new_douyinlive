@@ -1,25 +1,25 @@
 <!-- 匿名查询 —— 按总览页卡片风格重做 -->
 <template>
-  <div class="p-4">
+  <div class="douyin-page p-4">
     <!-- 顶部工具条 -->
-    <div class="art-card dy-toolbar px-5 py-4 mb-5 flex items-center justify-between gap-4 flex-wrap">
+    <div class="art-card dy-toolbar mb-5 flex items-center justify-between gap-4 flex-wrap">
       <div class="flex items-center gap-3">
-        <div class="size-10 rounded-lg flex-cc bg-theme/10 shrink-0">
-          <ArtSvgIcon icon="ri:user-search-line" class="text-lg text-theme" />
+        <div class="size-9 rounded-lg flex-cc bg-theme/10 shrink-0">
+          <ArtSvgIcon icon="ri:user-search-line" class="text-base text-theme" />
         </div>
         <div>
-          <div class="font-bold text-g-900 leading-tight">匿名查询</div>
+          <div class="dy-toolbar-title">匿名查询</div>
           <div class="flex items-center gap-2.5 mt-1.5 text-xs text-g-500">
             <span class="flex items-baseline gap-1">
-              <b class="text-[13px] font-semibold text-g-900">{{ users.length }}</b>个匹配用户
+              <b class="dy-count text-g-900">{{ users.length }}</b>个匹配用户
             </span>
             <span class="w-px h-3 bg-g-300" />
             <span class="flex items-baseline gap-1">
-              <b class="text-[13px] font-semibold text-g-900">{{ totalSessions }}</b>个参与场次
+              <b class="dy-count text-g-900">{{ totalSessions }}</b>个参与场次
             </span>
             <span class="w-px h-3 bg-g-300" />
             <span class="flex items-baseline gap-1">
-              <b class="text-[13px] font-semibold text-theme">{{ fmtNum(totalDiamonds) }}</b>累计钻石
+              <b class="dy-count text-theme">{{ fmtNum(totalDiamonds) }}</b>累计钻石
             </span>
             <template v-if="lastQuery">
               <span class="w-px h-3 bg-g-300" />
@@ -76,7 +76,7 @@
           <button
             v-for="kw in hotKeywords"
             :key="kw"
-            class="px-3 h-7 rounded-lg text-xs text-g-700 bg-g-100/70 hover:bg-theme/10 hover:text-theme transition-colors"
+            class="dy-pressable px-3 h-7 rounded-lg text-xs text-g-700 bg-g-100/70 hover:bg-theme/10 hover:text-theme"
             @click="quickSearch(kw)"
           >
             {{ kw }}
@@ -90,8 +90,16 @@
     </div>
 
     <div v-else v-loading="loading" element-loading-text="查询中…">
-      <!-- 空结果 -->
-      <div v-if="!loading && !sortedUsers.length" class="art-card p-5">
+      <!-- 失败：与「没有结果」明确区分（P0-3） -->
+      <QueryErrorState
+        v-if="!loading && queryError"
+        :message="queryError"
+        :retrying="loading"
+        @retry="doSearch"
+      />
+
+      <!-- 空结果：只有查询真的成功且确实没人时才显示 -->
+      <div v-else-if="!loading && !sortedUsers.length" class="art-card p-5">
         <el-empty :description="`没有匹配「${lastQuery}」的用户`" :image-size="80" />
       </div>
 
@@ -118,7 +126,7 @@
                 </el-avatar>
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2">
-                    <span class="text-[17px] font-medium text-g-900 truncate leading-snug">
+                    <span class="text-base font-medium text-g-900 truncate leading-snug">
                       {{ u.nickname || '未知用户' }}
                     </span>
                     <el-tag v-if="u.unique_id" size="small" effect="plain" class="shrink-0">
@@ -176,7 +184,7 @@
                   </div>
                   <div class="mt-0.5 flex items-baseline gap-1">
                     <span
-                      class="text-[17px] font-bold leading-tight"
+                      class="text-base font-medium leading-none"
                       :class="hasSessions(u) ? 'text-g-900' : 'text-g-400'"
                     >
                       {{ hasSessions(u) ? u.sessions.length : '—' }}
@@ -195,7 +203,7 @@
                   </div>
                   <div class="mt-0.5 flex items-baseline gap-1">
                     <span
-                      class="text-[17px] font-bold leading-tight"
+                      class="text-base font-medium leading-none"
                       :class="u.total_diamonds ? 'text-theme' : 'text-g-400'"
                     >
                       {{ u.total_diamonds ? fmtNum(u.total_diamonds) : '—' }}
@@ -214,10 +222,11 @@
                   </div>
                   <div class="mt-0.5 flex items-baseline gap-1">
                     <span
-                      class="text-[17px] font-bold leading-tight"
+                      class="text-base font-medium leading-none"
                       :class="u.danmaku_count ? 'text-g-900' : 'text-g-400'"
+                      :title="u.danmaku_count ? fmtTitle(u.danmaku_count) : ''"
                     >
-                      {{ u.danmaku_count ? u.danmaku_count.toLocaleString() : '—' }}
+                      {{ u.danmaku_count ? fmtNum(u.danmaku_count) : '—' }}
                     </span>
                     <span class="text-xs text-g-500">条</span>
                   </div>
@@ -281,7 +290,7 @@
                 <button
                   v-for="s in u.sessions.slice(0, 2)"
                   :key="s.id"
-                  class="px-2 h-6 rounded-md bg-g-100/70 text-g-700 hover:bg-theme/10 hover:text-theme transition-colors"
+                  class="dy-pressable px-2 h-6 rounded-md bg-g-100/70 text-g-700 hover:bg-theme/10 hover:text-theme"
                   @click="router.push(`/douyin/detail/${s.id}`)"
                 >
                   {{ s.streamer_name || '场次 #' + s.id }} · {{ fmtSessionTime(s.start_time) }}
@@ -302,7 +311,8 @@
   import { computed, ref } from 'vue'
   import { useRouter } from 'vue-router'
   import { anonymousLookup } from '@/api/douyin'
-  import { fmtAgo, fmtNum, fmtSessionTime } from '@/utils/format'
+  import { fmtAgo, fmtNum, fmtTitle, fmtSessionTime } from '@/utils/format'
+  import { apiErrorMessage } from '@/utils/douyin-error'
 
   defineOptions({ name: 'DouyinSearch' })
 
@@ -313,6 +323,8 @@
   const results = ref<any[]>([])
   const loading = ref(false)
   const searched = ref(false)
+  /** 查询失败的真实原因；非空时显示错误态而不是「没有匹配的用户」（P0-3） */
+  const queryError = ref('')
   const sortKey = ref<'recent' | 'diamonds' | 'danmaku' | 'sessions'>('recent')
   const streamerFilter = ref('')
 
@@ -359,6 +371,15 @@
     }
   })
 
+  /**
+   * 匿名查询。
+   *
+   * P0-3 修复点：原来 catch 里直接 `results.value = []` ——
+   * 网络失败/后端 500 被渲染成「没有匹配『xxx』的用户」，
+   * 与「确实查不到这个人」在界面上**完全一样**，
+   * 使用者会以为这个人没送过礼，而真相是这次查询根本没成功。
+   * 现在失败单独进入错误态（带重试），空结果只在真的查成功且为空时出现。
+   */
   async function doSearch() {
     const q = query.value.trim()
     if (!q) return
@@ -368,8 +389,10 @@
     try {
       const res: any = await anonymousLookup(q)
       results.value = res?.users || (Array.isArray(res) ? res : [])
-    } catch {
+      queryError.value = ''
+    } catch (e) {
       results.value = []
+      queryError.value = apiErrorMessage(e, '查询失败')
     } finally {
       loading.value = false
     }

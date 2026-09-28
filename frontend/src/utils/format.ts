@@ -54,12 +54,45 @@ export function formatDuration(min: number): string {
   return m > 0 ? `${h}h ${m}m` : `${h}h`
 }
 
-/** 格式化数字（万/亿，保留两位小数） */
-export function fmtNum(n: number): string {
-  if (!n) return '0'
-  if (n >= 1e8) return (n / 1e8).toFixed(2) + '亿'
-  if (n >= 10000) return (n / 10000).toFixed(2) + '万'
-  return n.toLocaleString()
+/**
+ * 格式化数字（万/亿，保留两位小数）—— **全站唯一的数字显示口径**
+ *
+ * 为什么要有"唯一口径"（DESIGN-REVIEW P1-7）：
+ * 原来同一页里混用三套写法 —— fmtNum()（1.23万）、toLocaleString()（12,345）、
+ * 以及裸整数。结果 dashboard 的汇总卡写"27.73万"，同一页的榜单却写"37,965"，
+ * 读的人得在心里做一次换算，非常别扭。
+ *
+ * 约定：
+ *   - 展示一律用 fmtNum（大数缩写，扫读快）
+ *   - 需要精确值时用 fmtFull（千分位），并配 fmtTitle 作为悬浮提示
+ *
+ * 注意 1.23万 这种缩写会丢掉差异：1.23万 与 1.24万 看着几乎一样。
+ * 所以凡是"数值本身是结论"的地方（排行、明细），请用 fmtFull 或加 title。
+ */
+export function fmtNum(n: number | null | undefined): string {
+  if (n === null || n === undefined || Number.isNaN(Number(n))) return '0'
+  const v = Number(n)
+  if (!v) return '0'
+  if (v >= 1e8) return (v / 1e8).toFixed(2) + '亿'
+  if (v >= 10000) return (v / 10000).toFixed(2) + '万'
+  return v.toLocaleString('zh-CN')
+}
+
+/**
+ * 精确数值（千分位，不做万/亿缩写）。
+ * 用于：排行榜数值、明细行、以及任何"差一点都能看出来"的地方。
+ */
+export function fmtFull(n: number | null | undefined): string {
+  if (n === null || n === undefined || Number.isNaN(Number(n))) return '0'
+  return Number(n).toLocaleString('zh-CN')
+}
+
+/**
+ * 悬浮提示用的完整数值（配合 :title）。
+ * 缩写展示 + title 显示原值，既保持扫读效率又不丢精度。
+ */
+export function fmtTitle(n: number | null | undefined): string {
+  return fmtFull(n)
 }
 
 /** 排名徽章样式（前三名高亮） */

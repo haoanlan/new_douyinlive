@@ -1,40 +1,46 @@
 <template>
-  <div class="p-4">
+  <div class="douyin-page p-4">
     <!-- 工具条 -->
     <div
-      class="art-card room-toolbar px-5 py-4 mb-5 flex items-center justify-between gap-4 flex-wrap"
+      class="art-card dy-toolbar room-toolbar mb-5 flex items-center justify-between gap-4 flex-wrap"
     >
       <div class="flex items-center gap-3">
-        <div class="size-10 rounded-lg flex-cc bg-theme/10 shrink-0">
-          <ArtSvgIcon icon="ri:live-line" class="text-lg text-theme" />
+        <div class="size-9 rounded-lg flex-cc bg-theme/10 shrink-0">
+          <ArtSvgIcon icon="ri:live-line" class="text-base text-theme" />
         </div>
         <div>
-          <div class="font-bold text-g-900 leading-tight">房间管理</div>
+          <div class="dy-toolbar-title">房间管理</div>
           <div class="flex items-center gap-2.5 mt-1.5 text-xs text-g-500">
             <span class="flex items-baseline gap-1">
-              <b class="text-[13px] font-semibold text-g-900">{{ rooms.length }}</b
+              <b class="dy-count text-g-900">{{ rooms.length }}</b
               >房间
             </span>
             <span class="w-px h-3 bg-g-300" />
             <span class="flex items-baseline gap-1">
-              <b class="text-[13px] font-semibold text-success">{{ connectedCount }}</b
+              <b class="dy-count text-success">{{ connectedCount }}</b
               >监控中
             </span>
             <span class="w-px h-3 bg-g-300" />
             <span class="flex items-baseline gap-1">
-              <b class="text-[13px] font-semibold text-warning">{{ pausedCount }}</b
+              <b class="dy-count text-warning">{{ pausedCount }}</b
               >已暂停
             </span>
+            <!-- 顶部统计跟随筛选，明确说明当前是"筛选后"的口径 -->
+            <template v-if="search.trim()">
+              <span class="w-px h-3 bg-g-300" />
+              <span class="text-g-600">已筛选出 {{ filteredRooms.length }} 个</span>
+            </template>
           </div>
         </div>
       </div>
       <div class="flex gap-2">
+        <!-- P0-5：文案与行为一致 —— 这是本地过滤，不是跳转查询 -->
         <el-input
           v-model="search"
-          placeholder="搜索房间号或主播名"
+          placeholder="筛选房间号或主播名"
           style="width: 220px"
           clearable
-          @keyup.enter="doSearch"
+          @keyup.esc="clearSearch"
         >
           <template #prefix>
             <ArtSvgIcon icon="ri:search-line" class="text-g-400" />
@@ -48,11 +54,33 @@
     </div>
 
     <div v-loading="loading">
+      <!-- 轮询/加载失败：明确说明，且不再每 10 秒弹一次 toast（P0-3/P0-4） -->
+      <el-alert
+        v-if="queryError"
+        type="error"
+        :closable="false"
+        show-icon
+        class="mb-5"
+        title="房间列表加载失败"
+      >
+        <div class="flex items-center gap-3 flex-wrap">
+          <span class="text-xs break-all">{{ queryError }}</span>
+          <span class="text-xs">下方列表可能不是最新的。</span>
+          <el-button size="small" type="primary" plain @click="refresh">重试</el-button>
+        </div>
+      </el-alert>
+
       <ElRow :gutter="20">
-        <ElCol v-for="row in rooms" :key="row.room_id" :sm="24" :md="12" :lg="8">
+        <ElCol v-for="(row, idx) in filteredRooms" :key="row.room_id" :sm="24" :md="12" :lg="8">
           <div
-            class="art-card relative px-5 py-4 mb-5 c-p group transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
+            class="art-card room-card relative px-5 py-4 mb-5 c-p group"
+            role="button"
+            tabindex="0"
+            :aria-label="`查看 ${displayName(row)} 的场次`"
+            :style="{ animationDelay: `${Math.min(idx, 7) * 40}ms` }"
             @click="goSessions(row)"
+            @keydown.enter.prevent="goSessions(row)"
+            @keydown.space.prevent="goSessions(row)"
           >
             <div class="flex items-center gap-3.5">
               <!-- 头像（flex 消除 el-avatar 作为 inline 元素的基线间隙：
@@ -68,7 +96,7 @@
               <!-- 主播名 + 状态 -->
               <div class="flex-1 min-w-0">
                 <div
-                  class="text-[17px] font-medium truncate leading-snug"
+                  class="text-base font-medium truncate leading-snug"
                   :class="isNamePending(row) ? 'text-g-400' : 'text-g-900'"
                   :title="isNamePending(row) ? '主播名解析中（开播或解析成功后会更新）' : displayName(row)"
                 >
@@ -89,7 +117,8 @@
                     :hide-after="0"
                   >
                     <button
-                      class="size-8 rounded-lg flex-cc bg-g-100/70 text-g-500 hover:bg-theme/10 hover:text-theme transition-colors"
+                      class="dy-pressable size-8 rounded-lg flex-cc bg-g-100/70 text-g-500 hover:bg-theme/10 hover:text-theme"
+                      :aria-label="row.enabled ? '暂停监控' : '恢复监控'"
                       @click="row.enabled ? pause(row) : resume(row)"
                     >
                       <ArtSvgIcon
@@ -98,10 +127,11 @@
                       />
                     </button>
                   </el-tooltip>
-                  <el-tooltip content="删除房间（含历史数据）" placement="top" :hide-after="0">
+                  <el-tooltip content="移除房间" placement="top" :hide-after="0">
                     <button
-                      class="size-8 rounded-lg flex-cc bg-g-100/70 text-g-500 hover:bg-danger/10 hover:text-danger transition-colors"
-                      @click.stop="remove(row)"
+                      class="dy-pressable size-8 rounded-lg flex-cc bg-g-100/70 text-g-500 hover:bg-danger/10 hover:text-danger"
+                      aria-label="移除房间"
+                      @click.stop="openRemove(row)"
                     >
                       <ArtSvgIcon icon="ri:delete-bin-7-line" class="text-base" />
                     </button>
@@ -114,8 +144,9 @@
             <div
               class="flex items-center justify-between mt-4 pt-3.5 border-t border-dashed border-t-d"
             >
+              <!-- 卡片主数值：与统计卡/场次页统一为 20px（原来是 22px 这个游离档位） -->
               <div class="flex items-baseline gap-1">
-                <span class="text-[22px] font-medium text-g-900 leading-none">{{
+                <span class="text-[20px] font-medium text-g-900 leading-none">{{
                   row.session_count ?? 0
                 }}</span>
                 <span class="text-xs text-g-500">场次</span>
@@ -127,10 +158,55 @@
           </div>
         </ElCol>
       </ElRow>
-      <div v-if="!rooms.length && !loading" class="art-card px-5 py-4 mb-5">
-        <el-empty description="暂无房间，点击右上角添加" />
+      <!-- 空态区分「一个房间都没有」与「筛选没匹配上」（P0-5 的诚实收尾） -->
+      <div v-if="!filteredRooms.length && !loading && !queryError" class="art-card px-5 py-4 mb-5">
+        <el-empty
+          :description="
+            search.trim()
+              ? `没有匹配「${search.trim()}」的房间`
+              : '暂无房间，点击右上角添加'
+          "
+        />
+        <div v-if="search.trim()" class="text-center -mt-2">
+          <el-button size="small" text type="primary" @click="clearSearch">清除筛选</el-button>
+        </div>
       </div>
     </div>
+
+    <!--
+      移除房间：两个动作分开呈现。
+      「删除历史数据」不可逆，所以单独成一个红色按钮并再确认一次；
+      「取消」永远安全。
+    -->
+    <el-dialog
+      v-model="removeVisible"
+      title="移除房间"
+      width="440px"
+      align-center
+      @closed="removeTarget = null"
+    >
+      <div class="text-sm text-g-800 leading-relaxed">
+        要如何处理
+        <b>{{ removeTarget ? displayName(removeTarget) : '' }}</b>
+        <template v-if="removeTarget?.session_count">
+          （已采集 <b>{{ removeTarget.session_count }}</b> 个场次）
+        </template>
+        ？
+      </div>
+      <div class="mt-3 rounded-xl bg-g-100/60 px-3.5 py-3 text-xs text-g-600 leading-relaxed">
+        仅停止监控：<b>保留全部历史数据</b>，以后可以再添加回来继续采集。<br />
+        删除历史数据：连同场次、弹幕、礼物、进场记录一起删除，<b>无法恢复</b>。
+      </div>
+      <template #footer>
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <el-button text @click="closeRemove">取消</el-button>
+          <div class="flex items-center gap-2">
+            <el-button type="primary" @click="removeKeepData">仅停止监控</el-button>
+            <el-button type="danger" plain @click="removeWithData">删除历史数据</el-button>
+          </div>
+        </div>
+      </template>
+    </el-dialog>
 
     <!-- 添加房间弹窗 -->
     <el-dialog
@@ -146,7 +222,8 @@
         <div class="flex items-center justify-between mb-3.5">
           <span class="font-bold text-g-900">添加房间</span>
           <button
-            class="size-7 rounded-lg flex-cc bg-g-100/70 text-g-500 hover:bg-g-100 hover:text-g-900 transition-colors"
+            class="dy-pressable size-7 rounded-lg flex-cc bg-g-100/70 text-g-500 hover:bg-g-100 hover:text-g-900"
+            aria-label="关闭"
             @click="closeAdd"
           >
             <ArtSvgIcon icon="ri:close-line" class="text-base" />
@@ -283,6 +360,8 @@
   const rooms = ref<Room[]>([])
   const loading = ref(true)
   const search = ref('')
+  /** 取数失败的真实原因；非空时显示错误态而不是空列表（P0-3/P0-4） */
+  const queryError = ref('')
   const showAdd = ref(false)
   const newRoomId = ref('')
   const newRoomName = ref('')
@@ -291,8 +370,29 @@
   const preview = ref<LookupResult | null>(null)
   const looking = ref(false)
 
-  const connectedCount = computed(() => rooms.value.filter((r) => r.connected).length)
-  const pausedCount = computed(() => rooms.value.filter((r) => !r.enabled).length)
+  /**
+   * 搜索过滤（P0-5）。
+   *
+   * 原来输入框写着「搜索房间号或主播名」，但 `search` ref 从未参与过滤，
+   * 回车只是 router.push 跳到场次页，且 sessions 接口只按 room_id 查 ——
+   * 输入主播名必然查不到任何东西，承诺与行为不符。
+   * 现在按本地列表真实过滤：房间号、主播名、直播间标题都能匹配。
+   */
+  const filteredRooms = computed(() => {
+    const kw = search.value.trim().toLowerCase()
+    if (!kw) return rooms.value
+    return rooms.value.filter((r) => {
+      const hay = [r.room_id, r.name, r.roomTitle]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+      return hay.includes(kw)
+    })
+  })
+
+  /** 统计口径跟随筛选结果，避免"顶部数字与列表对不上" */
+  const connectedCount = computed(() => filteredRooms.value.filter((r) => r.connected).length)
+  const pausedCount = computed(() => filteredRooms.value.filter((r) => !r.enabled).length)
 
   const previewStatusText = computed(() => {
     const p = preview.value
@@ -393,6 +493,9 @@
   /**
    * 拉取房间列表并**合并**进现有数据：
    * 复用已有对象的引用（配合 :key="row.room_id"），卡片不会被整体重建 —— 不闪烁、不重排。
+   *
+   * 轮询失败时不再弹 toast（那是每 10 秒一次的刷屏），改为记录原因、
+   * 由页面上的错误条统一展示（P0-3/P0-4）。
    */
   async function refresh() {
     const isFirst = !rooms.value.length
@@ -407,6 +510,9 @@
         return old
       })
       rooms.value = merged
+      queryError.value = ''
+    } catch (e) {
+      queryError.value = apiErrorMessage(e, '房间列表加载失败')
     } finally {
       loading.value = false
     }
@@ -425,8 +531,12 @@
     refresh()
   }
 
-  function doSearch() {
-    router.push({ path: '/douyin/sessions', query: { hostId: search.value } })
+  /**
+   * 搜索框现在是**本地过滤**（见 filteredRooms），不再跳转。
+   * 保留 Esc / 清空即恢复全量。
+   */
+  function clearSearch() {
+    search.value = ''
   }
 
   function openAdd() {
@@ -539,34 +649,74 @@
     }
   }
 
-  async function remove(row: Room) {
+  /**
+   * 移除房间。
+   *
+   * 原来只有一条路：确认后**必定连历史数据一起删**（api 层硬编码 delete_data: true）。
+   * 删除不可逆，而"仅停止监控"随时可以再添加回来 —— 两者风险差很远，
+   * 不该被合并成一个按钮。所以本页弹窗提供两个明确的动作：
+   *   1) 仅停止监控（保留历史数据）
+   *   2) 删除房间和历史数据（红的、需要再确认一次）
+   * 「取消」永远是安全的：什么都不做。
+   */
+  const removeVisible = ref(false)
+  const removeTarget = ref<Room | null>(null)
+
+  function openRemove(row: Room) {
+    removeTarget.value = row
+    removeVisible.value = true
+  }
+
+  function closeRemove() {
+    removeVisible.value = false
+    removeTarget.value = null
+  }
+
+  /** 仅停止监控：保留全部历史数据 */
+  async function removeKeepData() {
+    const row = removeTarget.value
+    if (!row) return
+    closeRemove()
+    await doRemove(row, false)
+  }
+
+  /** 危险路径：删除房间并连同全部历史数据，必须再确认一次 */
+  async function removeWithData() {
+    const row = removeTarget.value
+    if (!row) return
+    const name = escapeHtml(displayName(row))
+    const sessions = row.session_count ?? 0
     try {
       await ElMessageBox.confirm(
-        `确定删除 <b>${escapeHtml(displayName(row))}</b>？`
-          + '<br><br><b>会同时删除该房间的全部历史数据</b>（场次、弹幕、礼物、进场记录），'
-          + '<b>删除后无法恢复</b>。'
-          + '<br><br>如果只想停止监控、保留历史数据，请改用「暂停」。',
+        `确定要删除 <b>${name}</b> 及其<b>全部历史数据</b>吗？`
+          + (sessions ? `<br><br>这包含 <b>${sessions} 个场次</b>的弹幕、礼物与进场记录。` : '')
+          + '<br><br><b>删除后无法恢复。</b>',
         '删除房间及历史数据',
         {
           confirmButtonText: '删除房间和历史数据',
           cancelButtonText: '取消',
           type: 'warning',
-          dangerouslyUseHTMLString: true,
+          dangerouslyUseHTMLString: true
         }
       )
     } catch {
-      return // 用户取消
+      return // 取消：留在原弹窗，什么都不做
     }
+    closeRemove()
+    await doRemove(row, true)
+  }
+
+  async function doRemove(row: Room, deleteData: boolean) {
     try {
-      const r = await removeRoom(row.room_id)
+      const r = await removeRoom(row.room_id, deleteData)
       if (r && (r as { ok?: boolean }).ok === false) {
-        ElMessage.error((r as { error?: string }).error || '删除失败')
+        ElMessage.error((r as { error?: string }).error || '移除失败')
         return
       }
-      ElMessage.success('已删除')
+      ElMessage.success(deleteData ? '已删除房间及历史数据' : '已停止监控（历史数据已保留）')
       refresh()
     } catch (e: unknown) {
-      ElMessage.error(apiErrorMessage(e, '删除失败'))
+      ElMessage.error(apiErrorMessage(e, '移除失败'))
     }
   }
 
@@ -621,12 +771,79 @@
 </style>
 
 <style scoped>
+  /*
+   * 房间卡片：整张卡可点，进房间场次。
+   *
+   * 原来写的是 `transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5`：
+   *   - transition-all 会连带过渡一堆属性（含触发布局的），鼠标划过就掉帧
+   *   - 300ms 偏慢，且用内置 ease，悬停会"飘"一下才到位
+   * 现在只过渡阴影/位移/描边（都是合成器友好的），并用统一的动效 token。
+   */
+  .room-card {
+    transition:
+      box-shadow var(--dy-dur-base) var(--dy-ease-out),
+      transform var(--dy-dur-base) var(--dy-ease-out),
+      border-color var(--dy-dur-fast) ease;
+  }
+
+  /*
+   * 卡片进场：一次淡入 + 轻微上移，逐张错开 40ms。
+   * 6 张卡同时"啪"地出现会显得机械；错开一点点就有层次感。
+   * 只做 opacity/transform（GPU），并且只跑一次，不阻塞交互。
+   *
+   * 注意：延迟用**行内 style 按索引**设置（见模板 :style），不要用 :nth-child ——
+   * 每张卡都是各自 ElCol 里的唯一子元素，nth-child 永远命中第 1 个，
+   * 结果是所有卡片延迟都是 0ms（这个坑已经踩过一次）。
+   */
+  .room-card {
+    animation: dy-card-in var(--dy-dur-slow) var(--dy-ease-out) both;
+  }
+
+  @keyframes dy-card-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+
+  /* 悬停/按下只在真指针设备上启用：触屏点按会误触发 hover，
+     表现成"点一下卡片先浮起来再跳走"。 */
+  @media (hover: hover) and (pointer: fine) {
+    .room-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px -10px rgb(0 0 0 / 16%);
+      border-color: color-mix(in srgb, var(--theme-color) 28%, transparent);
+    }
+  }
+
+  .room-card:active {
+    transform: scale(0.995);
+  }
+
+  .room-card:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 2px #fff,
+      0 0 0 4px var(--theme-color);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .room-card {
+      animation: none;
+    }
+
+    .room-card:hover,
+    .room-card:active {
+      transform: none;
+    }
+  }
+
   /* 工具条控件圆角与卡片统一（卡片 16px，控件默认仅 6px） */
   :deep(.room-toolbar .el-input__wrapper) {
     border-radius: 10px;
     background: var(--art-gray-100);
     box-shadow: none;
-    transition: box-shadow 0.2s ease;
+    transition: box-shadow var(--dy-dur-fast) ease;
   }
 
   :deep(.room-toolbar .el-input__wrapper:hover) {

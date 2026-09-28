@@ -1,5 +1,5 @@
 <template>
-  <div class="p-4">
+  <div class="douyin-page p-4">
     <!-- 面包屑导航 -->
     <el-breadcrumb class="mb-5" separator="/">
       <el-breadcrumb-item :to="{ path: '/douyin/rooms' }">
@@ -27,7 +27,7 @@
 
     <!-- 工具条 -->
     <div
-      class="art-card session-toolbar px-5 py-4 mb-5 flex items-center justify-between gap-4 flex-wrap"
+      class="art-card dy-toolbar session-toolbar mb-5 flex items-center justify-between gap-4 flex-wrap"
     >
       <div class="flex items-center gap-2.5">
         <span class="font-bold text-g-900">场次历史</span>
@@ -47,8 +47,12 @@
           @change="onDateChange"
         />
         <el-button v-if="dateRange" @click="clearDate">清除</el-button>
-        <el-dropdown v-if="isAdmin && selectedIds.length" trigger="click" @command="onBatchCommand">
-          <el-button type="primary">
+        <el-dropdown
+          v-if="isAdmin && selectedIds.length"
+          trigger="click"
+          @command="onBatchCommand"
+        >
+          <el-button type="primary" :loading="batchDownloading">
             <ArtSvgIcon icon="ri:check-double-line" class="mr-1" />
             批量 ({{ selectedIds.length }})
             <ArtSvgIcon icon="ri:arrow-down-s-line" class="ml-1" />
@@ -70,12 +74,17 @@
     <!-- 场次列表 -->
     <div class="art-card p-5 mb-5">
       <div v-loading="loading" class="flex flex-col gap-2.5">
-        <TransitionGroup name="row" tag="div" class="flex flex-col gap-2.5" appear>
+        <TransitionGroup name="dy-list" tag="div" class="flex flex-col gap-2.5" appear>
           <div
             v-for="row in pageSessions"
             :key="row.id"
-            class="rounded-xl bg-g-100/50 px-4 py-3 c-p group transition-colors hover:bg-g-100"
+            class="session-row rounded-xl bg-g-100/50 px-4 py-3 c-p group"
+            role="button"
+            tabindex="0"
+            :aria-label="`查看场次 #${row.id} 详情`"
             @click="router.push(`/douyin/detail/${row.id}`)"
+            @keydown.enter.prevent="router.push(`/douyin/detail/${row.id}`)"
+            @keydown.space.prevent="router.push(`/douyin/detail/${row.id}`)"
           >
             <!-- 主行 -->
             <div class="flex items-center gap-3">
@@ -106,15 +115,22 @@
               <div class="flex items-center gap-1.5 shrink-0" @click.stop>
                 <el-tooltip content="下载报告" placement="top" :hide-after="0">
                   <button
-                    class="size-8 rounded-lg flex-cc bg-g-100/70 text-g-500 hover:bg-theme/10 hover:text-theme transition-colors"
+                    class="dy-pressable size-8 rounded-lg flex-cc bg-g-100/70 text-g-500 hover:bg-theme/10 hover:text-theme disabled:opacity-50 disabled:cursor-not-allowed"
+                    :disabled="downloadingId !== null"
+                    aria-label="下载报告"
                     @click="downloadReport(row.id)"
                   >
-                    <ArtSvgIcon icon="ri:download-line" class="text-base" />
+                    <ArtSvgIcon
+                      :icon="downloadingId === row.id ? 'ri:loader-4-line' : 'ri:download-line'"
+                      class="text-base"
+                      :class="downloadingId === row.id ? 'animate-spin' : ''"
+                    />
                   </button>
                 </el-tooltip>
                 <button
                   v-if="isAdmin"
-                  class="size-8 rounded-lg flex-cc bg-g-100/70 text-g-500 hover:bg-danger/10 hover:text-danger transition-colors"
+                  class="dy-pressable size-8 rounded-lg flex-cc bg-g-100/70 text-g-500 hover:bg-danger/10 hover:text-danger"
+                  aria-label="删除场次"
                   @click="remove(row)"
                 >
                   <ArtSvgIcon icon="ri:delete-bin-7-line" class="text-base" />
@@ -144,7 +160,35 @@
             </div>
           </div>
         </TransitionGroup>
-        <el-empty v-if="!filteredSessions.length && !loading" description="该主播暂无场次" />
+        <!-- 缺参：直接打开本页（没有 hostId）时说明原因，而不是永久转圈 -->
+        <div v-if="!hostId && !loading" class="art-card px-5 py-8">
+          <div class="flex flex-col items-center text-center">
+            <div class="size-11 rounded-full flex-cc bg-theme/10 mb-3">
+              <ArtSvgIcon icon="ri:live-line" class="text-xl text-theme" />
+            </div>
+            <div class="text-sm font-medium text-g-900">请先选择要查看的主播</div>
+            <p class="mt-1.5 text-xs text-g-600">
+              场次历史按主播查询，请从「房间管理」点进某个房间查看它的场次。
+            </p>
+            <el-button class="mt-4" type="primary" plain @click="router.push('/douyin/rooms')">
+              <ArtSvgIcon icon="ri:arrow-left-line" class="mr-1" />
+              去房间管理
+            </el-button>
+          </div>
+        </div>
+
+        <!-- 失败：明确区别于「没有数据」，并给重试入口（P0-3） -->
+        <QueryErrorState
+          v-else-if="queryError"
+          :message="queryError"
+          :retrying="loading"
+          @retry="refresh"
+        />
+
+        <el-empty
+          v-else-if="!filteredSessions.length && !loading"
+          :description="dateRange ? '该时间段内没有场次' : '该主播暂无场次'"
+        />
       </div>
 
       <div v-if="filteredSessions.length" class="flex justify-end mt-4">
@@ -164,9 +208,11 @@
   import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { ElMessage, ElMessageBox } from 'element-plus'
-  import { fetchSessions, deleteSession, getReportUrl, type Session } from '@/api/douyin'
+  import { fetchSessions, deleteSession, type Session } from '@/api/douyin'
   import { useUserStore } from '@/store/modules/user'
   import { fmtTime, fmtNum } from '@/utils/format'
+  import { apiErrorMessage } from '@/utils/douyin-error'
+  import { downloadWithAuth } from '@/utils/download'
 
   defineOptions({ name: 'DouyinSessions' })
 
@@ -178,9 +224,14 @@
   const sessions = ref<Session[]>([])
   const hostId = ref((route.query.hostId as string) || '')
   const loading = ref(true)
+  /** 取数失败的真实原因；非空时页面显示错误态而不是空态（P0-3） */
+  const queryError = ref('')
   const selectedIds = ref<number[]>([])
   const dateRange = ref<[string, string] | null>(null)
   const page = ref(1)
+  /** 正在生成/下载的报告 id，用于禁用重复点击 */
+  const downloadingId = ref<number | null>(null)
+  const batchDownloading = ref(false)
   const pageSize = 10
 
   const summaryCards = computed(() => [
@@ -239,12 +290,31 @@
     page.value = 1
   }
 
+  /**
+   * 拉取场次列表。
+   *
+   * P0-3 修复点：原来第一行是 `if (!hostId.value) return`，
+   * 而 `loading` 初值为 true、只在 refresh 的 finally 里被置 false ——
+   * 于是「直接打开 /douyin/sessions（没有 hostId）」时页面**永久转圈**，
+   * 空态永远不会出现，看起来像一直在加载。
+   *
+   * 现在：没有 hostId 就明确进入「缺参数」空态并结束 loading；
+   * 请求失败则进入错误态（带重试），而不是静默显示空列表。
+   */
   async function refresh() {
-    if (!hostId.value) return
+    if (!hostId.value) {
+      sessions.value = []
+      queryError.value = ''
+      loading.value = false
+      return
+    }
     const isFirst = !sessions.value.length
     if (isFirst) loading.value = true
     try {
       sessions.value = await fetchSessions(hostId.value)
+      queryError.value = ''
+    } catch (e) {
+      queryError.value = apiErrorMessage(e, '场次列表加载失败')
     } finally {
       loading.value = false
     }
@@ -258,16 +328,55 @@
     }
   }
 
-  function downloadReport(id: number) {
-    window.open(getReportUrl(String(id)), '_blank')
+  /**
+   * 下载单场报告图片。
+   *
+   * P0-1 修复点：原来用 `window.open(getReportUrl(id))` —— 浏览器导航不带
+   * Authorization 头，而后端对所有 /api/* 都要求 Bearer 认证，新标签只会显示
+   * {"error":"未授权，请先登录"}，这个按钮永远不可能成功。
+   * 现在改为带 token 取 blob 再触发保存。
+   */
+  async function downloadReport(id: number) {
+    if (downloadingId.value !== null) return
+    downloadingId.value = id
+    try {
+      // 报告可能由后端现生成（要渲染截图），耗时较长，加载态给足提示
+      const name = await downloadWithAuth(
+        getReportUrl(String(id)),
+        `report_${id}.jpg`
+      )
+      ElMessage.success(`已保存 ${name}`)
+    } catch (e) {
+      ElMessage.error(apiErrorMessage(e, '报告下载失败'))
+    } finally {
+      downloadingId.value = null
+    }
   }
 
-  function downloadSelectedReports() {
-    const ids = selectedIds.value
-    ids.forEach((id, i) =>
-      setTimeout(() => window.open(getReportUrl(String(id)), '_blank'), i * 500)
-    )
-    ElMessage.success(`正在生成 ${ids.length} 份报告...`)
+  async function downloadSelectedReports() {
+    const ids = [...selectedIds.value]
+    if (!ids.length || batchDownloading.value) return
+    batchDownloading.value = true
+    let ok = 0
+    const failed: string[] = []
+    try {
+      // 串行下载：并发打开多个保存对话框会被浏览器拦截，
+      // 且后端每个报告都要渲染截图，串行也更稳。
+      for (const id of ids) {
+        try {
+          await downloadWithAuth(getReportUrl(String(id)), `report_${id}.jpg`)
+          ok++
+        } catch (e) {
+          failed.push(`#${id}（${apiErrorMessage(e, '失败')}）`)
+        }
+      }
+    } finally {
+      batchDownloading.value = false
+    }
+    if (ok) ElMessage.success(`已下载 ${ok} 份报告`)
+    if (failed.length) {
+      ElMessage.error(`${failed.length} 份下载失败：${failed.join('、')}`)
+    }
   }
 
   function onBatchCommand(cmd: string) {
@@ -337,7 +446,7 @@
     border-radius: 10px;
     background: var(--art-gray-100);
     box-shadow: none;
-    transition: box-shadow 0.2s ease;
+    transition: box-shadow var(--dy-dur-fast) ease;
   }
 
   :deep(.session-toolbar .el-input__wrapper:hover) {
@@ -353,22 +462,30 @@
     border-radius: 10px;
   }
 
-  .row-enter-active,
-  .row-leave-active {
-    transition: all 0.35s ease;
+  /*
+   * 场次行：可点进行详情。
+   * 进出场用全局 `.dy-list-*`（见 assets/styles/custom/douyin-motion.scss），
+   * 原来这里是 `transition: all 0.35s ease` —— transition-all 会过渡到布局属性上，
+   * 而且退出用 scale(0.98)、进场用 translateY(8px)，方向不一致会显得"散"。
+   */
+  .session-row {
+    transition: background-color var(--dy-dur-fast) ease;
   }
 
-  .row-enter-from {
-    opacity: 0;
-    transform: translateY(8px);
+  @media (hover: hover) and (pointer: fine) {
+    .session-row:hover {
+      background-color: var(--art-gray-100);
+    }
   }
 
-  .row-leave-to {
-    opacity: 0;
-    transform: scale(0.98);
+  .session-row:active {
+    background-color: var(--art-gray-100);
   }
 
-  .row-move {
-    transition: transform 0.35s ease;
+  .session-row:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 2px #fff,
+      0 0 0 4px var(--theme-color);
   }
 </style>

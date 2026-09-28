@@ -21,3 +21,6 @@
 
 // 主题切换圆形扩散动画
 @use './core/theme-animation.scss';
+
+// 抖音监控页：动效 token 与统一交互态（按下反馈 / 列表进出过渡）
+@use './custom/douyin-motion.scss';

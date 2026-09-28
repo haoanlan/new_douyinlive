@@ -1,5 +1,5 @@
 <template>
-  <div class="p-4">
+  <div class="douyin-page p-4">
     <!-- 加载失败 / 无数据 -->
     <div v-if="error" class="art-card p-5 mb-4">
       <el-empty :description="error" :image-size="80">
@@ -67,8 +67,9 @@
               <div
                 v-for="h in hourBars"
                 :key="h.hour"
-                class="flex-1 rounded-t bg-theme/60 hover:bg-theme transition-colors"
-                :style="{ height: h.h + '%' }"
+                class="hour-bar flex-1 rounded-t"
+                :class="h.empty ? 'hour-bar--empty' : 'bg-theme/60'"
+                :style="{ height: h.empty ? undefined : h.h + '%' }"
                 :title="`${h.hour}:00 — ${h.count} 次`"
               />
             </div>
@@ -173,11 +174,18 @@
       { label: '送礼次数', value: p?.gift_count ?? '-' },
       { label: '礼物种类', value: p?.gift_types_count ?? '-' },
       { label: '弹幕条数', value: p?.danmakuCount ?? '-' },
-      { label: '活跃场次', value: p?.activeSessionCount ?? '-' },
+      { label: '活跃场次', value: p?.activeSessionCount ?? '-' }
     ]
   })
 
-  /** 24 小时柱状：按最大值归一化到百分比高度 */
+  /**
+   * 24 小时柱状：按最大值归一化到百分比高度。
+   *
+   * 原来 `count === 0 ? 2` 会把「没有活动的小时」也画成一根可见的柱子，
+   * 而且和真实数据同色 —— 读图结论直接被污染（看起来每个小时都有人送礼）。
+   * 现在 0 用 0 高度 + 一条独立的浅色基线表达「这一小时确实没有」，
+   * 并且加了个 `empty` 标记让模板用不同颜色渲染。
+   */
   const hourBars = computed(() => {
     const map = new Map<number, number>()
     for (const h of profile.value?.hourStats || []) {
@@ -189,7 +197,9 @@
     return values.map((count, hour) => ({
       hour: String(hour).padStart(2, '0'),
       count,
-      h: count === 0 ? 2 : Math.max(6, Math.round((count / max) * 100)),
+      empty: count === 0,
+      // 0 就是 0（靠基线表达"这一格存在但为空"），非 0 至少 6% 保证可见
+      h: count === 0 ? 0 : Math.max(6, Math.round((count / max) * 100))
     }))
   })
 
@@ -211,3 +221,29 @@
 
   onMounted(load)
 </script>
+
+<style scoped>
+  /*
+   * 活跃时段柱状图。
+   *
+   * 两个细节：
+   *   1) 有数据的小时：悬停加深，且只在真指针设备上启用（触屏会误触发）
+   *   2) 没有数据的小时：**不是**一根和真数据同色的柱子，而是一条浅色基线，
+   *      否则"每个小时都有人送礼"这种错误结论会被读出来
+   */
+  .hour-bar {
+    transition: background-color var(--dy-dur-fast) ease;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .hour-bar:not(.hour-bar--empty):hover {
+      background-color: var(--theme-color);
+    }
+  }
+
+  /* 空小时：2px 基线，颜色明显弱于真实数据 */
+  .hour-bar--empty {
+    height: 2px;
+    background-color: var(--art-gray-300);
+  }
+</style>

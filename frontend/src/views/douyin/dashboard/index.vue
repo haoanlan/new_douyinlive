@@ -1,54 +1,98 @@
 <template>
-  <div class="p-4">
-    <!-- 汇总卡片 -->
-    <div class="flex flex-wrap gap-5 mb-5">
-      <div
-        v-for="card in cards"
-        :key="card.des"
-        class="art-card relative flex-1 min-w-[220px] flex flex-col justify-center h-32 px-5"
-      >
-        <div class="flex items-center justify-between pr-2">
-          <span class="text-g-700 text-sm">{{ card.des }}</span>
-          <div class="size-10 rounded-lg flex-cc bg-theme/10 shrink-0">
-            <ArtSvgIcon :icon="card.icon" class="text-lg text-theme" />
+  <div class="douyin-page p-4">
+    <!--
+      汇总卡片。
+      与「场次历史 / 场次详情」的同款卡片对齐口径（原来这里是自己一套）：
+        - 高度 h-32（128px）→ h-20（80px），三个页面统一
+        - 数值 24px bold + text-sm 标签 → 20px medium + text-xs 标签
+        - 图标容器 size-10/text-lg → size-9/text-base
+      之前同一类卡片在三个页面是三种尺寸，扫过去会觉得"这些页不是一个产品"。
+    -->
+    <div class="dy-stat-row">
+      <div v-for="card in cards" :key="card.des" class="art-card dy-stat-card">
+        <div class="min-w-0">
+          <div class="text-xs text-g-500">{{ card.des }}</div>
+          <div class="mt-1 flex items-baseline gap-1">
+            <span class="text-[20px] font-medium text-g-900 leading-none whitespace-nowrap">{{
+              card.num
+            }}</span>
+            <span class="text-xs text-g-500 shrink-0">{{ card.unit }}</span>
           </div>
         </div>
-        <div class="mt-1 flex items-baseline gap-1">
-          <span class="text-[24px] font-bold text-g-900 leading-tight whitespace-nowrap">{{
-            card.num
-          }}</span>
-          <span class="text-sm font-medium text-g-500 shrink-0">{{ card.unit }}</span>
+        <div class="size-9 rounded-lg flex-cc bg-theme/10 shrink-0">
+          <ArtSvgIcon :icon="card.icon" class="text-base text-theme" />
         </div>
       </div>
     </div>
 
+    <!--
+      P0-3：状态取不到时必须显式说明。
+      否则后端一挂，下面四张卡照旧显示绿色「运行中 / 正常」，
+      使用者会以为一切正常——这是监控工具最危险的失败模式。
+    -->
+    <el-alert
+      v-if="statusError"
+      type="error"
+      :closable="false"
+      show-icon
+      class="mb-5"
+      title="监控状态获取失败，下面显示的可能不是当前真实状态"
+    >
+      <div class="flex items-center gap-3 flex-wrap">
+        <span class="text-xs break-all">{{ statusError }}</span>
+        <span v-if="staleSeconds > 0" class="text-xs">
+          · 数据已过期 {{ staleSeconds }} 秒
+        </span>
+        <el-button size="small" type="primary" plain @click="refreshStatus">重试</el-button>
+      </div>
+    </el-alert>
+
+    <!-- 状态是好的但已经很久没刷新成功：提示数据新鲜度 -->
+    <el-alert
+      v-else-if="lastStatusAt && staleSeconds > 30"
+      type="warning"
+      :closable="false"
+      show-icon
+      class="mb-5"
+      :title="`状态数据已 ${staleSeconds} 秒未更新，自动刷新可能已停止`"
+    />
+
     <!-- 监控状态 —— 立即显示，无阻塞 -->
     <div v-loading="!daemon" class="flex flex-wrap gap-5 mb-5" element-loading-text="连接中…">
       <div class="art-card relative flex-1 min-w-[160px] flex items-center gap-3 h-20 px-5">
-        <div class="size-10 rounded-lg flex-cc bg-theme/10 shrink-0">
-          <ArtSvgIcon icon="ri:server-line" class="text-lg text-theme" />
+        <div class="size-9 rounded-lg flex-cc bg-theme/10 shrink-0">
+          <ArtSvgIcon icon="ri:server-line" class="text-base text-theme" />
         </div>
         <div class="min-w-0">
           <div class="text-xs text-g-500">守护进程</div>
-          <el-tag :type="daemonRunning ? 'success' : 'danger'" size="small" effect="light">
-            {{ daemonRunning ? '运行中' : '未运行' }}
+          <!-- 状态取失败时不再沿用上次的绿色标签（会看起来"一切正常"） -->
+          <el-tag
+            :type="statusError ? 'info' : daemonRunning ? 'success' : 'danger'"
+            size="small"
+            effect="light"
+          >
+            {{ statusError ? '状态未知' : daemonRunning ? '运行中' : '未运行' }}
           </el-tag>
         </div>
       </div>
       <div class="art-card relative flex-1 min-w-[160px] flex items-center gap-3 h-20 px-5">
-        <div class="size-10 rounded-lg flex-cc bg-theme/10 shrink-0">
-          <ArtSvgIcon icon="ri:server-line" class="text-lg text-theme" />
+        <div class="size-9 rounded-lg flex-cc bg-theme/10 shrink-0">
+          <ArtSvgIcon icon="ri:server-line" class="text-base text-theme" />
         </div>
         <div class="min-w-0">
           <div class="text-xs text-g-500">Go 代理</div>
-          <el-tag :type="daemonRunning ? 'success' : 'danger'" size="small" effect="light">
-            {{ daemonRunning ? '正常' : '未知' }}
+          <el-tag
+            :type="statusError ? 'info' : daemonRunning ? 'success' : 'danger'"
+            size="small"
+            effect="light"
+          >
+            {{ statusError ? '状态未知' : daemonRunning ? '正常' : '未知' }}
           </el-tag>
         </div>
       </div>
       <div class="art-card relative flex-1 min-w-[160px] flex items-center gap-3 h-20 px-5">
-        <div class="size-10 rounded-lg flex-cc bg-theme/10 shrink-0">
-          <ArtSvgIcon icon="ri:link" class="text-lg text-theme" />
+        <div class="size-9 rounded-lg flex-cc bg-theme/10 shrink-0">
+          <ArtSvgIcon icon="ri:link" class="text-base text-theme" />
         </div>
         <div class="min-w-0">
           <div class="text-xs text-g-500">WebSocket 连接</div>
@@ -59,8 +103,8 @@
         </div>
       </div>
       <div class="art-card relative flex-1 min-w-[160px] flex items-center gap-3 h-20 px-5">
-        <div class="size-10 rounded-lg flex-cc bg-theme/10 shrink-0">
-          <ArtSvgIcon icon="ri:radio-line" class="text-lg text-theme" />
+        <div class="size-9 rounded-lg flex-cc bg-theme/10 shrink-0">
+          <ArtSvgIcon icon="ri:radio-line" class="text-base text-theme" />
         </div>
         <div class="min-w-0">
           <div class="text-xs text-g-500">录制中</div>
@@ -72,6 +116,21 @@
       </div>
     </div>
 
+    <!-- 历史总览取不到时说明原因，避免下面各块的「暂无数据」被读成"真的没数据" -->
+    <el-alert
+      v-if="overviewError"
+      type="error"
+      :closable="false"
+      show-icon
+      class="mb-5"
+      title="历史总览数据加载失败"
+    >
+      <div class="flex items-center gap-3 flex-wrap">
+        <span class="text-xs break-all">{{ overviewError }}</span>
+        <el-button size="small" type="primary" plain @click="refreshOverview">重试</el-button>
+      </div>
+    </el-alert>
+
     <!-- 在线峰值 + 热门礼物 -->
     <el-row :gutter="20">
       <el-col :sm="24" :md="14" :lg="14">
@@ -82,7 +141,7 @@
               <p>历史在线人数 Top 5</p>
             </div>
           </div>
-          <TransitionGroup name="list" tag="div" class="flex flex-col gap-2.5 mt-4" appear>
+          <TransitionGroup name="dy-list" tag="div" class="flex flex-col gap-2.5 mt-4" appear>
             <div
               v-for="(p, i) in overview?.peakSessions || []"
               :key="p.id"
@@ -100,8 +159,8 @@
                 }}</div>
                 <div class="text-xs text-g-500">{{ fmtTime(p.start_time) }}</div>
               </div>
-              <span class="text-sm font-bold text-theme shrink-0"
-                >{{ p.online_peak.toLocaleString() }}人</span
+              <span class="text-sm font-bold text-theme shrink-0" :title="fmtTitle(p.online_peak)"
+                >{{ fmtNum(p.online_peak) }}人</span
               >
             </div>
             <el-empty
@@ -120,7 +179,7 @@
               <p>累计钻石 Top 5</p>
             </div>
           </div>
-          <TransitionGroup name="list" tag="div" class="flex flex-col gap-2.5 mt-4" appear>
+          <TransitionGroup name="dy-list" tag="div" class="flex flex-col gap-2.5 mt-4" appear>
             <div
               v-for="(g, i) in (overview?.topGifts || []).slice(0, 5)"
               :key="g.name"
@@ -159,7 +218,7 @@
               <p>累计钻石 Top 5</p>
             </div>
           </div>
-          <TransitionGroup name="list" tag="div" class="flex flex-col gap-2.5 mt-4" appear>
+          <TransitionGroup name="dy-list" tag="div" class="flex flex-col gap-2.5 mt-4" appear>
             <div
               v-for="(u, i) in overview?.topUsers || []"
               :key="u.sec_uid || u.nickname"
@@ -186,7 +245,7 @@
               <p>发言次数 Top 5</p>
             </div>
           </div>
-          <TransitionGroup name="list" tag="div" class="flex flex-col gap-2.5 mt-4" appear>
+          <TransitionGroup name="dy-list" tag="div" class="flex flex-col gap-2.5 mt-4" appear>
             <div
               v-for="(d, i) in overview?.topDanmaku || []"
               :key="d.nickname"
@@ -199,8 +258,8 @@
               >
               <el-avatar :size="32" :src="d.avatar">{{ d.nickname?.[0] }}</el-avatar>
               <span class="flex-1 min-w-0 text-sm truncate">{{ d.nickname }}</span>
-              <span class="text-sm font-bold text-g-800 shrink-0"
-                >{{ d.count.toLocaleString() }}条</span
+              <span class="text-sm font-bold text-g-800 shrink-0" :title="fmtTitle(d.count)"
+                >{{ fmtNum(d.count) }}条</span
               >
             </div>
             <el-empty
@@ -221,7 +280,7 @@
           <p>最新 8 场直播记录</p>
         </div>
       </div>
-      <TransitionGroup name="list" tag="div" class="flex flex-col gap-2.5 mt-4" appear>
+      <TransitionGroup name="dy-list" tag="div" class="flex flex-col gap-2.5 mt-4" appear>
         <div
           v-for="s in overview?.recentSessions || []"
           :key="s.id"
@@ -246,22 +305,20 @@
           <div
             class="flex items-center gap-4 mt-2 pt-2 border-t border-g-100/80 text-xs text-g-600 flex-wrap"
           >
-            <span class="flex items-center gap-1">
+            <span class="flex items-center gap-1" :title="fmtTitle(s.diamonds)">
               <ArtSvgIcon icon="ri:diamond-line" class="text-g-400" />{{ fmtNum(s.diamonds) }}
             </span>
-            <span class="flex items-center gap-1">
-              <ArtSvgIcon icon="ri:chat-3-line" class="text-g-400" />{{
-                s.danmaku.toLocaleString()
-              }}
+            <span class="flex items-center gap-1" :title="fmtTitle(s.danmaku)">
+              <ArtSvgIcon icon="ri:chat-3-line" class="text-g-400" />{{ fmtNum(s.danmaku) }}
               条
             </span>
-            <span class="flex items-center gap-1">
-              <ArtSvgIcon icon="ri:user-3-line" class="text-g-400" />{{ s.users.toLocaleString() }}
+            <span class="flex items-center gap-1" :title="fmtTitle(s.users)">
+              <ArtSvgIcon icon="ri:user-3-line" class="text-g-400" />{{ fmtNum(s.users) }}
               人
             </span>
-            <span class="ml-auto flex items-center gap-1 shrink-0">
+            <span class="ml-auto flex items-center gap-1 shrink-0" :title="fmtTitle(s.online_peak)">
               <ArtSvgIcon icon="ri:signal-wifi-line" class="text-g-400" />在线峰值
-              {{ s.online_peak.toLocaleString() }}
+              {{ fmtNum(s.online_peak) }}
             </span>
           </div>
         </div>
@@ -280,13 +337,28 @@
   import { useRouter } from 'vue-router'
   import { useTransition } from '@vueuse/core'
   import { fetchOverview, fetchStatus, type OverviewData, type DaemonStatus } from '@/api/douyin'
-  import { fmtNum, fmtTime, rankClass } from '@/utils/format'
+  import { fmtNum, fmtFull, fmtTitle, fmtTime, rankClass } from '@/utils/format'
+  import { apiErrorMessage } from '@/utils/douyin-error'
 
   defineOptions({ name: 'DouyinDashboard' })
 
   const router = useRouter()
   const overview = ref<OverviewData | null>(null)
   const daemon = ref<DaemonStatus | null>(null)
+
+  /**
+   * P0-3：「失败」不能伪装成「正常」。
+   *
+   * 原来 refreshStatus / refreshOverview 都是 `catch {}` 静默吞掉异常：
+   * 后端挂掉时页面照常显示最后一次成功的数据，守护进程/Go 代理的标签
+   * 依旧是绿色的「运行中 / 正常」——监控工具最不可接受的失败模式。
+   * 现在分别记录失败原因与"最后一次成功更新的时刻"，让数据新鲜度可见。
+   */
+  const statusError = ref('')
+  const overviewError = ref('')
+  const lastStatusAt = ref<number | null>(null)
+  /** 已过多久没成功刷新过状态（秒），用于提示数据是否过期 */
+  const staleSeconds = ref(0)
 
   const daemonRunning = computed(() => Boolean(daemon.value?.data?.running))
   const roomStatusList = computed(() => {
@@ -332,13 +404,20 @@
   async function refreshStatus() {
     try {
       daemon.value = await fetchStatus()
-    } catch {}
+      statusError.value = ''
+      lastStatusAt.value = Date.now()
+      staleSeconds.value = 0
+    } catch (e) {
+      // 保留上次数据，但必须明确告知"这份数据已经不可信了"
+      statusError.value = apiErrorMessage(e, '监控状态获取失败')
+    }
   }
 
   async function refreshOverview() {
     try {
       const ov = await fetchOverview()
       overview.value = ov
+      overviewError.value = ''
       const s = ov?.summary
       if (s) {
         rawSessions.value = s.total_sessions || 0
@@ -347,7 +426,17 @@
         rawUsers.value = s.unique_users || 0
         rawLikes.value = s.total_likes || 0
       }
-    } catch {}
+    } catch (e) {
+      overviewError.value = apiErrorMessage(e, '总览数据加载失败')
+    }
+  }
+
+  /** 每秒更新"数据已过期多久"，让使用者一眼看出这份状态是不是旧的 */
+  let staleTimer: number | undefined
+  function tickStale() {
+    staleSeconds.value = lastStatusAt.value
+      ? Math.floor((Date.now() - lastStatusAt.value) / 1000)
+      : 0
   }
 
   // 录制停止（场次结束归档）时刷新历史总览数据
@@ -362,29 +451,22 @@
     refreshStatus()
     refreshOverview()
     statusTimer = window.setInterval(refreshStatus, 10000)
+    staleTimer = window.setInterval(tickStale, 1000)
   })
   onUnmounted(() => {
     clearInterval(statusTimer)
+    clearInterval(staleTimer)
   })
 </script>
 
 <style scoped>
-  .list-enter-active,
-  .list-leave-active {
-    transition: all 0.4s ease;
-  }
-
-  .list-enter-from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-
-  .list-leave-to {
-    opacity: 0;
-    transform: translateX(-10px);
-  }
-
-  .list-move {
-    transition: transform 0.4s ease;
-  }
+  /*
+   * 统计卡（.dy-stat-row / .dy-stat-card）的布局已提到全局
+   * `assets/styles/custom/douyin-motion.scss`，因为状态监控页也要用同一套。
+   * 别在这里重新定义 —— 否则两页会各有一套、又走回"看着像共用其实不是"的老路。
+   *
+   * 列表进出统一走全局 `.dy-list-*`（同上文件）：
+   * 原来这里是 `transition: all 0.4s ease`，进场 translateY(10px) 而退出 translateX(-10px) ——
+   * 一个纵向进、一个横向出，方向不一致，看着像"被甩出去"。现在统一纵向。
+   */
 </style>

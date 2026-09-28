@@ -137,6 +137,10 @@ P1 是 7 条跨页系统性问题（对比度 token、数字格式、键盘可�
    以后若又"查不到信息"，先怀疑代理被限流。
 5. **cookie 未配置** —— 弹幕/礼物链路正常（走代理 WS），但 `lib/douyin-api.js`
    那套（部分主播资料）拿不到数据。
+6. ~~**图片报告功能是死的**~~ —— **已修**，见下方「七、本次会话（P0 修复）」。
+   原记录：运行时报 `Failed to launch chromium because executable doesn't exist at
+   /opt/data/home/.agent-browser/browsers/chrome-<ver>/chrome`，即 `report-image.js`
+   在 Windows 上找 Linux 绝对路径。现已改为按平台解析（`lib/browser-path.js`）。
 
 ---
 
@@ -171,3 +175,129 @@ cd frontend && node node_modules\vite\bin\vite.js                   # 终端 C�
 
 另：`api/douyin-http.ts` 的错误拦截器已修好（会展示后端返回的真实原因，
 并支持 `showErrorMessage: false`）。
+
+---
+
+## 七、本次会话（2026-09-15 晚）—— DESIGN-REVIEW 的 P0 五条已修完
+
+### 最重要的发现：P0-1「下载报告」有**两层**原因，评审只发现了第一层
+
+1. **第一层（评审已写）**：`window.open` 不带 `Authorization` 头 → 401。
+2. **第二层（本次新发现，真 bug）**：`lib/routes/sessions.js` 报告分支最后是裸
+   `return;`，而 `web-dashboard.js` 的 `handleAPI` 靠**返回值**判断路由是否命中 ——
+   `undefined` 被当成"没命中"，于是继续往后走，在**响应已经 pipe 出去之后**
+   又追加一个 `404 {"error":"API 不存在"}`。
+   现象极具误导性：报告**能**生成，但只要生成成功就必然 404；
+   而生成失败时反而返回干净的 500。所以「下载报告」永远不可能成功。
+   已改为 `return true`，并在 `handleAPI` 加了 `res.headersSent || res.writableEnded`
+   防御（同类隐患一次堵住）。
+
+顺带修好了同一件事的第三个障碍：`report-image.js` 写死 Linux 的 Chromium 绝对路径，
+已抽成 `lib/browser-path.js` 按平台解析（env → 系统 Chrome/Edge → 线上旧路径 → playwright 自带）。
+
+### 其余四条
+
+| # | 修法 |
+| --- | --- |
+| P0-2 | 「快速重启」改名「重启全部服务」，与行内按钮统一走 `ElMessageBox.confirm`，确认框**动态列出真实影响面**（N 个房间连接断开 / 正在录制的 M 个房间会中断并结束当前场次）。「重连」→「重启监控脚本」 |
+| P0-3 | 新增共用件 `QueryErrorState` + 6 处错误态：dashboard（两个 `catch{}` 静默吞异常 → 错误条 + 数据过期秒数 + 状态未知标签）、trends（蒙层永久盖住 → `finally` 必关，并加空态）、sessions（无 hostId 永久转圈 → 明确引导）、search（失败＝空 → 两者分开）、status（数据未到显示红色"未运行" → "状态未知" + 中性灰点）、rooms |
+| P0-4 | 轮询类读接口统一 `showErrorMessage: false`（`fetchRooms`/`lookupRoom`/`fetchStatus`/`fetchServiceStatus`/`fetchSessions`/`fetchOverview`），改由页面持久展示 + 重试，不再每 10 秒弹 toast |
+| P0-5 | 搜索框改为**真实本地过滤**（房间号/主播名/直播间标题），顶部统计跟随筛选并显示"已筛选出 N 个"，文案改「筛选」，空态区分"没有房间"与"筛选没匹配" |
+
+共用件：`frontend/src/utils/douyin-error.ts`（错误原因提取，从 rooms 提到公共层）、
+`frontend/src/utils/download.ts`（带认证的 blob 下载）、
+`frontend/src/components/business/query-error-state/`。
+
+### 验证方式与结果
+
+用 Playwright（**需 `danger-full-access`**，Chrome 的 `--remote-debugging-pipe` 被沙箱拦）
+跑了 23 条断言，**22 条通过、控制台零错误**：
+
+- 报告接口：登录态取到 `HTTP 200` + 真 JPEG 字节（80–93KB）且 `FF D8` 头正确；不带 token 仍 401
+- rooms 过滤：`before=6 → after=0`（无匹配）、输入「林语巷」`matched=2`
+- sessions 无 hostId：`loading masks=0`，显示「请先选择要查看的主播」
+- status：确认框弹出且文案含影响面，取消后未执行重启
+- trends：`masks=0`、`canvas=4`
+
+唯一未通过的 1 条是**验证脚本自身的断言写法问题**（点击下载按钮后拦截 `download` 事件，
+无头环境下事件时序不稳），不是功能问题 —— 报告接口已用浏览器内 fetch 证明可用。
+
+### 环境备注（新踩的坑）
+
+- **后端进程本身也要能启动 Chrome**：报告图片由后端渲染，所以 `node web-dashboard.js`
+  必须跑在能 `spawn` Chrome 的权限下，否则接口返回 `spawn EPERM`。
+- 停后端请用 `netstat -ano | findstr :9871` 找**监听** PID 再杀；按时间批量杀 node
+  会误伤/漏杀（本次踩过，已恢复）。
+- 起服务时若 :9871 已有进程，`web-dashboard.js` 会拒绝双启（保护写库），
+  这不是故障，是预期行为。
+
+---
+
+## 八、后续会话：打磨与 P1（DESIGN-REVIEW 的 P1 基本清完）
+
+### 8.1 动效与交互态（原来完全没有规范）
+
+新增 `frontend/src/assets/styles/custom/douyin-motion.scss` 作为**唯一的动效与语义色来源**：
+
+- `--dy-ease-*` / `--dy-dur-*`：曲线与时长档位（原来同一件事有 0.4s/0.35s/300ms 三套）
+- `.dy-pressable`：按下 `scale(.97)` + `focus-visible` 焦点环 + 触屏不误触发 hover
+- `.dy-list-*`：列表进出统一过渡（原来 dashboard 纵向进、横向出，方向都不一致）
+- `.dy-toolbar` / `.dy-toolbar-title` / `.dy-count`：工具条容器与标题、计数口径
+- `.dy-stat-row` / `.dy-stat-card`：统计卡一排（**原写在 dashboard 的 scoped style 里，
+  别的页引用类名却拿不到布局** —— 这是"看着像共用其实不是"的典型，已提到全局）
+- `.dy-tone-*` / `--dy-text-*` / `--dy-tag-*`：语义色（见 8.2）
+
+### 8.2 对比度（P1-6）—— 实测 38 处不达标 → 0
+
+关键判断：**没有直接改 `--art-gray-*` 色板**（那是全局模板 token，图表填充/边框/图标都在用，
+压深会把整个模板改掉）。改为加一层**按用途命名**的文字色，页面照旧写 `text-g-500`，
+由 `.douyin-page` 作用域统一解析。
+
+实测发现两个评审没提的组件层问题：
+
+| 问题 | 实测 | 原因 |
+| --- | --- | --- |
+| `el-tag` 文字 | **1.62:1** | 模板把亮色填充 `#13DEB9` 直接当**文字色**用 |
+| 主按钮 / 选中态 | **3.29:1** | 白字配 `#5D87FF` 不够深（压深为 `#4568f5` = 4.61:1） |
+| `dy-switch-btn` | 深色 **2.27:1** | `douyin-toolbar.scss` 里写死 `background: #fff` |
+
+结果：**浅色 415 处采样 0 未达标**，深色单独复核也 0。
+
+### 8.3 数字口径（P1-7）
+
+`fmtNum`（万/亿）与 `toLocaleString`（千分位）同页混用 → 统一走 `fmtNum`，
+新增 `fmtFull` / `fmtTitle` 用于精确值与悬浮提示。
+
+### 8.4 detail 长列表（P1-9）—— 两个真 bug
+
+1. `items.slice(-limit)` 作用在**升序**数组上 → "最新动态"默认展示的是**最旧的** 200 条。
+2. "全部"模式用**固定行高 64px** 的虚拟滚动，而弹幕换行 2–3 行 → 行与行**必然重叠**。
+   改为渐进披露（最新 N 条 + 加载更多），从根上不存在重叠。实测 200 行 0 重叠。
+
+### 8.5 破坏性默认值（P1-10）
+
+`api/douyin.ts` 的 `removeRoom` 硬编码 `delete_data: true` → 删房间**必定**连历史数据一起删。
+已改为必传参数，rooms 页弹窗提供两个明确动作：
+**仅停止监控（保留数据）** / **删除历史数据（红色 + 再确认一次）**，取消永远安全。
+
+### 8.6 状态监控页重做
+
+版式参照 Art Design Pro 的 `monitor/overview`（操作条 + 总体状态条 + 4 张数据卡 + 两栏详情）。
+数据卡是「浅色方块图标 + 小标题 + 大数字（`ArtCountTo`）+ 下带横线的两列小指标」。
+
+**教训（重要）**：这一页来回改了五版才定。中间犯的错是——用户给了 artd.pro 的地址让我
+"模仿这个页面风格"，而那个地址需登录、快照只能拿到 `Art Design Pro X` 一行文本，
+我却拿本地模板组件去**反推**，结果连错三次（hero 大卡 → 合并 → 自造卡片），
+每次都被指出"更丑了"。**正确做法是当时就停下等截图。** 拿到截图后一次就对了。
+
+同理：早期那批"对比度/字号/动效"改动是**在没看过页面的情况下靠数值推的**，
+后来看到图才发现判断有偏差。**改 UI 前先截图看，不要靠数值猜。**
+
+### 8.7 仍未做
+
+- **P1-8 键盘可达**：rows / sessions / detail 三处的可点行已补
+  `role="button"` + `tabindex` + Enter/Space + `focus-visible`；
+  但 detail 里的榜单行、profile 的表格等**还没全铺开**。
+- **`.db-wal` / `.db-shm` 静态屏蔽**（第六节安全清单第 3 条）仍未加。
+- 状态监控页的图表类内容（趋势图）没做——参考图里的「登录安全走势」在这套数据下没有对应物。
+

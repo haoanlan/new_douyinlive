@@ -151,9 +151,14 @@ async function handleAPI(req, res) {
     for (const handler of routeHandlers) {
       if (await handler(pathname, query, req, res, ctx)) return;
     }
+    // 防御：有的 handler 直接 pipe 响应体却返回 undefined（例如报告图片接口），
+    // 会被当成"路由未命中"走到这里。此时响应已经发出，绝不能再追加 404/500，
+    // 否则客户端收到的是一个被污染的响应（报告能生成但下载永远 404）。
+    if (res.headersSent || res.writableEnded) return;
     sendError(res, 'API 不存在', 404);
   } catch (e) {
     console.error('[API]', e.message);
+    if (res.headersSent || res.writableEnded) return;
     sendError(res, e.message);
   }
 }

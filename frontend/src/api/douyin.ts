@@ -292,14 +292,24 @@ export function fetchSummary() {
   return request.get<Summary>({ url: '/api/summary' })
 }
 
+/**
+ * 房间列表。
+ *
+ * P0-4：原来没关 showErrorMessage，而本页每 10 秒轮询一次 ——
+ * 后端一挂，拦截器就每 10 秒弹一条错误提示，页面无法使用。
+ * 读接口统一改为不自动弹窗，由调用方展示持久、可重试的错误态。
+ */
 export function fetchRooms() {
-  return request.get<Room[]>({ url: '/api/rooms' })
+  return request.get<Room[]>({ url: '/api/rooms', showErrorMessage: false })
 }
 
 /** 预览某个房间号的信息（添加房间前确认用，不产生任何副作用） */
 export function lookupRoom(roomId: string) {
   return request.get<LookupResult>({
-    url: `/api/rooms/lookup?room_id=${encodeURIComponent(roomId)}`
+    url: `/api/rooms/lookup?room_id=${encodeURIComponent(roomId)}`,
+    // 同样关掉自动提示：调用方已经有自己的失败文案，
+    // 否则失败时会「自动提示 + 调用方提示」弹两次
+    showErrorMessage: false
   })
 }
 
@@ -335,16 +345,35 @@ export function resumeRoom(roomId: string) {
   })
 }
 
-export function removeRoom(roomId: string) {
+/**
+ * 移除房间。
+ *
+ * `deleteData` 必须由调用方显式传入（原来这里硬编码 `delete_data: true`）——
+ * 也就是"删房间"必定连历史数据一起删，而这是**唯一不可逆**的操作，
+ * 却长得和普通按钮一样。历史数据（场次/弹幕/礼物/进场）删了无法恢复，
+ * 所以把选择权交给调用点，由它在界面上让用户明确决定。
+ *
+ * @param roomId 房间号
+ * @param deleteData true=同时删除该房间的全部历史数据；false=只停止监控、保留数据
+ */
+export function removeRoom(roomId: string, deleteData: boolean) {
   return request.post<{ ok: boolean }>({
     url: '/api/rooms/remove',
-    data: { room_id: roomId, delete_data: true },
+    data: { room_id: roomId, delete_data: deleteData },
     showErrorMessage: false
   })
 }
 
+/**
+ * 某主播的场次列表。
+ * 本页每 15 秒轮询一次，失败必须由页面展示（错误态 + 重试），
+ * 不能靠拦截器每 15 秒弹一条 toast（与 P0-4 同一个根因）。
+ */
 export function fetchSessions(hostId: string) {
-  return request.get<Session[]>({ url: `/api/hosts/${hostId}/sessions` })
+  return request.get<Session[]>({
+    url: `/api/hosts/${hostId}/sessions`,
+    showErrorMessage: false
+  })
 }
 
 export function deleteSession(sessionId: string) {
@@ -359,9 +388,20 @@ export function fetchSessionDetail(sessionId: string) {
   return request.get<SessionDetail>({ url: `/api/sessions/${sessionId}/detail` })
 }
 
-export function fetchDanmaku(sessionId: string, limit = 99999) {
+/**
+ * 某场次的弹幕。
+ *
+ * 注意 limit 会被后端收到 2000（MAX_LIMIT）—— 实测一次拉 5 万条要 19 秒 / 22MB，
+ * 主线程还要同步处理 5 万条，页面直接卡死。要看更早的内容请用 `q` 让**服务端**检索。
+ *
+ * @param limit 单次条数（后端上限 2000）
+ * @param q     关键字（同时匹配弹幕内容与昵称），由 SQL 在服务端过滤全量数据
+ */
+export function fetchDanmaku(sessionId: string, limit = 2000, q = '') {
+  const params = new URLSearchParams({ limit: String(limit) })
+  if (q) params.set('q', q)
   return request.get<DanmakuFull>({
-    url: `/api/sessions/${sessionId}/danmaku?limit=${limit}`
+    url: `/api/sessions/${sessionId}/danmaku?${params.toString()}`
   })
 }
 
@@ -443,11 +483,12 @@ export interface OverviewData {
 }
 
 export function fetchOverview() {
-  return request.get<OverviewData>({ url: '/api/overview' })
+  return request.get<OverviewData>({ url: '/api/overview', showErrorMessage: false })
 }
 
+/** 守护进程/房间实时状态。每 10 秒轮询，失败由页面统一展示（P0-3/P0-4）。 */
 export function fetchStatus() {
-  return request.get<DaemonStatus>({ url: '/api/status' })
+  return request.get<DaemonStatus>({ url: '/api/status', showErrorMessage: false })
 }
 
 // ===================== 服务状态（Go 代理 / 守护进程 / WS / 一键启停） =====================
@@ -533,8 +574,12 @@ export interface ServiceActionResult {
 
 export type ServiceAction = 'start' | 'stop' | 'restart' | 'start-proxy' | 'restart-proxy'
 
+/** 状态监控页每 8 秒轮询此项，失败由页面展示错误态而非反复弹 toast（P0-3/P0-4）。 */
 export function fetchServiceStatus() {
-  return request.get<ServiceStatus>({ url: '/api/service/status' })
+  return request.get<ServiceStatus>({
+    url: '/api/service/status',
+    showErrorMessage: false
+  })
 }
 
 export function performServiceAction(action: ServiceAction) {

@@ -6,6 +6,7 @@
 const fs = require('fs');
 const path = require('path');
 const { chromium } = require('playwright');
+const { resolveChromium } = require('./lib/browser-path.js');
 const { execFile } = require('child_process');
 const { promisify } = require('util');
 const execFileAsync = promisify(execFile);
@@ -1216,9 +1217,12 @@ function htmlWrap(theme, bodyContent) {
 let _sharedBrowser = null;
 async function getSharedBrowser() {
   if (_sharedBrowser && _sharedBrowser.isConnected()) return _sharedBrowser;
+  // 浏览器路径按平台自适应解析（原来写死 Linux 绝对路径，本地调用必然 500）。
+  // resolveChromium() 返回 null 时交给 playwright 自己找自带的 chromium。
+  const executablePath = resolveChromium();
   _sharedBrowser = await chromium.launch({
     headless: true,
-    executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || '/opt/data/home/.agent-browser/browsers/chrome-148.0.7778.167/chrome',
+    ...(executablePath ? { executablePath } : {}),
   });
   return _sharedBrowser;
 }

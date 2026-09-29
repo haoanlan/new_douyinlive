@@ -301,3 +301,110 @@ cd frontend && node node_modules\vite\bin\vite.js                   # 终端 C�
 - **`.db-wal` / `.db-shm` 静态屏蔽**（第六节安全清单第 3 条）仍未加。
 - 状态监控页的图表类内容（趋势图）没做——参考图里的「登录安全走势」在这套数据下没有对应物。
 
+---
+
+## 九、后续会话（打磨轮）：趋势分析重做 + 卡面质感
+
+两个提交：
+- `f651150` fix: 修掉 P0 级真 bug 并统一各页视觉口径（25 文件，+3762/-692）
+- `60efc44` feat: 趋势分析改为按房间跨场次 + 卡面质感（6 文件，+1024/-116）
+
+### 9.1 趋势分析：从"全站总和"改成"单房间自己和自己比"
+
+**原来的逻辑为什么没意义**（这是用户直接指出的）：
+后端 `/api/trends` 只有时间维度一个条件（`WHERE create_time >= ...`），
+把所有房间的礼物/弹幕按日期加总 —— 那是"全站总和的日曲线"。
+各房间基线差几十倍（单场平均钻石 1.9 万 ~ 99 万），加总后的起伏主要反映
+"今天一共开了几场"，而不是任何一个直播间变好或变差。
+
+**新接口 `/api/hosts/trends`**（在 `lib/routes/sessions.js`）：
+- 参数 `hosts=21,34,3`（最多 4 个）+ `range=7d|30d|90d|all`
+- 按**每一场直播**给数据点（`sessions` 表按 `start_time` 升序）
+- 数据源用 `sessions` 的预聚合列（`agg_*` / `stats_*` / `online_peak`）——
+  已核对与 gifts/danmaku 明细**完全一致**，且不必扫 27 万行
+- 返回 `summary`（平均每场，比总和更适合跨房间比）+ `prevSummary`（上一等长周期，用于涨跌）
+- 派生指标 `diamondsPerHour` / `danmakuPerThousand`：跨房间比"效率"时比原始量有意义
+
+**数据事实**（探查过，别再查一遍）：
+- `streamers` 5 行 / `sessions` 125 行 / `gifts` 232680 / `danmaku` 278296
+- **当前数据里「直播间」与「主播」是 1:1**（每个 streamer 只对应 1 个 room_id，反之亦然）。
+  数据模型分开了 `streamer_id` / `room_id`，将来若变多对多，两个维度可各自生效。
+- `/api/streamers` → `{ id, name, room_id, avatar, session_count, sec_uid(真 sec_uid), ... }`
+- `/api/rooms` → 只含**已监控**房间（会漏掉部分主播），键是 `room_id`
+- 用 `/api/streamers` 的 `id` 当 hostId；**别拿 `sec_uid` 当 id**（那是真 sec_uid 字符串）
+- `stats_social` 全 0，别用；其余 7 个指标都有数据
+
+### 9.2 卡面质感（"廉价感"的修复）
+
+根因：模板 `.art-card` 只有 `border: 1px solid` + 极弱阴影，**没有过渡、没有悬停反馈**，
+卡片像印在背景上的色块。在 `.douyin-page` 作用域内补三层（不动模板、不影响其它页）：
+- 顶部 1px 高光内描边（伪元素，不占盒模型、不挤动内容）
+- 悬停 `translateY(-2px)` + 层次阴影 + 主题色描边
+- 进场依次上浮淡入（步进 40ms，上限 8 张）
+
+**取值刻意克制：位移 ≤2px、阴影透明度 ≤10%。** 大位移和大阴影本身就是廉价感来源。
+保留 `prefers-reduced-motion` 降级（已验证 `animation-name: none`）。
+
+### 9.3 本次会话踩到的坑（都是"看着对、实际没生效"）
+
+1. **`:deep()` 在无 `scoped` 的 `<style>` 块里无效**
+   详情页的 `<style>` 是**全局**的（没写 `scoped`），在里面写 `:deep()` 不会
+   被 Vue 转换，而是原样输出成 CSS —— 浏览器不认识 `:deep()`，整条规则被丢弃。
+   **症状：样式写了完全没生效，且 CSSOM 里搜不到该规则。**
+   修法：移到 `custom/douyin-motion.scss`，用类名限定（全局块里不能写裸的
+   `.el-input__wrapper`，会泄漏到全站）。
+
+2. **模板在 `border-mode` 下写死了 `box-shadow: none !important`**
+   `app.scss` 用 `@include art-card-base(var(--art-card-border), none, 4px)`。
+   悬停阴影不加 `!important` 会被整个压掉（实测只有位移生效、卡片依然是平的）。
+
+3. **element-plus 原生选择器特异性常常更高**
+   `.el-check-tag.el-check-tag--primary.is-checked` 是 (0,3,0)；
+   只写 `.douyin-page .el-check-tag.is-checked`（0,2,0）盖不住。
+   **修法：把修饰类也写进选择器**，不要动辄上 `!important`。
+
+4. **`getComputedStyle().display` 对 flex 子项会报 `block`（误报陷阱）**
+   我为"礼物标签是否独占一行"查了半天，最后是靠几何量排除的：
+   标签 `32x16`、父行高仅 `19.5px`、与昵称 `sameRowAsName=true`。
+   **经验：判断 flex 布局要看盒尺寸/位置，不要只看 display 的值。**
+
+5. **`el-check-tag` 的 change 事件传出的是「新值」**（内部已做 `!checked`）。
+   再按当前状态取反一次，两个反相抵消 → 表现是"点了没反应"。
+
+6. **旧的僵死后端会占住 9871，导致新后端拒绝双启直接退出**
+   （日志有 `已有守护进程在运行`）。症状：端口 OPEN 但所有接口超时。
+   **修法：`netstat -ano | findstr :9871` 找到 PID → 确认 CommandLine 是
+   `web-dashboard.js` → 杀掉再起。** 不要用按时间过滤的批量 kill。
+
+### 9.4 仍未做 / 已知问题
+
+- **趋势页：勾选非默认指标后图表不渲染**（优先级最高的一个）
+  已确认的事实：
+  - 状态层正确：`activeMetrics` 确实包含新指标、标签也显示为选中
+  - 但图表容器 `clientWidth` 为 **0**，而它的 `display` 又是 **block**
+  - 这个组合反常 —— 说明是**祖先链**导致不可见，不是 `v-show` 自身
+  - 试过 `flush: 'post'`、`requestAnimationFrame` 轮询等容器可见，都没解决
+  - 默认的峰值在线/钻石/弹幕三张图**正常渲染**
+  建议下一步：在 `redraw` 里打印容器**祖先链**逐层的
+  `display / visibility / clientWidth`，定位是哪一层塌了。
+- **房间管理页下方约 450px 纯空白**（5 张卡占上半屏，下面全空）。
+- P1-8 键盘可达未全铺开；`.db-wal`/`.db-shm` 静态屏蔽未加（见第八节）。
+
+### 9.5 验证方式（已沉淀成可重复脚本）
+
+`scripts/ui-regression.js` —— 8 项检查，**改动后跑它**：
+```bash
+node scripts/ui-regression.js
+```
+覆盖：浅色对比度 AA、数字口径、工具条内边距、统计卡高度、字号档位、
+detail 动态列表无重叠、detail 底部齐平、无本地 5xx/JS 报错。
+
+两个已经踩过的**测试自身缺陷**（已修，别改回去）：
+- 采样时机：原来只等 loading 蒙层，网络慢时会测到骨架态/空状态占位
+  （采样数从 412 掉到 172，报出 9 处"未达标"却全是中间态）。
+  现在依次等：根容器出现 → 蒙层消失 → 所有动画结束。
+- 量尺寸前必须**移开鼠标并清零 animation/transition/transform**，
+  否则卡片悬停的 `translateY(-2px)` 会被量成"底部不齐"（实测误报 2px）。
+
+浏览器验证需要 `danger-full-access`（Chrome 走 named pipe，沙箱会拦成 `spawn EPERM`）。
+

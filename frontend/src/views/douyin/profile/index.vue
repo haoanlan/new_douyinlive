@@ -8,31 +8,40 @@
     </div>
 
     <template v-else>
-      <!-- 头部 -->
+      <!-- 档案头：左身份区 + 右指标区（竖分隔线，两区结构） -->
       <div class="art-card p-5 mb-4" v-loading="loading">
-        <div class="flex items-center gap-4 flex-wrap">
-          <div class="relative shrink-0 flex">
-            <el-avatar :size="56" :src="profile?.avatar">{{ profile?.nickname?.[0] }}</el-avatar>
+        <div class="flex items-center gap-5 flex-wrap">
+          <div class="flex items-center gap-4 min-w-0 flex-1">
+            <el-avatar :size="64" :src="profile?.avatar">{{ profile?.nickname?.[0] }}</el-avatar>
+            <div class="min-w-0">
+              <div class="text-xl font-semibold text-g-900 truncate">
+                {{ profile?.nickname || '-' }}
+              </div>
+              <div class="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                <el-tag v-if="profile?.giftStyle" size="small" effect="plain">
+                  {{ profile.giftStyle }}
+                </el-tag>
+                <el-tag v-if="profile?.danmakuStyle" size="small" effect="plain" type="info">
+                  弹幕 · {{ profile.danmakuStyle }}
+                </el-tag>
+              </div>
+              <div class="text-xs text-g-400 mt-1.5">
+                首次活跃 {{ fmtTs(profile?.firstSeen) }} · 最近活跃 {{ fmtTs(profile?.lastSeen) }}
+              </div>
+            </div>
           </div>
-          <div class="flex-1 min-w-0">
-            <div class="text-lg font-bold text-g-900 truncate">{{ profile?.nickname || '-' }}</div>
-            <div class="text-sm text-g-500 mt-0.5">
-              <span v-if="profile?.giftStyle">{{ profile.giftStyle }}</span>
-              <span v-if="profile?.danmakuStyle"> · 弹幕 {{ profile.danmakuStyle }}</span>
+          <!-- 关键指标：与信息查询 hero 同一套数字语言（标签在上、数字在下） -->
+          <div class="flex gap-6 flex-wrap lg:border-l lg:border-g-100 lg:pl-6">
+            <div v-for="s in stats" :key="s.label">
+              <div class="text-xs text-g-500">{{ s.label }}</div>
+              <div
+                class="text-2xl font-semibold leading-tight mt-0.5"
+                :class="s.accent && s.value !== '0' ? 'text-theme' : 'text-g-900'"
+                :title="s.title"
+              >
+                {{ s.value }}
+              </div>
             </div>
-            <div class="text-xs text-g-400 mt-1">
-              首次活跃 {{ fmtTs(profile?.firstSeen) }} · 最近活跃 {{ fmtTs(profile?.lastSeen) }}
-            </div>
-          </div>
-        </div>
-
-        <!-- 关键指标（数字口径与全站一致：万/亿缩写 + 精确值悬浮，P1-7） -->
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mt-4 pt-4 border-t border-dashed border-t-d">
-          <div v-for="s in stats" :key="s.label">
-            <div class="text-xl font-semibold text-g-900 leading-none" :title="s.title">
-              {{ s.value }}
-            </div>
-            <div class="text-xs text-g-500 mt-1">{{ s.label }}</div>
           </div>
         </div>
       </div>
@@ -41,36 +50,31 @@
         <!-- 左列 -->
         <el-col :sm="24" :md="12">
           <div class="art-card p-5 mb-4">
-            <div class="art-card-header"><div class="title"><h4>常用礼物</h4></div></div>
-            <el-table :data="profile?.topGiftsByCount || []" size="small">
-              <el-table-column label="礼物" min-width="130">
-                <template #default="{ row }">
-                  <div class="flex items-center gap-2">
+            <div class="art-card-header">
+              <div class="title"><h4>常用礼物</h4><p>按次数，条形为相对占比</p></div>
+            </div>
+            <div v-if="giftBars.length" class="flex flex-col gap-3.5 mt-3">
+              <div v-for="g in giftBars" :key="g.gift_name">
+                <div class="flex items-center justify-between gap-3 text-sm">
+                  <span class="flex items-center gap-2 min-w-0">
                     <el-image
-                      v-if="row.icon_url"
-                      :src="row.icon_url"
-                      :preview-src-list="[row.icon_url]"
+                      v-if="g.icon_url"
+                      :src="g.icon_url"
                       fit="contain"
-                      class="!w-6 !h-6 shrink-0"
+                      class="!w-5 !h-5 shrink-0"
                     />
-                    <span class="truncate">{{ row.gift_name }}</span>
-                  </div>
-                </template>
-              </el-table-column>
-              <el-table-column label="次数" width="80" align="right">
-                <template #default="{ row }">
-                  <span :title="fmtTitle(row.count)">{{ fmtNum(row.count) }}</span>
-                </template>
-              </el-table-column>
-              <el-table-column label="钻石" width="90" align="right">
-                <template #default="{ row }">
-                  <span :title="fmtTitle(row.total_diamonds)">
-                    {{ fmtNum(row.total_diamonds) }}
+                    <span class="truncate text-g-800">{{ g.gift_name }}</span>
                   </span>
-                </template>
-              </el-table-column>
-            </el-table>
-            <el-empty v-if="!profile?.topGiftsByCount?.length" description="暂无礼物" :image-size="60" />
+                  <span class="text-xs text-g-500 shrink-0" :title="fmtTitle(g.total_diamonds)">
+                    {{ g.count }} 次 · {{ fmtNum(g.total_diamonds) }} 钻
+                  </span>
+                </div>
+                <div class="h-1.5 rounded-full bg-g-100 mt-1.5 overflow-hidden">
+                  <div class="h-full rounded-full bg-theme" :style="{ width: g.pct + '%' }" />
+                </div>
+              </div>
+            </div>
+            <el-empty v-else description="暂无礼物" :image-size="60" />
           </div>
 
           <div class="art-card p-5 mb-4">
@@ -122,21 +126,23 @@
         <!-- 右列 -->
         <el-col :sm="24" :md="12">
           <div class="art-card p-5 mb-4">
-            <div class="art-card-header"><div class="title"><h4>常送主播</h4></div></div>
-            <el-table :data="profile?.topStreamers || []" size="small">
-              <el-table-column prop="name" label="主播" min-width="120" show-overflow-tooltip />
-              <el-table-column label="次数" width="80" align="right">
-                <template #default="{ row }">
-                  <span :title="fmtTitle(row.count)">{{ fmtNum(row.count) }}</span>
-                </template>
-              </el-table-column>
-              <el-table-column label="钻石" width="90" align="right">
-                <template #default="{ row }">
-                  <span :title="fmtTitle(row.diamonds)">{{ fmtNum(row.diamonds) }}</span>
-                </template>
-              </el-table-column>
-            </el-table>
-            <el-empty v-if="!profile?.topStreamers?.length" description="暂无数据" :image-size="60" />
+            <div class="art-card-header">
+              <div class="title"><h4>常送主播</h4><p>按累计钻石，条形为相对占比</p></div>
+            </div>
+            <div v-if="streamerBars.length" class="flex flex-col gap-3.5 mt-3">
+              <div v-for="s in streamerBars" :key="s.name">
+                <div class="flex items-center justify-between gap-3 text-sm">
+                  <span class="truncate text-g-800">{{ s.name }}</span>
+                  <span class="text-xs text-g-500 shrink-0" :title="fmtTitle(s.diamonds)">
+                    {{ fmtNum(s.diamonds) }} 钻 · {{ s.count }} 次
+                  </span>
+                </div>
+                <div class="h-1.5 rounded-full bg-g-100 mt-1.5 overflow-hidden">
+                  <div class="h-full rounded-full bg-theme" :style="{ width: s.pct + '%' }" />
+                </div>
+              </div>
+            </div>
+            <el-empty v-else description="暂无数据" :image-size="60" />
           </div>
 
           <div class="art-card p-5 mb-4">
@@ -214,8 +220,8 @@
 
   const stats = computed(() => {
     const p = profile.value
-    const raw: { label: string; value: number | undefined }[] = [
-      { label: '累计钻石', value: p?.total_diamonds },
+    const raw: { label: string; value: number | undefined; accent?: boolean }[] = [
+      { label: '累计钻石', value: p?.total_diamonds, accent: true },
       { label: '送礼次数', value: p?.gift_count },
       { label: '礼物种类', value: p?.gift_types_count },
       { label: '弹幕条数', value: p?.danmakuCount },
@@ -224,7 +230,28 @@
     return raw.map((s) => ({
       label: s.label,
       value: s.value === undefined ? '-' : fmtNum(s.value),
-      title: s.value === undefined ? '' : fmtTitle(s.value)
+      title: s.value === undefined ? '' : fmtTitle(s.value),
+      accent: Boolean(s.accent)
+    }))
+  })
+
+  /** 常用礼物 → 条形列表（按次数，条宽为相对最大值的占比） */
+  const giftBars = computed(() => {
+    const list = (profile.value?.topGiftsByCount || []).slice(0, 5)
+    const max = Math.max(...list.map((g) => g.count || 0), 1)
+    return list.map((g) => ({
+      ...g,
+      pct: Math.max(4, Math.round(((g.count || 0) / max) * 100))
+    }))
+  })
+
+  /** 常送主播 → 条形列表（按累计钻石） */
+  const streamerBars = computed(() => {
+    const list = (profile.value?.topStreamers || []).slice(0, 5)
+    const max = Math.max(...list.map((s) => s.diamonds || 0), 1)
+    return list.map((s) => ({
+      ...s,
+      pct: Math.max(4, Math.round(((s.diamonds || 0) / max) * 100))
     }))
   })
 

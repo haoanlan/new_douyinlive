@@ -281,6 +281,49 @@ async function main() {
     rowsAlign.join('/')
   );
 
+  /*
+   * ---- trends 非默认指标勾选后图表必须渲染（HANDOFF 9.4 回归）----
+   * 根因：allMetrics 是 script setup 的 const，v-for 被编成 STABLE_FRAGMENT，
+   * 卡片元素若无动态 prop 就不进 dynamicChildren，v-show 的 updated 永不执行。
+   * 修复靠 :data-metric —— 这里同时断言属性存在 + 勾选后容器可见 + canvas 画出。
+   */
+  await page.goto(`${FRONT}/#/douyin/trends`, { waitUntil: 'domcontentloaded' });
+  await waitForLoaded(3500);
+  const beforeToggle = await page.evaluate(() => {
+    const cards = [...document.querySelectorAll('.douyin-page .art-card[data-metric]')];
+    return {
+      attr: cards.length,
+      visibleWithCanvas: cards.filter(
+        (c) => getComputedStyle(c).display !== 'none' && c.querySelectorAll('canvas').length > 0
+      ).length
+    };
+  });
+  const metricTag = page.locator('.el-check-tag', { hasText: '钻/时' }).first();
+  await metricTag.click();
+  let target = { display: 'none', w: 0, canvases: 0 };
+  for (let i = 0; i < 24; i++) {
+    await page.waitForTimeout(250);
+    target = await page.evaluate(() => {
+      const card = document.querySelector('.douyin-page .art-card[data-metric="diamondsPerHour"]');
+      if (!card) return { display: 'missing', w: 0, canvases: 0 };
+      return {
+        display: getComputedStyle(card).display,
+        w: card.clientWidth,
+        canvases: card.querySelectorAll('canvas').length
+      };
+    });
+    if (target.display !== 'none' && target.w > 0 && target.canvases >= 1) break;
+  }
+  check(
+    `trends 勾选非默认指标后图表渲染（钻/时 clientW=${target.w} canvas=${target.canvases}；默认图 ${beforeToggle.visibleWithCanvas}/3）`,
+    beforeToggle.attr >= 8 &&
+      beforeToggle.visibleWithCanvas >= 3 &&
+      target.display !== 'none' &&
+      target.w > 0 &&
+      target.canvases >= 1,
+    `attr=${beforeToggle.attr} display=${target.display}`
+  );
+
   // ---- 全站错误 ----
   console.log('\n=== 页面/控制台错误 ===');
   console.log(errors.length ? errors.slice(0, 12).join('\n') : '  无');

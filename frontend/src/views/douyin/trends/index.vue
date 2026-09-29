@@ -167,11 +167,18 @@
         函数式 :ref 每次渲染都会生成新闭包，会触发
         "Maximum recursive updates exceeded"（实测踩到过）。
         固定 ref 引用 + v-show 没有这个问题，图表实例也不用来回销毁重建。
+
+        :data-metric 不是摆设：allMetrics 是 script setup 的 const，
+        编译器把该 v-for 标成 STABLE_FRAGMENT，纯静态子节点不会进
+        dynamicChildren，patch 时被整体跳过 —— v-show 的 updated 钩子
+        永远不执行，勾选非默认指标后卡片一直是 display:none（实测踩到过）。
+        给元素一个动态 prop（pf>0）才会被收集进 dynamicChildren、走正常 patch。
       -->
       <div
         v-for="m in allMetrics"
         v-show="activeMetrics.includes(m.key)"
         :key="m.key"
+        :data-metric="m.key"
         class="art-card p-5 mb-5"
       >
         <div class="flex items-center justify-between gap-3 mb-1 flex-wrap">

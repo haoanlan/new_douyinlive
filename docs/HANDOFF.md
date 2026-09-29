@@ -378,26 +378,20 @@ cd frontend && node node_modules\vite\bin\vite.js                   # 终端 C�
 
 ### 9.4 仍未做 / 已知问题
 
-- **趋势页：勾选非默认指标后图表不渲染**（优先级最高的一个）
-  已确认的事实：
-  - 状态层正确：`activeMetrics` 确实包含新指标、标签也显示为选中
-  - 但图表容器 `clientWidth` 为 **0**，而它的 `display` 又是 **block**
-  - 这个组合反常 —— 说明是**祖先链**导致不可见，不是 `v-show` 自身
-  - 试过 `flush: 'post'`、`requestAnimationFrame` 轮询等容器可见，都没解决
-  - 默认的峰值在线/钻石/弹幕三张图**正常渲染**
-  建议下一步：在 `redraw` 里打印容器**祖先链**逐层的
-  `display / visibility / clientWidth`，定位是哪一层塌了。
+- ~~**趋势页：勾选非默认指标后图表不渲染**~~ —— **已修**（见 9.6 根因）。
+  原记录：状态层正确但容器 `clientWidth===0` 且 `display===block`（矛盾组合），
+  `flush:'post'`、rAF 轮询都无效。
 - **房间管理页下方约 450px 纯空白**（5 张卡占上半屏，下面全空）。
 - P1-8 键盘可达未全铺开；`.db-wal`/`.db-shm` 静态屏蔽未加（见第八节）。
 
 ### 9.5 验证方式（已沉淀成可重复脚本）
 
-`scripts/ui-regression.js` —— 8 项检查，**改动后跑它**：
+`scripts/ui-regression.js` —— 9 项检查，**改动后跑它**：
 ```bash
 node scripts/ui-regression.js
 ```
 覆盖：浅色对比度 AA、数字口径、工具条内边距、统计卡高度、字号档位、
-detail 动态列表无重叠、detail 底部齐平、无本地 5xx/JS 报错。
+detail 动态列表无重叠、detail 底部齐平、trends 勾选非默认指标后图表渲染、无本地 5xx/JS 报错。
 
 两个已经踩过的**测试自身缺陷**（已修，别改回去）：
 - 采样时机：原来只等 loading 蒙层，网络慢时会测到骨架态/空状态占位
@@ -407,4 +401,28 @@ detail 动态列表无重叠、detail 底部齐平、无本地 5xx/JS 报错。
   否则卡片悬停的 `translateY(-2px)` 会被量成"底部不齐"（实测误报 2px）。
 
 浏览器验证需要 `danger-full-access`（Chrome 走 named pipe，沙箱会拦成 `spawn EPERM`）。
+
+### 9.6 趋势页 v-show 失效的根因（已修，模式级知识）
+
+**症状**：勾选非默认指标，状态层全对（标签选中、`activeMetrics` 已含），
+但卡片 `display` 停在 `none`、`clientWidth=0`；而子节点 `.h-72` 是
+`display:block` + `clientWidth=0` —— HANDOFF 原以为"祖先链塌了"，
+**实际父卡片一直是 `display:none`，量的子节点只是继承了不可见**（9.3.4 的陷阱再犯）。
+
+**根因（Vue 编译期优化 + 运行时 patch 跳过）**：
+1. `allMetrics` 是 `<script setup>` 的 `const` → binding 为 `setup-const` →
+   编译器把该 v-for 判成 `isStableFragment` → fragment patchFlag **64 (STABLE_FRAGMENT)**，
+   item 编译成 **patchFlag 0 的裸元素**（无 bindingMetadata 时编出来是 128 KEYED，会误判成"代码没问题"）。
+2. 收集规则：patchFlag>0 或组件才进 `dynamicChildren`；纯静态 item **不进 dc**。
+3. 运行时 `processFragment` 对 STABLE_FRAGMENT 且两边 dc 等长时**只 patchBlockChildren**，
+   静态 item 永远不走 `patchElement` → **`vShow.updated` 永不执行**。
+4. dev 下 `traverseStaticChildren` 会更新 `el.__vnode`（dirs.value 已是 true）——
+   **"vnode 里 value=true 但 DOM 没变"的假象来源，别再被它骗**。
+5. 标签（el-check-tag）能更新是因为**组件 vnode 无条件进 dc**（shapeFlag 规则）。
+
+**修法**：给卡片加动态 prop `:data-metric="m.key"`（pf=8 PROPS）→ item 进 dc →
+正常 patchElement → 指令钩子执行。模板注释里有完整说明。
+**通用教训**：v-for 列表源是 setup-const 时，item 上的运行时指令（v-show 等）
+需要 item 自身是动态的；排查时 `el.__vnode` 不可信，要看 MutationObserver 或
+`getComputedStyle` 的实际值。
 

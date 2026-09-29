@@ -1,105 +1,124 @@
-<!-- 匿名查询 —— 按总览页卡片风格重做 -->
+<!--
+  信息查询（原「匿名查询」）—— 按「查询台」重设计：
+
+  结构契约：
+    1. Hero 查询台：大输入 + 范围/排序内联 + 热词 chips；右侧竖排聚合大数字
+       （匹配用户/参与场次/累计钻石）。引导态与结果态共用 hero，不再有独立引导卡。
+    2. 结果区：单栏信息流（一个容器 + 分隔行），不是两列胖卡片网格。
+       「仅进场记录」用带计数的分组分隔线 —— 把排序规则变成可见的结构。
+    3. 范围下拉把 streamer_id 传给后端缩圈（SQL 少扫 + 抖音接口补全调用变少）。
+-->
 <template>
   <div class="douyin-page p-4">
-    <!-- 顶部工具条 -->
-    <div class="art-card dy-toolbar mb-5 flex items-center justify-between gap-4 flex-wrap">
-      <div class="flex items-center gap-3">
-        <div class="size-9 rounded-lg flex-cc bg-theme/10 shrink-0">
-          <ArtSvgIcon icon="ri:user-search-line" class="text-base text-theme" />
-        </div>
-        <div>
-          <div class="dy-toolbar-title">匿名查询</div>
-          <div class="flex items-center gap-2.5 mt-1.5 text-xs text-g-500">
-            <span class="flex items-baseline gap-1">
-              <b class="dy-count text-g-900">{{ users.length }}</b>个匹配用户
-            </span>
-            <span class="w-px h-3 bg-g-300" />
-            <span class="flex items-baseline gap-1">
-              <b class="dy-count text-g-900">{{ totalSessions }}</b>个参与场次
-            </span>
-            <span class="w-px h-3 bg-g-300" />
-            <span class="flex items-baseline gap-1">
-              <b class="dy-count text-theme">{{ fmtNum(totalDiamonds) }}</b>累计钻石
-            </span>
-            <template v-if="lastQuery">
-              <span class="w-px h-3 bg-g-300" />
-              <span>关键词「{{ lastQuery }}」</span>
-            </template>
-            <template v-if="lastScope">
-              <span class="w-px h-3 bg-g-300" />
-              <span>{{ lastScope }}</span>
-            </template>
+    <!-- ===== 查询台 hero ===== -->
+    <div class="art-card dy-query-hero p-5 mb-5">
+      <div class="flex gap-6 flex-wrap lg:flex-nowrap">
+        <!-- 左：标题 + 说明 + 大输入 + 次级控制 + 热词 -->
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2.5">
+            <div class="size-9 rounded-lg flex-cc bg-theme/10 shrink-0">
+              <ArtSvgIcon icon="ri:user-search-line" class="text-base text-theme" />
+            </div>
+            <div class="text-xl font-semibold text-g-900">信息查询</div>
+          </div>
+          <p class="text-sm text-g-500 mt-2 leading-relaxed">
+            按昵称关键词检索本库的弹幕、礼物与进场记录；结果太多时先选一个直播间缩小范围。
+          </p>
+
+          <div class="flex items-center gap-2.5 mt-4">
+            <el-input
+              v-model="query"
+              size="large"
+              placeholder="输入昵称关键词，回车查询"
+              clearable
+              class="query-input flex-1"
+              @keyup.enter="doSearch"
+            >
+              <template #prefix>
+                <ArtSvgIcon icon="ri:search-line" class="text-g-400" />
+              </template>
+            </el-input>
+            <el-button type="primary" size="large" :loading="loading" @click="doSearch">
+              查询
+            </el-button>
+          </div>
+
+          <div class="flex items-center gap-2 mt-3 flex-wrap">
+            <!-- 范围：默认全部直播间；选中具体房间 → 后端按 streamer_id 缩圈 -->
+            <el-select v-model="scopeId" clearable placeholder="全部直播间" style="width: 160px">
+              <el-option label="全部直播间" value="" />
+              <el-option v-for="s in scopeOptions" :key="s.id" :label="s.name" :value="s.id">
+                <div class="flex items-center justify-between gap-3">
+                  <span class="truncate">{{ s.name }}</span>
+                  <span class="text-xs text-g-500 shrink-0">{{ s.session_count ?? 0 }} 场</span>
+                </div>
+              </el-option>
+            </el-select>
+            <el-select v-model="sortKey" style="width: 130px">
+              <el-option label="按最近活跃" value="recent" />
+              <el-option label="按累计钻石" value="diamonds" />
+              <el-option label="按弹幕数" value="danmaku" />
+              <el-option label="按场次数" value="sessions" />
+            </el-select>
+          </div>
+
+          <div class="flex items-center gap-2 mt-3 flex-wrap">
+            <span class="text-xs text-g-500 shrink-0">热门关键词</span>
+            <button
+              v-for="kw in hotKeywords"
+              :key="kw"
+              class="dy-pressable px-2.5 h-7 rounded-lg text-xs text-g-700 bg-g-100/70 hover:bg-theme/10 hover:text-theme"
+              @click="quickSearch(kw)"
+            >
+              {{ kw }}
+            </button>
           </div>
         </div>
-      </div>
 
-      <div class="dy-toolbar-actions">
-        <!--
-          查询范围：默认「全部直播间」；选中某个直播间时把 streamer_id 传给后端，
-          SQL 只扫该直播间的场次，命中的用户变少 → 抖音接口补全调用量同步下降。
-        -->
-        <el-select v-model="scopeId" clearable placeholder="全部直播间" style="width: 160px">
-          <el-option label="全部直播间" value="" />
-          <el-option v-for="s in scopeOptions" :key="s.id" :label="s.name" :value="s.id">
-            <div class="flex items-center justify-between gap-3">
-              <span class="truncate">{{ s.name }}</span>
-              <span class="text-xs text-g-500 shrink-0">{{ s.session_count ?? 0 }} 场</span>
-            </div>
-          </el-option>
-        </el-select>
-        <el-select v-model="sortKey" style="width: 130px">
-          <el-option label="按最近活跃" value="recent" />
-          <el-option label="按累计钻石" value="diamonds" />
-          <el-option label="按弹幕数" value="danmaku" />
-          <el-option label="按场次数" value="sessions" />
-        </el-select>
-        <el-input
-          v-model="query"
-          placeholder="输入昵称关键词，回车查询"
-          style="width: 240px"
-          clearable
-          @keyup.enter="doSearch"
+        <!-- 右：查询聚合（结果态） / 查询提示（待查询态） -->
+        <aside
+          class="w-full lg:w-56 shrink-0 flex flex-col justify-center gap-4 lg:border-l lg:border-g-100 lg:pl-6"
         >
-          <template #prefix>
-            <ArtSvgIcon icon="ri:search-line" class="text-g-400" />
+          <template v-if="searched && !queryError">
+            <div>
+              <div class="text-xs text-g-500">匹配用户</div>
+              <div class="text-2xl font-semibold text-g-900 leading-tight mt-0.5">
+                {{ fmtNum(users.length) }}
+              </div>
+            </div>
+            <div>
+              <div class="text-xs text-g-500">参与场次</div>
+              <div class="text-2xl font-semibold text-g-900 leading-tight mt-0.5">
+                {{ fmtNum(totalSessions) }}
+              </div>
+            </div>
+            <div>
+              <div class="text-xs text-g-500">累计钻石</div>
+              <div
+                class="text-2xl font-semibold leading-tight mt-0.5"
+                :class="totalDiamonds ? 'text-theme' : 'text-g-400'"
+                :title="fmtTitle(totalDiamonds)"
+              >
+                {{ fmtNum(totalDiamonds) }}
+              </div>
+            </div>
           </template>
-        </el-input>
-        <el-button type="primary" :loading="loading" @click="doSearch">
-          <ArtSvgIcon icon="ri:search-line" class="mr-1" />
-          查询
-        </el-button>
+          <div v-else class="flex flex-col gap-2.5 text-xs text-g-500 leading-relaxed">
+            <div class="flex gap-1.5">
+              <ArtSvgIcon icon="ri:information-line" class="text-g-400 mt-0.5 shrink-0" />
+              <span>查询会调用抖音接口补全用户资料，人数较多时分批请求，请稍候</span>
+            </div>
+            <div class="flex gap-1.5">
+              <ArtSvgIcon icon="ri:scan-line" class="text-g-400 mt-0.5 shrink-0" />
+              <span>先选一个直播间再查，能明显减少命中人数与接口调用量</span>
+            </div>
+          </div>
+        </aside>
       </div>
     </div>
 
-    <!-- 首次进入的引导 -->
-    <div v-if="!searched" class="art-card p-5">
-      <div class="art-card-header">
-        <div class="title">
-          <h4>开始查询</h4>
-          <p>支持昵称模糊匹配，数据来自本库的弹幕、礼物与进场记录</p>
-        </div>
-      </div>
-      <div class="mt-4 flex flex-col gap-3">
-        <div class="flex items-center gap-2 flex-wrap">
-          <span class="text-sm text-g-500">试试这些关键词：</span>
-          <button
-            v-for="kw in hotKeywords"
-            :key="kw"
-            class="dy-pressable px-3 h-7 rounded-lg text-xs text-g-700 bg-g-100/70 hover:bg-theme/10 hover:text-theme"
-            @click="quickSearch(kw)"
-          >
-            {{ kw }}
-          </button>
-        </div>
-        <div class="flex items-center gap-2 text-xs text-g-500">
-          <ArtSvgIcon icon="ri:information-line" class="text-g-400" />
-          查询会调用抖音接口补全用户资料，人数较多时会分批请求，请稍候；
-          结果太多时可在右上角先选一个直播间缩小范围
-        </div>
-      </div>
-    </div>
-
-    <div v-else v-loading="loading" element-loading-text="查询中…">
+    <!-- ===== 结果区 ===== -->
+    <div v-if="searched" v-loading="loading" element-loading-text="查询中…">
       <!-- 失败：与「没有结果」明确区分（P0-3） -->
       <QueryErrorState
         v-if="!loading && queryError"
@@ -113,12 +132,14 @@
         <el-empty :description="`没有匹配「${lastQuery}」的用户`" :image-size="80" />
       </div>
 
-      <!-- 结果卡片 -->
-      <template v-else>
-        <div class="flex items-center justify-between mb-3 px-1">
+      <!-- 单栏信息流 -->
+      <div v-else class="art-card p-0">
+        <div
+          class="flex items-center justify-between gap-3 px-5 py-3.5 border-b border-g-100 flex-wrap"
+        >
           <span class="text-sm text-g-600">
             共 <b class="text-g-900">{{ sortedUsers.length }}</b> 个用户
-            <span class="text-g-400">（仅进场记录的用户排在最后）</span>
+            <span v-if="lastScope" class="text-g-400">· {{ lastScope }}</span>
           </span>
           <el-button size="small" text @click="doSearch">
             <ArtSvgIcon icon="ri:refresh-line" class="mr-1" />
@@ -126,196 +147,33 @@
           </el-button>
         </div>
 
-        <ElRow :gutter="20">
-          <ElCol v-for="u in sortedUsers" :key="u.sec_uid || u.nickname" :sm="24" :md="12" :lg="12">
-            <div class="art-card relative px-5 py-4 mb-5">
-              <!-- 头部：头像 + 昵称 + 别名 -->
-              <div class="flex items-start gap-3.5">
-                <el-avatar :size="48" :src="u.avatar" class="shrink-0">
-                  {{ (u.nickname || '?')[0] }}
-                </el-avatar>
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2">
-                    <span class="text-base font-medium text-g-900 truncate leading-snug">
-                      {{ u.nickname || '未知用户' }}
-                    </span>
-                    <el-tag v-if="u.unique_id" size="small" effect="plain" class="shrink-0">
-                      ID {{ u.unique_id }}
-                    </el-tag>
-                  </div>
-                  <div class="flex items-center gap-1.5 mt-1 flex-wrap">
-                    <span
-                      v-if="u.ip_location"
-                      class="inline-flex items-center gap-1 text-xs text-g-500"
-                    >
-                      <ArtSvgIcon icon="ri:map-pin-line" class="text-g-400" />{{ u.ip_location }}
-                    </span>
-                    <span v-if="u.user_gender" class="text-xs text-g-500">
-                      {{ u.user_gender === 1 ? '男' : '女' }}
-                    </span>
-                    <span v-if="u.is_private" class="text-xs text-warning">私密账号</span>
-                    <span v-if="!u.sec_uid" class="text-xs text-g-400">库里无 sec_uid</span>
-                  </div>
-                  <div
-                    v-if="otherNicknames(u).length"
-                    class="flex items-center gap-1.5 mt-2 flex-wrap"
-                  >
-                    <span class="text-xs text-g-400 shrink-0">库内别名</span>
-                    <el-tag
-                      v-for="n in otherNicknames(u).slice(0, 3)"
-                      :key="n"
-                      size="small"
-                      effect="plain"
-                      type="info"
-                    >
-                      {{ n }}
-                    </el-tag>
-                    <span v-if="otherNicknames(u).length > 3" class="text-xs text-g-400">
-                      +{{ otherNicknames(u).length - 3 }}
-                    </span>
-                  </div>
-                </div>
-                <el-button
-                  v-if="u.sec_uid"
-                  size="small"
-                  type="primary"
-                  class="shrink-0"
-                  @click="router.push(`/douyin/profile/${u.sec_uid}`)"
-                >
-                  画像
-                </el-button>
-              </div>
+        <!-- 有互动的用户（完整展示） -->
+        <template v-if="interactiveUsers.length">
+          <ResultRow
+            v-for="u in interactiveUsers"
+            :key="u.sec_uid || u.nickname"
+            :user="u"
+            @open-profile="openProfile(u.sec_uid)"
+            @open-session="openSession"
+          />
+        </template>
 
-              <!-- 三格统计：无数据的格子弱化为虚线占位，避免一排“0”看着像坏了 -->
-              <div class="grid grid-cols-3 gap-2 mt-4">
-                <div
-                  class="rounded-xl px-3 py-2"
-                  :class="hasSessions(u) ? 'bg-g-100/50' : 'bg-g-100/30 border border-dashed border-g-200'"
-                >
-                  <div class="text-xs text-g-500 flex items-center gap-1">
-                    <ArtSvgIcon icon="ri:live-line" class="text-g-400" />参与场次
-                  </div>
-                  <div class="mt-0.5 flex items-baseline gap-1">
-                    <span
-                      class="text-base font-medium leading-none"
-                      :class="hasSessions(u) ? 'text-g-900' : 'text-g-400'"
-                    >
-                      {{ hasSessions(u) ? u.sessions.length : '—' }}
-                    </span>
-                    <span class="text-xs text-g-500">场</span>
-                  </div>
-                </div>
-                <div
-                  class="rounded-xl px-3 py-2"
-                  :class="
-                    u.total_diamonds ? 'bg-g-100/50' : 'bg-g-100/30 border border-dashed border-g-200'
-                  "
-                >
-                  <div class="text-xs text-g-500 flex items-center gap-1">
-                    <ArtSvgIcon icon="ri:diamond-line" class="text-g-400" />累计钻石
-                  </div>
-                  <div class="mt-0.5 flex items-baseline gap-1">
-                    <span
-                      class="text-base font-medium leading-none"
-                      :class="u.total_diamonds ? 'text-theme' : 'text-g-400'"
-                    >
-                      {{ u.total_diamonds ? fmtNum(u.total_diamonds) : '—' }}
-                    </span>
-                    <span class="text-xs text-g-500">钻</span>
-                  </div>
-                </div>
-                <div
-                  class="rounded-xl px-3 py-2"
-                  :class="
-                    u.danmaku_count ? 'bg-g-100/50' : 'bg-g-100/30 border border-dashed border-g-200'
-                  "
-                >
-                  <div class="text-xs text-g-500 flex items-center gap-1">
-                    <ArtSvgIcon icon="ri:chat-3-line" class="text-g-400" />弹幕数
-                  </div>
-                  <div class="mt-0.5 flex items-baseline gap-1">
-                    <span
-                      class="text-base font-medium leading-none"
-                      :class="u.danmaku_count ? 'text-g-900' : 'text-g-400'"
-                      :title="u.danmaku_count ? fmtTitle(u.danmaku_count) : ''"
-                    >
-                      {{ u.danmaku_count ? fmtNum(u.danmaku_count) : '—' }}
-                    </span>
-                    <span class="text-xs text-g-500">条</span>
-                  </div>
-                </div>
-              </div>
-              <div
-                v-if="!hasSessions(u) && !u.total_diamonds && !u.danmaku_count"
-                class="mt-2 text-xs text-g-400 flex items-center gap-1"
-              >
-                <ArtSvgIcon icon="ri:information-line" />
-                本库仅命中进场记录（查询只取最近 200 条匹配记录）
-              </div>
-
-              <!-- 最近动作 / 最近弹幕 / 最近礼物 -->
-              <div class="flex flex-col gap-2 mt-4 pt-3 border-t border-g-100/80">
-                <div v-if="u.latest_action" class="flex items-center gap-2 text-xs">
-                  <span
-                    class="px-1.5 py-0.5 rounded-md shrink-0"
-                    :class="actionClass(u.latest_action.type)"
-                  >
-                    {{ actionLabel(u.latest_action.type) }}
-                  </span>
-                  <span class="flex-1 min-w-0 truncate text-g-700">
-                    {{ cleanText(u.latest_action.detail) }}
-                  </span>
-                  <span class="text-g-400 shrink-0">{{ fmtAgo(u.latest_action.time) }}</span>
-                </div>
-                <div v-if="u.latest_danmaku" class="flex items-center gap-2 text-xs">
-                  <span class="px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-500 shrink-0">
-                    弹幕
-                  </span>
-                  <span class="flex-1 min-w-0 truncate text-g-600">
-                    {{ cleanText(u.latest_danmaku.detail) }}
-                  </span>
-                  <span class="text-g-400 shrink-0">{{ fmtAgo(u.latest_danmaku.time) }}</span>
-                </div>
-                <div v-if="u.latest_gift" class="flex items-center gap-2 text-xs">
-                  <span class="px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-600 shrink-0">
-                    礼物
-                  </span>
-                  <span class="flex-1 min-w-0 truncate text-g-600">
-                    {{ cleanText(u.latest_gift.detail) }}
-                  </span>
-                  <span class="text-g-400 shrink-0">{{ fmtAgo(u.latest_gift.time) }}</span>
-                </div>
-                <div
-                  v-if="!u.latest_action && !u.latest_danmaku && !u.latest_gift"
-                  class="text-xs text-g-400"
-                >
-                  暂无行为记录
-                </div>
-              </div>
-
-              <!-- 底部：参与场次入口 -->
-              <div
-                v-if="u.sessions?.length"
-                class="flex items-center gap-2 mt-3 pt-3 border-t border-g-100/80 text-xs text-g-600 flex-wrap"
-              >
-                <ArtSvgIcon icon="ri:time-line" class="text-g-400" />
-                <span class="shrink-0">最近参与</span>
-                <button
-                  v-for="s in u.sessions.slice(0, 2)"
-                  :key="s.id"
-                  class="dy-pressable px-2 h-6 rounded-md bg-g-100/70 text-g-700 hover:bg-theme/10 hover:text-theme"
-                  @click="router.push(`/douyin/detail/${s.id}`)"
-                >
-                  {{ s.streamer_name || '场次 #' + s.id }} · {{ fmtSessionTime(s.start_time) }}
-                </button>
-                <span v-if="u.sessions.length > 2" class="text-g-400">
-                  还有 {{ u.sessions.length - 2 }} 场
-                </span>
-              </div>
-            </div>
-          </ElCol>
-        </ElRow>
-      </template>
+        <!-- 仅进场记录：分组分隔线 = 排序规则的可视化 -->
+        <div
+          v-if="entryOnlyUsers.length"
+          class="flex items-center gap-2 px-5 py-2 bg-g-100/50 border-y border-g-100 text-xs text-g-500"
+        >
+          <ArtSvgIcon icon="ri:door-open-line" class="text-g-400" />
+          仅进场记录 · {{ entryOnlyUsers.length }} 人（没有弹幕与送礼，排在最后）
+        </div>
+        <ResultRow
+          v-for="u in entryOnlyUsers"
+          :key="u.sec_uid || u.nickname"
+          :user="u"
+          @open-profile="openProfile(u.sec_uid)"
+          @open-session="openSession"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -324,8 +182,9 @@
   import { computed, onMounted, ref } from 'vue'
   import { useRouter } from 'vue-router'
   import { anonymousLookup, fetchStreamers, type Streamer } from '@/api/douyin'
-  import { fmtAgo, fmtNum, fmtTitle, fmtSessionTime } from '@/utils/format'
+  import { fmtNum, fmtTitle } from '@/utils/format'
   import { apiErrorMessage } from '@/utils/douyin-error'
+  import ResultRow from './modules/result-row.vue'
 
   defineOptions({ name: 'DouyinSearch' })
 
@@ -399,14 +258,14 @@
     return [...interactive, ...entryOnly]
   })
 
+  const interactiveUsers = computed(() => sortedUsers.value.filter((u) => !isEntryOnly(u)))
+  const entryOnlyUsers = computed(() => sortedUsers.value.filter(isEntryOnly))
+
   /**
-   * 匿名查询。
+   * 信息查询。
    *
-   * P0-3 修复点：原来 catch 里直接 `results.value = []` ——
-   * 网络失败/后端 500 被渲染成「没有匹配『xxx』的用户」，
-   * 与「确实查不到这个人」在界面上**完全一样**，
-   * 使用者会以为这个人没送过礼，而真相是这次查询根本没成功。
-   * 现在失败单独进入错误态（带重试），空结果只在真的查成功且为空时出现。
+   * P0-3 修复点：失败单独进入错误态（带重试），
+   * 空结果只在真的查成功且为空时出现，不把网络失败伪装成「没有这个人」。
    */
   async function doSearch() {
     const q = query.value.trim()
@@ -437,37 +296,43 @@
     doSearch()
   }
 
-  function hasSessions(u: any): boolean {
-    return Boolean(u?.sessions?.length)
+  function openProfile(secUid?: string) {
+    if (secUid) router.push(`/douyin/profile/${secUid}`)
   }
 
-  /** 库内别名去掉与当前显示昵称相同的那条（否则昵称旁边会贴一个一模一样的标签） */
-  function otherNicknames(u: any): string[] {
-    const cur = u?.nickname || ''
-    return (u?.db_nicknames || []).filter((n: string) => n && n !== cur)
-  }
-
-  /** 后端 detail 里带 [礼物] 前缀与表情，去掉多余前后缀让行更干净 */
-  function cleanText(s?: string | null): string {
-    if (!s) return ''
-    return String(s).replace(/^\[[^\]]+\]\s*/, '').trim()
-  }
-
-  function actionLabel(type?: string): string {
-    if (type === 'gift') return '礼物'
-    if (type === 'danmaku') return '弹幕'
-    if (type === 'member') return '进场'
-    return '行为'
-  }
-
-  function actionClass(type?: string): string {
-    if (type === 'gift') return 'bg-amber-50 text-amber-600'
-    if (type === 'danmaku') return 'bg-blue-50 text-blue-500'
-    return 'bg-emerald-50 text-emerald-600'
+  function openSession(id: number) {
+    router.push(`/douyin/detail/${id}`)
   }
 </script>
 
 <style scoped lang="scss">
-  /* 工具条控件圆角/间距与卡片统一（与状态监控页同一套） */
-  @use '@styles/custom/douyin-toolbar.scss';
+  /*
+   * 查询台专属控件样式：原 dy-toolbar 的控件口径（灰底、10px 圆角、聚焦反描边）
+   * 迁到这里 —— 本页不再用 dy-toolbar 类，样式必须跟着容器走，
+   * 否则输入框会退回 element-plus 默认的 4px 白底，与全站口径分裂。
+   */
+  .dy-query-hero {
+    :deep(.el-input__wrapper),
+    :deep(.el-select__wrapper) {
+      border-radius: 10px;
+    }
+
+    :deep(.el-input__wrapper) {
+      background: var(--art-gray-100);
+      box-shadow: none;
+      transition: box-shadow 0.2s ease;
+    }
+
+    :deep(.el-input__wrapper:hover) {
+      box-shadow: 0 0 0 1px var(--art-gray-400) inset;
+    }
+
+    :deep(.el-input__wrapper.is-focus) {
+      box-shadow: 0 0 0 1px var(--theme-color) inset;
+    }
+
+    :deep(.el-button) {
+      border-radius: 10px;
+    }
+  }
 </style>

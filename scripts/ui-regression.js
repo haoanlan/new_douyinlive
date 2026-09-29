@@ -299,11 +299,8 @@ async function main() {
     };
   });
   const metricTag = page.locator('.el-check-tag', { hasText: '钻/时' }).first();
-  await metricTag.click();
-  let target = { display: 'none', w: 0, canvases: 0 };
-  for (let i = 0; i < 24; i++) {
-    await page.waitForTimeout(250);
-    target = await page.evaluate(() => {
+  const readTarget = () =>
+    page.evaluate(() => {
       const card = document.querySelector('.douyin-page .art-card[data-metric="diamondsPerHour"]');
       if (!card) return { display: 'missing', w: 0, canvases: 0 };
       return {
@@ -312,16 +309,38 @@ async function main() {
         canvases: card.querySelectorAll('canvas').length
       };
     });
-    if (target.display !== 'none' && target.w > 0 && target.canvases >= 1) break;
-  }
+  const waitTarget = async (pred, tries = 24) => {
+    let snap = { display: 'missing', w: 0, canvases: 0 };
+    for (let i = 0; i < tries; i++) {
+      await page.waitForTimeout(250);
+      snap = await readTarget();
+      if (pred(snap)) break;
+    }
+    return snap;
+  };
+  const shown = (s) => s.display !== 'none' && s.w > 0 && s.canvases >= 1;
+
+  // 首次勾选：记录从点击到渲染完成的耗时（验收要求 ≤1s）
+  const t0 = Date.now();
+  await metricTag.click();
+  const target = await waitTarget(shown);
+  const elapsed = Date.now() - t0;
+
+  // 取消勾选 → 应隐藏；再次勾选 → 应重新渲染（"反复勾选/取消"验收路径）
+  await metricTag.click();
+  const hidden = await waitTarget((s) => s.display === 'none', 16);
+  await metricTag.click();
+  const again = await waitTarget(shown);
+
   check(
-    `trends 勾选非默认指标后图表渲染（钻/时 clientW=${target.w} canvas=${target.canvases}；默认图 ${beforeToggle.visibleWithCanvas}/3）`,
+    `trends 勾选非默认指标后图表渲染（钻/时 ${elapsed}ms clientW=${target.w} canvas=${target.canvases}；默认图 ${beforeToggle.visibleWithCanvas}/3；二次勾选 ${shown(again) ? 'ok' : 'ng'}）`,
     beforeToggle.attr >= 8 &&
       beforeToggle.visibleWithCanvas >= 3 &&
-      target.display !== 'none' &&
-      target.w > 0 &&
-      target.canvases >= 1,
-    `attr=${beforeToggle.attr} display=${target.display}`
+      shown(target) &&
+      elapsed <= 1000 &&
+      hidden.display === 'none' &&
+      shown(again),
+    `attr=${beforeToggle.attr} display=${target.display} hidden=${hidden.display} again=${again.display}`
   );
 
   // ---- 全站错误 ----

@@ -26,10 +26,12 @@
           </div>
         </div>
 
-        <!-- 关键指标 -->
+        <!-- 关键指标（数字口径与全站一致：万/亿缩写 + 精确值悬浮，P1-7） -->
         <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mt-4 pt-4 border-t border-dashed border-t-d">
           <div v-for="s in stats" :key="s.label">
-            <div class="text-xl font-semibold text-g-900 leading-none">{{ s.value }}</div>
+            <div class="text-xl font-semibold text-g-900 leading-none" :title="s.title">
+              {{ s.value }}
+            </div>
             <div class="text-xs text-g-500 mt-1">{{ s.label }}</div>
           </div>
         </div>
@@ -55,15 +57,25 @@
                   </div>
                 </template>
               </el-table-column>
-              <el-table-column prop="count" label="次数" width="80" />
-              <el-table-column prop="total_diamonds" label="钻石" width="90" />
+              <el-table-column label="次数" width="80" align="right">
+                <template #default="{ row }">
+                  <span :title="fmtTitle(row.count)">{{ fmtNum(row.count) }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column label="钻石" width="90" align="right">
+                <template #default="{ row }">
+                  <span :title="fmtTitle(row.total_diamonds)">
+                    {{ fmtNum(row.total_diamonds) }}
+                  </span>
+                </template>
+              </el-table-column>
             </el-table>
             <el-empty v-if="!profile?.topGiftsByCount?.length" description="暂无礼物" :image-size="60" />
           </div>
 
           <div class="art-card p-5 mb-4">
             <div class="art-card-header"><div class="title"><h4>活跃时段</h4></div></div>
-            <div class="flex items-end gap-0.5 h-24">
+            <div class="flex items-end gap-0.5 h-24" role="img" :aria-label="hourBarsAria">
               <div
                 v-for="h in hourBars"
                 :key="h.hour"
@@ -88,7 +100,20 @@
               <el-table-column label="开始时间" width="150">
                 <template #default="{ row }">{{ fmtTs(row.start_time) }}</template>
               </el-table-column>
-              <el-table-column prop="session_diamonds" label="钻石" width="90" />
+              <el-table-column label="钻石" width="90" align="right">
+                <template #default="{ row }">
+                  <span :title="fmtTitle(row.session_diamonds)">
+                    {{ fmtNum(row.session_diamonds) }}
+                  </span>
+                </template>
+              </el-table-column>
+              <el-table-column label="" width="70" align="right">
+                <template #default="{ row }">
+                  <el-button size="small" text type="primary" @click="goDetail(row.id)">
+                    详情
+                  </el-button>
+                </template>
+              </el-table-column>
             </el-table>
             <el-empty v-if="!profile?.activeSessions?.length" description="暂无数据" :image-size="60" />
           </div>
@@ -100,8 +125,16 @@
             <div class="art-card-header"><div class="title"><h4>常送主播</h4></div></div>
             <el-table :data="profile?.topStreamers || []" size="small">
               <el-table-column prop="name" label="主播" min-width="120" show-overflow-tooltip />
-              <el-table-column prop="count" label="次数" width="80" />
-              <el-table-column prop="diamonds" label="钻石" width="90" />
+              <el-table-column label="次数" width="80" align="right">
+                <template #default="{ row }">
+                  <span :title="fmtTitle(row.count)">{{ fmtNum(row.count) }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column label="钻石" width="90" align="right">
+                <template #default="{ row }">
+                  <span :title="fmtTitle(row.diamonds)">{{ fmtNum(row.diamonds) }}</span>
+                </template>
+              </el-table-column>
             </el-table>
             <el-empty v-if="!profile?.topStreamers?.length" description="暂无数据" :image-size="60" />
           </div>
@@ -131,8 +164,18 @@
             <div class="art-card-header"><div class="title"><h4>馈赠明细</h4></div></div>
             <el-table :data="(profile?.giftBreakdown || []).slice(0, 8)" size="small">
               <el-table-column prop="gift_name" label="礼物" min-width="120" show-overflow-tooltip />
-              <el-table-column prop="count" label="次数" width="80" />
-              <el-table-column prop="total_diamonds" label="钻石" width="90" />
+              <el-table-column label="次数" width="80" align="right">
+                <template #default="{ row }">
+                  <span :title="fmtTitle(row.count)">{{ fmtNum(row.count) }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column label="钻石" width="90" align="right">
+                <template #default="{ row }">
+                  <span :title="fmtTitle(row.total_diamonds)">
+                    {{ fmtNum(row.total_diamonds) }}
+                  </span>
+                </template>
+              </el-table-column>
             </el-table>
             <el-empty v-if="!profile?.giftBreakdown?.length" description="暂无数据" :image-size="60" />
           </div>
@@ -144,12 +187,14 @@
 
 <script setup lang="ts">
   import { computed, onMounted, ref } from 'vue'
-  import { useRoute } from 'vue-router'
+  import { useRoute, useRouter } from 'vue-router'
   import { fetchUser, type UserProfile } from '@/api/douyin'
+  import { fmtNum, fmtTitle } from '@/utils/format'
 
   defineOptions({ name: 'DouyinProfile' })
 
   const route = useRoute()
+  const router = useRouter()
   const secUid = String(route.params.secUid)
   const profile = ref<UserProfile | null>(null)
   const loading = ref(true)
@@ -169,14 +214,23 @@
 
   const stats = computed(() => {
     const p = profile.value
-    return [
-      { label: '累计钻石', value: p?.total_diamonds ?? '-' },
-      { label: '送礼次数', value: p?.gift_count ?? '-' },
-      { label: '礼物种类', value: p?.gift_types_count ?? '-' },
-      { label: '弹幕条数', value: p?.danmakuCount ?? '-' },
-      { label: '活跃场次', value: p?.activeSessionCount ?? '-' }
+    const raw: { label: string; value: number | undefined }[] = [
+      { label: '累计钻石', value: p?.total_diamonds },
+      { label: '送礼次数', value: p?.gift_count },
+      { label: '礼物种类', value: p?.gift_types_count },
+      { label: '弹幕条数', value: p?.danmakuCount },
+      { label: '活跃场次', value: p?.activeSessionCount }
     ]
+    return raw.map((s) => ({
+      label: s.label,
+      value: s.value === undefined ? '-' : fmtNum(s.value),
+      title: s.value === undefined ? '' : fmtTitle(s.value)
+    }))
   })
+
+  function goDetail(sessionId: number) {
+    router.push(`/douyin/detail/${sessionId}`)
+  }
 
   /**
    * 24 小时柱状：按最大值归一化到百分比高度。
@@ -201,6 +255,13 @@
       // 0 就是 0（靠基线表达"这一格存在但为空"），非 0 至少 6% 保证可见
       h: count === 0 ? 0 : Math.max(6, Math.round((count / max) * 100))
     }))
+  })
+
+  /** 活跃时段柱状图的无障碍摘要（4.5px 宽的柱子没法逐根朗读） */
+  const hourBarsAria = computed(() => {
+    const total = (profile.value?.hourStats || []).reduce((s, h) => s + (Number(h.count) || 0), 0)
+    const peak = profile.value?.peakHour
+    return `送礼活跃时段分布，共 ${total} 次${peak ? `，高峰 ${peak}` : ''}`
   })
 
   async function load() {

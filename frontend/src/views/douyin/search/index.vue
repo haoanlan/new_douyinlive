@@ -25,24 +25,33 @@
               <span class="w-px h-3 bg-g-300" />
               <span>关键词「{{ lastQuery }}」</span>
             </template>
+            <template v-if="lastScope">
+              <span class="w-px h-3 bg-g-300" />
+              <span>{{ lastScope }}</span>
+            </template>
           </div>
         </div>
       </div>
 
       <div class="dy-toolbar-actions">
+        <!--
+          查询范围：默认「全部直播间」；选中某个直播间时把 streamer_id 传给后端，
+          SQL 只扫该直播间的场次，命中的用户变少 → 抖音接口补全调用量同步下降。
+        -->
+        <el-select v-model="scopeId" clearable placeholder="全部直播间" style="width: 160px">
+          <el-option label="全部直播间" value="" />
+          <el-option v-for="s in scopeOptions" :key="s.id" :label="s.name" :value="s.id">
+            <div class="flex items-center justify-between gap-3">
+              <span class="truncate">{{ s.name }}</span>
+              <span class="text-xs text-g-500 shrink-0">{{ s.session_count ?? 0 }} 场</span>
+            </div>
+          </el-option>
+        </el-select>
         <el-select v-model="sortKey" style="width: 130px">
           <el-option label="按最近活跃" value="recent" />
           <el-option label="按累计钻石" value="diamonds" />
           <el-option label="按弹幕数" value="danmaku" />
           <el-option label="按场次数" value="sessions" />
-        </el-select>
-        <el-select
-          v-model="streamerFilter"
-          clearable
-          placeholder="全部主播"
-          style="width: 150px"
-        >
-          <el-option v-for="s in streamerOptions" :key="s" :label="s" :value="s" />
         </el-select>
         <el-input
           v-model="query"
@@ -84,7 +93,8 @@
         </div>
         <div class="flex items-center gap-2 text-xs text-g-500">
           <ArtSvgIcon icon="ri:information-line" class="text-g-400" />
-          查询会调用抖音接口补全用户资料，人数较多时会分批请求，请稍候
+          查询会调用抖音接口补全用户资料，人数较多时会分批请求，请稍候；
+          结果太多时可在右上角先选一个直播间缩小范围
         </div>
       </div>
     </div>
@@ -108,7 +118,7 @@
         <div class="flex items-center justify-between mb-3 px-1">
           <span class="text-sm text-g-600">
             共 <b class="text-g-900">{{ sortedUsers.length }}</b> 个用户
-            <span v-if="streamerFilter" class="text-g-400">（已筛选主播：{{ streamerFilter }}）</span>
+            <span class="text-g-400">（仅进场记录的用户排在最后）</span>
           </span>
           <el-button size="small" text @click="doSearch">
             <ArtSvgIcon icon="ri:refresh-line" class="mr-1" />
@@ -146,10 +156,13 @@
                     <span v-if="u.is_private" class="text-xs text-warning">私密账号</span>
                     <span v-if="!u.sec_uid" class="text-xs text-g-400">库里无 sec_uid</span>
                   </div>
-                  <div v-if="u.db_nicknames?.length" class="flex items-center gap-1.5 mt-2 flex-wrap">
+                  <div
+                    v-if="otherNicknames(u).length"
+                    class="flex items-center gap-1.5 mt-2 flex-wrap"
+                  >
                     <span class="text-xs text-g-400 shrink-0">库内别名</span>
                     <el-tag
-                      v-for="n in u.db_nicknames.slice(0, 3)"
+                      v-for="n in otherNicknames(u).slice(0, 3)"
                       :key="n"
                       size="small"
                       effect="plain"
@@ -157,8 +170,8 @@
                     >
                       {{ n }}
                     </el-tag>
-                    <span v-if="u.db_nicknames.length > 3" class="text-xs text-g-400">
-                      +{{ u.db_nicknames.length - 3 }}
+                    <span v-if="otherNicknames(u).length > 3" class="text-xs text-g-400">
+                      +{{ otherNicknames(u).length - 3 }}
                     </span>
                   </div>
                 </div>
@@ -308,9 +321,9 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, ref } from 'vue'
+  import { computed, onMounted, ref } from 'vue'
   import { useRouter } from 'vue-router'
-  import { anonymousLookup } from '@/api/douyin'
+  import { anonymousLookup, fetchStreamers, type Streamer } from '@/api/douyin'
   import { fmtAgo, fmtNum, fmtTitle, fmtSessionTime } from '@/utils/format'
   import { apiErrorMessage } from '@/utils/douyin-error'
 
@@ -320,13 +333,33 @@
 
   const query = ref('')
   const lastQuery = ref('')
+  /** 上一次查询实际使用的范围（展示的是"当时查了什么"，不是当前下拉的值） */
+  const lastScope = ref('')
   const results = ref<any[]>([])
   const loading = ref(false)
   const searched = ref(false)
   /** 查询失败的真实原因；非空时显示错误态而不是「没有匹配的用户」（P0-3） */
   const queryError = ref('')
   const sortKey = ref<'recent' | 'diamonds' | 'danmaku' | 'sessions'>('recent')
-  const streamerFilter = ref('')
+
+  /**
+   * 查询范围（默认全部直播间）。
+   * 选中具体直播间时会把 streamer_id 传给后端做 SQL 缩圈 ——
+   * 命中用户少了，抖音接口补全的调用量也随之下降。
+   */
+  const scopeId = ref<number | string>('')
+  const scopeOptions = ref<Streamer[]>([])
+
+  async function loadScopeOptions() {
+    try {
+      const list = await fetchStreamers()
+      scopeOptions.value = [...list].sort((a, b) => (b.session_count ?? 0) - (a.session_count ?? 0))
+    } catch {
+      // 范围下拉是增强能力，拿不到就只剩「全部直播间」，不打断查询
+    }
+  }
+
+  onMounted(loadScopeOptions)
 
   const hotKeywords = ['无限', '苏江', '林语巷', '神秘人']
 
@@ -339,36 +372,31 @@
     users.value.reduce((sum, u) => sum + (u.sessions?.length || 0), 0)
   )
 
-  const streamerOptions = computed(() => {
-    const set = new Set<string>()
-    for (const u of users.value) {
-      for (const s of u.sessions || []) {
-        if (s.streamer_name && s.streamer_name !== '未知') set.add(s.streamer_name)
-      }
-    }
-    return [...set]
-  })
+  /** 「仅进场记录」= 没弹幕没送礼 —— 排序时整体沉底（用户决定：照常展示仅靠后） */
+  function isEntryOnly(u: any): boolean {
+    return !u.danmaku_count && !u.total_diamonds
+  }
 
   const sortedUsers = computed(() => {
-    let list = [...users.value]
-    if (streamerFilter.value) {
-      list = list.filter((u) =>
-        (u.sessions || []).some((s: any) => s.streamer_name === streamerFilter.value)
-      )
-    }
+    const list = [...users.value]
     const num = (v: any) => (typeof v === 'number' ? v : 0)
-    switch (sortKey.value) {
-      case 'diamonds':
-        return list.sort((a, b) => num(b.total_diamonds) - num(a.total_diamonds))
-      case 'danmaku':
-        return list.sort((a, b) => num(b.danmaku_count) - num(a.danmaku_count))
-      case 'sessions':
-        return list.sort((a, b) => (b.sessions?.length || 0) - (a.sessions?.length || 0))
-      default:
-        return list.sort(
-          (a, b) => num(b.latest_action?.time) - num(a.latest_action?.time)
-        )
+    const bySort = (a: any, b: any) => {
+      switch (sortKey.value) {
+        case 'diamonds':
+          return num(b.total_diamonds) - num(a.total_diamonds)
+        case 'danmaku':
+          return num(b.danmaku_count) - num(a.danmaku_count)
+        case 'sessions':
+          return (b.sessions?.length || 0) - (a.sessions?.length || 0)
+        default:
+          return num(b.latest_action?.time) - num(a.latest_action?.time)
+      }
     }
+    // 先按所选排序排好，再把「仅进场」整体挪到最后（组内相对顺序不变）
+    list.sort(bySort)
+    const interactive = list.filter((u) => !isEntryOnly(u))
+    const entryOnly = list.filter(isEntryOnly)
+    return [...interactive, ...entryOnly]
   })
 
   /**
@@ -386,8 +414,14 @@
     loading.value = true
     searched.value = true
     lastQuery.value = q
+    // 记录本次查询的真实范围（展示口径以"当时查的"为准）
+    const scoped = scopeId.value !== '' && scopeId.value != null
+    const scopeName = scoped
+      ? scopeOptions.value.find((s) => String(s.id) === String(scopeId.value))?.name || ''
+      : ''
+    lastScope.value = scoped ? `范围：${scopeName}的直播间` : '范围：全部直播间'
     try {
-      const res: any = await anonymousLookup(q)
+      const res: any = await anonymousLookup(q, scoped ? String(scopeId.value) : undefined)
       results.value = res?.users || (Array.isArray(res) ? res : [])
       queryError.value = ''
     } catch (e) {
@@ -405,6 +439,12 @@
 
   function hasSessions(u: any): boolean {
     return Boolean(u?.sessions?.length)
+  }
+
+  /** 库内别名去掉与当前显示昵称相同的那条（否则昵称旁边会贴一个一模一样的标签） */
+  function otherNicknames(u: any): string[] {
+    const cur = u?.nickname || ''
+    return (u?.db_nicknames || []).filter((n: string) => n && n !== cur)
   }
 
   /** 后端 detail 里带 [礼物] 前缀与表情，去掉多余前后缀让行更干净 */

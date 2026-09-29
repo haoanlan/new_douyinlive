@@ -37,13 +37,14 @@ commits: 832dbea.. # in progress
 - 回归保护：默认三图不回归；`node scripts/ui-regression.js` 8/8 保持通过。
 - 若修复涉及样式，必须用 `getComputedStyle` 实测实际值验证（HANDOFF 第九节约束）。
 
-### S2.2 房间管理页下方空白
+### S2.2 房间管理页下方空白 —— 已决定不修（2026-09-29）
 
-- 先截图（Playwright，`danger-full-access`）确认现状，不靠数值猜。
-- 目标：下半屏不再是无内容的纯空白——具体手段（内容补位 / 收紧布局 / 空态填充）
-  在截图确认现状后定，以视觉自然为准，遵守第九节"改 UI 前先截图"。
-- 验收：截图中页面无 ≥300px 的无内容纯空白带；`getComputedStyle` 若涉及样式
-  改动需实测。
+- 先截图（Playwright）确认现状，不靠数值猜。实测：工具条+5 卡在 ~430px 结束，
+  `.douyin-page` min-height=881px（100vh-119），各层背景全透明 → 下方 ~450px 纯白。
+- 曾按"内容补位"实现过「最近场次」板块（现成 `GET /api/sessions?limit=6`，纯前端），
+  **用户明确不要往房间页加内容，已全部回退**。
+- 其余候选（卡片拉伸 / 内容区灰底）经用户确认后**放弃本条待办，保持现状**。
+  记录仅作背景：以后若重开此题，纯 CSS 方案只剩这两条，且都已评估过代价。
 
 ### S2.3 P1-8 键盘可达铺开
 
@@ -71,14 +72,13 @@ commits: 832dbea.. # in progress
 
 ## Tasks
 
-- [ ] T1: 三服务起来 + ui-regression 基线 8/8 — acceptance: 三端口可访问，
+- [x] T1: 三服务起来 + ui-regression 基线 8/8 — acceptance: 三端口可访问，
   `node scripts/ui-regression.js` 报 8/8 通过（covers: S2.1 前置）
-- [ ] T2: 祖先链定位趋势图容器塌陷根因并修复 — acceptance: 浏览器勾选非默认
+- [x] T2: 祖先链定位趋势图容器塌陷根因并修复 — acceptance: 浏览器勾选非默认
   指标 ≤1s 渲染曲线，反复勾选/取消、切 X 轴、刷新均正常；默认三图不回归；
   ui-regression 8/8；已提交（covers: S2.1）
-- [ ] T3: 修复房间管理页下方纯空白 — acceptance: 截图确认无 ≥300px 无内容
-  空白带；改动已提交（covers: S2.2; depends: T1）
+- [ ] T3: ~~修复房间管理页下方纯空白~~ — 按用户决定放弃（S2.2），不实现
 - [ ] T4: P1-8 键盘可达铺开到 detail 榜单行 / profile 表格 — acceptance:
   键盘 Tab 可达并激活，焦点环经 getComputedStyle 实测存在；已提交（covers: S2.3）
-- [ ] T5: 全量验证 + 独立评审 — acceptance: ui-regression 8/8、相关 e2e 脚本
-  通过，评审子代理结论无 critical（covers: S2.1/S2.2/S2.3; depends: T2,T3,T4）
+- [ ] T5: 全量验证 + 独立评审 — acceptance: ui-regression 全量通过、相关检查
+  通过，评审子代理结论无 critical（covers: S2.1/S2.3; depends: T2,T4）

@@ -822,9 +822,11 @@
 
   .room-card:focus-visible {
     outline: none;
+    /* !important 不能省：模板在 border-mode 下给 .art-card 写死了
+       box-shadow: none !important，不加会被整个压掉（实测焦点环为 none）。 */
     box-shadow:
       0 0 0 2px #fff,
-      0 0 0 4px var(--theme-color);
+      0 0 0 4px var(--theme-color) !important;
   }
 
   @media (prefers-reduced-motion: reduce) {

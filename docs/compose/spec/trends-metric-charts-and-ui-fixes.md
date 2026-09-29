@@ -78,7 +78,10 @@ commits: 832dbea.. # in progress
   指标 ≤1s 渲染曲线，反复勾选/取消、切 X 轴、刷新均正常；默认三图不回归；
   ui-regression 8/8；已提交（covers: S2.1）
 - [ ] T3: ~~修复房间管理页下方纯空白~~ — 按用户决定放弃（S2.2），不实现
-- [ ] T4: P1-8 键盘可达铺开到 detail 榜单行 / profile 表格 — acceptance:
+- [x] T4: P1-8 键盘可达铺开到 detail 榜单行 / profile 表格 — acceptance:
   键盘 Tab 可达并激活，焦点环经 getComputedStyle 实测存在；已提交（covers: S2.3）
+  —— 盘点后发现该说的"未铺开"已过时（detail 行早已补全、profile 表格不可点）；
+  真正的问题是房间卡焦点环被 `box-shadow:none !important` 压掉，已修；
+  回归沉淀为 `scripts/kbd-regression.js`（5/5）。
 - [ ] T5: 全量验证 + 独立评审 — acceptance: ui-regression 全量通过、相关检查
   通过，评审子代理结论无 critical（covers: S2.1/S2.3; depends: T2,T4）

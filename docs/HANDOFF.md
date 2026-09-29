@@ -295,11 +295,16 @@ cd frontend && node node_modules\vite\bin\vite.js                   # 终端 C�
 
 ### 8.7 仍未做
 
-- **P1-8 键盘可达**：rows / sessions / detail 三处的可点行已补
-  `role="button"` + `tabindex` + Enter/Space + `focus-visible`；
-  但 detail 里的榜单行、profile 的表格等**还没全铺开**。
+- ~~**P1-8 键盘可达**~~ —— **2026-09-29 盘点完成，已全铺开**：
+  detail 榜单行 / sessions 行 / rooms 卡片都有 `role="button"` + `tabindex` + Enter/Space +
+  `focus-visible`；icon-only 按钮 aria-label 全齐（7/7）；profile 表格本身不可点（无需通路）。
+  实测发现并修掉一个真 bug：**房间卡焦点环被 `.art-card` 的
+  `box-shadow: none !important` 压掉**（9.3.2 的坑），已加 `!important`。
+  回归脚本：`node scripts/kbd-regression.js`（键盘路径聚焦 + getComputedStyle 严格断言）。
 - **`.db-wal` / `.db-shm` 静态屏蔽**（第六节安全清单第 3 条）仍未加。
 - 状态监控页的图表类内容（趋势图）没做——参考图里的「登录安全走势」在这套数据下没有对应物。
+- DESIGN-REVIEW #8 里"用 title 当图表提示（profile 柱图柱子太细）"未做——属图表交互，
+  不是键盘通路，本轮未覆盖。
 
 ---
 
@@ -383,7 +388,8 @@ cd frontend && node node_modules\vite\bin\vite.js                   # 终端 C�
   `flush:'post'`、rAF 轮询都无效。
 - ~~**房间管理页下方约 450px 纯空白**~~ —— 2026-09-29 决定**不修**（不加内容、
   不改灰底/拉伸，保持现状）。曾实现过"最近场次"补位，按用户要求已回退。
-- P1-8 键盘可达未全铺开；`.db-wal`/`.db-shm` 静态屏蔽未加（见第八节）。
+- ~~P1-8 键盘可达未全铺开~~ —— 已完成并沉淀 `scripts/kbd-regression.js`（见 8.7）；
+  `.db-wal`/`.db-shm` 静态屏蔽未加（见第八节）。
 
 ### 9.5 验证方式（已沉淀成可重复脚本）
 

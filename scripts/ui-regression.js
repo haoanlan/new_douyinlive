@@ -60,8 +60,25 @@ async function main() {
    * 最终页面**的对比度问题 —— 排查方向会被带偏。
    * 现在显式等 el-loading 蒙层消失，再留一小段给渲染稳定。
    */
-  function waitForLoaded(extra = 1200) {
+  /**
+   * 等到页面真正加载完再采样。
+   *
+   * 三类中间态都会污染对比度采样，必须都排掉：
+   *   1. loading 蒙层还在（"加载中…"）
+   *   2. 蒙层还没出现、但页面骨架/空状态已渲染（"暂无数据"这种占位文本）
+   *   3. 卡片进场动画未结束（位移中，位置不稳）
+   * 之前只等蒙层，网络一慢就抓到 (2)，实测采样数从 412 掉到 172、
+   * 报出 9 处"未达标"却全是中间态 —— 这种误报会把排查方向带偏。
+   */
+  function waitForLoaded(extra = 1500) {
     return (async () => {
+      // 1) 等根容器出现
+      for (let i = 0; i < 50; i++) {
+        const has = await page.evaluate(() => !!document.querySelector('.douyin-page'));
+        if (has) break;
+        await page.waitForTimeout(200);
+      }
+      // 2) 等 loading 蒙层消失
       for (let i = 0; i < 60; i++) {
         const maskGone = await page.evaluate(() => {
           const m = document.querySelector('.el-loading-mask');
@@ -71,6 +88,14 @@ async function main() {
         });
         if (maskGone) break;
         await page.waitForTimeout(200);
+      }
+      // 3) 等所有卡片动画跑完
+      for (let i = 0; i < 40; i++) {
+        const animating = await page.evaluate(
+          () => document.getAnimations().filter((a) => a.playState === 'running').length
+        );
+        if (animating === 0) break;
+        await page.waitForTimeout(150);
       }
       await page.waitForTimeout(extra);
     })();
@@ -197,7 +222,15 @@ async function main() {
     return m ? m.id : null;
   });
   await page.goto(`${FRONT}/#/douyin/detail/${sid}`, { waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(7000);
+  await waitForLoaded(2000);
+  /*
+   * 量尺寸前先把鼠标移开并把指针移出卡片。
+   * 卡片悬停会 translateY(-2px)，如果采样时鼠标正好停在某张卡上，
+   * 会把"悬停抬升"当成"底部不齐"（实测误报过底边差 2px）。
+   * 这类断言量的是布局，必须在无交互的静止态下取。
+   */
+  await page.mouse.move(4, 4);
+  await page.waitForTimeout(600);
   const feed = await page.evaluate(() => {
     // 动态列表的滚动容器（.dy-scroll 是共用的卡内滚动区）。
     // 注意：页面上有多个 .dy-scroll，动态列表那个在里面含最多行，取行数最多的。
@@ -223,6 +256,17 @@ async function main() {
   );
 
   // ---- detail 底部行是否齐平（行内卡片底边差必须为 0）----
+  /*
+   * 先把动画停掉再量。
+   * 卡片进场有 stagger 动画（animation-delay 最多 280ms），悬停还会 translateY(-2px)；
+   * 如果在动画/悬停过程中采样，量到的是瞬时值而不是最终布局（实测误报过底边差 2px）。
+   * 这里显式把 animation / transition / transform 清零，量"静止态的真实布局"。
+   */
+  await page.addStyleTag({
+    content: `.douyin-page .art-card,
+      .douyin-page .art-card:hover { animation: none !important; transition: none !important; transform: none !important; }`
+  });
+  await page.waitForTimeout(300);
   const rowsAlign = await page.evaluate(() => {
     const root = document.querySelector('.douyin-page');
     const grids = [...root.querySelectorAll('.dy-detail-grid')];

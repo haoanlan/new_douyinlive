@@ -174,9 +174,27 @@ export interface DanmakuFull {
 
 // ===================== Streamers =====================
 
+/**
+ * 主播（= 被监控的直播间），来自 `/api/streamers`。
+ *
+ * 注意 `id` 是 **streamer 主键**（数字），趋势/场次接口都按它查；
+ * `sec_uid` 是真正的抖音 sec_uid（字符串，可能为空），别拿它当 id 用。
+ */
 export interface Streamer {
-  id: string
+  /** streamer 主键 */
+  id: number | string
   name: string
+  room_id?: string
+  avatar?: string | null
+  /** 兼容部分调用方读 avatar_url 的写法 */
+  avatar_url?: string | null
+  /** 该主播有多少场直播（趋势页用来排序/判断可选性） */
+  session_count?: number
+  /** 真正的抖音 sec_uid（可能为空字符串） */
+  sec_uid?: string
+  total_gifts?: number
+  total_danmaku?: number
+  created_at?: string
 }
 
 // ===================== Anonymous =====================
@@ -261,11 +279,82 @@ export interface UserSession {
 
 // ===================== Trends =====================
 
+/**
+ * 旧的「全站总和」趋势。
+ * @deprecated 只有时间维度、把所有房间加总，对单个直播间的判断没有意义。
+ * 已由 {@link fetchHostTrends} 取代（按房间的每一场给出数据点）。
+ */
 export interface Trends {
   giftTrend: { date: string; total_diamonds: number; gift_count: number; sender_count: number }[]
   danmakuTrend: { date: string; danmaku_count: number; sender_count: number }[]
   onlineTrend: { date: string; peak_online: number | null }[]
 }
+
+/** 一场直播在趋势图上的一个数据点 */
+export interface HostTrendPoint {
+  sessionId: number
+  /** 开播时间，用于 X 轴与区分"一天多场" */
+  startAt: string
+  /** 是否已结束（未结束的是直播中那场） */
+  ended: boolean
+  durationMinutes: number
+  peakOnline: number
+  diamonds: number
+  danmaku: number
+  gifts: number
+  users: number
+  likes: number
+  members: number
+  /** 派生指标：跨场次/跨房间比"效率"时比原始量更有意义 */
+  diamondsPerHour: number
+  danmakuPerThousand: number
+  /** 这一场的预聚合数据是否可信；false 时不应被读成"业绩为 0" */
+  hasData: boolean
+}
+
+export interface HostTrendSummary {
+  sessions: number
+  sessionsWithData: number
+  avgPeakOnline: number
+  maxPeakOnline: number
+  avgDiamonds: number
+  totalDiamonds: number
+  avgDanmaku: number
+  totalDanmaku: number
+  avgDurationMinutes: number
+  avgDiamondsPerHour: number
+  avgUsers: number
+}
+
+export interface HostTrendSeries {
+  hostId: number
+  roomId: string
+  name: string
+  avatar: string | null
+  points: HostTrendPoint[]
+  summary: HostTrendSummary
+  /** 上一个等长周期的汇总，用于判断"涨了还是跌了"；无确定范围时为 null */
+  prevSummary: Pick<
+    HostTrendSummary,
+    'sessions' | 'avgPeakOnline' | 'avgDiamonds' | 'avgDanmaku' | 'avgDurationMinutes'
+  > | null
+}
+
+export interface HostTrends {
+  range: string
+  series: HostTrendSeries[]
+}
+
+/** 可选的趋势指标 */
+export type TrendMetricKey =
+  | 'peakOnline'
+  | 'diamonds'
+  | 'danmaku'
+  | 'gifts'
+  | 'durationMinutes'
+  | 'users'
+  | 'diamondsPerHour'
+  | 'danmakuPerThousand'
 
 // ===================== Status =====================
 
@@ -426,8 +515,27 @@ export function searchUser(query: string) {
   })
 }
 
+/** @deprecated 用 fetchHostTrends 取代（见该函数说明） */
 export function fetchTrends(range = '7d', group = 'day') {
   return request.get<Trends>({ url: `/api/trends?range=${range}&group=${group}` })
+}
+
+/**
+ * 单房间（主播）的**跨场次**趋势。
+ *
+ * 与旧的 /api/trends 的区别：那个只有时间维度、把所有房间加总，
+ * 得到的是"全站总和的日曲线"；这个按**每一场直播**给数据点，
+ * 同一房间自己和自己比，才看得出"这次比上次好还是差"。
+ *
+ * @param hostIds 主播 id 列表。传多个即"多房间对比"，各自作为独立序列。
+ * @param range   7d / 30d / 90d / all
+ */
+export function fetchHostTrends(hostIds: (number | string)[], range = '30d') {
+  const hosts = hostIds.join(',')
+  return request.get<HostTrends>({
+    url: `/api/hosts/trends?hosts=${hosts}&range=${range}`,
+    showErrorMessage: false
+  })
 }
 
 // ===================== Overview（总览页聚合） =====================

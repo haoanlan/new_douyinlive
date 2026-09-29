@@ -557,6 +557,51 @@
 }
 
 /* ==========================================================================
+ * 趋势分析页
+ * ========================================================================== */
+
+/*
+ * 每个房间一张 KPI 卡，横向铺开。
+ * 用 auto-fit 而不是固定列数：选 1 个房间时卡片撑满，选 4 个时自动变 4 列，
+ * 不用为不同数量写不同布局。
+ */
+.dy-trend-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+/*
+ * 指标开关标签（趋势分析页）。
+ *
+ * 特异性必须压过 element-plus 自带的这几条，否则写了也不生效（实测踩到）：
+ *   .el-check-tag                                  → var(--el-color-info)   浅灰，2.66:1
+ *   .el-check-tag.el-check-tag--primary.is-checked → var(--el-color-primary) 即 #5D87FF，3.29:1
+ * 后者是 (0,3,0)，所以选中态必须带 `--primary` 修饰类才能赢，不能只写 `.is-checked`。
+ */
+.douyin-page .el-check-tag,
+.douyin-page .el-check-tag.el-check-tag--primary {
+  font-size: 13px;
+  color: var(--dy-text-secondary);
+  background: var(--art-gray-100);
+  transition:
+    color var(--dy-dur-fast) var(--dy-ease-out),
+    background-color var(--dy-dur-fast) var(--dy-ease-out);
+}
+
+.douyin-page .el-check-tag.is-checked,
+.douyin-page .el-check-tag.el-check-tag--primary.is-checked {
+  color: var(--dy-text-accent);
+  background: color-mix(in srgb, var(--theme-color) 13%, transparent);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .douyin-page .el-check-tag:hover {
+    background: var(--art-gray-200);
+  }
+}
+
+/* ==========================================================================
  * 卡内滚动区
  *
  * 高度由行高决定（见 .dy-detail-grid），内容多了在卡内滚动。
@@ -844,5 +889,125 @@
 .douyin-page .art-svg-icon.text-g-500,
 .douyin-page svg.text-g-500 {
   color: var(--art-gray-400) !important;
+}
+
+/* ==========================================================================
+ * 卡面质感
+ *
+ * 为什么需要：模板的 `.art-card` 只有 `border: 1px solid` + 一层很弱的阴影，
+ * **没有过渡、没有悬停反馈**。于是卡片看起来是"印在背景上的一块色块"而不是
+ * 一个可以交互的实体 —— 这正是那种"廉价感"的来源。
+ *
+ * 这里在 `.douyin-page` 作用域内补齐三件事（不动模板、不影响其它页面）：
+ *   1. 悬停微抬 + 极淡的层次阴影，让卡片"有厚度"
+ *   2. 顶部 1px 高光内描边：模拟受光面，是高档卡片常见的一招（克制，不抢内容）
+ *   3. 进场时轻微上浮淡入，让页面"落下来"而不是硬切
+ *
+ * 取值原则：位移 ≤ 2px、阴影透明度 ≤ 0.10。大幅位移和大阴影反而是廉价感的来源。
+ * ========================================================================== */
+.douyin-page .art-card {
+  position: relative;
+  transition:
+    box-shadow var(--dy-dur-base) var(--dy-ease-out),
+    border-color var(--dy-dur-base) var(--dy-ease-out),
+    transform var(--dy-dur-base) var(--dy-ease-out);
+}
+
+/* 顶部高光：用伪元素而不是 border-top，避免改变盒模型尺寸导致内容跳动 */
+.douyin-page .art-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(255 255 255 / 70%) 18%,
+    rgb(255 255 255 / 70%) 82%,
+    transparent
+  );
+}
+
+.dark .douyin-page .art-card::before {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(255 255 255 / 7%) 18%,
+    rgb(255 255 255 / 7%) 82%,
+    transparent
+  );
+}
+
+@media (hover: hover) and (pointer: fine) {
+  /*
+   * 必须用 !important：
+   * 模板在 [data-box-mode='border-mode'] 下通过 `@include art-card-base(border, none, 4px)`
+   * 写死了 `box-shadow: none !important`（默认盒子模式就是 border-mode）。
+   * 不加 !important 时实测悬停只有位移生效、阴影被压掉，卡片依然是"平的"。
+   * 同样地 border-color 也被模板的 `border: 1px solid ... !important` 覆盖，需要一起提升。
+   */
+  .douyin-page .art-card:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--theme-color) 26%, var(--art-card-border)) !important;
+    box-shadow:
+      0 1px 2px rgb(16 24 40 / 4%),
+      0 8px 20px -6px rgb(16 24 40 / 10%) !important;
+  }
+}
+
+/* ==========================================================================
+ * 页面进场
+ *
+ * 卡片依次轻微上浮淡入（stagger），而不是整页硬切。
+ * 用 animation 而不是 transition：进场只需要跑一次，也不受 hover 的 transform 影响。
+ * 步进 40ms、最多累计到第 8 张 —— 再多会让最后几张等太久，反而显得慢。
+ * ========================================================================== */
+@keyframes dy-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.douyin-page > .art-card,
+.douyin-page .dy-stat-row > .art-card,
+.douyin-page .dy-detail-grid > .art-card,
+.douyin-page .dy-trend-kpis > .art-card,
+.douyin-page > .el-row .art-card {
+  animation: dy-card-in var(--dy-dur-slow) var(--dy-ease-out) backwards;
+}
+
+/* 依次延迟：用 nth-child 覆盖前 8 个，避免为每页写内联 delay */
+@for $i from 1 through 8 {
+  .douyin-page > .art-card:nth-child(#{$i}),
+  .douyin-page .dy-stat-row > .art-card:nth-child(#{$i}),
+  .douyin-page .dy-detail-grid > .art-card:nth-child(#{$i}),
+  .douyin-page .dy-trend-kpis > .art-card:nth-child(#{$i}) {
+    animation-delay: #{($i - 1) * 40}ms;
+  }
+}
+
+/*
+ * 减弱动效：位移全部去掉，只保留极短的淡入。
+ * 颜色/透明度变化不影响前庭系统，可以留；位移/缩放必须去掉。
+ */
+@media (prefers-reduced-motion: reduce) {
+  .douyin-page .art-card:hover {
+    transform: none;
+  }
+
+  .douyin-page > .art-card,
+  .douyin-page .dy-stat-row > .art-card,
+  .douyin-page .dy-detail-grid > .art-card,
+  .douyin-page .dy-trend-kpis > .art-card,
+  .douyin-page > .el-row .art-card {
+    animation: none;
+  }
 }
 

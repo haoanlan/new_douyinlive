@@ -1,14 +1,47 @@
 ---
 feature: trends-metric-charts-and-ui-fixes
-status: in-progress
+status: delivered
 updated: 2026-09-29
 branch: vue
-commits: 832dbea.. # in progress
+commits: 832dbea..fdd235e (e6c181c spec / fbc6835 趋势修复 / a843ece 放弃记录 / fdd235e P1-8)
 ---
 
 # 趋势页非默认指标图 + 两项低优先级 UI 修复
 
 ## Report
+
+**What was built** — 修复了趋势页勾选非默认指标后图表不渲染的真根因：`allMetrics`
+是 `<script setup>` 的 const，v-for 被编译成 STABLE_FRAGMENT，静态 item 不进
+dynamicChildren，`vShow.updated` 永不执行；修法是给卡片加 `:data-metric` 动态 prop
+（pf=8）使其进入 dc 正常 patch，机制级教训沉淀在 HANDOFF 9.6。房间管理页 450px
+空白按用户决定**放弃**（期间实现过的"最近场次"补位已整体回退）。P1-8 键盘可达完成
+盘点：detail 榜单行 / sessions 行 / rooms 卡片的 role+tabindex+Enter 与 icon-only
+aria-label 其实早已铺开；实测发现唯一真缺口——房间卡焦点环被 `.art-card` 的
+`box-shadow: none !important` 压掉——已修复，沉淀 `scripts/kbd-regression.js`。
+
+**Verification** — `node scripts/ui-regression.js` → **9/9 PASS**（含新增断言：
+钻/时 349ms 渲染 ≤1s、取消后隐藏、二次勾选恢复、默认三图 3/3、无本地 5xx/JS 报错）；
+`node scripts/kbd-regression.js` → **5/5 PASS**（键盘路径聚焦 + getComputedStyle
+严格断言焦点环颜色/扩散 + Enter 激活）；`eslint` 16 errors 与 `vue-tsc` ~45 errors
+均与基线完全一致（全 PRE-EXISTING，位于未触碰文件/行）；独立评审结论
+**无 critical / 无 major**（4 minor，其中 2 条文档项评审时已同步、2 条测试覆盖项
+在评审后以 0451383 补齐并复跑 9/9）。UI 改动均按第九节约束截图目检 + 实测计算值，
+未靠源码猜测。
+
+**Journey log**:
+1. 根因定位先走了 HANDOFF 建议的"祖先链"方向，实测证明是误导：父卡
+   `display:none` 从未变过，"子节点 display:block + clientWidth=0"只是继承；
+   `el.__vnode.dirs.value=true` 是 dev 下 `traverseStaticChildren` 造成的假象，
+   **排查时不可信**——可信证据是包装 vShow 钩子计数 + MutationObserver 盯 style。
+2. "本地编译 128 KEYED 但浏览器跑 64 STABLE"的反差来自 compiler-sfc 调用缺
+   `bindingMetadata`；对照编译（传 setup-const）才复现根因——**对照编译必须带
+   与插件一致的选项**。
+3. better-sqlite3 ABI 坑：MIMO Node(ABI 145) 无预编译包，改用 nvm Node22
+   (ABI 127) 重装预编译，web-dashboard/Vite 均以 n22 运行（服务启动方式已验证）。
+4. 用户一句"不要房间管理页加别的了"推翻了已实现的补位方案——**产品范围上
+   用户现场指令 > spec 既有计划**，回退要干净（评审确认无残留）。
+5. 评审 minor 促成了测试补强：原"≤1s/反复勾选"验收只靠手工背书，现由
+   ui-regression 硬断言（实测 349ms）。
 
 ## [S1] Problem
 
@@ -34,7 +67,7 @@ commits: 832dbea.. # in progress
 - 验收行为：在 `/douyin/trends` 选择有数据的房间，勾选任意非默认指标
   （钻/时、弹幕/千人、礼物数、参与用户、时长），对应图表在 ≤1s 内渲染出曲线；
   取消勾选后再勾选仍能渲染；切换 X 轴粒度、刷新数据后仍正常。
-- 回归保护：默认三图不回归；`node scripts/ui-regression.js` 8/8 保持通过。
+- 回归保护：默认三图不回归；`node scripts/ui-regression.js` 9/9 保持通过。
 - 若修复涉及样式，必须用 `getComputedStyle` 实测实际值验证（HANDOFF 第九节约束）。
 
 ### S2.2 房间管理页下方空白 —— 已决定不修（2026-09-29）
@@ -76,12 +109,16 @@ commits: 832dbea.. # in progress
   `node scripts/ui-regression.js` 报 8/8 通过（covers: S2.1 前置）
 - [x] T2: 祖先链定位趋势图容器塌陷根因并修复 — acceptance: 浏览器勾选非默认
   指标 ≤1s 渲染曲线，反复勾选/取消、切 X 轴、刷新均正常；默认三图不回归；
-  ui-regression 8/8；已提交（covers: S2.1）
+  ui-regression 全量通过（终态 9/9）；已提交（covers: S2.1）
 - [ ] T3: ~~修复房间管理页下方纯空白~~ — 按用户决定放弃（S2.2），不实现
 - [x] T4: P1-8 键盘可达铺开到 detail 榜单行 / profile 表格 — acceptance:
   键盘 Tab 可达并激活，焦点环经 getComputedStyle 实测存在；已提交（covers: S2.3）
   —— 盘点后发现该说的"未铺开"已过时（detail 行早已补全、profile 表格不可点）；
   真正的问题是房间卡焦点环被 `box-shadow:none !important` 压掉，已修；
   回归沉淀为 `scripts/kbd-regression.js`（5/5）。
-- [ ] T5: 全量验证 + 独立评审 — acceptance: ui-regression 全量通过、相关检查
+- [x] T5: 全量验证 + 独立评审 — acceptance: ui-regression 全量通过、相关检查
   通过，评审子代理结论无 critical（covers: S2.1/S2.3; depends: T2,T4）
+  —— 终态：ui-regression 9/9、kbd-regression 5/5（均 exit 0）；eslint/vue-tsc
+  与基线一致（全 PRE-EXISTING）；独立评审结论 **无 critical / 无 major**，
+  4 条 minor：2 条文档同步项评审时已改；2 条测试覆盖项（≤1s 断言、反复勾选）
+  评审后以 `0451383` 补齐并复跑 9/9。

@@ -1,11 +1,12 @@
 <!--
-  状态监控
+  状态监控 —— 版式对齐 Art Design Pro X「监控 / 缓存监控」（frontend.artd.pro/#/monitor/cache）：
 
-  版式参照 Art Design Pro「监控总览」：
-    1. 操作条：左「刷新 + 自动刷新 + 检查时间」，右「标题 + 说明」
-    2. 总体状态条：左「状态标签 + 一句话说明」，右「四个 标签/值」
-    3. 四张数据卡：浅色图标块 + 小标题 + 大数字，下半部分横线分隔的两列小指标
-    4. 两栏：左「服务明细」、右「连接健康」（进度条）
+    1. Hero 头卡：h1 + 说明 + 右侧操作（状态标签 / 自动刷新 / 刷新状态 / 重启全部服务），
+       卡内嵌 4 个 kv 小卡（运行模式 / 监控脚本 / 监控房间 / 最近检查）
+    2. 四张指标 tile：标题 + 图标块 + 大数字 + 进度条 + 底部小标签/状态词
+    3. 两栏 1.38fr / 360px：左「服务明细」（kv grid + 服务行列表带操作按钮），
+       右「连接健康」（进度条）+「异常提醒」（dashed 空态）
+    4. 整宽「运行日志」（折叠）
 
   约定（改动前请先读）：
     - 状态取不到（statusError）时一律显示「状态未知」并禁用操作，不能用红色「未运行」
@@ -13,49 +14,13 @@
     - 重启类操作走 confirmDangerous 二次确认，且文案里写明影响面。
 -->
 <template>
-  <div class="douyin-page p-4">
-    <!-- 1. 操作条 -->
-    <div class="art-card mon-toolbar mb-5">
-      <div class="flex items-center gap-3 flex-wrap">
-        <el-button :loading="loading" @click="refresh">
-          <ArtSvgIcon icon="ri:refresh-line" class="mr-1" />
-          刷新
-        </el-button>
-        <span class="dy-switch-btn">
-          <span class="dy-switch-btn__label">自动刷新</span>
-          <el-switch v-model="autoRefresh" />
-        </span>
-        <span class="mon-stamp">
-          <ArtSvgIcon icon="ri:time-line" class="text-sm" />
-          {{ status?.checkedAt ? fmtClock(status.checkedAt) : '—' }}
-          <span class="text-g-400">{{ today }}</span>
-        </span>
-        <el-button
-          type="primary"
-          class="ml-auto"
-          :loading="busy === 'restart'"
-          :disabled="Boolean(statusError) && !status"
-          @click="handleRestart"
-        >
-          <ArtSvgIcon icon="ri:restart-line" class="mr-1" />
-          重启全部服务
-        </el-button>
-      </div>
-      <div class="mon-toolbar__title">
-        <h2 class="mon-title">状态监控</h2>
-        <p class="mon-subtitle">
-          聚合 Go 抓取代理、监控脚本与各房间 WebSocket 连接的健康状态，用于快速判断当前是否在正常采集。
-        </p>
-      </div>
-    </div>
-
+  <div class="douyin-page p-4 flex flex-col gap-4">
     <!-- 状态取不到：明确说明，而不是把下面渲染成红色「未运行」 -->
     <el-alert
       v-if="statusError"
       type="error"
       :closable="false"
       show-icon
-      class="mb-5"
       :title="
         status
           ? '状态刷新失败，下方显示的是上一次成功获取的状态'
@@ -70,107 +35,144 @@
       </div>
     </el-alert>
 
-    <!-- 2. 总体状态条 -->
-    <div class="art-card mon-bar mb-5">
-      <div class="mon-bar__left">
-        <span class="mon-chip" :class="overall.chipClass">
-          <ArtSvgIcon :icon="overall.icon" class="text-xs" />
-          {{ overall.chip }}
-        </span>
-        <span class="mon-bar__text">{{ overall.detail }}</span>
-      </div>
-      <div class="mon-bar__right">
-        <div v-for="f in overallFacts" :key="f.label" class="mon-fact">
-          <div class="mon-fact__label">{{ f.label }}</div>
-          <div class="mon-fact__value" :class="f.tone">{{ f.value }}</div>
+    <!-- ① Hero 头卡 -->
+    <section class="art-card p-5">
+      <div class="flex flex-wrap items-start justify-between gap-4">
+        <div class="min-w-0 flex-1">
+          <h1 class="text-[20px] font-semibold tracking-tight text-g-900 m-0">状态监控</h1>
+          <p class="mt-2 text-sm leading-7 text-g-600 max-w-2xl">
+            聚合 Go 抓取代理、监控脚本与各房间 WebSocket
+            连接的健康状态，用于快速判断当前是否在正常采集。
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="mon-chip" :class="overall.chipClass">
+            <ArtSvgIcon :icon="overall.icon" class="text-xs" />
+            {{ overall.chip }}
+          </span>
+          <span class="dy-switch-btn">
+            <span class="dy-switch-btn__label">自动刷新</span>
+            <el-switch v-model="autoRefresh" />
+          </span>
+          <el-button :loading="loading" @click="refresh">
+            <ArtSvgIcon icon="ri:refresh-line" class="mr-1" />
+            刷新状态
+          </el-button>
+          <el-button
+            type="primary"
+            :loading="busy === 'restart'"
+            :disabled="Boolean(statusError) && !status"
+            @click="handleRestart"
+          >
+            <ArtSvgIcon icon="ri:restart-line" class="mr-1" />
+            重启全部服务
+          </el-button>
         </div>
       </div>
-    </div>
 
-    <!-- 3. 四张数据卡 -->
-    <div class="mon-grid-4 mb-5">
-      <div v-for="m in metrics" :key="m.label" class="art-card mon-metric">
-        <div class="mon-metric__top">
-          <div class="mon-metric__icon">
-            <ArtSvgIcon :icon="m.icon" class="text-lg" />
-          </div>
+      <!-- hero 内嵌 kv 小卡 -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5">
+        <div v-for="f in heroKv" :key="f.label" class="mon-kv">
+          <div class="mon-kv__label">{{ f.label }}</div>
+          <div class="mon-kv__value" :class="f.tone || 'text-g-900'">{{ f.value }}</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ② 四张指标 tile -->
+    <section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+      <article v-for="m in tiles" :key="m.label" class="art-card p-5">
+        <div class="flex items-start justify-between gap-3">
           <div class="min-w-0">
-            <div class="mon-metric__label">{{ m.label }}</div>
+            <div class="text-sm font-medium text-g-600">{{ m.label }}</div>
             <ArtCountTo
               v-if="m.count !== null"
-              class="mon-metric__num"
+              class="mt-3 block truncate text-3xl font-semibold leading-none text-g-900"
               :target="m.count"
               :duration="1200"
-              :prefix="m.prefix"
               :suffix="m.suffix"
             />
-            <div v-else class="mon-metric__num">{{ m.text }}</div>
-          </div>
-        </div>
-        <div class="mon-metric__bottom">
-          <div v-for="s in m.subs" :key="s.label" class="mon-mini">
-            <div class="mon-mini__label">{{ s.label }}</div>
-            <div class="mon-mini__value">{{ s.value }}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 4. 两栏：服务明细 / 连接健康 -->
-    <el-row :gutter="20">
-      <el-col :xs="24" :md="14" :lg="14">
-        <div class="art-card mon-panel mb-5">
-          <div class="mon-panel__head">
-            <div>
-              <h4 class="mon-panel__title">服务明细</h4>
-              <p class="mon-panel__sub">每项可单独重启，互不影响</p>
+            <div v-else class="mt-3 truncate text-3xl font-semibold leading-none text-g-900">
+              {{ m.text }}
             </div>
-            <span class="mon-chip" :class="overall.chipClass">{{ overall.chip }}</span>
           </div>
+          <div class="size-9 rounded-lg flex-cc bg-theme/10 shrink-0">
+            <ArtSvgIcon :icon="m.icon" class="text-base text-theme" />
+          </div>
+        </div>
+        <div class="mt-4 h-2 overflow-hidden rounded-full bg-g-100">
+          <div
+            class="h-full rounded-full"
+            :style="{ width: m.bar.percent + '%', backgroundColor: m.bar.color }"
+          />
+        </div>
+        <div class="mt-3 flex items-center justify-between gap-3 text-xs">
+          <span class="text-g-500">{{ m.footLabel }}</span>
+          <span class="truncate font-medium text-g-700">{{ m.footValue }}</span>
+        </div>
+      </article>
+    </section>
 
-          <div v-loading="loading && !status" element-loading-text="检测中…">
-            <div
-              v-for="(item, i) in items"
-              :key="item.key"
-              class="mon-service"
-              :class="i ? 'border-t border-g-100' : ''"
-            >
-              <ArtSvgIcon :icon="item.icon" class="text-base shrink-0" :class="item.iconTone" />
-              <div class="min-w-0 flex-1">
-                <div class="flex items-center gap-2">
-                  <span class="text-sm font-medium text-g-900">{{ item.name }}</span>
-                  <span class="mon-dot" :class="item.dotClass" />
-                  <span class="text-xs font-medium" :class="item.tone">{{ item.stateText }}</span>
-                </div>
-                <div class="text-xs text-g-500 mt-1 truncate" :title="item.detail">
-                  {{ item.detail }}
-                </div>
+    <!-- ③ 两栏：服务明细 / 连接健康 + 异常提醒 -->
+    <section class="grid grid-cols-1 xl:grid-cols-[minmax(0,1.38fr)_minmax(360px,0.8fr)] gap-4">
+      <!-- 左：服务明细 -->
+      <article class="art-card p-5">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div class="min-w-0">
+            <h3 class="text-lg font-semibold text-g-900 m-0">服务明细</h3>
+            <p class="mt-1 text-sm leading-6 text-g-600">每项可单独重启，互不影响。</p>
+          </div>
+          <span class="mon-chip" :class="overall.chipClass">{{ overall.chip }}</span>
+        </div>
+
+        <!-- 服务事实 kv -->
+        <div class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div v-for="f in serviceKv" :key="f.label" class="mon-kv">
+            <div class="mon-kv__label">{{ f.label }}</div>
+            <div class="mon-kv__value text-g-900" :title="f.value">{{ f.value }}</div>
+          </div>
+        </div>
+
+        <!-- 服务行（保留逐项重启） -->
+        <div class="mt-5" v-loading="loading && !status" element-loading-text="检测中…">
+          <div
+            v-for="(item, i) in items"
+            :key="item.key"
+            class="mon-service"
+            :class="i ? 'border-t border-g-100' : ''"
+          >
+            <ArtSvgIcon :icon="item.icon" class="text-base shrink-0" :class="item.iconTone" />
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-medium text-g-900">{{ item.name }}</span>
+                <span class="mon-dot" :class="item.dotClass" />
+                <span class="text-xs font-medium" :class="item.tone">{{ item.stateText }}</span>
               </div>
-              <el-button
-                size="small"
-                plain
-                class="shrink-0"
-                :loading="busy === item.action.act"
-                :disabled="!statusKnown"
-                @click="actWithConfirm(item.action.act)"
-              >
-                <ArtSvgIcon :icon="item.action.icon" class="mr-1" />
-                {{ item.action.text }}
-              </el-button>
+              <div class="text-xs text-g-500 mt-1 truncate" :title="item.detail">
+                {{ item.detail }}
+              </div>
             </div>
+            <el-button
+              size="small"
+              plain
+              class="shrink-0"
+              :loading="busy === item.action.act"
+              :disabled="!statusKnown"
+              @click="actWithConfirm(item.action.act)"
+            >
+              <ArtSvgIcon :icon="item.action.icon" class="mr-1" />
+              {{ item.action.text }}
+            </el-button>
           </div>
         </div>
-      </el-col>
+      </article>
 
-      <el-col :xs="24" :md="10" :lg="10">
-        <div class="art-card mon-panel mb-5">
-          <div class="mon-panel__head">
-            <div>
-              <h4 class="mon-panel__title">连接健康</h4>
-              <p class="mon-panel__sub">各房间 WebSocket 连接与采集概况</p>
-            </div>
-          </div>
+      <!-- 右：连接健康 + 异常提醒 -->
+      <article class="art-card p-5">
+        <h3 class="text-lg font-semibold text-g-900 m-0">连接健康</h3>
+        <p class="mt-1 text-sm leading-6 text-g-600">各房间 WebSocket 连接与采集概况。</p>
 
+        <div class="mt-5">
           <div v-for="b in bars" :key="b.label" class="mon-bar-item">
             <div class="mon-bar-item__row">
               <span class="mon-bar-item__label">{{ b.label }}</span>
@@ -184,67 +186,57 @@
               class="[&_.el-progress-bar__outer]:bg-[rgb(240_240_240)]"
             />
           </div>
+        </div>
 
-          <!-- 异常提醒放在这一栏，和健康度一起读 -->
-          <div class="mon-panel__divider"></div>
-          <div class="mon-panel__head">
-            <div>
-              <h4 class="mon-panel__title">异常提醒</h4>
-              <p class="mon-panel__sub">
-                {{ issues.length ? `${issues.length} 项待处理` : '未发现异常' }}
-              </p>
-            </div>
-          </div>
-
-          <div class="flex flex-col">
-            <template v-if="issues.length">
-              <div
-                v-for="(it, i) in issues"
-                :key="i"
-                class="flex items-start gap-2.5 py-2.5"
-                :class="i ? 'border-t border-g-100' : ''"
-              >
-                <ArtSvgIcon
-                  :icon="it.level === 'error' ? 'ri:error-warning-line' : 'ri:alert-line'"
-                  class="text-base mt-0.5 shrink-0"
-                  :class="it.level === 'error' ? 'text-danger' : 'text-warning'"
-                />
-                <span
-                  class="flex-1 min-w-0 text-sm leading-relaxed"
-                  :class="it.level === 'error' ? 'text-danger' : 'text-warning'"
-                >
-                  {{ it.text }}
-                </span>
-              </div>
-            </template>
-            <div
-              v-else
-              class="flex items-center gap-2.5 rounded-xl px-4 py-3.5"
-              :class="statusKnown ? 'bg-success/10' : 'bg-g-100/60'"
-            >
-              <ArtSvgIcon
-                :icon="statusKnown ? 'ri:checkbox-circle-line' : 'ri:question-line'"
-                class="text-base shrink-0"
-                :class="statusKnown ? 'text-success' : 'text-g-500'"
-              />
-              <span
-                class="text-sm font-medium"
-                :class="statusKnown ? 'text-success' : 'text-g-700'"
-              >
-                {{ statusKnown ? '代理、监控脚本与连接均正常' : '状态未知，无法判断是否存在异常' }}
-              </span>
-            </div>
+        <div class="mon-panel__divider"></div>
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div class="min-w-0">
+            <h4 class="text-base font-semibold text-g-900 m-0">异常提醒</h4>
+            <p class="mt-1 text-xs leading-5 text-g-500">
+              {{ issues.length ? `${issues.length} 项待处理` : '未发现异常' }}
+            </p>
           </div>
         </div>
-      </el-col>
-    </el-row>
 
-    <!-- 运行日志 -->
-    <div class="art-card mon-panel mb-5">
-      <div class="mon-panel__head">
-        <div>
-          <h4 class="mon-panel__title">运行日志</h4>
-          <p class="mon-panel__sub">代理与监控脚本的最近输出</p>
+        <div class="flex flex-col mt-3">
+          <template v-if="issues.length">
+            <div
+              v-for="(it, i) in issues"
+              :key="i"
+              class="flex items-start gap-2.5 py-2.5"
+              :class="i ? 'border-t border-g-100' : ''"
+            >
+              <ArtSvgIcon
+                :icon="it.level === 'error' ? 'ri:error-warning-line' : 'ri:alert-line'"
+                class="text-base mt-0.5 shrink-0"
+                :class="it.level === 'error' ? 'text-danger' : 'text-warning'"
+              />
+              <span
+                class="flex-1 min-w-0 text-sm leading-relaxed"
+                :class="it.level === 'error' ? 'text-danger' : 'text-warning'"
+              >
+                {{ it.text }}
+              </span>
+            </div>
+          </template>
+          <!-- 官方 dashed 空态 -->
+          <div
+            v-else
+            class="rounded-lg border border-dashed border-g-200 px-4 py-6 text-center text-sm"
+            :class="statusKnown ? 'text-g-500' : 'text-g-600'"
+          >
+            {{ statusKnown ? '代理、监控脚本与连接均正常' : '状态未知，无法判断是否存在异常' }}
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <!-- ④ 运行日志 -->
+    <article class="art-card p-5">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div class="min-w-0">
+          <h3 class="text-lg font-semibold text-g-900 m-0">运行日志</h3>
+          <p class="mt-1 text-sm leading-6 text-g-600">代理与监控脚本的最近输出。</p>
         </div>
         <button
           type="button"
@@ -263,7 +255,7 @@
       </div>
       <div class="log-collapse" :class="showLog ? 'log-collapse--open' : ''">
         <div id="dy-status-log" class="log-collapse__inner">
-          <div class="rounded-xl bg-g-100/50 px-4 py-3 max-h-80 overflow-auto mt-2">
+          <div class="rounded-xl bg-g-100/50 px-4 py-3 max-h-80 overflow-auto mt-3">
             <template v-if="status?.logLines?.length">
               <div
                 v-for="(l, i) in status.logLines"
@@ -278,7 +270,7 @@
           </div>
         </div>
       </div>
-    </div>
+    </article>
 
     <!-- 操作结果 -->
     <el-dialog v-model="dialogVisible" :title="dialog.title" width="520px" class="dy-status-dialog">
@@ -337,12 +329,6 @@
     ok: true
   })
 
-  const today = computed(() => {
-    const d = new Date()
-    const p = (n: number) => String(n).padStart(2, '0')
-    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
-  })
-
   const proxyHealthy = computed(() => Boolean(status.value?.proxy?.healthy))
   const proxyReachable = computed(() => Boolean(status.value?.proxy?.reachable))
   const daemonRunning = computed(() => Boolean(status.value?.daemon?.running))
@@ -368,8 +354,6 @@
         chip: '未知',
         chipClass: 'mon-chip--unknown',
         icon: 'ri:question-line',
-        dotClass: 'bg-g-300',
-        tone: 'text-g-500',
         detail: statusError.value || '未能取到服务状态，无法判断当前是否正常'
       }
     }
@@ -378,8 +362,6 @@
         chip: '异常',
         chipClass: 'mon-chip--danger',
         icon: 'ri:error-warning-line',
-        dotClass: 'bg-danger',
-        tone: 'text-danger',
         detail: `检测到 ${issues.value.length} 项异常，详见下方「异常提醒」`
       }
     }
@@ -388,8 +370,6 @@
         chip: '风险',
         chipClass: 'mon-chip--danger',
         icon: 'ri:alert-line',
-        dotClass: 'bg-warning',
-        tone: 'text-warning',
         detail: '监控未完全运行，部分功能不可用，请逐项检查「服务明细」'
       }
     }
@@ -397,111 +377,129 @@
       chip: '已连接',
       chipClass: 'mon-chip--ok',
       icon: 'ri:link',
-      dotClass: 'bg-success',
-      tone: 'text-success',
       detail: `代理与监控脚本运行正常，${connectedRooms.value}/${configuredRooms.value} 个房间连接就绪，采集指标读取正常`
     }
   })
 
-  /** 总体状态条右侧的「标签 / 值」 */
-  const overallFacts = computed(() => {
+  /** Hero 内嵌 kv 小卡（缓存监控页 hero 的「引擎/状态/Key 数量/内存」位） */
+  const heroKv = computed(() => {
     const unknown = !statusKnown.value
-    const recording = recordingRooms.value
     return [
-      {
-        label: '代理健康',
-        value: unknown ? '未知' : proxyHealthy.value ? '正常' : '异常',
-        tone: unknown ? 'text-g-500' : proxyHealthy.value ? 'text-success' : 'text-danger'
-      },
+      { label: '运行模式', value: unknown ? '—' : '嵌入式监控' },
       {
         label: '监控脚本',
-        value: unknown ? '未知' : daemonRunning.value ? '运行中' : '未运行',
+        value: unknown ? '状态未知' : daemonRunning.value ? '运行中' : '未运行',
         tone: unknown ? 'text-g-500' : daemonRunning.value ? 'text-success' : 'text-danger'
       },
       {
-        label: '正在直播',
-        value: unknown ? '—' : `${liveRooms.value} 个`,
+        label: '监控房间',
+        value: unknown ? '—' : `${configuredRooms.value} 个`,
         tone: 'text-g-900'
       },
       {
-        label: '正在录制',
-        value: unknown ? '—' : `${recording} 个`,
-        tone: recording > 0 ? 'text-danger' : 'text-g-900'
+        label: '最近检查',
+        value: status.value?.checkedAt ? fmtClock(status.value.checkedAt) : '—',
+        tone: 'text-g-900'
       }
     ]
   })
 
-  /**
-   * 四张数据卡（版式对齐监控总览：浅色图标块 + 小标题 + 大数字，
-   * 下半部分是两个小指标）。`count` 为 null 表示值不是纯数字，走 text 分支。
-   */
-  const metrics = computed(() => {
+  /** 四张指标 tile（缓存监控页的命中率/Key 数量/Ops/s/客户端连接位） */
+  const tiles = computed(() => {
     const s = status.value
-    const w = s?.ws
     const unknown = !statusKnown.value
     const rooms = configuredRooms.value
     const connected = connectedRooms.value
     const recording = recordingRooms.value
     const live = liveRooms.value
-
+    const pct = (n: number) => (unknown || !rooms ? 0 : Math.round((n / rooms) * 100))
     return [
       {
         label: '监控房间',
         icon: 'ri:live-line',
         count: unknown ? 0 : rooms,
-        prefix: '',
         suffix: ' 个',
         text: '',
-        subs: [
-          { label: '已连接', value: unknown ? '—' : `${connected} 个` },
-          { label: '正在直播', value: unknown ? '—' : `${live} 个` }
-        ]
+        bar: { percent: pct(connected), color: 'var(--dy-text-success)' },
+        footLabel: '已连接',
+        footValue: unknown ? '—' : `${connected} 个`
       },
       {
         label: 'WebSocket 连接',
         icon: 'ri:link',
         count: unknown ? 0 : connected,
-        prefix: '',
         suffix: rooms ? ` / ${rooms}` : ' 个',
         text: '',
-        subs: [
-          {
-            label: '连接率',
-            value: unknown || !rooms ? '—' : `${Math.round((connected / rooms) * 100)}%`
-          },
-          { label: '数据来源', value: w?.source === 'log-stale' ? '历史日志' : '实时' }
-        ]
+        bar: {
+          percent: pct(connected),
+          color:
+            !unknown && connected === rooms && rooms > 0
+              ? 'var(--dy-text-success)'
+              : 'var(--dy-text-warning)'
+        },
+        footLabel: '连接率',
+        footValue: unknown || !rooms ? '—' : `${pct(connected)}%`
       },
       {
         label: '录制中',
         icon: 'ri:radio-line',
         count: unknown ? 0 : recording,
-        prefix: '',
         suffix: ' 个',
         text: '',
-        subs: [
-          { label: '正在直播', value: unknown ? '—' : `${live} 个` },
-          { label: '空闲房间', value: unknown ? '—' : `${Math.max(rooms - live, 0)} 个` }
-        ]
+        bar: { percent: pct(recording), color: 'var(--dy-text-danger)' },
+        footLabel: '正在直播',
+        footValue: unknown ? '—' : `${live} 个`
       },
       {
         // 代理版本是字符串，用不了滚动数字
         label: 'Go 抓取代理',
         icon: 'ri:server-line',
         count: null,
+        suffix: '',
         text: unknown ? '—' : s?.proxy?.health?.tag || `:${s?.proxy?.port ?? 1088}`,
-        subs: [
-          { label: '监听端口', value: unknown ? '—' : String(s?.proxy?.port ?? 1088) },
-          {
-            label: '健康检查',
-            value: unknown ? '—' : proxyHealthy.value ? '通过' : proxyReachable.value ? '异常' : '未运行'
-          }
-        ]
+        bar: {
+          percent: unknown ? 0 : proxyHealthy.value ? 100 : 0,
+          color: !unknown && proxyHealthy.value ? 'var(--dy-text-success)' : 'var(--dy-text-danger)'
+        },
+        footLabel: '健康检查',
+        footValue: unknown
+          ? '—'
+          : proxyHealthy.value
+            ? '通过'
+            : proxyReachable.value
+              ? '异常'
+              : '未运行'
       }
     ]
   })
 
-  /** 连接健康进度条（对齐监控总览里「运行健康」的进度条组） */
+  /** 「服务明细」顶部 kv（缓存监控页「连接与指标」的 kv grid 位） */
+  const serviceKv = computed(() => {
+    const s = status.value
+    const unknown = !statusKnown.value
+    return [
+      { label: '代理地址', value: unknown ? '—' : `127.0.0.1:${s?.proxy?.port ?? 1088}` },
+      { label: '代理版本', value: unknown ? '—' : s?.proxy?.health?.tag || '—' },
+      { label: '监控 PID', value: unknown ? '—' : String(s?.daemon?.pid ?? '—') },
+      {
+        label: '控制通道',
+        value: unknown ? '状态未知' : s?.daemon?.controlChannel ? '正常' : '不可用'
+      },
+      {
+        label: '数据来源',
+        value: unknown
+          ? '—'
+          : s?.ws?.source === 'log'
+            ? '监控日志'
+            : s?.ws?.source === 'socket'
+              ? '控制通道'
+              : '无'
+      },
+      { label: '运行平台', value: unknown ? '—' : s?.platform || '—' }
+    ]
+  })
+
+  /** 连接健康进度条 */
   const bars = computed(() => {
     const unknown = !statusKnown.value
     const rooms = configuredRooms.value
@@ -514,7 +512,11 @@
         label: '连接就绪',
         text: unknown ? '未知' : `${connected} / ${rooms}`,
         percentage: pct(connected),
-        color: unknown ? 'var(--dy-text-muted)' : connected === rooms && rooms > 0 ? 'var(--dy-text-success)' : 'var(--dy-text-warning)'
+        color: unknown
+          ? 'var(--dy-text-muted)'
+          : connected === rooms && rooms > 0
+            ? 'var(--dy-text-success)'
+            : 'var(--dy-text-warning)'
       },
       {
         label: '正在直播',
@@ -616,13 +618,7 @@
       dotClass: !w?.rooms ? 'bg-g-300' : wsAllOk ? 'bg-success' : 'bg-warning',
       tone: !w?.rooms ? 'text-g-500' : tone(wsAllOk, true),
       iconTone: !w?.rooms ? 'text-g-400' : iconTone(wsAllOk, true),
-      stateText: unknown
-        ? '状态未知'
-        : !w?.rooms
-          ? '无连接'
-          : wsAllOk
-            ? '全部已连接'
-            : '部分断开',
+      stateText: unknown ? '状态未知' : !w?.rooms ? '无连接' : wsAllOk ? '全部已连接' : '部分断开',
       detail: unknown
         ? '未能取到状态，无法判断连接情况'
         : w?.rooms
@@ -792,221 +788,32 @@
 </script>
 
 <style scoped lang="scss">
-  /* 工具条控件圆角/间距与卡片统一 */
-  @use '@styles/custom/douyin-toolbar.scss';
-
-  /* ===== 操作条：左侧操作 + 右侧标题说明（对齐监控总览）===== */
-  .mon-toolbar {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 16px 24px;
-    padding: 20px;
-    flex-wrap: wrap;
-  }
-
-  .mon-toolbar__title {
-    text-align: right;
+  /* ===== kv 小卡（官方 hero/面板内嵌的 label+value 卡） ===== */
+  .mon-kv {
     min-width: 0;
+    padding: 10px 14px;
+    border: 1px solid var(--art-gray-200);
+    border-radius: 8px;
   }
 
-  .mon-title {
-    font-size: 20px;
-    font-weight: 700;
-    line-height: 1.2;
-    color: var(--dy-text-primary);
-    margin: 0;
-  }
-
-  .mon-subtitle {
+  .mon-kv__label {
     font-size: 12px;
+    line-height: 1.4;
     color: var(--dy-text-muted);
-    margin: 6px 0 0;
-    line-height: 1.6;
-    max-width: 560px;
   }
 
-  .mon-stamp {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    height: 36px;
-    padding: 0 12px;
-    border: 1px solid var(--art-gray-300);
-    border-radius: 10px;
-    font-size: 12px;
-    color: var(--dy-text-secondary);
-    font-variant-numeric: tabular-nums;
-  }
-
-
-
-
-
-  /* ===== 总体状态条 ===== */
-  .mon-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px 32px;
-    padding: 16px 20px;
-    flex-wrap: wrap;
-  }
-
-  .mon-bar__left {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-width: 0;
-    flex: 1;
-  }
-
-  .mon-bar__text {
-    font-size: 13px;
-    color: var(--dy-text-secondary);
-    min-width: 0;
-  }
-
-  .mon-bar__right {
-    display: flex;
-    align-items: center;
-    gap: 40px;
-    flex-wrap: wrap;
-  }
-
-  .mon-fact {
-    min-width: 72px;
-  }
-
-  .mon-fact__label {
-    font-size: 12px;
-    color: var(--dy-text-muted);
-    margin-bottom: 4px;
-  }
-
-  .mon-fact__value {
-    font-size: 16px;
-    font-weight: 600;
-    line-height: 1.2;
-  }
-
-  /* ===== 四张数据卡 ===== */
-  .mon-grid-4 {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 20px;
-  }
-
-  @media (max-width: 1200px) {
-    .mon-grid-4 {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-
-  @media (max-width: 700px) {
-    .mon-grid-4 {
-      grid-template-columns: minmax(0, 1fr);
-      gap: 12px;
-    }
-  }
-
-  .mon-metric {
-    padding: 20px 20px 0;
-    transition: transform var(--dy-dur-base) var(--dy-ease-out);
-  }
-
-  @media (hover: hover) and (pointer: fine) {
-    .mon-metric:hover {
-      transform: translateY(-2px);
-    }
-  }
-
-  .mon-metric__top {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    padding-bottom: 16px;
-  }
-
-  /* 浅色方块图标（对齐监控总览：不是实心彩块） */
-  .mon-metric__icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    background: var(--art-gray-100);
-    color: var(--dy-text-secondary);
-    flex-shrink: 0;
-  }
-
-  .mon-metric__label {
-    font-size: 13px;
-    color: var(--dy-text-secondary);
-    margin-bottom: 6px;
-  }
-
-  .mon-metric__num {
-    font-size: 26px;
-    font-weight: 600;
-    line-height: 1.1;
-    color: var(--dy-text-primary);
-    font-variant-numeric: tabular-nums;
-  }
-
-  /* 下半部分：横线分隔的两列小指标 */
-  .mon-metric__bottom {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-    margin: 0 -20px;
-    padding: 12px 20px;
-    border-top: 1px solid var(--art-gray-200);
-  }
-
-  .mon-mini {
-    min-width: 0;
-  }
-
-  .mon-mini__label {
-    font-size: 12px;
-    color: var(--dy-text-muted);
-    margin-bottom: 4px;
-  }
-
-  .mon-mini__value {
+  .mon-kv__value {
+    margin-top: 6px;
     font-size: 14px;
-    font-weight: 500;
-    color: var(--dy-text-secondary);
-  }
-
-  /* ===== 两栏面板 ===== */
-  .mon-panel {
-    padding: 20px;
-  }
-
-  .mon-panel__head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
-    padding-bottom: 14px;
-  }
-
-  .mon-panel__title {
-    font-size: 16px;
     font-weight: 600;
-    color: var(--dy-text-primary);
-    margin: 0;
+    line-height: 1.35;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-variant-numeric: tabular-nums;
   }
 
-  .mon-panel__sub {
-    font-size: 12px;
-    color: var(--dy-text-muted);
-    margin: 4px 0 0;
-  }
-
+  /* ===== 两栏面板公共 ===== */
   .mon-panel__divider {
     height: 1px;
     background: var(--art-gray-200);
@@ -1078,10 +885,6 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .mon-metric:hover {
-      transform: none;
-    }
-
     .log-collapse,
     .log-caret {
       transition-duration: 1ms;

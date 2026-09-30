@@ -26,13 +26,22 @@
           </div>
         </div>
 
-        <!-- 关键指标（数字口径与全站一致：万/亿缩写 + 精确值悬浮，P1-7） -->
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mt-4 pt-4 border-t border-dashed border-t-d">
-          <div v-for="s in stats" :key="s.label">
-            <div class="text-xl font-semibold text-g-900 leading-none" :title="s.title">
-              {{ s.value }}
+        <!-- 关键指标：官方 tile 语言（图标块 + 数字 + 标签）；数字口径 P1-7 -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mt-4 pt-4 border-t border-g-100">
+          <div
+            v-for="s in stats"
+            :key="s.label"
+            class="flex items-center gap-3 px-4 py-3 border border-g-300/85 rounded-xl"
+          >
+            <div class="size-9 rounded-lg flex-cc bg-theme/10 shrink-0">
+              <ArtSvgIcon :icon="s.icon" class="text-base text-theme" />
             </div>
-            <div class="text-xs text-g-500 mt-1">{{ s.label }}</div>
+            <div class="min-w-0">
+              <div class="text-xl font-medium leading-none" :title="s.title">
+                {{ s.value }}
+              </div>
+              <div class="text-xs text-g-500 mt-1.5">{{ s.label }}</div>
+            </div>
           </div>
         </div>
       </div>
@@ -214,15 +223,16 @@
 
   const stats = computed(() => {
     const p = profile.value
-    const raw: { label: string; value: number | undefined }[] = [
-      { label: '累计钻石', value: p?.total_diamonds },
-      { label: '送礼次数', value: p?.gift_count },
-      { label: '礼物种类', value: p?.gift_types_count },
-      { label: '弹幕条数', value: p?.danmakuCount },
-      { label: '活跃场次', value: p?.activeSessionCount }
+    const raw: { label: string; value: number | undefined; icon: string }[] = [
+      { label: '累计钻石', value: p?.total_diamonds, icon: 'ri:diamond-line' },
+      { label: '送礼次数', value: p?.gift_count, icon: 'ri:gift-2-line' },
+      { label: '礼物种类', value: p?.gift_types_count, icon: 'ri:price-tag-3-line' },
+      { label: '弹幕条数', value: p?.danmakuCount, icon: 'ri:chat-3-line' },
+      { label: '活跃场次', value: p?.activeSessionCount, icon: 'ri:live-line' }
     ]
     return raw.map((s) => ({
       label: s.label,
+      icon: s.icon,
       value: s.value === undefined ? '-' : fmtNum(s.value),
       title: s.value === undefined ? '' : fmtTitle(s.value)
     }))

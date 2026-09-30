@@ -1,32 +1,13 @@
 /**
  * 抖音监控页 · 工具条统一样式
  *
- * 背景：Element Plus 控件默认圆角 6px、内边距偏紧，而 art-card 圆角是 10px，
- * 直接混排会显得"控件不像卡片体系里的东西"（房间管理页已单独修过这个问题）。
- * 这里抽成一份公共样式，供各页工具条复用，保证：
- *   - 控件圆角与卡片统一（10px）
+ * 控件口径回到 **Art Design Pro 官方默认**（element-plus 基础圆角 6px、白底描边），
+ * 不再自创 10px 灰底样式 —— 官方示例页（dashboard/analysis 等）就是这个控件语言。
+ * 这里只保留官方之外真正必要的三件事：
  *   - 控件间距统一（12px），避免 8/20 混排
- *   - 输入框用灰底无描边风格，悬停/聚焦有反馈
+ *   - 开关主题色对齐
+ *   - 等高开关包装（对比度问题，见下）
  */
-
-.dy-toolbar :deep(.el-button) {
-  border-radius: 10px;
-}
-
-.dy-toolbar :deep(.el-input__wrapper) {
-  border-radius: 10px;
-  background: var(--art-gray-100);
-  box-shadow: none;
-  transition: box-shadow 0.2s ease;
-}
-
-.dy-toolbar :deep(.el-input__wrapper:hover) {
-  box-shadow: 0 0 0 1px var(--art-gray-400) inset;
-}
-
-.dy-toolbar :deep(.el-input__wrapper.is-focus) {
-  box-shadow: 0 0 0 1px var(--theme-color) inset;
-}
 
 /* 开关与按钮视觉重量对齐 */
 .dy-toolbar :deep(.el-switch) {
@@ -49,7 +30,7 @@
   height: 36px;
   padding: 0 12px;
   border: 1px solid var(--art-gray-300);
-  border-radius: 10px;
+  border-radius: 6px;
   background: var(--default-box-color);
   transition: border-color var(--dy-dur-fast, 0.16s) ease;
   user-select: none;

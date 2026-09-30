@@ -23,11 +23,11 @@
             </span>
             <template v-if="lastQuery">
               <span class="w-px h-3 bg-g-300" />
-              <span>关键词「{{ lastQuery }}」</span>
+              <el-tag size="small" effect="plain">关键词 {{ lastQuery }}</el-tag>
             </template>
             <template v-if="lastScope">
               <span class="w-px h-3 bg-g-300" />
-              <span>{{ lastScope }}</span>
+              <el-tag size="small" effect="plain" type="info">{{ lastScope }}</el-tag>
             </template>
           </div>
         </div>
@@ -118,7 +118,9 @@
         <div class="flex items-center justify-between mb-3 px-1">
           <span class="text-sm text-g-600">
             共 <b class="text-g-900">{{ sortedUsers.length }}</b> 个用户
-            <span class="text-g-400">（仅进场记录的用户排在最后）</span>
+            <span v-if="entryCount" class="text-g-400">
+              · 其中仅进场 {{ entryCount }} 个（排在最后）
+            </span>
           </span>
           <el-button size="small" text @click="doSearch">
             <ArtSvgIcon icon="ri:refresh-line" class="mr-1" />
@@ -186,72 +188,74 @@
                 </el-button>
               </div>
 
-              <!-- 三格统计：无数据的格子弱化为虚线占位，避免一排“0”看着像坏了 -->
-              <div class="grid grid-cols-3 gap-2 mt-4">
-                <div
-                  class="rounded-xl px-3 py-2"
-                  :class="hasSessions(u) ? 'bg-g-100/50' : 'bg-g-100/30 border border-dashed border-g-200'"
-                >
-                  <div class="text-xs text-g-500 flex items-center gap-1">
-                    <ArtSvgIcon icon="ri:live-line" class="text-g-400" />参与场次
-                  </div>
-                  <div class="mt-0.5 flex items-baseline gap-1">
-                    <span
-                      class="text-base font-medium leading-none"
-                      :class="hasSessions(u) ? 'text-g-900' : 'text-g-400'"
-                    >
-                      {{ hasSessions(u) ? u.sessions.length : '—' }}
-                    </span>
-                    <span class="text-xs text-g-500">场</span>
-                  </div>
-                </div>
-                <div
-                  class="rounded-xl px-3 py-2"
-                  :class="
-                    u.total_diamonds ? 'bg-g-100/50' : 'bg-g-100/30 border border-dashed border-g-200'
-                  "
-                >
-                  <div class="text-xs text-g-500 flex items-center gap-1">
-                    <ArtSvgIcon icon="ri:diamond-line" class="text-g-400" />累计钻石
-                  </div>
-                  <div class="mt-0.5 flex items-baseline gap-1">
-                    <span
-                      class="text-base font-medium leading-none"
-                      :class="u.total_diamonds ? 'text-theme' : 'text-g-400'"
-                    >
-                      {{ u.total_diamonds ? fmtNum(u.total_diamonds) : '—' }}
-                    </span>
-                    <span class="text-xs text-g-500">钻</span>
-                  </div>
-                </div>
-                <div
-                  class="rounded-xl px-3 py-2"
-                  :class="
-                    u.danmaku_count ? 'bg-g-100/50' : 'bg-g-100/30 border border-dashed border-g-200'
-                  "
-                >
-                  <div class="text-xs text-g-500 flex items-center gap-1">
-                    <ArtSvgIcon icon="ri:chat-3-line" class="text-g-400" />弹幕数
-                  </div>
-                  <div class="mt-0.5 flex items-baseline gap-1">
-                    <span
-                      class="text-base font-medium leading-none"
-                      :class="u.danmaku_count ? 'text-g-900' : 'text-g-400'"
-                      :title="u.danmaku_count ? fmtTitle(u.danmaku_count) : ''"
-                    >
-                      {{ u.danmaku_count ? fmtNum(u.danmaku_count) : '—' }}
-                    </span>
-                    <span class="text-xs text-g-500">条</span>
-                  </div>
-                </div>
-              </div>
+              <!-- 仅进场用户：三个空格子降噪成一行（占结果的大多数，满屏虚线格最扎眼） -->
               <div
-                v-if="!hasSessions(u) && !u.total_diamonds && !u.danmaku_count"
-                class="mt-2 text-xs text-g-400 flex items-center gap-1"
+                v-if="isEntryOnly(u)"
+                class="mt-3.5 pt-3 border-t border-g-100/80 flex items-center gap-3 flex-wrap text-sm"
               >
-                <ArtSvgIcon icon="ri:information-line" />
-                本库仅命中进场记录（查询只取最近 200 条匹配记录）
+                <span class="inline-flex items-center gap-1.5 text-g-500">
+                  <ArtSvgIcon icon="ri:door-open-line" class="text-g-400" />
+                  仅进场
+                </span>
+                <span class="text-g-600">
+                  参与 <b class="text-g-900 font-medium">{{ u.sessions?.length || 0 }}</b> 场
+                </span>
+                <span class="text-g-400 text-xs">
+                  没有弹幕与送礼<template v-if="!hasSessions(u)">
+                    （查询只取最近 200 条匹配记录）</template
+                  >
+                </span>
               </div>
+
+              <template v-else>
+                <!-- 统计格：套官方 today-sales 的 tile 语言（实线框 + 图标块 + 数字上标签下） -->
+                <div class="grid grid-cols-3 gap-2.5 mt-4">
+                  <div class="flex items-center gap-3 px-4 py-3 border border-g-300/85 rounded-xl">
+                    <div class="size-9 rounded-lg flex-cc bg-theme/10 shrink-0">
+                      <ArtSvgIcon icon="ri:live-line" class="text-base text-theme" />
+                    </div>
+                    <div class="min-w-0">
+                      <div
+                        class="text-xl font-medium leading-none"
+                        :class="hasSessions(u) ? 'text-g-900' : 'text-g-400'"
+                      >
+                        {{ hasSessions(u) ? u.sessions.length : '—' }}
+                      </div>
+                      <div class="text-xs text-g-500 mt-1.5">参与场次</div>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-3 px-4 py-3 border border-g-300/85 rounded-xl">
+                    <div class="size-9 rounded-lg flex-cc bg-theme/10 shrink-0">
+                      <ArtSvgIcon icon="ri:diamond-line" class="text-base text-theme" />
+                    </div>
+                    <div class="min-w-0">
+                      <div
+                        class="text-xl font-medium leading-none"
+                        :class="u.total_diamonds ? 'text-theme' : 'text-g-400'"
+                        :title="u.total_diamonds ? fmtTitle(u.total_diamonds) : ''"
+                      >
+                        {{ u.total_diamonds ? fmtNum(u.total_diamonds) : '—' }}
+                      </div>
+                      <div class="text-xs text-g-500 mt-1.5">累计钻石</div>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-3 px-4 py-3 border border-g-300/85 rounded-xl">
+                    <div class="size-9 rounded-lg flex-cc bg-theme/10 shrink-0">
+                      <ArtSvgIcon icon="ri:chat-3-line" class="text-base text-theme" />
+                    </div>
+                    <div class="min-w-0">
+                      <div
+                        class="text-xl font-medium leading-none"
+                        :class="u.danmaku_count ? 'text-g-900' : 'text-g-400'"
+                        :title="u.danmaku_count ? fmtTitle(u.danmaku_count) : ''"
+                      >
+                        {{ u.danmaku_count ? fmtNum(u.danmaku_count) : '—' }}
+                      </div>
+                      <div class="text-xs text-g-500 mt-1.5">弹幕数</div>
+                    </div>
+                  </div>
+                </div>
+              </template>
 
               <!-- 最近动作 / 最近弹幕 / 最近礼物 -->
               <div class="flex flex-col gap-2 mt-4 pt-3 border-t border-g-100/80">
@@ -398,6 +402,9 @@
     const entryOnly = list.filter(isEntryOnly)
     return [...interactive, ...entryOnly]
   })
+
+  /** 结果里「仅进场」的数量（结果头与卡片降噪共用同一口径） */
+  const entryCount = computed(() => users.value.filter(isEntryOnly).length)
 
   /**
    * 信息查询。

@@ -141,7 +141,8 @@
               <p>历史在线人数 Top 5</p>
             </div>
           </div>
-          <TransitionGroup name="dy-list" tag="div" class="flex flex-col gap-2.5 mt-4" appear>
+          <el-skeleton v-if="!overview && !overviewError" :rows="5" animated class="mt-4" />
+          <TransitionGroup v-else name="dy-list" tag="div" class="flex flex-col gap-2.5 mt-4" appear>
             <div
               v-for="(p, i) in overview?.peakSessions || []"
               :key="p.id"
@@ -165,12 +166,13 @@
                 >{{ fmtNum(p.online_peak) }}人</span
               >
             </div>
-            <el-empty
-              v-if="!overview?.peakSessions?.length"
-              description="暂无数据"
-              :image-size="60"
-            />
           </TransitionGroup>
+          <!-- 空态是"状态占位"，不是列表项：移出 TransitionGroup，否则它也会做一次进出动画 -->
+          <el-empty
+            v-if="overview && !overview?.peakSessions?.length"
+            description="暂无数据"
+            :image-size="60"
+          />
         </div>
       </el-col>
       <el-col :sm="24" :md="10" :lg="10">
@@ -181,7 +183,8 @@
               <p>累计钻石 Top 5</p>
             </div>
           </div>
-          <TransitionGroup name="dy-list" tag="div" class="flex flex-col gap-2.5 mt-4" appear>
+          <el-skeleton v-if="!overview && !overviewError" :rows="5" animated class="mt-4" />
+          <TransitionGroup v-else name="dy-list" tag="div" class="flex flex-col gap-2.5 mt-4" appear>
             <div
               v-for="(g, i) in (overview?.topGifts || []).slice(0, 5)"
               :key="g.name"
@@ -204,8 +207,12 @@
               <span class="flex-1 min-w-0 truncate text-sm text-g-800">{{ g.name }}</span>
               <span class="text-sm font-bold text-theme shrink-0">{{ fmtNum(g.diamonds) }}钻</span>
             </div>
-            <el-empty v-if="!overview?.topGifts?.length" description="暂无数据" :image-size="60" />
           </TransitionGroup>
+          <el-empty
+            v-if="overview && !overview?.topGifts?.length"
+            description="暂无数据"
+            :image-size="60"
+          />
         </div>
       </el-col>
     </el-row>

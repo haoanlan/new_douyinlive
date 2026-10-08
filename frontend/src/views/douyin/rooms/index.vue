@@ -814,7 +814,6 @@
   @keyframes dy-room-card-in {
     from {
       opacity: 0;
-      transform: translateY(8px);
     }
   }
 

@@ -66,29 +66,27 @@
 }
 
 /* ===== 列表进出统一过渡（列表页都在复刻同一套 TransitionGroup）===== */
+/*
+ * 只做透明度：不做纵向位移。
+ * 原来进场是 `translateY(8px)` 淡入 —— 数据刚到位时（骨架/空态被真实内容替换）
+ * 会看到整列内容"从下往上顶出来"，很扎眼（用户反馈）。
+ * 位移动画留给 `.dy-list-move`（列表重排时才是真的位置变化）。
+ */
 .dy-list-enter-active {
-  transition:
-    opacity var(--dy-dur-slow) var(--dy-ease-out),
-    transform var(--dy-dur-slow) var(--dy-ease-out);
+  transition: opacity var(--dy-dur-slow) var(--dy-ease-out);
 }
 
 /* 退出要更快：系统响应用户操作时应当干脆 */
 .dy-list-leave-active {
-  transition:
-    opacity var(--dy-dur-base) var(--dy-ease-out),
-    transform var(--dy-dur-base) var(--dy-ease-out);
+  transition: opacity var(--dy-dur-base) var(--dy-ease-out);
 }
 
-/* 进场从下方 8px 淡入（不要从 0 缩放，也不要大位移） */
 .dy-list-enter-from {
   opacity: 0;
-  transform: translateY(8px);
 }
 
-/* 退出方向与进场一致（都是纵向），不要一边纵向进、一边横向出 */
 .dy-list-leave-to {
   opacity: 0;
-  transform: translateY(-4px);
 }
 
 /* 列表重排时位移动画 */
@@ -1052,18 +1050,20 @@
 /* ==========================================================================
  * 页面进场
  *
- * 卡片依次轻微上浮淡入（stagger），而不是整页硬切。
+ * 卡片依次淡入（stagger），而不是整页硬切，也不做上浮。
  * 用 animation 而不是 transition：进场只需要跑一次，也不受 hover 的 transform 影响。
  * 步进 40ms、最多累计到第 8 张 —— 再多会让最后几张等太久，反而显得慢。
+ *
+ * 关于位移：原来这里是 `translateY(8px)`（HANDOFF §9.2 声称"位移 ≤2px"，代码其实
+ * 是 8px）—— 整页卡片同时上浮，观感就是"内容从下往上顶出来"，用户明确反馈难看。
+ * 现在只保留透明度，纵向位移一律交给 hover/按下这类**由用户触发**的反馈。
  * ========================================================================== */
 @keyframes dy-card-in {
   from {
     opacity: 0;
-    transform: translateY(8px);
   }
   to {
     opacity: 1;
-    transform: none;
   }
 }
 

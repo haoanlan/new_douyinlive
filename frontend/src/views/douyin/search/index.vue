@@ -190,21 +190,25 @@
                     库内别名：跟在昵称下面（同属"这个人的身份信息"）。
                     一个人可能有一二十个名字，其中绝大多数是抖音给未登录访客生成的 douXXXXXXX
                     （实测样本 30 个名字里 28 个是这种）——全铺出来非常吵。
-                    所以只内联"像真名"的（≤2 个），游客名压成一个入口，点开看全部；
-                    固定一行高（h-[22px]）保证卡片高度不被别名数量影响。
+                    所以只内联"像真名"的（最近 2 个 + 最早 1 个），游客名压成一个入口，点开看全部；
+                    名字长时可以换行（不截断），最少占一行。
                   -->
-                  <div class="flex items-center gap-1.5 mt-2 min-w-0 h-[22px] overflow-hidden">
+                  <!--
+                    只在有需要时换行：名字长的时候宁可换行也不要截断（max-w 220px 只是兜底，
+                    实测库里最长的昵称「深情磊🌝（爱吃牛肉炒饭版）」约 186px，能完整显示）
+                  -->
+                  <div class="flex flex-wrap items-center gap-1.5 mt-2 min-w-0 min-h-[22px]">
                     <span class="text-xs text-g-400 shrink-0">库内别名</span>
                     <el-tag
-                      v-for="a in realAliases(u)"
-                      :key="a.nickname"
+                      v-for="n in aliasNames(u)"
+                      :key="n"
                       size="small"
                       effect="plain"
                       type="info"
-                      class="max-w-[150px] truncate"
-                      :title="a.nickname"
+                      class="max-w-[220px] truncate"
+                      :title="n"
                     >
-                      {{ a.nickname }}
+                      {{ n }}
                     </el-tag>
                     <el-popover
                       v-if="tempAliases(u).length"
@@ -525,9 +529,23 @@
    * 一个人改过名时可能有一二十个名字（其中大量是抖音给游客生成的 douXXXXXXX），
    * 卡片上只内联"像真名"的几个，其余走 popover —— 见 realAliases / tempAliases。
    */
-  function aliasList(u: any): { nickname: string; count: number }[] {
+  /** 一个名字在库里的出现情况（first/last 是毫秒时间戳，用来挑"最近 2 个 + 最早 1 个"） */
+  interface AliasStat {
+    nickname: string
+    count: number
+    first?: number
+    last?: number
+  }
+
+  function aliasList(u: any): AliasStat[] {
     if (Array.isArray(u?.nickname_stats) && u.nickname_stats.length) {
-      return u.nickname_stats.map((s: any) => ({ nickname: s.nickname, count: s.count || 0 }))
+      // 注意：这里必须把 first/last 一起带出来，否则 aliasNames 里的"最近/最早"排序拿不到时间
+      return u.nickname_stats.map((s: any) => ({
+        nickname: s.nickname,
+        count: s.count || 0,
+        first: s.first || 0,
+        last: s.last || 0
+      }))
     }
     return (u?.db_nicknames || []).map((n: string) => ({ nickname: n, count: 0 }))
   }
@@ -548,12 +566,33 @@
   const TEMP_ALIAS_RE = /^(dou\d+|神秘人)/i
 
   /** 真实昵称（不含自动生成的游客名），按出现次数降序（aliasList 已排好序） */
-  function realAliases(u: any): { nickname: string; count: number }[] {
+  function realAliases(u: any): AliasStat[] {
     return aliasList(u).filter((a) => !TEMP_ALIAS_RE.test(a.nickname))
   }
 
+  /**
+   * 卡片上展示的真名：最多 3 个 —— **最近用过的 2 个 + 最早用过的 1 个**（用户定的规则）。
+   * 依据 nickname_stats 里的 first/last 时间戳；不足 3 个就全显示。
+   * 「最近 2 个」反映现在叫什么，「最早 1 个」保留最初认识他时的名字。
+   */
+  function aliasNames(u: any): string[] {
+    const list = realAliases(u)
+    if (!list.length) return []
+    // 展示顺序统一按规则来（不因名字个数而变）：最近的 2 个在前，最早的 1 个在后
+    const recent = [...list].sort((a, b) => (b.last || 0) - (a.last || 0)).slice(0, 2)
+    const earliest = [...list].sort((a, b) => (a.first || 0) - (b.first || 0))[0]
+    const out = recent.map((a) => a.nickname)
+    if (earliest && !out.includes(earliest.nickname)) out.push(earliest.nickname)
+    // 不足 3 个（例如只有 1~2 个真名）时按出现次数补足
+    for (const a of list) {
+      if (out.length >= 3) break
+      if (!out.includes(a.nickname)) out.push(a.nickname)
+    }
+    return out.slice(0, 3)
+  }
+
   /** 自动生成的游客名，收进 popover 里"点开看全部" */
-  function tempAliases(u: any): { nickname: string; count: number }[] {
+  function tempAliases(u: any): AliasStat[] {
     return aliasList(u).filter((a) => TEMP_ALIAS_RE.test(a.nickname))
   }
 

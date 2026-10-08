@@ -212,8 +212,8 @@
 
     <!-- 送礼榜 + 弹幕活跃 -->
     <el-row :gutter="20">
-      <el-col :sm="24" :md="12" :lg="12">
-        <div class="art-card p-5 mb-5 h-full">
+      <el-col :sm="24" :md="12" :lg="12" class="mb-5">
+        <div class="art-card p-5 h-full">
           <div class="art-card-header">
             <div class="title">
               <h4>送礼榜</h4>
@@ -244,8 +244,8 @@
           </TransitionGroup>
         </div>
       </el-col>
-      <el-col :sm="24" :md="12" :lg="12">
-        <div class="art-card p-5 mb-5 h-full">
+      <el-col :sm="24" :md="12" :lg="12" class="mb-5">
+        <div class="art-card p-5 h-full">
           <div class="art-card-header">
             <div class="title">
               <h4>弹幕活跃</h4>

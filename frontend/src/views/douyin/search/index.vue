@@ -388,26 +388,28 @@
               <!-- 最近动作 / 最近弹幕 / 最近礼物：**恒定 3 行**，缺的显示"无记录"占位。
                    原来每行都是 v-if，0~3 行的高度差直接体现在卡片高度上（实测同页 292 vs 326）。 -->
               <div class="flex flex-col gap-2 mt-4 pt-3 border-t border-g-100/80">
-                <div v-if="u.latest_action" class="flex items-center gap-2 text-xs">
-                  <span
-                    class="px-1.5 py-0.5 rounded-md shrink-0"
-                    :class="actionClass(u.latest_action.type)"
-                  >
-                    {{ actionLabel(u.latest_action.type) }}
-                  </span>
-                  <span class="flex-1 min-w-0 truncate text-g-700">
+                <!--
+                  三行按**类型**固定：进场 / 弹幕 / 礼物。
+                  原来是"最近动作 + 弹幕 + 礼物"：最近动作取的就是弹幕/送礼里最新的那条，
+                  于是它经常与下面同名行重复；上一轮用去重把重复行改成"无记录"，
+                  结果对"明明发过很多弹幕"的人显示成"弹幕 无记录"（错误结论）。
+                  现在每行只认自己那一类，"无记录"就真的是这一类没有记录。
+                -->
+                <div v-if="u.latest_action && u.latest_action.type === 'member'" class="flex items-center gap-2 text-xs">
+                  <span class="px-1.5 py-0.5 rounded-md bg-g-100 text-g-600 shrink-0">进场</span>
+                  <span class="flex-1 min-w-0 truncate text-g-600">
                     {{ cleanText(u.latest_action.detail) }}
                   </span>
                   <span class="text-g-400 shrink-0">{{ fmtTime(u.latest_action.time) }}</span>
                 </div>
                 <div v-else class="flex items-center gap-2 text-xs">
-                  <span class="px-1.5 py-0.5 rounded-md bg-g-100 text-g-400 shrink-0">最近动作</span>
+                  <span class="px-1.5 py-0.5 rounded-md bg-g-100 text-g-400 shrink-0">进场</span>
                   <span class="flex-1 min-w-0 text-g-400">无记录</span>
                 </div>
 
                 <!-- 与「最近动作」是同一条时不再重复显示（走占位行） -->
                 <div
-                  v-if="u.latest_danmaku && !isSameAsAction(u.latest_danmaku, u.latest_action)"
+                  v-if="u.latest_danmaku"
                   class="flex items-center gap-2 text-xs"
                 >
                   <span class="px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-500 shrink-0">
@@ -424,7 +426,7 @@
                 </div>
 
                 <div
-                  v-if="u.latest_gift && !isSameAsAction(u.latest_gift, u.latest_action)"
+                  v-if="u.latest_gift"
                   class="flex items-center gap-2 text-xs"
                 >
                   <span class="px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-600 shrink-0">
@@ -741,17 +743,6 @@
     }
     return parts.join('；')
   })
-
-  /**
-   * 判断某条记录是否就是「最近动作」本身。
-   * 「最近动作」取的是"弹幕/送礼里最新的那条"，所以它经常和下面「弹幕」或「礼物」是**同一条**，
-   * 卡片上就会上下重复显示（用户反馈"最近的弹幕两条或者礼物都是重复的"）。
-   * 重复时下面那行走占位（"无记录"），三行的固定结构不变、卡片仍然等高。
-   */
-  function isSameAsAction(rec: any, action: any): boolean {
-    if (!rec || !action) return false
-    return rec.type === action.type && rec.time === action.time && rec.detail === action.detail
-  }
 
   /** 清空输入框：回到"未查询"引导态。
    * 原来只有 clearable 没有 @clear —— 点 ✕ 后卡片和「共 N 个匹配用户」还在、

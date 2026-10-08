@@ -385,61 +385,49 @@
                 </div>
               </template>
 
-              <!-- 最近动作 / 最近弹幕 / 最近礼物：**恒定 3 行**，缺的显示"无记录"占位。
-                   原来每行都是 v-if，0~3 行的高度差直接体现在卡片高度上（实测同页 292 vs 326）。 -->
+              <!--
+                最近三条动作：显示这个用户**最近做的三件事**（弹幕/送礼/进场混合、按时间倒序），
+                不是"三种动作各一条" —— 后者会把"最近连发三条弹幕、礼物是五天前"显示错。
+                数据来自后端 recent（≤3 条）；不足 3 条用占位补齐，保持三行固定高度、卡片等高。
+              -->
               <div class="flex flex-col gap-2 mt-4 pt-3 border-t border-g-100/80">
+                <div
+                  v-for="(a, i) in recentRows(u)"
+                  :key="i"
+                  class="flex items-center gap-2 text-xs"
+                >
+                  <span
+                    class="px-1.5 py-0.5 rounded-md shrink-0"
+                    :class="recentChipClass(a.type)"
+                    >{{ recentChipLabel(a.type) }}</span
+                  >
+                  <span
+                    class="flex-1 min-w-0 truncate"
+                    :class="a.type === 'danmaku' ? 'text-g-700' : 'text-g-600'"
+                  >
+                    {{ cleanText(a.detail) }}
+                  </span>
+                  <span class="text-g-400 shrink-0">{{ fmtTime(a.time) }}</span>
+                </div>
+                <!-- 一条动作都没有：给一行说明（有动作时不留"无记录"行，避免同一张卡出现多条重复文案） -->
+                <div v-if="!recentRows(u).length" class="flex items-center gap-2 text-xs text-g-400">
+                  <span class="px-1.5 py-0.5 rounded-md shrink-0 bg-g-100 text-g-400">—</span>
+                  <span class="flex-1 min-w-0">暂无动作记录</span>
+                </div>
                 <!--
-                  三行按**类型**固定：进场 / 弹幕 / 礼物。
-                  原来是"最近动作 + 弹幕 + 礼物"：最近动作取的就是弹幕/送礼里最新的那条，
-                  于是它经常与下面同名行重复；上一轮用去重把重复行改成"无记录"，
-                  结果对"明明发过很多弹幕"的人显示成"弹幕 无记录"（错误结论）。
-                  现在每行只认自己那一类，"无记录"就真的是这一类没有记录。
+                  高度占位：做成与真实行**完全同构**的隐形行（invisible 仍占位），
+                  行高必然一致 —— 之前用固定像素（3-n)*28 算，实测和真实行高不等，
+                  卡片出现 376/356/380 三种高度。
                 -->
-                <div v-if="u.latest_action && u.latest_action.type === 'member'" class="flex items-center gap-2 text-xs">
-                  <span class="px-1.5 py-0.5 rounded-md bg-g-100 text-g-600 shrink-0">进场</span>
-                  <span class="flex-1 min-w-0 truncate text-g-600">
-                    {{ cleanText(u.latest_action.detail) }}
-                  </span>
-                  <span class="text-g-400 shrink-0">{{ fmtTime(u.latest_action.time) }}</span>
-                </div>
-                <div v-else class="flex items-center gap-2 text-xs">
-                  <span class="px-1.5 py-0.5 rounded-md bg-g-100 text-g-400 shrink-0">进场</span>
-                  <span class="flex-1 min-w-0 text-g-400">无记录</span>
-                </div>
-
-                <!-- 与「最近动作」是同一条时不再重复显示（走占位行） -->
                 <div
-                  v-if="u.latest_danmaku"
-                  class="flex items-center gap-2 text-xs"
+                  v-for="i in Math.max(0, 3 - Math.max(recentRows(u).length, 1))"
+                  :key="`sp-${i}`"
+                  class="flex items-center gap-2 text-xs invisible"
+                  aria-hidden="true"
                 >
-                  <span class="px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-500 shrink-0">
-                    弹幕
-                  </span>
-                  <span class="flex-1 min-w-0 truncate text-g-600">
-                    {{ cleanText(u.latest_danmaku.detail) }}
-                  </span>
-                  <span class="text-g-400 shrink-0">{{ fmtTime(u.latest_danmaku.time) }}</span>
-                </div>
-                <div v-else class="flex items-center gap-2 text-xs">
-                  <span class="px-1.5 py-0.5 rounded-md bg-g-100 text-g-400 shrink-0">弹幕</span>
-                  <span class="flex-1 min-w-0 text-g-400">无记录</span>
-                </div>
-
-                <div
-                  v-if="u.latest_gift"
-                  class="flex items-center gap-2 text-xs"
-                >
-                  <span class="px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-600 shrink-0">
-                    礼物
-                  </span>
-                  <span class="flex-1 min-w-0 truncate text-g-600">
-                    {{ cleanText(u.latest_gift.detail) }}
-                  </span>
-                  <span class="text-g-400 shrink-0">{{ fmtTime(u.latest_gift.time) }}</span>
-                </div>
-                <div v-else class="flex items-center gap-2 text-xs">
-                  <span class="px-1.5 py-0.5 rounded-md bg-g-100 text-g-400 shrink-0">礼物</span>
-                  <span class="flex-1 min-w-0 text-g-400">无记录</span>
+                  <span class="px-1.5 py-0.5 rounded-md shrink-0">占</span>
+                  <span class="flex-1 min-w-0">占位</span>
+                  <span class="shrink-0">00:00</span>
                 </div>
               </div>
 
@@ -743,6 +731,29 @@
     }
     return parts.join('；')
   })
+
+  /**
+   * 卡片底部的「最近三条动作」（≤3 条，按时间倒序）。
+   * 只返回真实存在的行 —— 不足 3 条时由模板里的固定高度占位补齐，
+   * 这样既不会出现多条重复的"无记录"文案，卡片也仍然等高。
+   */
+  function recentRows(u: any): any[] {
+    return Array.isArray(u?.recent) ? u.recent.slice(0, 3) : []
+  }
+
+  const RECENT_CHIP: Record<string, { label: string; cls: string }> = {
+    danmaku: { label: '弹幕', cls: 'bg-blue-50 text-blue-500' },
+    gift: { label: '礼物', cls: 'bg-amber-50 text-amber-600' },
+    member: { label: '进场', cls: 'bg-g-100 text-g-600' }
+  }
+
+  function recentChipLabel(type?: string): string {
+    return RECENT_CHIP[type || '']?.label || '—'
+  }
+
+  function recentChipClass(type?: string): string {
+    return RECENT_CHIP[type || '']?.cls || 'bg-g-100 text-g-400'
+  }
 
   /** 清空输入框：回到"未查询"引导态。
    * 原来只有 clearable 没有 @clear —— 点 ✕ 后卡片和「共 N 个匹配用户」还在、

@@ -810,6 +810,32 @@ html.dark .dy-select-popper .el-select-dropdown__wrap::-webkit-scrollbar-thumb:h
   background: rgb(255 255 255 / 34%);
 }
 
+/* ==========================================================================
+ * 结果首次出现：极短的透明度淡入（无位移、无缩放）
+ *
+ * 原来信息查询是"遮罩消失 → 卡片直接出现"，用户反馈很突兀、要"无感"。
+ * 这里只做 120ms 的 opacity 淡入：不做 translate/scale，避免任何位移感；
+ * prefers-reduced-motion 下直接不播动画。
+ * ========================================================================== */
+@keyframes dy-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.dy-fade-in {
+  animation: dy-fade-in 120ms var(--dy-ease-out, ease-out) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dy-fade-in {
+    animation: none;
+  }
+}
+
 /* 只在抖音监控页生效，避免影响模板其它页面 */
 .douyin-page {
   /* 主要文字 */

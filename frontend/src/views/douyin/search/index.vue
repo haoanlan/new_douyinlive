@@ -195,7 +195,15 @@
           </el-tooltip>
         </div>
 
-        <ElRow :gutter="20">
+        <!--
+          key 里带上查询条件：每次新结果都重新渲染 → 120ms 淡入重新触发
+          （否则动画只在首次挂载时播一次，之后换结果仍是"直接出现"）
+        -->
+        <ElRow
+          :key="`${lastQuery}|${lastScope}|${resultTotal}|${returnedCount}`"
+          :gutter="20"
+          class="dy-fade-in"
+        >
           <ElCol
             v-for="u in sortedUsers"
             :key="u.sec_uid || u.nickname"

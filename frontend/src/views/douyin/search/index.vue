@@ -3,13 +3,13 @@
   <div class="douyin-page p-4">
     <!-- 顶部工具条 -->
     <div class="art-card dy-toolbar mb-5 flex items-center justify-between gap-4 flex-wrap">
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-3 min-w-0">
         <div class="size-9 rounded-lg flex-cc bg-theme/10 shrink-0">
           <ArtSvgIcon icon="ri:user-search-line" class="text-base text-theme" />
         </div>
-        <div>
+        <div class="min-w-0">
           <div class="dy-toolbar-title">信息查询</div>
-          <div class="flex items-center gap-2.5 mt-1.5 text-xs text-g-500">
+          <div class="flex items-center gap-2.5 mt-1.5 text-xs text-g-500 flex-wrap">
             <span class="flex items-baseline gap-1">
               <b class="dy-count text-g-900">{{ users.length }}</b>个匹配用户
             </span>
@@ -21,14 +21,6 @@
             <span class="flex items-baseline gap-1">
               <b class="dy-count text-theme">{{ fmtNum(totalDiamonds) }}</b>累计钻石
             </span>
-            <template v-if="lastQuery">
-              <span class="w-px h-3 bg-g-300" />
-              <el-tag size="small" effect="plain">关键词 {{ lastQuery }}</el-tag>
-            </template>
-            <template v-if="lastScope">
-              <span class="w-px h-3 bg-g-300" />
-              <el-tag size="small" effect="plain" type="info">{{ lastScope }}</el-tag>
-            </template>
           </div>
         </div>
       </div>
@@ -99,7 +91,12 @@
       </div>
     </div>
 
-    <div v-else v-loading="loading" element-loading-text="查询中…">
+    <div
+      v-else
+      v-loading="loading"
+      element-loading-text="查询中…"
+      :class="loading ? 'min-h-[360px]' : ''"
+    >
       <!-- 失败：与「没有结果」明确区分（P0-3） -->
       <QueryErrorState
         v-if="!loading && queryError"
@@ -115,12 +112,17 @@
 
       <!-- 结果卡片 -->
       <template v-else>
-        <div class="flex items-center justify-between mb-3 px-1">
-          <span class="text-sm text-g-600">
+        <!-- 加载中不显示这行：首次查询时会闪一个「共 0 个用户」，而且 v-loading 的遮罩
+             只剩这一行的高度（实测 36px 高的一条），看起来不知道是什么 -->
+        <div v-if="!loading" class="flex items-center justify-between gap-3 mb-3 px-1">
+          <span class="text-sm text-g-600 flex items-center gap-2 flex-wrap">
             共 <b class="text-g-900">{{ sortedUsers.length }}</b> 个用户
             <span v-if="entryCount" class="text-g-400">
               · 其中仅进场 {{ entryCount }} 个（排在最后）
             </span>
+            <!-- 本次查询条件：原来放在工具条左块，查询后出现会把整组操作挤到第二行 -->
+            <el-tag v-if="lastQuery" size="small" effect="plain">关键词 {{ lastQuery }}</el-tag>
+            <el-tag v-if="lastScope" size="small" effect="plain" type="info">{{ lastScope }}</el-tag>
           </span>
           <el-button size="small" text @click="doSearch">
             <ArtSvgIcon icon="ri:refresh-line" class="mr-1" />
@@ -129,8 +131,16 @@
         </div>
 
         <ElRow :gutter="20">
-          <ElCol v-for="u in sortedUsers" :key="u.sec_uid || u.nickname" :sm="24" :md="12" :lg="12">
-            <div class="art-card relative px-5 py-4 mb-5">
+          <ElCol
+            v-for="u in sortedUsers"
+            :key="u.sec_uid || u.nickname"
+            :sm="24"
+            :md="12"
+            :lg="12"
+            class="mb-5"
+          >
+            <!-- 间距放在 el-col 上、卡片 h-full 撑满列高：同一行里内容行数不同的卡片才不会高低不齐 -->
+            <div class="art-card relative px-5 py-4 h-full">
               <!-- 头部：头像 + 昵称 + 别名 -->
               <div class="flex items-start gap-3.5">
                 <el-avatar :size="48" :src="u.avatar" class="shrink-0">

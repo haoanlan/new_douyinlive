@@ -178,8 +178,20 @@
           <el-tag v-if="lastScope" size="small" effect="plain" type="info" class="shrink-0">
             {{ lastScope }}
           </el-tag>
-          <el-tooltip placement="top" :content="detailTip" :show-after="150">
-            <ArtSvgIcon icon="ri:information-line" class="text-g-400 shrink-0 c-p" />
+          <el-tooltip placement="top" :show-after="100">
+            <!-- 触发元素必须是有明确尺寸的盒子：直接拿 SVG 当触发区时命中范围只有图标本身，
+                 经常 hover 不到（用户反馈 ⓘ 不显示内容） -->
+            <span
+              class="inline-flex items-center justify-center size-5 shrink-0 rounded-full c-p hover:bg-g-100/70"
+              role="img"
+              aria-label="查询结果说明"
+            >
+              <ArtSvgIcon icon="ri:information-line" class="text-sm text-g-400" />
+            </span>
+            <template #content>
+              <!-- 限宽换行：不然 Element Plus 会渲染成一条 1090px 的单行（实测） -->
+              <div class="max-w-[320px] leading-relaxed">{{ detailTip }}</div>
+            </template>
           </el-tooltip>
         </div>
 

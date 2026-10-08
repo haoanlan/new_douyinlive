@@ -293,7 +293,13 @@
         <div
           v-for="s in overview?.recentSessions || []"
           :key="s.id"
-          class="rounded-xl bg-g-100/50 px-3 py-2.5"
+          class="recent-row rounded-xl bg-g-100/50 px-3 py-2.5"
+          role="button"
+          tabindex="0"
+          :aria-label="`查看场次 #${s.id} 详情`"
+          @click="goDetail(s.id)"
+          @keydown.enter.prevent="goDetail(s.id)"
+          @keydown.space.prevent="goDetail(s.id)"
         >
           <div class="flex items-center gap-3">
             <el-avatar :size="34" :src="s.streamer_avatar" class="shrink-0">{{
@@ -304,14 +310,9 @@
               <div class="text-xs text-g-500 truncate">{{ s.streamer || '-' }}</div>
             </div>
             <span class="text-xs text-g-500 shrink-0">{{ fmtTime(s.start_time) }}</span>
-            <el-button
-              size="small"
-              type="primary"
-              link
-              @click="router.push(`/douyin/detail/${s.id}`)"
-            >
-              详情
-            </el-button>
+            <!-- 整行已经可点，这里只留一个"可进入"的视觉提示：原来是 30×18 的小按钮，
+                 触屏很难命中（UI-AUDIT P1-9）。 -->
+            <ArtSvgIcon icon="ri:arrow-right-s-line" class="text-base text-g-400 shrink-0" />
           </div>
           <div
             class="flex items-center gap-4 mt-2 pt-2 border-t border-g-100/80 text-xs text-g-600 flex-wrap"
@@ -354,6 +355,15 @@
   defineOptions({ name: 'DouyinDashboard' })
 
   const router = useRouter()
+
+  /**
+   * 最近场次：整行可点。
+   * 原来只有一个 30×18 的行内「详情」按钮 —— 触屏/鼠标都很难点中（UI-AUDIT P1-9），
+   * 现在整行是点击目标（保留 role/tabindex/Enter/Space 的键盘通路）。
+   */
+  function goDetail(sessionId: number) {
+    router.push(`/douyin/detail/${sessionId}`)
+  }
   const overview = ref<OverviewData | null>(null)
   const daemon = ref<DaemonStatus | null>(null)
 
@@ -507,4 +517,21 @@
    * 原来这里是 `transition: all 0.4s ease`，进场 translateY(10px) 而退出 translateX(-10px) ——
    * 一个纵向进、一个横向出，方向不一致，看着像"被甩出去"。现在统一纵向。
    */
+
+  /* 「最近场次」整行可点：给出悬停与键盘焦点的可见反馈 */
+  .recent-row {
+    cursor: pointer;
+    transition: background-color var(--dy-dur-fast) var(--dy-ease-out);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .recent-row:hover {
+      background-color: var(--art-gray-200);
+    }
+  }
+
+  .recent-row:focus-visible {
+    outline: 2px solid var(--theme-color);
+    outline-offset: 2px;
+  }
 </style>

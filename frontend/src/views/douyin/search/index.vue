@@ -398,35 +398,42 @@
                   <span class="flex-1 min-w-0 truncate text-g-700">
                     {{ cleanText(u.latest_action.detail) }}
                   </span>
-                  <span class="text-g-400 shrink-0">{{ fmtAgo(u.latest_action.time) }}</span>
+                  <span class="text-g-400 shrink-0">{{ fmtTime(u.latest_action.time) }}</span>
                 </div>
                 <div v-else class="flex items-center gap-2 text-xs">
                   <span class="px-1.5 py-0.5 rounded-md bg-g-100 text-g-400 shrink-0">最近动作</span>
                   <span class="flex-1 min-w-0 text-g-400">无记录</span>
                 </div>
 
-                <div v-if="u.latest_danmaku" class="flex items-center gap-2 text-xs">
+                <!-- 与「最近动作」是同一条时不再重复显示（走占位行） -->
+                <div
+                  v-if="u.latest_danmaku && !isSameAsAction(u.latest_danmaku, u.latest_action)"
+                  class="flex items-center gap-2 text-xs"
+                >
                   <span class="px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-500 shrink-0">
                     弹幕
                   </span>
                   <span class="flex-1 min-w-0 truncate text-g-600">
                     {{ cleanText(u.latest_danmaku.detail) }}
                   </span>
-                  <span class="text-g-400 shrink-0">{{ fmtAgo(u.latest_danmaku.time) }}</span>
+                  <span class="text-g-400 shrink-0">{{ fmtTime(u.latest_danmaku.time) }}</span>
                 </div>
                 <div v-else class="flex items-center gap-2 text-xs">
                   <span class="px-1.5 py-0.5 rounded-md bg-g-100 text-g-400 shrink-0">弹幕</span>
                   <span class="flex-1 min-w-0 text-g-400">无记录</span>
                 </div>
 
-                <div v-if="u.latest_gift" class="flex items-center gap-2 text-xs">
+                <div
+                  v-if="u.latest_gift && !isSameAsAction(u.latest_gift, u.latest_action)"
+                  class="flex items-center gap-2 text-xs"
+                >
                   <span class="px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-600 shrink-0">
                     礼物
                   </span>
                   <span class="flex-1 min-w-0 truncate text-g-600">
                     {{ cleanText(u.latest_gift.detail) }}
                   </span>
-                  <span class="text-g-400 shrink-0">{{ fmtAgo(u.latest_gift.time) }}</span>
+                  <span class="text-g-400 shrink-0">{{ fmtTime(u.latest_gift.time) }}</span>
                 </div>
                 <div v-else class="flex items-center gap-2 text-xs">
                   <span class="px-1.5 py-0.5 rounded-md bg-g-100 text-g-400 shrink-0">礼物</span>
@@ -473,7 +480,7 @@
     type Streamer,
     type Session
   } from '@/api/douyin'
-  import { fmtAgo, fmtNum, fmtTitle, fmtSessionTime } from '@/utils/format'
+  import { fmtNum, fmtTime, fmtTitle, fmtSessionTime } from '@/utils/format'
   import { ElMessage } from 'element-plus'
   import { apiErrorMessage } from '@/utils/douyin-error'
 
@@ -736,7 +743,17 @@
   })
 
   /**
-   * 清空输入框：回到"未查询"引导态。
+   * 判断某条记录是否就是「最近动作」本身。
+   * 「最近动作」取的是"弹幕/送礼里最新的那条"，所以它经常和下面「弹幕」或「礼物」是**同一条**，
+   * 卡片上就会上下重复显示（用户反馈"最近的弹幕两条或者礼物都是重复的"）。
+   * 重复时下面那行走占位（"无记录"），三行的固定结构不变、卡片仍然等高。
+   */
+  function isSameAsAction(rec: any, action: any): boolean {
+    if (!rec || !action) return false
+    return rec.type === action.type && rec.time === action.time && rec.detail === action.detail
+  }
+
+  /** 清空输入框：回到"未查询"引导态。
    * 原来只有 clearable 没有 @clear —— 点 ✕ 后卡片和「共 N 个匹配用户」还在、
    * 标签还是旧词，而按回车/点查询毫无反应（doSearch 里 `if (!q) return`）。
    */

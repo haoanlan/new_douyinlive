@@ -54,7 +54,7 @@
         </el-select>
       </div>
 
-      <div class="flex items-center gap-2 flex-wrap">
+      <div class="dy-toolbar-actions">
         <el-radio-group v-model="range" @change="refresh">
           <el-radio-button value="7d">7天</el-radio-button>
           <el-radio-button value="30d">30天</el-radio-button>

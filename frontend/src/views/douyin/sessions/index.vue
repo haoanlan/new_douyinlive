@@ -40,7 +40,7 @@
           共 {{ filteredSessions.length }} 场<template v-if="dateRange">（已筛选）</template>
         </span>
       </div>
-      <div class="flex items-center gap-2">
+      <div class="dy-toolbar-actions">
         <el-date-picker
           v-model="dateRange"
           type="daterange"

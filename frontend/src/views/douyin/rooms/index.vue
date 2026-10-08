@@ -33,7 +33,7 @@
           </div>
         </div>
       </div>
-      <div class="flex gap-2">
+      <div class="dy-toolbar-actions">
         <!-- P0-5：文案与行为一致 —— 这是本地过滤，不是跳转查询 -->
         <el-input
           v-model="search"

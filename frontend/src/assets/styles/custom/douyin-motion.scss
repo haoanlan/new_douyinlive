@@ -853,6 +853,25 @@
    * 于是同一张卡里标签瞬间跳色、卡片底色却是 160ms 渐变（口径不一致）。
    * 这里按语义时长补回来（只过渡颜色类属性，不动 all）。
    */
+  /*
+   * 工具条右侧操作组：统一 12px 间距，并清掉 Element Plus 给相邻按钮加的
+   * `margin-left: 12px`（与 gap 叠加会变 24px）。
+   * 原来这套只在 search 页生效（douyin-toolbar.scss 只被它 @use），
+   * rooms/sessions/trends 各自用 gap-2(8px)，四页两种口径。
+   * 注意：全局样式文件里**不能**写 `:deep()`（不会被 Vue 编译，整条规则会被丢弃），
+   * 所以这里用 `.douyin-page` 作用域 + 普通后代选择器。
+   */
+  .dy-toolbar-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .dy-toolbar-actions .el-button + .el-button {
+    margin-left: 0;
+  }
+
   .el-tag {
     transition:
       color var(--dy-dur-fast) var(--dy-ease-out),

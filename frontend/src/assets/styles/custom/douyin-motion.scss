@@ -836,6 +836,47 @@ html.dark .dy-select-popper .el-select-dropdown__wrap::-webkit-scrollbar-thumb:h
   }
 }
 
+/* ==========================================================================
+ * 卡内滚动区（固定高度 + 细滚动条）
+ *
+ * 画像页的「活跃场次」「馈赠明细」可能上百条，全铺出来卡片会非常长；
+ * 用户要求固定高度、内部滑动。这里统一一套细滚动条（浅/深色）。
+ * ========================================================================== */
+.dy-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(0 0 0 / 18%) transparent;
+}
+
+.dy-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.dy-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dy-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgb(0 0 0 / 18%);
+}
+
+.dy-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgb(0 0 0 / 30%);
+}
+
+html.dark .dy-scroll {
+  scrollbar-color: rgb(255 255 255 / 22%) transparent;
+}
+
+html.dark .dy-scroll::-webkit-scrollbar-thumb {
+  background: rgb(255 255 255 / 22%);
+}
+
+html.dark .dy-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgb(255 255 255 / 34%);
+}
+
 /* 只在抖音监控页生效，避免影响模板其它页面 */
 .douyin-page {
   /* 主要文字 */

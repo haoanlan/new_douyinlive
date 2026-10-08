@@ -390,44 +390,35 @@
                 不是"三种动作各一条" —— 后者会把"最近连发三条弹幕、礼物是五天前"显示错。
                 数据来自后端 recent（≤3 条）；不足 3 条用占位补齐，保持三行固定高度、卡片等高。
               -->
+              <!--
+                固定两行：最近一次弹幕 / 最近一次礼物。
+                不再有"三条动作"与进场行（进场记录只在画像页的近期行为里，并带上直播间）。
+                取值优先用后端 recent（它已按时间倒序且做过连击礼物去重，连击只留 ×N 那条），
+                没有 recent 时回退到 latest_danmaku / latest_gift。
+              -->
               <div class="flex flex-col gap-2 mt-4 pt-3 border-t border-g-100/80">
-                <div
-                  v-for="(a, i) in recentRows(u)"
-                  :key="i"
-                  class="flex items-center gap-2 text-xs"
-                >
-                  <span
-                    class="px-1.5 py-0.5 rounded-md shrink-0"
-                    :class="recentChipClass(a.type)"
-                    >{{ recentChipLabel(a.type) }}</span
-                  >
-                  <span
-                    class="flex-1 min-w-0 truncate"
-                    :class="a.type === 'danmaku' ? 'text-g-700' : 'text-g-600'"
-                  >
-                    {{ cleanText(a.detail) }}
+                <div v-if="latestOf(u, 'danmaku')" class="flex items-center gap-2 text-xs">
+                  <span class="px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-500 shrink-0">弹幕</span>
+                  <span class="flex-1 min-w-0 truncate text-g-700">
+                    {{ cleanText(latestOf(u, 'danmaku').detail) }}
                   </span>
-                  <span class="text-g-400 shrink-0">{{ fmtTime(a.time) }}</span>
+                  <span class="text-g-400 shrink-0">{{ fmtTime(latestOf(u, 'danmaku').time) }}</span>
                 </div>
-                <!-- 一条动作都没有：给一行说明（有动作时不留"无记录"行，避免同一张卡出现多条重复文案） -->
-                <div v-if="!recentRows(u).length" class="flex items-center gap-2 text-xs text-g-400">
-                  <span class="px-1.5 py-0.5 rounded-md shrink-0 bg-g-100 text-g-400">—</span>
-                  <span class="flex-1 min-w-0">暂无动作记录</span>
+                <div v-else class="flex items-center gap-2 text-xs">
+                  <span class="px-1.5 py-0.5 rounded-md bg-blue-50/60 text-blue-400 shrink-0">弹幕</span>
+                  <span class="flex-1 min-w-0 text-g-400">无记录</span>
                 </div>
-                <!--
-                  高度占位：做成与真实行**完全同构**的隐形行（invisible 仍占位），
-                  行高必然一致 —— 之前用固定像素（3-n)*28 算，实测和真实行高不等，
-                  卡片出现 376/356/380 三种高度。
-                -->
-                <div
-                  v-for="i in Math.max(0, 3 - Math.max(recentRows(u).length, 1))"
-                  :key="`sp-${i}`"
-                  class="flex items-center gap-2 text-xs invisible"
-                  aria-hidden="true"
-                >
-                  <span class="px-1.5 py-0.5 rounded-md shrink-0">占</span>
-                  <span class="flex-1 min-w-0">占位</span>
-                  <span class="shrink-0">00:00</span>
+
+                <div v-if="latestOf(u, 'gift')" class="flex items-center gap-2 text-xs">
+                  <span class="px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-600 shrink-0">礼物</span>
+                  <span class="flex-1 min-w-0 truncate text-g-600">
+                    {{ cleanText(latestOf(u, 'gift').detail) }}
+                  </span>
+                  <span class="text-g-400 shrink-0">{{ fmtTime(latestOf(u, 'gift').time) }}</span>
+                </div>
+                <div v-else class="flex items-center gap-2 text-xs">
+                  <span class="px-1.5 py-0.5 rounded-md bg-amber-50/60 text-amber-500 shrink-0">礼物</span>
+                  <span class="flex-1 min-w-0 text-g-400">无记录</span>
                 </div>
               </div>
 
@@ -733,26 +724,14 @@
   })
 
   /**
-   * 卡片底部的「最近三条动作」（≤3 条，按时间倒序）。
-   * 只返回真实存在的行 —— 不足 3 条时由模板里的固定高度占位补齐，
-   * 这样既不会出现多条重复的"无记录"文案，卡片也仍然等高。
+   * 卡片上「最近一次弹幕 / 最近一次礼物」的取值。
+   * 优先用后端 `recent`（按时间倒序 + 已做连击礼物去重，连击只保留 ×N 那条），
+   * 回退到 latest_danmaku / latest_gift —— 这样连击礼物不会显示成 ×1/×2/×3 三行。
    */
-  function recentRows(u: any): any[] {
-    return Array.isArray(u?.recent) ? u.recent.slice(0, 3) : []
-  }
-
-  const RECENT_CHIP: Record<string, { label: string; cls: string }> = {
-    danmaku: { label: '弹幕', cls: 'bg-blue-50 text-blue-500' },
-    gift: { label: '礼物', cls: 'bg-amber-50 text-amber-600' },
-    member: { label: '进场', cls: 'bg-g-100 text-g-600' }
-  }
-
-  function recentChipLabel(type?: string): string {
-    return RECENT_CHIP[type || '']?.label || '—'
-  }
-
-  function recentChipClass(type?: string): string {
-    return RECENT_CHIP[type || '']?.cls || 'bg-g-100 text-g-400'
+  function latestOf(u: any, type: 'danmaku' | 'gift'): any {
+    const hit = (Array.isArray(u?.recent) ? u.recent : []).find((a: any) => a.type === type)
+    if (hit) return hit
+    return type === 'danmaku' ? u?.latest_danmaku || null : u?.latest_gift || null
   }
 
   /** 清空输入框：回到"未查询"引导态。

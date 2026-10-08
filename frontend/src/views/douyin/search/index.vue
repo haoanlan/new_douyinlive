@@ -155,7 +155,7 @@
                       ID {{ u.unique_id }}
                     </el-tag>
                   </div>
-                  <div class="flex items-center gap-1.5 mt-1 flex-wrap">
+                  <div class="flex items-center gap-1.5 mt-1 flex-wrap min-h-[20px]">
                     <span
                       v-if="u.ip_location"
                       class="inline-flex items-center gap-1 text-xs text-g-500"
@@ -168,23 +168,18 @@
                     <span v-if="u.is_private" class="text-xs text-warning">私密账号</span>
                     <span v-if="!u.sec_uid" class="text-xs text-g-400">库里没有用户标识</span>
                   </div>
-                  <div
-                    v-if="otherNicknames(u).length"
-                    class="flex items-center gap-1.5 mt-2 flex-wrap"
-                  >
-                    <span class="text-xs text-g-400 shrink-0">库内别名</span>
-                    <el-tag
-                      v-for="n in otherNicknames(u).slice(0, 3)"
-                      :key="n"
-                      size="small"
-                      effect="plain"
-                      type="info"
-                    >
-                      {{ n }}
-                    </el-tag>
-                    <span v-if="otherNicknames(u).length > 3" class="text-xs text-g-400">
-                      +{{ otherNicknames(u).length - 3 }}
-                    </span>
+                  <!-- 别名行：恒定占位 + 只显示第一个别名（+N）+ 强制单行 ——
+                       别名多寡与长短不该改变卡片高度（完整的别名列表在用户画像页） -->
+                  <div class="flex items-center gap-1.5 mt-2 min-w-0 min-h-[22px]">
+                    <template v-if="otherNicknames(u).length">
+                      <span class="text-xs text-g-400 shrink-0">库内别名</span>
+                      <el-tag size="small" effect="plain" type="info" class="truncate max-w-[50%]">
+                        {{ otherNicknames(u)[0] }}
+                      </el-tag>
+                      <span v-if="otherNicknames(u).length > 1" class="text-xs text-g-400 shrink-0">
+                        +{{ otherNicknames(u).length - 1 }}
+                      </span>
+                    </template>
                   </div>
                 </div>
                 <el-button
@@ -268,7 +263,8 @@
                 </div>
               </template>
 
-              <!-- 最近动作 / 最近弹幕 / 最近礼物 -->
+              <!-- 最近动作 / 最近弹幕 / 最近礼物：**恒定 3 行**，缺的显示"无记录"占位。
+                   原来每行都是 v-if，0~3 行的高度差直接体现在卡片高度上（实测同页 292 vs 326）。 -->
               <div class="flex flex-col gap-2 mt-4 pt-3 border-t border-g-100/80">
                 <div v-if="u.latest_action" class="flex items-center gap-2 text-xs">
                   <span
@@ -282,6 +278,11 @@
                   </span>
                   <span class="text-g-400 shrink-0">{{ fmtAgo(u.latest_action.time) }}</span>
                 </div>
+                <div v-else class="flex items-center gap-2 text-xs">
+                  <span class="px-1.5 py-0.5 rounded-md bg-g-100 text-g-400 shrink-0">最近动作</span>
+                  <span class="flex-1 min-w-0 text-g-400">无记录</span>
+                </div>
+
                 <div v-if="u.latest_danmaku" class="flex items-center gap-2 text-xs">
                   <span class="px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-500 shrink-0">
                     弹幕
@@ -291,6 +292,11 @@
                   </span>
                   <span class="text-g-400 shrink-0">{{ fmtAgo(u.latest_danmaku.time) }}</span>
                 </div>
+                <div v-else class="flex items-center gap-2 text-xs">
+                  <span class="px-1.5 py-0.5 rounded-md bg-g-100 text-g-400 shrink-0">弹幕</span>
+                  <span class="flex-1 min-w-0 text-g-400">无记录</span>
+                </div>
+
                 <div v-if="u.latest_gift" class="flex items-center gap-2 text-xs">
                   <span class="px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-600 shrink-0">
                     礼物
@@ -300,32 +306,32 @@
                   </span>
                   <span class="text-g-400 shrink-0">{{ fmtAgo(u.latest_gift.time) }}</span>
                 </div>
-                <div
-                  v-if="!u.latest_action && !u.latest_danmaku && !u.latest_gift"
-                  class="text-xs text-g-400"
-                >
-                  暂无行为记录
+                <div v-else class="flex items-center gap-2 text-xs">
+                  <span class="px-1.5 py-0.5 rounded-md bg-g-100 text-g-400 shrink-0">礼物</span>
+                  <span class="flex-1 min-w-0 text-g-400">无记录</span>
                 </div>
               </div>
 
-              <!-- 底部：参与场次入口 -->
+              <!-- 底部：参与场次入口（恒定渲染、强制单行：只放最近 1 场，多的用"还有 N 场"，
+                   否则长主播名会把这一行折成两行、卡片高度又不一致） -->
               <div
-                v-if="u.sessions?.length"
-                class="flex items-center gap-2 mt-3 pt-3 border-t border-g-100/80 text-xs text-g-600 flex-wrap"
+                class="flex items-center gap-2 mt-3 pt-3 border-t border-g-100/80 text-xs text-g-600 min-w-0"
               >
-                <ArtSvgIcon icon="ri:time-line" class="text-g-400" />
+                <ArtSvgIcon icon="ri:time-line" class="text-g-400 shrink-0" />
                 <span class="shrink-0">最近参与</span>
-                <button
-                  v-for="s in u.sessions.slice(0, 2)"
-                  :key="s.id"
-                  class="dy-pressable px-2 h-6 rounded-md bg-g-100/70 text-g-700 hover:bg-theme/10 hover:text-theme"
-                  @click="router.push(`/douyin/detail/${s.id}`)"
-                >
-                  {{ s.streamer_name || '场次 #' + s.id }} · {{ fmtSessionTime(s.start_time) }}
-                </button>
-                <span v-if="u.sessions.length > 2" class="text-g-400">
-                  还有 {{ u.sessions.length - 2 }} 场
-                </span>
+                <template v-if="u.sessions?.length">
+                  <button
+                    class="dy-pressable px-2 h-6 rounded-md bg-g-100/70 text-g-700 hover:bg-theme/10 hover:text-theme truncate max-w-[220px]"
+                    @click="router.push(`/douyin/detail/${u.sessions[0].id}`)"
+                  >
+                    {{ u.sessions[0].streamer_name || '场次 #' + u.sessions[0].id }} ·
+                    {{ fmtSessionTime(u.sessions[0].start_time) }}
+                  </button>
+                  <span v-if="u.sessions.length > 1" class="text-g-400 shrink-0">
+                    还有 {{ u.sessions.length - 1 }} 场
+                  </span>
+                </template>
+                <span v-else class="text-g-400">暂无参与场次</span>
               </div>
             </div>
           </ElCol>

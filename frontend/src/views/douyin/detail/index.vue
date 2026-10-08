@@ -50,7 +50,7 @@
 
     <!-- 统计卡片 -->
     <ElRow :gutter="20">
-      <ElCol v-for="stat in statCards" :key="stat.label" :xs="12" :sm="8" :md="8" :lg="6">
+      <ElCol v-for="stat in statCards" :key="stat.label" :xs="12" :sm="8" :md="8" :lg="4">
         <div class="art-card flex items-center justify-between h-20 px-5 mb-5">
           <div class="min-w-0">
             <div class="text-xs text-g-500">{{ stat.label }}</div>

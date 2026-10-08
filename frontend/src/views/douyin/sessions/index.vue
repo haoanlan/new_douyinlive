@@ -10,9 +10,10 @@
 
     <!-- 顶部汇总 -->
     <ElRow :gutter="20">
-      <!-- 6 张卡：lg 用 span 6（每行 4 张）。span 4 时每行 6 张，1280 屏每张只剩约 150px，
-           数值必然被 truncate -->
-      <ElCol v-for="card in summaryCards" :key="card.label" :xs="12" :sm="8" :md="8" :lg="6">
+      <!-- 6 张卡保持一行（lg 用 span 4 = 每行 6 张）。
+           曾经为了防 1280 下数值被截断改成 span 6（每行 4 张），结果变成 4+2 两行、
+           右上大片空白 —— 用户明确要求一行。截断风险靠 :title 与 fmtNum 缩写来兜。 -->
+      <ElCol v-for="card in summaryCards" :key="card.label" :xs="12" :sm="8" :md="8" :lg="4">
         <div class="art-card flex items-center justify-between h-20 px-5 mb-5">
           <div class="min-w-0">
             <div class="text-xs text-g-500">{{ card.label }}</div>

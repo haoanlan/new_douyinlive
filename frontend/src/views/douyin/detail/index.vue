@@ -37,8 +37,9 @@
           </div>
           <div class="text-xs text-g-500 mt-1 truncate">
             {{ detail?.session?.streamer_name || '' }}
+            <!-- 开始 → 结束（跨天时结束时间带日期，见 fmtSessionRange）；直播中由上面的标签表达 -->
             <template v-if="detail?.session?.start_time">
-              · {{ fmtTime(detail.session.start_time) }}
+              · {{ fmtSessionRange(detail.session.start_time, detail.session.end_time) }}
             </template>
           </div>
         </div>
@@ -461,7 +462,7 @@
   } from '@/api/douyin'
   import { renderWordCloud } from '@/utils/wordcloud'
   import { replaceDouyinEmoji, esc } from '@/utils/douyin-emoji'
-  import { fmtTime, formatDuration, fmtNum, fmtTitle, rankClass } from '@/utils/format'
+  import { fmtTime, formatDuration, fmtNum, fmtTitle, fmtSessionRange, rankClass } from '@/utils/format'
   import { apiErrorMessage } from '@/utils/douyin-error'
 
   interface FeedItem {

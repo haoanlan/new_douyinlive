@@ -148,6 +148,36 @@ export function fmtClock(t: any): string {
   return d.toLocaleTimeString('zh-CN', { hour12: false })
 }
 
+/**
+ * 只取时分 (HH:mm)。
+ * 用于场次的"结束时间"这类展示：同一天内只需要时分，
+ * `fmtClock` 带秒（23:41:07）在列表里太啰嗦。
+ */
+export function fmtHm(t: any): string {
+  const d = toDate(t)
+  if (!d) return '-'
+  const p = (x: number) => String(x).padStart(2, '0')
+  return `${p(d.getHours())}:${p(d.getMinutes())}`
+}
+
+/**
+ * 场次时间范围："2026/10/07 22:08 → 23:41"
+ *
+ * 同一天只给结束的时分；**跨天必须带上日期** —— 否则实测会出现
+ * 「2026/09/16 16:57 → 15:12」这种"结束比开始还早"的读法（那天实际是 09/22 结束的）。
+ */
+export function fmtSessionRange(start: any, end: any): string {
+  if (!start) return '-'
+  const head = fmtTime(start)
+  if (!end) return head
+  const s = toDate(start)
+  const e = toDate(end)
+  if (!s || !e) return `${head} → ${fmtTime(end)}`
+  const sameDay =
+    s.getFullYear() === e.getFullYear() && s.getMonth() === e.getMonth() && s.getDate() === e.getDate()
+  return `${head} → ${sameDay ? fmtHm(end) : fmtTime(end)}`
+}
+
 /** 转义属性值（用于 HTML 属性内部） */
 function escAttr(s: string | null | undefined): string {
   if (!s) return ''

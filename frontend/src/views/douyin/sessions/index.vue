@@ -137,7 +137,12 @@
                 <div class="font-medium text-sm truncate text-g-900">{{
                   row.title || '场次 #' + row.id
                 }}</div>
-                <div class="text-xs text-g-500 truncate mt-0.5">{{ fmtTime(row.started_at) }}</div>
+                <!-- 已结束的场次要能看到结束时间与时长；直播中则明确写"进行中" -->
+                <div class="text-xs text-g-500 truncate mt-0.5">
+                  {{ fmtSessionRange(row.started_at, row.ended_at) }}
+                  <template v-if="row.duration_min"> · {{ formatDuration(row.duration_min) }}</template>
+                  <template v-if="row.is_live"> · 进行中</template>
+                </div>
               </div>
               <el-tag
                 :type="row.is_live ? 'danger' : 'info'"
@@ -221,7 +226,7 @@
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { fetchSessions, deleteSession, type Session } from '@/api/douyin'
   import { useUserStore } from '@/store/modules/user'
-  import { fmtTime, fmtNum, fmtFull } from '@/utils/format'
+  import { fmtNum, fmtFull, fmtSessionRange, formatDuration } from '@/utils/format'
   import { apiErrorMessage } from '@/utils/douyin-error'
   import { downloadWithAuth } from '@/utils/download'
 

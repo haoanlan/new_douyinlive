@@ -167,6 +167,23 @@
                     </span>
                     <span v-if="u.is_private" class="text-xs text-warning">私密账号</span>
                     <span v-if="!u.sec_uid" class="text-xs text-g-400">库里没有用户标识</span>
+                    <!--
+                      兜底信息：这个用户的抖音资料没取到时（没有 ip/性别/私密），
+                      这一行原来会留成一条空白（为卡片等高预留的 min-h）。
+                      填上"库内记录数 + 首次出现"既不留白，也顺带回答了"数据全不全"。
+                    -->
+                    <span
+                      v-if="
+                        u.sec_uid &&
+                        u.total_records &&
+                        !u.ip_location &&
+                        !u.user_gender &&
+                        !u.is_private
+                      "
+                      class="text-xs text-g-500 truncate"
+                    >
+                      库内 {{ u.total_records }} 条记录 · 首次 {{ fmtDay(u.first_seen) }}
+                    </span>
                   </div>
 
                   <!--
@@ -516,6 +533,14 @@
       return u.nickname_stats.map((s: any) => ({ nickname: s.nickname, count: s.count || 0 }))
     }
     return (u?.db_nicknames || []).map((n: string) => ({ nickname: n, count: 0 }))
+  }
+
+  /** 毫秒时间戳 → 2026/06/25（用于"首次出现"这类日期展示） */
+  function fmtDay(ms?: number | null): string {
+    if (!ms) return '—'
+    const d = new Date(ms)
+    const p = (n: number) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())}`
   }
 
   /**

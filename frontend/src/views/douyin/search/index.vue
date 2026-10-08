@@ -168,6 +168,58 @@
                     <span v-if="u.is_private" class="text-xs text-warning">私密账号</span>
                     <span v-if="!u.sec_uid" class="text-xs text-g-400">库里没有用户标识</span>
                   </div>
+
+                  <!--
+                    库内别名：跟在昵称下面（同属"这个人的身份信息"）。
+                    一个人可能有一二十个名字，其中绝大多数是抖音给未登录访客生成的 douXXXXXXX
+                    （实测样本 30 个名字里 28 个是这种）——全铺出来非常吵。
+                    所以只内联"像真名"的（≤2 个），游客名压成一个入口，点开看全部；
+                    固定一行高（h-[22px]）保证卡片高度不被别名数量影响。
+                  -->
+                  <div class="flex items-center gap-1.5 mt-2 min-w-0 h-[22px] overflow-hidden">
+                    <span class="text-xs text-g-400 shrink-0">库内别名</span>
+                    <el-tag
+                      v-for="a in realAliases(u).slice(0, 2)"
+                      :key="a.nickname"
+                      size="small"
+                      effect="plain"
+                      type="info"
+                      class="max-w-[150px] truncate"
+                    >
+                      {{ a.nickname
+                      }}<span v-if="a.count > 1" class="text-g-400"> ×{{ a.count }}</span>
+                    </el-tag>
+                    <span v-if="realAliases(u).length > 2" class="text-xs text-g-500 shrink-0">
+                      +{{ realAliases(u).length - 2 }}
+                    </span>
+                    <el-popover
+                      v-if="tempAliases(u).length"
+                      placement="top"
+                      :width="300"
+                      trigger="click"
+                    >
+                      <template #reference>
+                        <button class="dy-pressable text-xs text-theme shrink-0">
+                          另有 {{ tempAliases(u).length }} 个游客名
+                        </button>
+                      </template>
+                      <div class="text-xs text-g-500 mb-2">
+                        抖音为未登录访客生成的名字（同一人的游客身份，按出现次数排序）：
+                      </div>
+                      <div class="max-h-[220px] overflow-auto flex flex-wrap gap-1.5">
+                        <el-tag
+                          v-for="a in tempAliases(u)"
+                          :key="a.nickname"
+                          size="small"
+                          effect="plain"
+                          type="info"
+                        >
+                          {{ a.nickname }}<span class="text-g-400"> ×{{ a.count }}</span>
+                        </el-tag>
+                      </div>
+                    </el-popover>
+                    <span v-if="!aliasList(u).length" class="text-xs text-g-400">—</span>
+                  </div>
                 </div>
                 <el-button
                   v-if="u.sec_uid"
@@ -297,56 +349,6 @@
                   <span class="px-1.5 py-0.5 rounded-md bg-g-100 text-g-400 shrink-0">礼物</span>
                   <span class="flex-1 min-w-0 text-g-400">无记录</span>
                 </div>
-              </div>
-
-              <!--
-                库内别名（放在卡片底部：别名是次要信息，不该把参与场次/钻石这些主要数字往下推）。
-                一个人可能有一二十个名字，其中绝大多数是抖音给未登录访客生成的 douXXXXXXX
-                （实测样本 30 个名字里 28 个是这种）——全铺出来非常吵。
-                所以这里只内联"像真名"的几个，游客名压成一个入口，点开可看全部。
-              -->
-              <div class="flex items-center gap-1.5 mt-2 min-w-0 h-[22px] overflow-hidden">
-                <span class="text-xs text-g-400 shrink-0">库内别名</span>
-                <el-tag
-                  v-for="a in realAliases(u).slice(0, 2)"
-                  :key="a.nickname"
-                  size="small"
-                  effect="plain"
-                  type="info"
-                  class="max-w-[150px] truncate"
-                >
-                  {{ a.nickname }}<span v-if="a.count > 1" class="text-g-400"> ×{{ a.count }}</span>
-                </el-tag>
-                <span v-if="realAliases(u).length > 2" class="text-xs text-g-500 shrink-0">
-                  +{{ realAliases(u).length - 2 }}
-                </span>
-                <el-popover
-                  v-if="tempAliases(u).length"
-                  placement="top"
-                  :width="300"
-                  trigger="click"
-                >
-                  <template #reference>
-                    <button class="dy-pressable text-xs text-theme shrink-0">
-                      另有 {{ tempAliases(u).length }} 个游客名
-                    </button>
-                  </template>
-                  <div class="text-xs text-g-500 mb-2">
-                    抖音为未登录访客生成的名字（同一人的游客身份，按出现次数排序）：
-                  </div>
-                  <div class="max-h-[220px] overflow-auto flex flex-wrap gap-1.5">
-                    <el-tag
-                      v-for="a in tempAliases(u)"
-                      :key="a.nickname"
-                      size="small"
-                      effect="plain"
-                      type="info"
-                    >
-                      {{ a.nickname }}<span class="text-g-400"> ×{{ a.count }}</span>
-                    </el-tag>
-                  </div>
-                </el-popover>
-                <span v-if="!aliasList(u).length" class="text-xs text-g-400">—</span>
               </div>
 
               <!-- 底部：参与场次入口（恒定渲染、强制单行：只放最近 1 场，多的用"还有 N 场"，

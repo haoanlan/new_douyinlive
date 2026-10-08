@@ -1,11 +1,10 @@
 <template>
   <div class="douyin-page p-4">
-    <!-- 加载失败 / 无数据 -->
-    <div v-if="error" class="art-card p-5 mb-4">
-      <el-empty :description="error" :image-size="80">
-        <el-button @click="load">重试</el-button>
-      </el-empty>
-    </div>
+    <!--
+      加载失败：用共用错误态（不是空态插图），并把重试的进行中状态接上。
+      原来这里是 el-empty + 一个没有 loading 的「重试」按钮（UI-AUDIT P1-10）。
+    -->
+    <QueryErrorState v-if="error" :message="error" :retrying="loading" @retry="load" />
 
     <template v-else>
       <!-- 头部 -->
@@ -199,6 +198,7 @@
   import { useRoute, useRouter } from 'vue-router'
   import { fetchUser, type UserProfile } from '@/api/douyin'
   import { fmtNum, fmtTitle } from '@/utils/format'
+  import { apiErrorMessage } from '@/utils/douyin-error'
 
   defineOptions({ name: 'DouyinProfile' })
 
@@ -280,11 +280,13 @@
     try {
       profile.value = await fetchUser(secUid)
     } catch (e: unknown) {
-      // 后端在「该用户没有任何送礼记录」时返回 404，这里给出明确提示而不是空白页
-      const msg = (e as { response?: { status?: number }; message?: string })?.response?.status === 404
-        ? `未找到该用户的记录（sec_uid: ${secUid}）`
-        : (e as Error)?.message || '加载失败'
-      error.value = msg
+      // 后端在「该用户没有任何送礼记录」时返回 404 —— 给一句人话，
+      // 不要把内部字段名和 64 字符的 sec_uid 抛给用户（UI-AUDIT P1-10）
+      const status = (e as { response?: { status?: number } })?.response?.status
+      error.value =
+        status === 404
+          ? '没有找到这个用户的互动记录（该用户可能没有送礼或弹幕数据）'
+          : apiErrorMessage(e, '用户画像加载失败')
     } finally {
       loading.value = false
     }

@@ -333,7 +333,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+  import { computed, onActivated, onDeactivated, onMounted, onUnmounted, ref, watch } from 'vue'
   import { useRouter } from 'vue-router'
   import { useTransition } from '@vueuse/core'
   import { fetchOverview, fetchStatus, type OverviewData, type DaemonStatus } from '@/api/douyin'
@@ -447,16 +447,43 @@
   })
 
   let statusTimer: number | undefined
+
+  function stopTimers() {
+    if (statusTimer) clearInterval(statusTimer)
+    if (staleTimer) clearInterval(staleTimer)
+    statusTimer = undefined
+    staleTimer = undefined
+  }
+
+  function startTimers() {
+    stopTimers()
+    statusTimer = window.setInterval(() => {
+      // 切到别的页面时由 onDeactivated 停表；这里再挡一层"浏览器标签页被隐藏"
+      if (document.visibilityState === 'visible') refreshStatus()
+    }, 10000)
+    staleTimer = window.setInterval(tickStale, 1000)
+  }
+
+  // keep-alive 页：切回来刷新并恢复轮询、切走立刻停。
+  // 旧版只在 onUnmounted 清定时器，而这页被缓存、根本不会 unmount ——
+  // 于是停在其他页面时它仍在每 10s 偷偷请求（实测复现，见 UI-AUDIT P1-7）。
+  let activatedOnce = false
   onMounted(() => {
     refreshStatus()
     refreshOverview()
-    statusTimer = window.setInterval(refreshStatus, 10000)
-    staleTimer = window.setInterval(tickStale, 1000)
+    startTimers()
   })
-  onUnmounted(() => {
-    clearInterval(statusTimer)
-    clearInterval(staleTimer)
+  onActivated(() => {
+    // 首次挂载时 mounted 与 activated 都会触发，跳过以免重复请求
+    if (!activatedOnce) {
+      activatedOnce = true
+      return
+    }
+    refreshStatus()
+    startTimers()
   })
+  onDeactivated(() => stopTimers())
+  onUnmounted(() => stopTimers())
 </script>
 
 <style scoped>

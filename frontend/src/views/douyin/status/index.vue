@@ -240,7 +240,7 @@
         </div>
         <button
           type="button"
-          class="dy-pressable inline-flex items-center gap-1 text-xs text-g-500 select-none hover:text-theme"
+          class="dy-pressable inline-flex min-h-6 items-center gap-1 text-xs text-g-500 select-none hover:text-theme"
           aria-controls="dy-status-log"
           :aria-expanded="showLog"
           @click="showLog = !showLog"
@@ -297,7 +297,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+  import { computed, onActivated, onDeactivated, onMounted, onUnmounted, ref, watch } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import {
     fetchServiceStatus,
@@ -772,7 +772,10 @@
   let timer: number | undefined
   const startTimer = () => {
     stopTimer()
-    timer = window.setInterval(refresh, 8000)
+    timer = window.setInterval(() => {
+      // 切走时由 onDeactivated 停表；这里再挡一层"浏览器标签页被隐藏"
+      if (document.visibilityState === 'visible') refresh()
+    }, 8000)
   }
   const stopTimer = () => {
     if (timer) clearInterval(timer)
@@ -780,10 +783,22 @@
   }
 
   watch(autoRefresh, (on) => (on ? startTimer() : stopTimer()))
+  // keep-alive：这页被缓存，onUnmounted 不会触发 —— 旧版切走后仍在每 8s 请求（实测复现）
+  let activatedOnce = false
   onMounted(() => {
     refresh()
     startTimer()
   })
+  onActivated(() => {
+    // 首次挂载时 mounted 与 activated 都会触发，跳过以免重复请求
+    if (!activatedOnce) {
+      activatedOnce = true
+      return
+    }
+    refresh()
+    if (autoRefresh.value) startTimer()
+  })
+  onDeactivated(() => stopTimer())
   onUnmounted(() => stopTimer())
 </script>
 

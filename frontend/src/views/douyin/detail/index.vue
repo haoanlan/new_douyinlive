@@ -11,6 +11,15 @@
       <el-breadcrumb-item>场次 {{ sessionId }}</el-breadcrumb-item>
     </el-breadcrumb>
 
+    <!-- 失败必须说出来（UI-AUDIT P1-11）：否则页面停在全 0 的假数据上 -->
+    <QueryErrorState
+      v-if="queryError"
+      class="mb-5"
+      :message="queryError"
+      :retrying="loading"
+      @retry="refresh"
+    />
+
     <!-- 场次头部 -->
     <div class="art-card dy-toolbar mb-5 flex items-center justify-between gap-4 flex-wrap">
       <div class="flex items-center gap-3.5 min-w-0">
@@ -34,14 +43,14 @@
           </div>
         </div>
       </div>
-      <el-button @click="refresh">
+      <el-button :loading="loading" :disabled="loading" @click="refresh">
         <ArtSvgIcon icon="ri:refresh-line" class="mr-1" />刷新
       </el-button>
     </div>
 
     <!-- 统计卡片 -->
     <ElRow :gutter="20">
-      <ElCol v-for="stat in statCards" :key="stat.label" :xs="12" :sm="8" :md="8" :lg="4">
+      <ElCol v-for="stat in statCards" :key="stat.label" :xs="12" :sm="8" :md="8" :lg="6">
         <div class="art-card flex items-center justify-between h-20 px-5 mb-5">
           <div class="min-w-0">
             <div class="text-xs text-g-500">{{ stat.label }}</div>
@@ -453,6 +462,7 @@
   import { renderWordCloud } from '@/utils/wordcloud'
   import { replaceDouyinEmoji, esc } from '@/utils/douyin-emoji'
   import { fmtTime, formatDuration, fmtNum, fmtTitle, rankClass } from '@/utils/format'
+  import { apiErrorMessage } from '@/utils/douyin-error'
 
   interface FeedItem {
     _type: 'danmaku' | 'gift'
@@ -477,6 +487,8 @@
   const detail = ref<SessionDetail | null>(null)
   const streamerId = computed(() => detail.value?.session?.streamer_id)
   const loading = ref(true)
+  /** 取数失败的原因（与「真的没有数据」区分开） */
+  const queryError = ref('')
 
   /**
    * 「最新动态」的取数与渲染策略。
@@ -762,9 +774,14 @@
     loading.value = true
     try {
       detail.value = await fetchSessionDetail(sessionId)
+      queryError.value = ''
       renderCloud()
       observeCloudBox()
       loadDanmakuFeed()
+    } catch (e) {
+      // 以前这里只有 finally 没有 catch：场次不存在/接口失败时异常逃逸，
+      // 页面停在一片全 0 的假数据上，用户以为"这场真的没有数据"（UI-AUDIT P1-11）
+      queryError.value = apiErrorMessage(e, '场次详情加载失败')
     } finally {
       loading.value = false
     }

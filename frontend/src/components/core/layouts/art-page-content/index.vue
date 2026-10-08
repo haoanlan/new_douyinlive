@@ -15,15 +15,22 @@
     </div>
 
     <RouterView v-if="isRefresh" v-slot="{ Component, route }" :style="contentStyle">
-      <!-- 缓存路由动画 -->
-      <KeepAlive :max="10" :exclude="keepAliveExclude">
-        <component
-          class="art-page-view"
-          :is="Component"
-          :key="route.path"
-          v-if="route.meta.keepAlive"
-        />
-      </KeepAlive>
+      <!--
+        缓存路由动画（UI-AUDIT P1-5）：原来这里只有 KeepAlive、没有 Transition，
+        于是 5 个 keepAlive 页（dashboard/rooms/sessions/trends/status）之间互跳是硬切，
+        只有非缓存的 search/detail/profile 有动画 —— 观感上"点搜索结果反而更顺"。
+        Transition 包住 KeepAlive 是 Vue 官方支持的写法。
+      -->
+      <Transition :name="showTransitionMask ? '' : actualTransition">
+        <KeepAlive :max="10" :exclude="keepAliveExclude">
+          <component
+            class="art-page-view"
+            :is="Component"
+            :key="route.path"
+            v-if="route.meta.keepAlive"
+          />
+        </KeepAlive>
+      </Transition>
 
       <!-- 非缓存路由动画 -->
       <Transition :name="showTransitionMask ? '' : actualTransition">

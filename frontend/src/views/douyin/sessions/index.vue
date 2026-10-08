@@ -10,11 +10,16 @@
 
     <!-- 顶部汇总 -->
     <ElRow :gutter="20">
-      <ElCol v-for="card in summaryCards" :key="card.label" :xs="12" :sm="8" :md="8" :lg="4">
+      <!-- 6 张卡：lg 用 span 6（每行 4 张）。span 4 时每行 6 张，1280 屏每张只剩约 150px，
+           数值必然被 truncate -->
+      <ElCol v-for="card in summaryCards" :key="card.label" :xs="12" :sm="8" :md="8" :lg="6">
         <div class="art-card flex items-center justify-between h-20 px-5 mb-5">
           <div class="min-w-0">
             <div class="text-xs text-g-500">{{ card.label }}</div>
-            <div class="text-[20px] font-medium text-g-900 mt-1 leading-none truncate">
+            <div
+              class="text-[20px] font-medium text-g-900 mt-1 leading-none truncate"
+              :title="card.title"
+            >
               {{ card.value }}
             </div>
           </div>
@@ -205,12 +210,12 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+  import { computed, onActivated, onDeactivated, onMounted, onUnmounted, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { fetchSessions, deleteSession, type Session } from '@/api/douyin'
   import { useUserStore } from '@/store/modules/user'
-  import { fmtTime, fmtNum } from '@/utils/format'
+  import { fmtTime, fmtNum, fmtFull } from '@/utils/format'
   import { apiErrorMessage } from '@/utils/douyin-error'
   import { downloadWithAuth } from '@/utils/download'
 
@@ -235,31 +240,41 @@
   const pageSize = 10
 
   const summaryCards = computed(() => [
-    { label: '场次', icon: 'ri:live-line', value: fmtNum(sessions.value.length) },
+    {
+      label: '场次',
+      icon: 'ri:live-line',
+      value: fmtNum(sessions.value.length),
+      title: `${sessions.value.length} 场`
+    },
     {
       label: '总礼物',
       icon: 'ri:gift-2-line',
-      value: fmtNum(sessions.value.reduce((s, x) => s + (x.gift_count || 0), 0))
+      value: fmtNum(sessions.value.reduce((s, x) => s + (x.gift_count || 0), 0)),
+      title: fmtFull(sessions.value.reduce((s, x) => s + (x.gift_count || 0), 0))
     },
     {
       label: '总钻石',
       icon: 'ri:diamond-line',
-      value: fmtNum(sessions.value.reduce((s, x) => s + (x.total_diamonds || 0), 0))
+      value: fmtNum(sessions.value.reduce((s, x) => s + (x.total_diamonds || 0), 0)),
+      title: fmtFull(sessions.value.reduce((s, x) => s + (x.total_diamonds || 0), 0))
     },
     {
       label: '总弹幕',
       icon: 'ri:chat-3-line',
-      value: fmtNum(sessions.value.reduce((s, x) => s + (x.danmaku_count || 0), 0))
+      value: fmtNum(sessions.value.reduce((s, x) => s + (x.danmaku_count || 0), 0)),
+      title: fmtFull(sessions.value.reduce((s, x) => s + (x.danmaku_count || 0), 0))
     },
     {
       label: '总用户',
       icon: 'ri:user-3-line',
-      value: fmtNum(sessions.value.reduce((s, x) => s + (x.user_count || 0), 0))
+      value: fmtNum(sessions.value.reduce((s, x) => s + (x.user_count || 0), 0)),
+      title: fmtFull(sessions.value.reduce((s, x) => s + (x.user_count || 0), 0))
     },
     {
       label: '总点赞',
       icon: 'ri:thumb-up-line',
-      value: fmtNum(sessions.value.reduce((s, x) => s + (x.stats_like || 0), 0))
+      value: fmtNum(sessions.value.reduce((s, x) => s + (x.stats_like || 0), 0)),
+      title: fmtFull(sessions.value.reduce((s, x) => s + (x.stats_like || 0), 0))
     }
   ])
 
@@ -392,7 +407,13 @@
     } catch {
       return
     }
-    await deleteSession(String(row.id))
+    try {
+      await deleteSession(String(row.id))
+    } catch (e) {
+      // 失败必须说清楚：以前这里是裸 await，异常逃逸后界面还会提示「已删除」（UI-AUDIT P1-12）
+      ElMessage.error(apiErrorMessage(e, '删除失败'))
+      return
+    }
     ElMessage.success('已删除')
     selectedIds.value = selectedIds.value.filter((x) => x !== row.id)
     refresh()
@@ -409,15 +430,21 @@
       return
     }
     let ok = 0
+    const failed: string[] = []
     for (const id of ids) {
       try {
         await deleteSession(String(id))
         ok++
-      } catch {
-        /* ignore */
+      } catch (e) {
+        failed.push(`#${id} ${apiErrorMessage(e, '失败')}`)
       }
     }
-    ElMessage.success(`已删除 ${ok} 场`)
+    if (ok) ElMessage.success(`已删除 ${ok} 场`)
+    if (failed.length) {
+      ElMessage.error(
+        `${failed.length} 场删除失败：${failed.slice(0, 3).join('、')}${failed.length > 3 ? ' 等' : ''}`
+      )
+    }
     selectedIds.value = []
     refresh()
   }
@@ -433,11 +460,39 @@
   )
 
   let timer: number | undefined
+
+  function stopPolling() {
+    if (timer) clearInterval(timer)
+    timer = undefined
+  }
+
+  function startPolling() {
+    stopPolling()
+    timer = window.setInterval(() => {
+      // 切走时由 onDeactivated 停表；这里再挡一层"浏览器标签页被隐藏"
+      if (document.visibilityState === 'visible') refresh()
+    }, 15000)
+  }
+
+  // keep-alive：切回来刷新并恢复轮询、切走停止。
+  // 旧版只在 onUnmounted 清定时器，而这页被缓存（且 isHideTab，标签关不掉）→
+  // 停在任何其他页面时它都还在每 15s 请求（实测复现，UI-AUDIT P1-7）。
+  let activatedOnce = false
   onMounted(() => {
     refresh()
-    timer = window.setInterval(refresh, 15000)
+    startPolling()
   })
-  onUnmounted(() => clearInterval(timer))
+  onActivated(() => {
+    // 首次挂载时 mounted 与 activated 都会触发，跳过以免重复请求
+    if (!activatedOnce) {
+      activatedOnce = true
+      return
+    }
+    refresh()
+    startPolling()
+  })
+  onDeactivated(() => stopPolling())
+  onUnmounted(() => stopPolling())
 </script>
 
 <style scoped>

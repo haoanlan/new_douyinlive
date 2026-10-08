@@ -37,6 +37,8 @@ export const douyinRoutes: AppRouteRecord = {
         isHide: true,
         isHideTab: true,
         keepAlive: true,
+        // 隐藏页没有自己的菜单项/标签，指定高亮归属（侧边栏与工作标签都用它兜底）
+        activePath: '/douyin/rooms',
         roles: ['R_SUPER', 'R_GUEST']
       }
     },
@@ -55,7 +57,14 @@ export const douyinRoutes: AppRouteRecord = {
       path: 'search',
       name: 'DouyinSearch',
       component: '/douyin/search',
-      meta: { title: 'menus.douyin.search', icon: 'ri:search-line', roles: ['R_SUPER', 'R_GUEST'] }
+      meta: {
+        title: 'menus.douyin.search',
+        icon: 'ri:search-line',
+        // 查询要调抖音接口、结果也可能很长：离开（比如点进某个用户）后回来必须还在，
+        // 不能因为没缓存就清空关键词与结果。见 docs/UI-AUDIT-2026-10-07.md P0-1。
+        keepAlive: true,
+        roles: ['R_SUPER', 'R_GUEST']
+      }
     },
     {
       path: 'status',
@@ -77,6 +86,7 @@ export const douyinRoutes: AppRouteRecord = {
         icon: 'ri:file-chart-line',
         isHide: true,
         isHideTab: true,
+        activePath: '/douyin/rooms',
         roles: ['R_SUPER', 'R_GUEST']
       },
       props: true
@@ -90,6 +100,7 @@ export const douyinRoutes: AppRouteRecord = {
         icon: 'ri:user-star-line',
         isHide: true,
         isHideTab: true,
+        activePath: '/douyin/search',
         roles: ['R_SUPER', 'R_GUEST']
       },
       props: true

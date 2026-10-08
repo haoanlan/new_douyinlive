@@ -92,8 +92,21 @@
       </div>
     </el-alert>
 
+    <!--
+      首次加载先占住位置，再出内容（UI-AUDIT P0-3）。
+      原来 onMounted 里自动选中房间后：引导卡（!selectedHosts.length）不成立、
+      内容卡（hasData）也不成立，空态分支又被 !loading 挡住 —— 中间有一整段
+      完全空白，数据回来时高度一次性 +896px。
+    -->
+    <div
+      v-if="loading && !hasData"
+      v-loading="true"
+      element-loading-text="加载中…"
+      class="art-card min-h-[420px]"
+    ></div>
+
     <!-- 没选房间：明确提示，而不是给一片空白 -->
-    <div v-if="!selectedHosts.length" class="art-card p-10">
+    <div v-else-if="!selectedHosts.length" class="art-card p-10">
       <el-empty description="请先在上方选择要分析的房间" :image-size="80">
         <div class="text-xs text-g-500">
           选一个房间看它自己的走势；多选几个可以把它们叠在同一张图上对比。
@@ -267,7 +280,7 @@
       </div>
     </template>
 
-    <div v-else-if="!loading && !queryError" class="art-card p-10">
+    <div v-else-if="!queryError" class="art-card p-10">
       <el-empty description="该时间范围内没有数据" :image-size="80">
         <div class="text-xs text-g-500">
           可以换一个更长的时间范围，或先确认这些房间是否已开始采集。
@@ -278,8 +291,9 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+  import { computed, nextTick, onActivated, onMounted, onUnmounted, ref, watch } from 'vue'
   import { useRouter } from 'vue-router'
+  import { ElMessage } from 'element-plus'
   import { echarts } from '@/plugins/echarts'
   import {
     fetchHostTrends,
@@ -354,8 +368,11 @@
     if (next) {
       if (i < 0) activeMetrics.value.push(key)
     } else {
-      // 至少留一个，否则页面会空掉
-      if (activeMetrics.value.length === 1) return
+      // 至少留一个，否则页面会空掉。必须说出来，否则用户看到的是"点了没反应"（UI-AUDIT P2-12）
+      if (activeMetrics.value.length === 1) {
+        ElMessage.info('至少保留一个指标')
+        return
+      }
       if (i >= 0) activeMetrics.value.splice(i, 1)
     }
   }
@@ -616,10 +633,38 @@
   // 拿得到真实尺寸（默认 'pre' 会在 DOM 更新前跑，容器还是 display:none）。
   watch(activeMetrics, () => redraw(), { deep: true, flush: 'post' })
 
+  /**
+   * 图表跟随视口变化（UI-AUDIT P0-4）。
+   *
+   * 原来没有任何 resize 监听：窗口缩小后 canvas 仍按旧宽度绘制，超出部分被容器裁掉
+   * （实测 1024 视口下 canvas 仍是 1443px）。这页又是 keep-alive，切回来也不会重建，
+   * 所以窗口改过大小后必须主动 resize。
+   */
+  let resizeTimer: number | undefined
+  function handleResize() {
+    if (resizeTimer) window.clearTimeout(resizeTimer)
+    resizeTimer = window.setTimeout(() => {
+      for (const m of allMetrics) {
+        const el = chartEls[m.key]
+        if (el) echarts.getInstanceByDom(el)?.resize()
+      }
+    }, 150)
+  }
+
   onMounted(async () => {
+    window.addEventListener('resize', handleResize)
     await loadHosts()
     await refresh()
   })
 
-  onUnmounted(disposeCharts)
+  // keep-alive：切回来时容器宽度可能已经变了（侧边栏折叠、窗口缩放），补一次
+  onActivated(() => {
+    nextTick(() => handleResize())
+  })
+
+  onUnmounted(() => {
+    window.removeEventListener('resize', handleResize)
+    if (resizeTimer) window.clearTimeout(resizeTimer)
+    disposeCharts()
+  })
 </script>

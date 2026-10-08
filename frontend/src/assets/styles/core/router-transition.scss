@@ -102,3 +102,51 @@ $fade-easing: transition-config('fade-easing');
 .slide-bottom {
   @include slide-transition('bottom');
 }
+
+// === 离开的页面脱离文档流 ===
+//
+// #app-main 是滚动容器（views/index/style.scss），新旧两页在 250ms 内同时参与布局时
+// 滚动高度接近翻倍，滚动条会跳、位置会漂（实测：search → detail 期间 DOM 里同时存在
+// 两个 .art-page-view）。让"正在离开"的那一页绝对定位即可，总时长不变、也不会跳。
+// 定位祖先是 .layout-content（已设为 position: relative）。
+.art-page-view.fade-leave-active,
+.art-page-view.slide-left-leave-active,
+.art-page-view.slide-right-leave-active,
+.art-page-view.slide-top-leave-active,
+.art-page-view.slide-bottom-leave-active {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+}
+
+// === 减弱动效 ===
+//
+// 整页位移是最典型的"前庭触发"动效。实测（UI-AUDIT P1-21）系统开启"减少动态效果"后
+// 路由过渡仍在跑，所以这里统一降到 1ms：只保留状态切换，不再有位移/淡入的过程。
+@media (prefers-reduced-motion: reduce) {
+  .fade-enter-active,
+  .fade-leave-active,
+  .slide-left-enter-active,
+  .slide-left-leave-active,
+  .slide-right-enter-active,
+  .slide-right-leave-active,
+  .slide-top-enter-active,
+  .slide-top-leave-active,
+  .slide-bottom-enter-active,
+  .slide-bottom-leave-active {
+    transition-duration: 1ms !important;
+    will-change: auto;
+  }
+
+  .slide-left-enter-from,
+  .slide-right-enter-from,
+  .slide-top-enter-from,
+  .slide-bottom-enter-from,
+  .slide-left-leave-to,
+  .slide-right-leave-to,
+  .slide-top-leave-to,
+  .slide-bottom-leave-to {
+    transform: none;
+  }
+}

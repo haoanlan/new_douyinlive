@@ -810,7 +810,29 @@
   }
 
   .el-radio-button__inner {
+    /* 点按目标下限：实测趋势页时间范围 58×22（UI-AUDIT P1-9） */
+    min-height: 24px;
     color: var(--dy-text-secondary);
+  }
+
+  /*
+   * 点按目标下限（WCAG 2.5.8 AA 要求 ≥24×24）。
+   * 实测偏小：dashboard 列表「详情」按钮 30×18（11 个）、trends 的 el-tag
+   * 关闭按钮 14×14、trends 时间范围 radio 58×22。见 UI-AUDIT P1-9。
+   */
+  .el-button--small {
+    min-height: 24px;
+  }
+
+  /* 关闭按钮的视觉尺寸不动，用伪元素把可点区域撑到 24×24 */
+  .el-tag .el-tag__close {
+    position: relative;
+
+    &::after {
+      position: absolute;
+      inset: -6px;
+      content: '';
+    }
   }
 
   /*

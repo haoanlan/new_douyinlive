@@ -142,7 +142,11 @@
 
   // 计算属性
   const list = computed(() => store.opened)
-  const activeTab = computed(() => currentRoute.value.path)
+  const activeTab = computed(() =>
+    // 隐藏页（sessions/detail/profile）没有自己的标签：用 meta.activePath 高亮它归属的标签，
+    // 否则标签栏没有激活态，右键菜单也会作用在一个不存在的 path 上（见 UI-AUDIT P2-25）
+    String(currentRoute.value.meta.activePath || currentRoute.value.path)
+  )
   const activeTabIndex = computed(() => list.value.findIndex((tab) => tab.path === activeTab.value))
 
   // 右键菜单逻辑

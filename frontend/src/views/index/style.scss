@@ -31,6 +31,8 @@
         box-sizing: border-box;
         width: calc(100% - 40px);
         margin: auto;
+        // 路由过渡时"离开的那一页"会绝对定位到它里面（见 core/router-transition.scss）
+        position: relative;
 
         // 子页面默认 style
         .page-content {

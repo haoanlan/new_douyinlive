@@ -470,6 +470,16 @@
     animation: breathing 1.5s ease-in-out infinite;
   }
 
+  /*
+   * 这个无限动画在任何页面都常驻（实测每页 document.getAnimations() 里都有它）：
+   * 既持续耗电，也会让"等动画结束"的自动化永远等不到。减弱动效时直接停掉。
+   */
+  @media (prefers-reduced-motion: reduce) {
+    .breathing-dot {
+      animation: none;
+    }
+  }
+
   /* iPad breakpoint adjustments */
   @media screen and (width <= 768px) {
     .logo2 {

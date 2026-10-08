@@ -745,8 +745,15 @@
     document.addEventListener('visibilitychange', onVisibility)
   })
 
-  // keep-alive 场景：切回本页时刷新并恢复轮询，切走时停掉
+  // keep-alive 场景：切回本页时刷新并恢复轮询，切走时停掉。
+  // 首次挂载时 mounted 与 activated 都会触发，所以用 activatedOnce 跳过重复刷新
+  // —— 否则首屏 /api/rooms 会连发两次（UI-AUDIT P2-29）
+  let activatedOnce = false
   onActivated(() => {
+    if (!activatedOnce) {
+      activatedOnce = true
+      return
+    }
     refresh()
     startPolling()
   })

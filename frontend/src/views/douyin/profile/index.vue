@@ -51,38 +51,43 @@
         <el-col :sm="24" :md="12">
           <div class="art-card p-5 mb-5">
             <div class="art-card-header"><div class="title"><h4>常用礼物</h4></div></div>
-            <el-table :data="profile?.topGiftsByCount || []" size="small">
-              <!-- 空态交给表格自己，避免"表格空态 + 卡片空态"两份同时出现（P2-15） -->
-              <template #empty>
-                <el-empty description="暂无礼物" :image-size="60" />
-              </template>
-              <el-table-column label="礼物" min-width="130">
-                <template #default="{ row }">
-                  <div class="flex items-center gap-2">
-                    <el-image
-                      v-if="row.icon_url"
-                      :src="row.icon_url"
-                      :preview-src-list="[row.icon_url]"
-                      fit="contain"
-                      class="!w-6 !h-6 shrink-0"
-                    />
-                    <span class="truncate">{{ row.gift_name }}</span>
-                  </div>
-                </template>
-              </el-table-column>
-              <el-table-column label="次数" width="80" align="right">
-                <template #default="{ row }">
-                  <span :title="fmtTitle(row.count)">{{ fmtNum(row.count) }}</span>
-                </template>
-              </el-table-column>
-              <el-table-column label="钻石" width="90" align="right">
-                <template #default="{ row }">
-                  <span :title="fmtTitle(row.total_diamonds)">
-                    {{ fmtNum(row.total_diamonds) }}
-                  </span>
-                </template>
-              </el-table-column>
-            </el-table>
+            <!-- 行样式与总览页一致：圆角矩形长条，不用表格分割线（用户要求） -->
+            <div class="flex flex-col gap-2.5 mt-4">
+              <div
+                v-for="(g, i) in (profile?.topGiftsByCount || []).slice(0, 8)"
+                :key="g.gift_name"
+                class="flex items-center gap-2.5 rounded-xl bg-g-100/50 px-3 py-2 min-h-[52px]"
+              >
+                <span
+                  class="w-6 h-6 rounded-md flex-cc text-xs font-bold shrink-0"
+                  :class="rankClass(i)"
+                  >{{ i + 1 }}</span
+                >
+                <el-image
+                  v-if="g.icon_url"
+                  :src="g.icon_url"
+                  fit="contain"
+                  class="!size-7 shrink-0"
+                  :preview-src-list="[g.icon_url]"
+                  preview-teleported
+                />
+                <ArtSvgIcon v-else icon="ri:gift-2-line" class="text-base shrink-0 text-g-500" />
+                <span class="flex-1 min-w-0 truncate text-sm text-g-800">{{ g.gift_name }}</span>
+                <span class="text-xs text-g-500 shrink-0" :title="fmtTitle(g.count)"
+                  >{{ fmtNum(g.count) }} 次</span
+                >
+                <span
+                  class="text-sm font-bold text-theme shrink-0"
+                  :title="fmtTitle(g.total_diamonds)"
+                  >{{ fmtNum(g.total_diamonds) }}钻</span
+                >
+              </div>
+              <el-empty
+                v-if="!profile?.topGiftsByCount?.length"
+                description="暂无礼物"
+                :image-size="60"
+              />
+            </div>
           </div>
 
           <div class="art-card p-5 flex flex-col">
@@ -108,29 +113,39 @@
 
           <div class="art-card p-5">
             <div class="art-card-header"><div class="title"><h4>活跃场次</h4></div></div>
-            <el-table :data="(profile?.activeSessions || []).slice(0, 8)" size="small">
-              <template #empty>
-                <el-empty description="暂无数据" :image-size="60" />
-              </template>
-              <el-table-column prop="streamer_name" label="主播" min-width="110" show-overflow-tooltip />
-              <el-table-column label="开始时间" width="150">
-                <template #default="{ row }">{{ fmtTs(row.start_time) }}</template>
-              </el-table-column>
-              <el-table-column label="钻石" width="90" align="right">
-                <template #default="{ row }">
-                  <span :title="fmtTitle(row.session_diamonds)">
-                    {{ fmtNum(row.session_diamonds) }}
-                  </span>
-                </template>
-              </el-table-column>
-              <el-table-column label="" width="70" align="right">
-                <template #default="{ row }">
-                  <el-button size="small" text type="primary" @click="goDetail(row.id)">
-                    详情
-                  </el-button>
-                </template>
-              </el-table-column>
-            </el-table>
+            <!-- 条形行 + 整行可点（与总览「最近场次」同一套交互） -->
+            <div class="flex flex-col gap-2.5 mt-4">
+              <div
+                v-for="s in (profile?.activeSessions || []).slice(0, 8)"
+                :key="s.id"
+                class="dy-row-link flex items-center gap-3 rounded-xl bg-g-100/50 px-3 py-2.5"
+                role="button"
+                tabindex="0"
+                :aria-label="`查看场次 #${s.id} 详情`"
+                @click="goDetail(s.id)"
+                @keydown.enter.prevent="goDetail(s.id)"
+                @keydown.space.prevent="goDetail(s.id)"
+              >
+                <el-avatar :size="32" :src="s.avatar" class="shrink-0">{{
+                  s.streamer_name?.[0] || '场'
+                }}</el-avatar>
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm truncate">{{ s.streamer_name || '未知主播' }}</div>
+                  <div class="text-xs text-g-500 truncate">{{ fmtTs(s.start_time) }}</div>
+                </div>
+                <span
+                  class="text-sm font-bold text-theme shrink-0"
+                  :title="fmtTitle(s.session_diamonds)"
+                  >{{ fmtNum(s.session_diamonds) }}钻</span
+                >
+                <ArtSvgIcon icon="ri:arrow-right-s-line" class="text-base text-g-400 shrink-0" />
+              </div>
+              <el-empty
+                v-if="!profile?.activeSessions?.length"
+                description="暂无数据"
+                :image-size="60"
+              />
+            </div>
           </div>
         </el-col>
 
@@ -138,65 +153,94 @@
         <el-col :sm="24" :md="12">
           <div class="art-card p-5 mb-5">
             <div class="art-card-header"><div class="title"><h4>常送主播</h4></div></div>
-            <el-table :data="profile?.topStreamers || []" size="small">
-              <template #empty>
-                <el-empty description="暂无数据" :image-size="60" />
-              </template>
-              <el-table-column prop="name" label="主播" min-width="120" show-overflow-tooltip />
-              <el-table-column label="次数" width="80" align="right">
-                <template #default="{ row }">
-                  <span :title="fmtTitle(row.count)">{{ fmtNum(row.count) }}</span>
-                </template>
-              </el-table-column>
-              <el-table-column label="钻石" width="90" align="right">
-                <template #default="{ row }">
-                  <span :title="fmtTitle(row.diamonds)">{{ fmtNum(row.diamonds) }}</span>
-                </template>
-              </el-table-column>
-            </el-table>
+            <div class="flex flex-col gap-2.5 mt-4">
+              <div
+                v-for="(s, i) in profile?.topStreamers || []"
+                :key="s.name"
+                class="flex items-center gap-2.5 rounded-xl bg-g-100/50 px-3 py-2 min-h-[52px]"
+              >
+                <span
+                  class="w-6 h-6 rounded-md flex-cc text-xs font-bold shrink-0"
+                  :class="rankClass(i)"
+                  >{{ i + 1 }}</span
+                >
+                <span class="flex-1 min-w-0 truncate text-sm text-g-800">{{ s.name }}</span>
+                <span class="text-xs text-g-500 shrink-0" :title="fmtTitle(s.count)"
+                  >{{ fmtNum(s.count) }} 次</span
+                >
+                <span class="text-sm font-bold text-theme shrink-0" :title="fmtTitle(s.diamonds)"
+                  >{{ fmtNum(s.diamonds) }}钻</span
+                >
+              </div>
+              <el-empty v-if="!profile?.topStreamers?.length" description="暂无数据" :image-size="60" />
+            </div>
           </div>
 
           <div class="art-card p-5 mb-5">
             <div class="art-card-header"><div class="title"><h4>近期行为</h4></div></div>
-            <el-timeline>
-              <el-timeline-item
-                v-for="(a, i) in profile?.recent_actions || []"
+            <!-- 原来是 el-timeline（带竖线 + 圆点）→ 改成与总览一致的条形行 -->
+            <div class="flex flex-col gap-2.5 mt-4">
+              <div
+                v-for="(a, i) in (profile?.recent_actions || []).slice(0, 10)"
                 :key="i"
-                :timestamp="a.time"
+                class="flex items-center gap-2.5 rounded-xl bg-g-100/50 px-3 py-2"
               >
-                <el-tag size="small" :type="a.type === 'gift' ? 'warning' : 'info'" class="mr-2">
+                <el-tag
+                  size="small"
+                  :type="a.type === 'gift' ? 'warning' : 'info'"
+                  class="shrink-0 !border-none"
+                >
                   {{ a.type === 'gift' ? '礼物' : '弹幕' }}
                 </el-tag>
-                {{ a.content }}
-              </el-timeline-item>
-            </el-timeline>
-            <el-empty
-              v-if="!profile?.recent_actions?.length"
-              description="暂无行为"
-              :image-size="60"
-            />
+                <span class="flex-1 min-w-0 truncate text-sm text-g-700">{{ a.content }}</span>
+                <span class="text-xs text-g-400 shrink-0">{{ a.time }}</span>
+              </div>
+              <el-empty
+                v-if="!profile?.recent_actions?.length"
+                description="暂无行为"
+                :image-size="60"
+              />
+            </div>
           </div>
 
           <div class="art-card p-5">
             <div class="art-card-header"><div class="title"><h4>馈赠明细</h4></div></div>
-            <el-table :data="(profile?.giftBreakdown || []).slice(0, 8)" size="small">
-              <template #empty>
-                <el-empty description="暂无数据" :image-size="60" />
-              </template>
-              <el-table-column prop="gift_name" label="礼物" min-width="120" show-overflow-tooltip />
-              <el-table-column label="次数" width="80" align="right">
-                <template #default="{ row }">
-                  <span :title="fmtTitle(row.count)">{{ fmtNum(row.count) }}</span>
-                </template>
-              </el-table-column>
-              <el-table-column label="钻石" width="90" align="right">
-                <template #default="{ row }">
-                  <span :title="fmtTitle(row.total_diamonds)">
-                    {{ fmtNum(row.total_diamonds) }}
-                  </span>
-                </template>
-              </el-table-column>
-            </el-table>
+            <div class="flex flex-col gap-2.5 mt-4">
+              <div
+                v-for="(g, i) in (profile?.giftBreakdown || []).slice(0, 8)"
+                :key="g.gift_name"
+                class="flex items-center gap-2.5 rounded-xl bg-g-100/50 px-3 py-2 min-h-[52px]"
+              >
+                <span
+                  class="w-6 h-6 rounded-md flex-cc text-xs font-bold shrink-0"
+                  :class="rankClass(i)"
+                  >{{ i + 1 }}</span
+                >
+                <el-image
+                  v-if="g.icon_url"
+                  :src="g.icon_url"
+                  fit="contain"
+                  class="!size-7 shrink-0"
+                  :preview-src-list="[g.icon_url]"
+                  preview-teleported
+                />
+                <ArtSvgIcon v-else icon="ri:gift-2-line" class="text-base shrink-0 text-g-500" />
+                <span class="flex-1 min-w-0 truncate text-sm text-g-800">{{ g.gift_name }}</span>
+                <span class="text-xs text-g-500 shrink-0" :title="fmtTitle(g.count)"
+                  >{{ fmtNum(g.count) }} 次</span
+                >
+                <span
+                  class="text-sm font-bold text-theme shrink-0"
+                  :title="fmtTitle(g.total_diamonds)"
+                  >{{ fmtNum(g.total_diamonds) }}钻</span
+                >
+              </div>
+              <el-empty
+                v-if="!profile?.giftBreakdown?.length"
+                description="暂无数据"
+                :image-size="60"
+              />
+            </div>
           </div>
         </el-col>
       </el-row>
@@ -208,7 +252,7 @@
   import { computed, onMounted, ref } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { fetchUser, type UserProfile } from '@/api/douyin'
-  import { fmtNum, fmtTitle } from '@/utils/format'
+  import { fmtNum, fmtTitle, rankClass } from '@/utils/format'
   import { apiErrorMessage } from '@/utils/douyin-error'
 
   defineOptions({ name: 'DouyinProfile' })

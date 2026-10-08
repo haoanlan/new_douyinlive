@@ -327,6 +327,30 @@
 }
 
 /* ==========================================================================
+ * 可整行点击的条形行（总览"最近场次"、画像"活跃场次"共用）
+ * 原来这套 hover/焦点样式只写在 dashboard 的 scoped style 里（.recent-row），
+ * 其它页面要用只能复制一份 —— 提到全局，避免两处各写一遍。
+ * ========================================================================== */
+.douyin-page .dy-row-link {
+  cursor: pointer;
+  transition:
+    background-color var(--dy-dur-fast) var(--dy-ease-out),
+    box-shadow var(--dy-dur-fast) var(--dy-ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .douyin-page .dy-row-link:hover {
+    background-color: var(--art-gray-200);
+    box-shadow: 0 2px 10px rgb(0 0 0 / 6%);
+  }
+}
+
+.douyin-page .dy-row-link:focus-visible {
+  outline: 2px solid var(--theme-color);
+  outline-offset: 2px;
+}
+
+/* ==========================================================================
  * 用户画像页：底部 6 个模块的矩形网格
  *
  * 原来是「左右两个 el-col 各堆 3 张卡」—— 列内堆叠，同一行两张卡的高度

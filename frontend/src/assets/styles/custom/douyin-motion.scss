@@ -327,6 +327,52 @@
 }
 
 /* ==========================================================================
+ * 用户画像页：底部 6 个模块的矩形网格
+ *
+ * 原来是「左右两个 el-col 各堆 3 张卡」—— 列内堆叠，同一行两张卡的高度
+ * 互不相干，底边必然参差（用户反馈"底部要对齐/要和总览一样矩形模块"）。
+ *
+ * 做法：把 el-row 变成 2 列 grid，两个 el-col 用 `display: contents` 让它们的
+ * 子卡片直接成为网格项。`grid-auto-flow: column` 按列填充，于是 DOM 顺序
+ * （左列 3 张 + 右列 3 张）正好排成
+ *   第 1 行 常用礼物 | 常送主播
+ *   第 2 行 活跃时段 | 近期行为
+ *   第 3 行 活跃场次 | 馈赠明细
+ * 行内由 grid 的 stretch 保证等高 → 底边齐平，且不用挪动 DOM。
+ * ========================================================================== */
+.douyin-page .dy-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  /*
+   * 必须同时给出显式行数：`grid-auto-flow: column` 在**没有显式行**时，
+   * 每张卡都会新开一列（实测 6 列、卡片被拉到 2177px 高）。
+   * 这里是固定的 6 个模块 → 3 行；多出来的模块会落到第 3 列（可接受的降级）。
+   */
+  grid-template-rows: repeat(3, auto);
+  grid-auto-flow: column;
+  gap: 20px;
+  align-items: stretch;
+}
+
+/* 让 el-col 不产生自己的盒子，子卡片直接参与网格布局 */
+.douyin-page .dy-profile-grid > .el-col {
+  display: contents;
+}
+
+/* 卡片外边距归零：间距统一由网格 gap 控制，否则每列最后一张会少 20px */
+.douyin-page .dy-profile-grid .art-card {
+  margin-bottom: 0 !important;
+}
+
+@media (max-width: 1100px) {
+  .douyin-page .dy-profile-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-auto-flow: row;
+  }
+}
+
+/* ==========================================================================
  * 场次详情页：词云 + 最新动态
  * ========================================================================== */
 

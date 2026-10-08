@@ -45,7 +45,8 @@
         </div>
       </div>
 
-      <el-row :gutter="20">
+      <!-- 底部 6 个模块排成矩形网格（两列、行内等高、底边齐平），见 douyin-motion.scss 的 .dy-profile-grid -->
+      <el-row :gutter="20" class="dy-profile-grid">
         <!-- 左列 -->
         <el-col :sm="24" :md="12">
           <div class="art-card p-5 mb-5">
@@ -84,9 +85,10 @@
             </el-table>
           </div>
 
-          <div class="art-card p-5 mb-5">
+          <div class="art-card p-5 flex flex-col">
             <div class="art-card-header"><div class="title"><h4>活跃时段</h4></div></div>
-            <div class="flex items-end gap-0.5 h-24" role="img" :aria-label="hourBarsAria">
+            <!-- 图表区 flex-1：矩形网格行内等高后由它吃掉多余高度，避免卡片下方留一大片空白 -->
+            <div class="flex items-end gap-0.5 h-24 flex-1 min-h-24" role="img" :aria-label="hourBarsAria">
               <div
                 v-for="h in hourBars"
                 :key="h.hour"

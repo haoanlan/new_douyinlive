@@ -62,6 +62,7 @@
 </template>
 
 <script setup lang="ts">
+  import { ElMessage } from 'element-plus'
   import { useFastEnter } from '@/hooks/core/useFastEnter'
   import type { FastEnterApplication, FastEnterQuickLink } from '@/types/config'
 
@@ -89,7 +90,18 @@
     if (targetPath.startsWith('http')) {
       window.open(targetPath, '_blank')
     } else {
-      router.push({ name: targetPath })
+      /*
+       * 未注册的路由名会让 vue-router 抛 MATCHER_NOT_FOUND（同步抛或 promise 拒绝），
+       * 原来没有任何处理 → 点了毫无反应。两种形式都兜住并给出提示。
+       * 见 UI-AUDIT P2-26。
+       */
+      try {
+        router.push({ name: targetPath }).catch(() => {
+          ElMessage.warning('该入口暂时不可用')
+        })
+      } catch {
+        ElMessage.warning('该入口暂时不可用')
+      }
     }
 
     popoverRef.value?.hide()

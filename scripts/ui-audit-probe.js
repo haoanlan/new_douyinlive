@@ -43,18 +43,23 @@ async function uiLogin(page) {
   const inputs = page.locator('.el-input__inner');
   await inputs.nth(0).fill('admin');
   await inputs.nth(1).fill('123456');
-  const box = await page.locator('.drag_verify').first().boundingBox().catch(() => null);
-  if (box) {
-    const hx = box.x + 20;
+  // 滑块验证：慢速拖动 + 失败重试（详见 ui-audit-layout.js 里的说明）
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const box = await page.locator('.drag_verify').first().boundingBox().catch(() => null);
+    if (!box) break;
+    const hx = box.x + 12;
     const hy = box.y + box.height / 2;
     await page.mouse.move(hx, hy);
     await page.mouse.down();
-    for (let i = 1; i <= 12; i++) {
-      await page.mouse.move(hx + ((box.width - 40) * i) / 12, hy, { steps: 2 });
-      await page.waitForTimeout(20);
+    await page.waitForTimeout(120);
+    for (let i = 1; i <= 30; i++) {
+      await page.mouse.move(hx + ((box.width - 24) * i) / 30, hy + (i % 3 === 0 ? 1 : 0), { steps: 3 });
+      await page.waitForTimeout(25);
     }
-    await page.mouse.up();
     await page.waitForTimeout(300);
+    await page.mouse.up();
+    await page.waitForTimeout(1200);
+    if (await page.evaluate(() => /验证成功/.test(document.body.innerText))) break;
   }
   await page.locator('button:has-text("登录")').first().click().catch(() => {});
   for (let i = 0; i < 60; i++) {

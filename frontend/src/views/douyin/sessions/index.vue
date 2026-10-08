@@ -76,6 +76,35 @@
       </div>
     </div>
 
+    <!--
+      缺参 / 失败 两个整块状态原来嵌在下面那张「列表卡」内部，成了卡中卡
+      （双层描边 + 额外内缩）。见 UI-AUDIT P2-16。
+    -->
+    <div v-if="!hostId && !loading" class="art-card px-5 py-8 mb-5">
+      <div class="flex flex-col items-center text-center">
+        <div class="size-11 rounded-full flex-cc bg-theme/10 mb-3">
+          <ArtSvgIcon icon="ri:live-line" class="text-xl text-theme" />
+        </div>
+        <div class="text-sm font-medium text-g-900">请先选择要查看的主播</div>
+        <p class="mt-1.5 text-xs text-g-600">
+          场次历史按主播查询，请从「房间管理」点进某个房间查看它的场次。
+        </p>
+        <el-button class="mt-4" type="primary" plain @click="router.push('/douyin/rooms')">
+          <ArtSvgIcon icon="ri:arrow-left-line" class="mr-1" />
+          去房间管理
+        </el-button>
+      </div>
+    </div>
+
+    <!-- 失败：明确区别于「没有数据」，并给重试入口（P0-3） -->
+    <QueryErrorState
+      v-else-if="queryError"
+      class="mb-5"
+      :message="queryError"
+      :retrying="loading"
+      @retry="refresh"
+    />
+
     <!-- 场次列表 -->
     <div class="art-card p-5 mb-5">
       <div v-loading="loading" class="flex flex-col gap-2.5">
@@ -165,33 +194,9 @@
             </div>
           </div>
         </TransitionGroup>
-        <!-- 缺参：直接打开本页（没有 hostId）时说明原因，而不是永久转圈 -->
-        <div v-if="!hostId && !loading" class="art-card px-5 py-8">
-          <div class="flex flex-col items-center text-center">
-            <div class="size-11 rounded-full flex-cc bg-theme/10 mb-3">
-              <ArtSvgIcon icon="ri:live-line" class="text-xl text-theme" />
-            </div>
-            <div class="text-sm font-medium text-g-900">请先选择要查看的主播</div>
-            <p class="mt-1.5 text-xs text-g-600">
-              场次历史按主播查询，请从「房间管理」点进某个房间查看它的场次。
-            </p>
-            <el-button class="mt-4" type="primary" plain @click="router.push('/douyin/rooms')">
-              <ArtSvgIcon icon="ri:arrow-left-line" class="mr-1" />
-              去房间管理
-            </el-button>
-          </div>
-        </div>
-
-        <!-- 失败：明确区别于「没有数据」，并给重试入口（P0-3） -->
-        <QueryErrorState
-          v-else-if="queryError"
-          :message="queryError"
-          :retrying="loading"
-          @retry="refresh"
-        />
-
+        <!-- 只有真的选了主播才谈"这个主播没有场次"：没有 hostId 时上面那张引导卡已经说明原因 -->
         <el-empty
-          v-else-if="!filteredSessions.length && !loading"
+          v-if="hostId && !filteredSessions.length && !loading"
           :description="dateRange ? '该时间段内没有场次' : '该主播暂无场次'"
         />
       </div>

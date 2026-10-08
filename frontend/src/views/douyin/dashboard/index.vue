@@ -152,7 +152,9 @@
                 :class="rankClass(i)"
                 >{{ i + 1 }}</span
               >
-              <el-avatar :size="32" :src="p.streamer_avatar">{{ p.streamer?.[0] }}</el-avatar>
+              <el-avatar :size="32" :src="p.streamer_avatar" class="shrink-0">{{
+                p.streamer?.[0]
+              }}</el-avatar>
               <div class="flex-1 min-w-0">
                 <div class="text-sm truncate">{{
                   p.streamer || p.room_title || '场次 #' + p.id
@@ -211,14 +213,19 @@
     <!-- 送礼榜 + 弹幕活跃 -->
     <el-row :gutter="20">
       <el-col :sm="24" :md="12" :lg="12">
-        <div class="art-card p-5 mb-5">
+        <div class="art-card p-5 mb-5 h-full">
           <div class="art-card-header">
             <div class="title">
               <h4>送礼榜</h4>
               <p>累计钻石 Top 5</p>
             </div>
           </div>
-          <TransitionGroup name="dy-list" tag="div" class="flex flex-col gap-2.5 mt-4" appear>
+          <!--
+            首屏骨架（UI-AUDIT P1-8）：原来数据没回来就先渲染 el-empty，
+            回来后被整块替换 —— 既会被误读成「真没数据」，又让页面高度跳变（实测收缩 393px）。
+          -->
+          <el-skeleton v-if="!overview && !overviewError" :rows="4" animated class="mt-4" />
+          <TransitionGroup v-else name="dy-list" tag="div" class="flex flex-col gap-2.5 mt-4" appear>
             <div
               v-for="(u, i) in overview?.topUsers || []"
               :key="u.sec_uid || u.nickname"
@@ -229,7 +236,7 @@
                 :class="rankClass(i)"
                 >{{ i + 1 }}</span
               >
-              <el-avatar :size="32" :src="u.avatar">{{ u.nickname?.[0] }}</el-avatar>
+              <el-avatar :size="32" :src="u.avatar" class="shrink-0">{{ u.nickname?.[0] }}</el-avatar>
               <span class="flex-1 min-w-0 text-sm truncate">{{ u.nickname }}</span>
               <span class="text-sm font-bold text-theme shrink-0">{{ fmtNum(u.diamonds) }}钻</span>
             </div>
@@ -238,14 +245,15 @@
         </div>
       </el-col>
       <el-col :sm="24" :md="12" :lg="12">
-        <div class="art-card p-5 mb-5">
+        <div class="art-card p-5 mb-5 h-full">
           <div class="art-card-header">
             <div class="title">
               <h4>弹幕活跃</h4>
               <p>发言次数 Top 5</p>
             </div>
           </div>
-          <TransitionGroup name="dy-list" tag="div" class="flex flex-col gap-2.5 mt-4" appear>
+          <el-skeleton v-if="!overview && !overviewError" :rows="4" animated class="mt-4" />
+          <TransitionGroup v-else name="dy-list" tag="div" class="flex flex-col gap-2.5 mt-4" appear>
             <div
               v-for="(d, i) in overview?.topDanmaku || []"
               :key="d.nickname"
@@ -256,7 +264,7 @@
                 :class="rankClass(i)"
                 >{{ i + 1 }}</span
               >
-              <el-avatar :size="32" :src="d.avatar">{{ d.nickname?.[0] }}</el-avatar>
+              <el-avatar :size="32" :src="d.avatar" class="shrink-0">{{ d.nickname?.[0] }}</el-avatar>
               <span class="flex-1 min-w-0 text-sm truncate">{{ d.nickname }}</span>
               <span class="text-sm font-bold text-g-800 shrink-0" :title="fmtTitle(d.count)"
                 >{{ fmtNum(d.count) }}条</span
@@ -280,14 +288,17 @@
           <p>最新 8 场直播记录</p>
         </div>
       </div>
-      <TransitionGroup name="dy-list" tag="div" class="flex flex-col gap-2.5 mt-4" appear>
+      <el-skeleton v-if="!overview && !overviewError" :rows="6" animated class="mt-4" />
+      <TransitionGroup v-else name="dy-list" tag="div" class="flex flex-col gap-2.5 mt-4" appear>
         <div
           v-for="s in overview?.recentSessions || []"
           :key="s.id"
           class="rounded-xl bg-g-100/50 px-3 py-2.5"
         >
           <div class="flex items-center gap-3">
-            <el-avatar :size="34" :src="s.streamer_avatar">{{ s.streamer?.[0] }}</el-avatar>
+            <el-avatar :size="34" :src="s.streamer_avatar" class="shrink-0">{{
+              s.streamer?.[0]
+            }}</el-avatar>
             <div class="flex-1 min-w-0">
               <div class="font-medium text-sm truncate">{{ s.room_title || '场次 #' + s.id }}</div>
               <div class="text-xs text-g-500 truncate">{{ s.streamer || '-' }}</div>

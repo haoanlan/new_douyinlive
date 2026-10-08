@@ -45,12 +45,16 @@
         </div>
       </div>
 
-      <el-row :gutter="16">
+      <el-row :gutter="20">
         <!-- 左列 -->
         <el-col :sm="24" :md="12">
-          <div class="art-card p-5 mb-4">
+          <div class="art-card p-5 mb-5">
             <div class="art-card-header"><div class="title"><h4>常用礼物</h4></div></div>
             <el-table :data="profile?.topGiftsByCount || []" size="small">
+              <!-- 空态交给表格自己，避免"表格空态 + 卡片空态"两份同时出现（P2-15） -->
+              <template #empty>
+                <el-empty description="暂无礼物" :image-size="60" />
+              </template>
               <el-table-column label="礼物" min-width="130">
                 <template #default="{ row }">
                   <div class="flex items-center gap-2">
@@ -78,10 +82,9 @@
                 </template>
               </el-table-column>
             </el-table>
-            <el-empty v-if="!profile?.topGiftsByCount?.length" description="暂无礼物" :image-size="60" />
           </div>
 
-          <div class="art-card p-5 mb-4">
+          <div class="art-card p-5 mb-5">
             <div class="art-card-header"><div class="title"><h4>活跃时段</h4></div></div>
             <div class="flex items-end gap-0.5 h-24" role="img" :aria-label="hourBarsAria">
               <div
@@ -104,6 +107,9 @@
           <div class="art-card p-5">
             <div class="art-card-header"><div class="title"><h4>活跃场次</h4></div></div>
             <el-table :data="(profile?.activeSessions || []).slice(0, 8)" size="small">
+              <template #empty>
+                <el-empty description="暂无数据" :image-size="60" />
+              </template>
               <el-table-column prop="streamer_name" label="主播" min-width="110" show-overflow-tooltip />
               <el-table-column label="开始时间" width="150">
                 <template #default="{ row }">{{ fmtTs(row.start_time) }}</template>
@@ -123,15 +129,17 @@
                 </template>
               </el-table-column>
             </el-table>
-            <el-empty v-if="!profile?.activeSessions?.length" description="暂无数据" :image-size="60" />
           </div>
         </el-col>
 
         <!-- 右列 -->
         <el-col :sm="24" :md="12">
-          <div class="art-card p-5 mb-4">
+          <div class="art-card p-5 mb-5">
             <div class="art-card-header"><div class="title"><h4>常送主播</h4></div></div>
             <el-table :data="profile?.topStreamers || []" size="small">
+              <template #empty>
+                <el-empty description="暂无数据" :image-size="60" />
+              </template>
               <el-table-column prop="name" label="主播" min-width="120" show-overflow-tooltip />
               <el-table-column label="次数" width="80" align="right">
                 <template #default="{ row }">
@@ -144,10 +152,9 @@
                 </template>
               </el-table-column>
             </el-table>
-            <el-empty v-if="!profile?.topStreamers?.length" description="暂无数据" :image-size="60" />
           </div>
 
-          <div class="art-card p-5 mb-4">
+          <div class="art-card p-5 mb-5">
             <div class="art-card-header"><div class="title"><h4>近期行为</h4></div></div>
             <el-timeline>
               <el-timeline-item
@@ -171,6 +178,9 @@
           <div class="art-card p-5">
             <div class="art-card-header"><div class="title"><h4>馈赠明细</h4></div></div>
             <el-table :data="(profile?.giftBreakdown || []).slice(0, 8)" size="small">
+              <template #empty>
+                <el-empty description="暂无数据" :image-size="60" />
+              </template>
               <el-table-column prop="gift_name" label="礼物" min-width="120" show-overflow-tooltip />
               <el-table-column label="次数" width="80" align="right">
                 <template #default="{ row }">
@@ -185,7 +195,6 @@
                 </template>
               </el-table-column>
             </el-table>
-            <el-empty v-if="!profile?.giftBreakdown?.length" description="暂无数据" :image-size="60" />
           </div>
         </el-col>
       </el-row>

@@ -803,6 +803,12 @@
 </script>
 
 <style scoped lang="scss">
+  /*
+   * 这份工具条样式原来只被 search 页 @use，而 status 也在用 `.dy-switch-btn`
+   * （自动刷新开关的等高外框 + hover 边框）→ 那些规则根本没被加载（UI-AUDIT P2-9）。
+   */
+  @use '@styles/custom/douyin-toolbar.scss';
+
   /* ===== kv 小卡（官方 hero/面板内嵌的 label+value 卡） ===== */
   .mon-kv {
     min-width: 0;

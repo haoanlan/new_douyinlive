@@ -122,7 +122,7 @@
       <div class="dy-trend-kpis mb-5">
         <div v-for="s in series" :key="s.hostId" class="art-card p-4">
           <div class="flex items-center gap-2.5 mb-3">
-            <el-avatar :size="32" :src="s.avatar">{{ s.name?.[0] }}</el-avatar>
+            <el-avatar :size="32" :src="s.avatar" class="shrink-0">{{ s.name?.[0] }}</el-avatar>
             <div class="min-w-0 flex-1">
               <div class="text-sm font-medium text-g-900 truncate" :title="s.name">
                 {{ s.name }}
@@ -273,10 +273,13 @@
               </el-button>
             </template>
           </el-table-column>
+          <!-- 空态交给表格自己的 #empty，避免"表格空态 + 外侧空态"两份同时出现（P2-15） -->
+          <template #empty>
+            <div class="py-6 text-center text-sm text-g-600">
+              该时间范围内这个房间还没有场次记录。
+            </div>
+          </template>
         </el-table>
-        <div v-if="!detailRows.length" class="py-6 text-center text-sm text-g-600">
-          该时间范围内这个房间还没有场次记录。
-        </div>
       </div>
     </template>
 

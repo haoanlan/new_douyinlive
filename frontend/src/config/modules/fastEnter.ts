@@ -9,42 +9,54 @@ const fastEnterConfig: FastEnterConfig = {
   // 显示条件（屏幕宽度）
   minWidth: 1200,
   // 应用列表
+  // 原来的 Console/Analysis/Fireworks/Chat/ChangeLog 都是模板遗留、当前根本没有注册
+  // （点击会抛 MATCHER_NOT_FOUND 且无任何提示），这里换成真实存在的抖音页面。
+  // 见 docs/UI-AUDIT-2026-10-07.md P2-26。
   applications: [
     {
-      name: '工作台',
-      description: '系统概览与数据统计',
-      icon: 'ri:pie-chart-line',
+      name: '数据概览',
+      description: '实时状态与历史总览',
+      icon: 'ri:bar-chart-2-line',
       iconColor: '#377dff',
       enabled: true,
       order: 1,
-      routeName: 'Console'
+      routeName: 'DouyinDashboard'
     },
     {
-      name: '分析页',
-      description: '数据分析与可视化',
-      icon: 'ri:game-line',
+      name: '房间管理',
+      description: '监控房间与场次',
+      icon: 'ri:live-line',
       iconColor: '#ff3b30',
       enabled: true,
       order: 2,
-      routeName: 'Analysis'
+      routeName: 'DouyinRooms'
     },
     {
-      name: '礼花效果',
-      description: '动画特效展示',
-      icon: 'ri:loader-line',
+      name: '趋势分析',
+      description: '同一房间跨场次走势',
+      icon: 'ri:line-chart-line',
       iconColor: '#7A7FFF',
       enabled: true,
       order: 3,
-      routeName: 'Fireworks'
+      routeName: 'DouyinTrends'
     },
     {
-      name: '聊天',
-      description: '即时通讯功能',
-      icon: 'ri:user-line',
+      name: '信息查询',
+      description: '按昵称查用户画像',
+      icon: 'ri:search-line',
       iconColor: '#13DEB9',
       enabled: true,
       order: 4,
-      routeName: 'Chat'
+      routeName: 'DouyinSearch'
+    },
+    {
+      name: '状态监控',
+      description: '服务与连接健康',
+      icon: 'ri:heart-pulse-line',
+      iconColor: '#ffb100',
+      enabled: true,
+      order: 5,
+      routeName: 'DouyinStatus'
     },
     {
       name: '官方文档',
@@ -52,7 +64,7 @@ const fastEnterConfig: FastEnterConfig = {
       icon: 'ri:bill-line',
       iconColor: '#ffb100',
       enabled: true,
-      order: 5,
+      order: 6,
       link: WEB_LINKS.DOCS
     },
     {
@@ -61,17 +73,8 @@ const fastEnterConfig: FastEnterConfig = {
       icon: 'ri:user-location-line',
       iconColor: '#ff6b6b',
       enabled: true,
-      order: 6,
-      link: WEB_LINKS.COMMUNITY
-    },
-    {
-      name: '更新日志',
-      description: '版本更新与变更记录',
-      icon: 'ri:gamepad-line',
-      iconColor: '#38C0FC',
-      enabled: true,
       order: 7,
-      routeName: 'ChangeLog'
+      link: WEB_LINKS.COMMUNITY
     },
     {
       name: '哔哩哔哩',
@@ -105,19 +108,19 @@ const fastEnterConfig: FastEnterConfig = {
     },
     {
       name: '定价',
-      enabled: true,
+      enabled: false, // 模板遗留，本项目管理后台没有这个页面（UI-AUDIT P2-26）
       order: 4,
       routeName: 'Pricing'
     },
     {
       name: '个人中心',
-      enabled: true,
+      enabled: false, // 同上，路由未注册
       order: 5,
       routeName: 'UserCenter'
     },
     {
       name: '留言管理',
-      enabled: true,
+      enabled: false, // 同上，路由未注册
       order: 6,
       routeName: 'ArticleComment'
     }

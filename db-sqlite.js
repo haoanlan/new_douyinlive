@@ -31,6 +31,9 @@ function getDb() {
       'CREATE INDEX IF NOT EXISTS idx_sessions_streamer ON sessions(streamer_id)',
       'CREATE INDEX IF NOT EXISTS idx_gifts_user_sec_uid ON gifts(user_sec_uid)',
       'CREATE INDEX IF NOT EXISTS idx_danmaku_user_sec_uid ON danmaku(user_sec_uid)',
+      // members（进场记录）也要按 sec_uid 查：匿名查询现在按 sec_uid 做全库聚合，
+      // 没这个索引就得对 members 全表扫
+      'CREATE INDEX IF NOT EXISTS idx_members_user_sec_uid ON members(user_sec_uid)',
       'CREATE INDEX IF NOT EXISTS idx_gifts_create_time ON gifts(create_time)',
     ];
     for (const sql of idxs) { try { db.prepare(sql).run(); } catch (e) { /* ignore */ } }

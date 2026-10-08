@@ -168,18 +168,42 @@
                     <span v-if="u.is_private" class="text-xs text-warning">私密账号</span>
                     <span v-if="!u.sec_uid" class="text-xs text-g-400">库里没有用户标识</span>
                   </div>
-                  <!-- 别名行：恒定占位 + 只显示第一个别名（+N）+ 强制单行 ——
-                       别名多寡与长短不该改变卡片高度（完整的别名列表在用户画像页） -->
-                  <div class="flex items-center gap-1.5 mt-2 min-w-0 min-h-[22px]">
-                    <template v-if="otherNicknames(u).length">
+                  <!--
+                    库内别名：把这个 sec_uid 在库里出现过的**所有名字**都列出来（按出现次数降序）。
+                    一个人可能有一二十个名字（改名 + 抖音给未登录用户生成的 douXXXXXXX），
+                    所以默认只占 2 行（卡片保持等高），点「展开全部」由用户主动拉高。
+                  -->
+                  <div class="mt-2 min-w-0">
+                    <div
+                      class="flex items-center gap-1.5 flex-wrap overflow-hidden"
+                      :class="isAliasExpanded(u) ? '' : 'h-[54px]'"
+                    >
                       <span class="text-xs text-g-400 shrink-0">库内别名</span>
-                      <el-tag size="small" effect="plain" type="info" class="truncate max-w-[50%]">
-                        {{ otherNicknames(u)[0] }}
+                      <el-tag
+                        v-for="a in aliasList(u)"
+                        :key="a.nickname"
+                        size="small"
+                        effect="plain"
+                        type="info"
+                        class="max-w-[220px] truncate"
+                      >
+                        {{ a.nickname }}<span v-if="a.count > 1" class="text-g-400"> ×{{ a.count }}</span>
                       </el-tag>
-                      <span v-if="otherNicknames(u).length > 1" class="text-xs text-g-400 shrink-0">
-                        +{{ otherNicknames(u).length - 1 }}
-                      </span>
-                    </template>
+                    </div>
+                    <!-- 折叠态也固定预留这一行：否则"别名少"的卡会比"别名多"的矮一截 -->
+                    <div class="mt-1 h-5 flex items-center">
+                      <button
+                        v-if="aliasList(u).length > 4"
+                        class="dy-pressable text-xs text-theme"
+                        @click.stop="toggleAlias(u)"
+                      >
+                        {{
+                          isAliasExpanded(u)
+                            ? '收起'
+                            : `展开全部 ${aliasList(u).length} 个名字`
+                        }}
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <el-button
@@ -357,6 +381,11 @@
   /** 上一次查询实际使用的范围（展示的是"当时查了什么"，不是当前下拉的值） */
   const lastScope = ref('')
   const results = ref<any[]>([])
+  /**
+   * 「库内别名」展开状态（按 sec_uid 记）。默认只占 2 行，卡片保持等高；
+   * 用户点「展开全部」才把这一张拉高 —— 高度变化由用户触发，网格不会互相错位。
+   */
+  const expandedAliases = ref<Set<string>>(new Set())
   const loading = ref(false)
   const searched = ref(false)
   /** 查询失败的真实原因；非空时显示错误态而不是「没有匹配的用户」（P0-3） */
@@ -465,10 +494,32 @@
     return Boolean(u?.sessions?.length)
   }
 
-  /** 库内别名去掉与当前显示昵称相同的那条（否则昵称旁边会贴一个一模一样的标签） */
-  function otherNicknames(u: any): string[] {
-    const cur = u?.nickname || ''
-    return (u?.db_nicknames || []).filter((n: string) => n && n !== cur)
+  /**
+   * 库内别名：一个 sec_uid 在库里出现过的**所有名字**（按出现次数降序）。
+   *
+   * 后端 /api/anonymous-lookup 现在按 sec_uid 做全库聚合，返回 `nickname_stats`；
+   * 一个人改过名时可能有一二十个名字（抖音给未登录用户自动生成的 douXXXXXXX 也算），
+   * 所以完整列表交给这里，卡片默认只占 2 行、可展开。
+   */
+  function aliasList(u: any): { nickname: string; count: number }[] {
+    if (Array.isArray(u?.nickname_stats) && u.nickname_stats.length) {
+      return u.nickname_stats.map((s: any) => ({ nickname: s.nickname, count: s.count || 0 }))
+    }
+    return (u?.db_nicknames || []).map((n: string) => ({ nickname: n, count: 0 }))
+  }
+
+  function aliasKey(u: any): string {
+    return u?.sec_uid || u?.nickname || ''
+  }
+
+  function isAliasExpanded(u: any): boolean {
+    return expandedAliases.value.has(aliasKey(u))
+  }
+
+  function toggleAlias(u: any): void {
+    const k = aliasKey(u)
+    if (expandedAliases.value.has(k)) expandedAliases.value.delete(k)
+    else expandedAliases.value.add(k)
   }
 
   /** 后端 detail 里带 [礼物] 前缀与表情，去掉多余前后缀让行更干净 */

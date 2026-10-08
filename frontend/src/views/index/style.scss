@@ -15,6 +15,13 @@
     min-width: 0;
     height: 100vh;
     overflow: auto;
+    /*
+     * 恒定预留滚动条沟槽（修"切页时画面左右抖动"）：
+     * #app-main 才是滚动容器，内容比视口高时出现滚动条、矮页面没有 ——
+     * 这一进一出让内容宽度相差一个滚动条（实测 8px；Windows 常见滚动条 15–17px），
+     * 于是切页时整块内容横向跳一下。`stable` 让沟槽始终保留，与当前页有无滚动条无关。
+     */
+    scrollbar-gutter: stable;
 
     #app-header {
       position: sticky;

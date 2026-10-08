@@ -10,17 +10,26 @@
         <div class="min-w-0">
           <div class="dy-toolbar-title">信息查询</div>
           <div class="flex items-center gap-2.5 mt-1.5 text-xs text-g-500 flex-wrap">
-            <span class="flex items-baseline gap-1">
-              <b class="dy-count text-g-900">{{ searched ? resultTotal : 0 }}</b>个匹配用户
-            </span>
-            <span class="w-px h-3 bg-g-300" />
-            <span class="flex items-baseline gap-1">
-              <b class="dy-count text-g-900">{{ totalSessions }}</b>个参与场次
-            </span>
-            <span class="w-px h-3 bg-g-300" />
-            <span class="flex items-baseline gap-1">
-              <b class="dy-count text-theme">{{ fmtNum(totalDiamonds) }}</b>累计钻石
-            </span>
+            <!-- 加载中/失败时不显示（也不残留）上一轮的统计数字 -->
+            <span v-if="loading">查询中…</span>
+            <span v-else-if="queryError" class="text-danger">查询失败</span>
+            <template v-else>
+              <span class="flex items-baseline gap-1">
+                <b class="dy-count text-g-900">{{ searched ? resultTotal : 0 }}</b>个匹配用户
+              </span>
+              <span class="w-px h-3 bg-g-300" />
+              <span class="flex items-baseline gap-1">
+                <b class="dy-count text-g-900">{{ totalSessions }}</b>个参与场次
+              </span>
+              <span class="w-px h-3 bg-g-300" />
+              <span class="flex items-baseline gap-1">
+                <b class="dy-count text-theme">{{ fmtNum(totalDiamonds) }}</b>累计钻石
+              </span>
+              <!-- 后两项是对本次返回结果求和，不是全库口径：被截断时必须说明 -->
+              <span v-if="truncated" class="text-g-400">
+                （后两项仅统计本次显示的 {{ returnedCount }} 人）
+              </span>
+            </template>
           </div>
         </div>
       </div>
@@ -33,6 +42,7 @@
         <el-select
           v-model="scopeId"
           clearable
+          filterable
           placeholder="全部直播间"
           style="width: 160px"
           @change="onScopeChanged"
@@ -70,7 +80,8 @@
           placeholder="输入昵称关键词，回车查询"
           style="width: 240px"
           clearable
-          @keyup.enter="doSearch"
+          @keyup.enter="onQueryEnter"
+          @clear="onQueryClear"
         >
           <template #prefix>
             <ArtSvgIcon icon="ri:search-line" class="text-g-400" />
@@ -136,15 +147,19 @@
              只剩这一行的高度（实测 36px 高的一条），看起来不知道是什么 -->
         <div v-if="!loading" class="flex items-center justify-between gap-3 mb-3 px-1">
           <span class="text-sm text-g-600 flex items-center gap-2 flex-wrap">
-            共 <b class="text-g-900">{{ resultTotal }}</b> 个匹配用户
+            共 <b class="text-g-900">{{ resultTotal }}</b> 个匹配用户 ·
+            <b class="text-g-900">{{ fmtNum(totalRecords) }}</b> 条命中记录
             <span v-if="truncated" class="text-g-500">
-              · 本次显示前 {{ returnedCount }} 个（按最近活跃排序）—— 用上方「直播间 / 场次」缩小范围
+              · 本次显示前 {{ returnedCount }} 个（按命中记录的最后出现时间排序）——
+              用上方「直播间 / 场次」缩小范围
             </span>
             <span v-if="entryCount" class="text-g-400">
               · 其中仅进场 {{ entryCount }} 个（排在最后）
             </span>
             <span v-if="orphanRecords" class="text-g-400">
-              · 另有 {{ orphanRecords }} 条记录没有用户标识（单列在最后）
+              · 另有 {{ orphanRecords }} 条记录没有用户标识{{
+                truncated ? '（本次未列出）' : '（单列在最后）'
+              }}
             </span>
             <!-- 本次查询条件：原来放在工具条左块，查询后出现会把整组操作挤到第二行 -->
             <el-tag v-if="lastQuery" size="small" effect="plain">关键词 {{ lastQuery }}</el-tag>
@@ -425,7 +440,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, ref } from 'vue'
+  import { computed, onActivated, onMounted, ref, watch } from 'vue'
   import { useRouter } from 'vue-router'
   import {
     anonymousLookup,
@@ -436,6 +451,7 @@
     type Session
   } from '@/api/douyin'
   import { fmtAgo, fmtNum, fmtTitle, fmtSessionTime } from '@/utils/format'
+  import { ElMessage } from 'element-plus'
   import { apiErrorMessage } from '@/utils/douyin-error'
 
   defineOptions({ name: 'DouyinSearch' })
@@ -464,6 +480,8 @@
   const resultTotal = ref(0)
   const returnedCount = ref(0)
   const orphanRecords = ref(0)
+  /** 库内命中的记录总条数（真实规模，不是本页卡片数） */
+  const totalRecords = ref(0)
   const truncated = computed(
     () => returnedCount.value > 0 && resultTotal.value > returnedCount.value
   )
@@ -487,20 +505,30 @@
 
   /**
    * 场次下拉：选了直播间就列该直播间的场次，否则列全部场次（只取最近 300 场，避免下拉过长）。
+   *
+   * 注意字段名：`/api/hosts/:id/sessions` 返回的是 `started_at`，
+   * 而 `/api/sessions` 返回原始行的 `start_time` —— 两种都要兼容，
+   * 否则选了直播间之后每项都渲染成「主播名 ·」（时间为空）。
    */
+  function sessionTime(s: any): string {
+    return String(s?.start_time || s?.started_at || '')
+  }
+
+  let sessionSeq = 0
+
   async function loadSessionOptions() {
+    const my = ++sessionSeq
     sessionLoading.value = true
     try {
       const scoped = scopeId.value !== '' && scopeId.value != null
       const list = scoped ? await fetchSessions(String(scopeId.value)) : await fetchAllSessions()
-      sessionOptions.value = [...list]
-        .sort((a, b) => String(b.start_time || '').localeCompare(String(a.start_time || '')))
-        .slice(0, 300)
+      if (my !== sessionSeq) return // 连点两个直播间时，丢弃先发的响应
+      sessionOptions.value = [...list].sort((a, b) => sessionTime(b).localeCompare(sessionTime(a)))
     } catch {
       // 场次下拉是增强能力，拿不到就只剩「全部场次」，不打断查询
-      sessionOptions.value = []
+      if (my === sessionSeq) sessionOptions.value = []
     } finally {
-      sessionLoading.value = false
+      if (my === sessionSeq) sessionLoading.value = false
     }
   }
 
@@ -517,10 +545,26 @@
   }
 
   function sessionLabel(s: any): string {
-    return `${s.streamer_name || '未知主播'} · ${String(s.start_time || '').slice(0, 16)}`
+    return `${s.streamer_name || '未知主播'} · ${sessionTime(s).slice(0, 16)}`
+  }
+
+  /** 按 id 取场次的展示名（查询时用；查不到就退化成 #id，不隐藏已选范围） */
+  function sessionLabelById(id: string | number): string {
+    const s = sessionOptions.value.find((x) => String(x.id) === String(id))
+    return s ? sessionLabel(s) : `#${id}`
   }
 
   onMounted(() => {
+    loadScopeOptions()
+    loadSessionOptions()
+  })
+
+  /**
+   * keepAlive 页面：切走再回来时刷新两个下拉（新增/改名的直播间、新场次），
+   * 但不动 query / results —— 用户回来的第一诉求是"我的结果还在"。
+   * 其余 5 个抖音页也有 onActivated，这里原来漏了。
+   */
+  onActivated(() => {
     loadScopeOptions()
     loadSessionOptions()
   })
@@ -532,8 +576,9 @@
   const totalDiamonds = computed(() =>
     users.value.reduce((sum, u) => sum + (u.total_diamonds || 0), 0)
   )
-  const totalSessions = computed(() =>
-    users.value.reduce((sum, u) => sum + (u.sessions?.length || 0), 0)
+  const totalSessions = computed(
+    // 去重统计：同一场次里有多个匹配用户时只算一场（原来是把各人的场次数相加，得到的是"人次"）
+    () => new Set(users.value.flatMap((u) => (u.sessions || []).map((s: any) => s.id))).size
   )
 
   /** 「仅进场记录」= 没弹幕没送礼 —— 排序时整体沉底（用户决定：照常展示仅靠后） */
@@ -543,17 +588,35 @@
 
   const sortedUsers = computed(() => {
     const num = (v: any) => (typeof v === 'number' ? v : 0)
-    // 排序只按"最近活跃"（与后端取前 limit 个的排序保持一致；
-    // 原来的"按钻石/弹幕/场次"下拉已按用户要求去掉，改由直播间/场次缩小范围）
+    // 用后端"取前 limit 个"的同一个键排序（命中记录的最后出现时间）：
+    // 原来按 latest_action（全库、且弹幕/送礼优先于进场）重排，会出现
+    // "被截掉的人比页面上的人更活跃"，顺序也解释不通。
     const list = [...users.value].sort(
-      (a, b) => num(b.latest_action?.time) - num(a.latest_action?.time)
+      (a, b) => num(b.matched_last_time) - num(a.matched_last_time)
     )
     // 「仅进场」整体挪到最后（组内相对顺序不变）
     return [...list.filter((u) => !isEntryOnly(u)), ...list.filter(isEntryOnly)]
   })
 
   /** 结果里「仅进场」的数量（结果头与卡片降噪共用同一口径） */
-  const entryCount = computed(() => users.value.filter(isEntryOnly).length)
+  const entryCount = computed(
+    // 排除"无用户标识"的条目：它们是按昵称聚合的匿名记录组，不是用户实体
+    () => users.value.filter((u) => u.sec_uid && isEntryOnly(u)).length
+  )
+
+  /** 本次查询的统计全部归零（切换查询/失败时必须调用，否则工具栏挂着上一轮的数字） */
+  function resetStats() {
+    resultTotal.value = 0
+    returnedCount.value = 0
+    orphanRecords.value = 0
+    totalRecords.value = 0
+  }
+
+  /**
+   * 请求序号：连续切换直播间/场次会连发多个请求，慢的先发响应可能后到并覆盖新结果，
+   * 造成"下拉是新的、卡片是旧的"。每次请求领一个号，回来时对不上就直接丢弃。
+   */
+  let searchSeq = 0
 
   /**
    * 信息查询。
@@ -566,37 +629,49 @@
    */
   async function doSearch() {
     const q = query.value.trim()
-    if (!q) return
+    if (!q) {
+      // 空关键词：说一句，而不是静默无反应（禁用态按钮在浅色模式下对比度只有 1.74:1，已回退）
+      ElMessage.info('请先输入昵称关键词')
+      return
+    }
+    const my = ++searchSeq
     loading.value = true
     searched.value = true
     lastQuery.value = q
+    queryError.value = ''
+    // 加载中不展示上一轮的数字（结果头特意做了同样处理，工具栏这里原来漏了）
+    resetStats()
     // 记录本次查询的真实范围（展示口径以"当时查的"为准）
     const scoped = scopeId.value !== '' && scopeId.value != null
     const scopeName = scoped
       ? scopeOptions.value.find((s) => String(s.id) === String(scopeId.value))?.name || ''
       : ''
-    const sess =
-      sessionId.value !== '' && sessionId.value != null
-        ? sessionOptions.value.find((s) => String(s.id) === String(sessionId.value))
-        : null
-    lastScope.value = (scoped ? `范围：${scopeName}的直播间` : '范围：全部直播间') +
-      (sess ? ` · 场次 ${sessionLabel(sess)}` : '')
+    // 场次参数直接用选中的值：不要依赖 sessionOptions 查得到，
+    // 否则下拉重载失败/被 slice 截断时，界面显示"已选场次"但请求其实没带 session_id
+    const sess = sessionId.value !== '' && sessionId.value != null ? String(sessionId.value) : ''
+    lastScope.value =
+      (scoped ? `范围：${scopeName}的直播间` : '范围：全部直播间') +
+      (sess ? ` · 场次 ${sessionLabelById(sess)}` : '')
     try {
       const res: any = await anonymousLookup(
         q,
         scoped ? String(scopeId.value) : undefined,
-        sess ? String(sess.id) : undefined
+        sess || undefined
       )
+      if (my !== searchSeq) return // 已经有更新的查询发出，丢弃这次的结果
       results.value = res?.users || (Array.isArray(res) ? res : [])
       resultTotal.value = Number(res?.total_users ?? results.value.length)
       returnedCount.value = Number(res?.returned_users ?? res?.returned ?? results.value.length)
       orphanRecords.value = Number(res?.orphan_records || 0)
+      totalRecords.value = Number(res?.total_records || 0)
       queryError.value = ''
     } catch (e) {
+      if (my !== searchSeq) return
       results.value = []
+      resetStats()
       queryError.value = apiErrorMessage(e, '查询失败')
     } finally {
-      loading.value = false
+      if (my === searchSeq) loading.value = false
     }
   }
 
@@ -604,6 +679,39 @@
     query.value = kw
     doSearch()
   }
+
+  /**
+   * 回车查询：中文输入法用回车"上屏候选词"时也会触发 keyup.enter，
+   * 那会拿半成品关键词发一次查询（还白耗一次抖音接口调用）。
+   */
+  function onQueryEnter(e: KeyboardEvent) {
+    if (e.isComposing) return
+    doSearch()
+  }
+
+  /**
+   * 清空输入框：回到"未查询"引导态。
+   * 原来只有 clearable 没有 @clear —— 点 ✕ 后卡片和「共 N 个匹配用户」还在、
+   * 标签还是旧词，而按回车/点查询毫无反应（doSearch 里 `if (!q) return`）。
+   */
+  function onQueryClear() {
+    searchSeq++ // 作废在途请求，避免清空后旧响应又灌回来
+    query.value = ''
+    searched.value = false
+    results.value = []
+    queryError.value = ''
+    lastQuery.value = ''
+    lastScope.value = ''
+    resetStats()
+  }
+
+  /**
+   * 手工把关键词删到空（不是点 ✕）时同样复位：
+   * 实测两种"变空"的路径只会触发其中一种事件，只挂 @clear 会漏掉手动删除。
+   */
+  watch(query, (v) => {
+    if (!String(v).trim() && searched.value) onQueryClear()
+  })
 
   function hasSessions(u: any): boolean {
     return Boolean(u?.sessions?.length)
@@ -641,11 +749,13 @@
     return (u?.db_nicknames || []).map((n: string) => ({ nickname: n, count: 0 }))
   }
 
-  /** 毫秒时间戳 → 2026/06/25（用于"首次出现"这类日期展示） */
+  /** 毫秒/秒时间戳 → 2026/06/25（用于"首次出现"这类日期展示，两种量级都能吃） */
   function fmtDay(ms?: number | null): string {
     if (!ms) return '—'
-    const d = new Date(ms)
-    const p = (n: number) => String(n).padStart(2, '0')
+    const n = Number(ms)
+    const d = new Date(n > 1e12 ? n : n * 1000)
+    if (Number.isNaN(d.getTime())) return '—'
+    const p = (x: number) => String(x).padStart(2, '0')
     return `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())}`
   }
 

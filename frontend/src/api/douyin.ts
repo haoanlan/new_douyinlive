@@ -81,6 +81,9 @@ export interface Session {
   streamer_name?: string
   is_live: boolean
   started_at: number
+  /** /api/sessions（原始行）返回的是这个字段，而 /api/hosts/:id/sessions 返回 started_at */
+  start_time?: string
+  end_time?: string
   ended_at: number | null
   duration_min: number | null
   gift_count: number
@@ -478,10 +481,10 @@ export function fetchSessions(hostId: string) {
 
 /**
  * 全部场次（用于信息查询页的「场次」筛选：没选直播间时列出所有场次）。
- * 只取最近若干场，避免下拉框太长。
+ * 只取最近 300 场 —— 后端 /api/sessions 支持 limit，不传会把全部场次都拉回来。
  */
 export function fetchAllSessions() {
-  return request.get<Session[]>({ url: '/api/sessions', showErrorMessage: false })
+  return request.get<Session[]>({ url: '/api/sessions?limit=300', showErrorMessage: false })
 }
 
 export function deleteSession(sessionId: string) {
@@ -514,14 +517,49 @@ export function fetchDanmaku(sessionId: string, limit = 2000, q = '') {
 }
 
 export function fetchStreamers() {
-  return request.get<Streamer[]>({ url: '/api/streamers' })
+  return request.get<Streamer[]>({ url: '/api/streamers', showErrorMessage: false })
 }
 
-export function anonymousLookup(query: string, streamerId?: string, sessionId?: string) {
+/**
+ * 匿名查询（信息查询页）。
+ *
+ * 返回的是**对象**（users + 真实规模统计），不是数组 —— 类型原来是 `AnonymousLookup[]`，
+ * 导致页面里 `Array.isArray(res) ? res : []` 的分支永远是死代码。
+ * 这里也关掉自动错误 toast：页面自己有 QueryErrorState（P0-4 的约定）。
+ *
+ * @param limit 返回人数上限（后端 clamp 到 [1,500]，默认 100）。每人要查全库 + 调抖音接口，
+ *              人数越多越慢；宽泛关键词建议传小一点。
+ */
+export function anonymousLookup(
+  query: string,
+  streamerId?: string,
+  sessionId?: string,
+  limit?: number
+) {
   const params = new URLSearchParams({ q: query })
   if (streamerId) params.set('streamer_id', streamerId)
   if (sessionId) params.set('session_id', sessionId)
-  return request.get<AnonymousLookup[]>({ url: `/api/anonymous-lookup?${params.toString()}` })
+  if (limit) params.set('limit', String(limit))
+  return request.get<AnonymousLookupResponse>({
+    url: `/api/anonymous-lookup?${params.toString()}`,
+    showErrorMessage: false
+  })
+}
+
+/** /api/anonymous-lookup 的返回形状 */
+export interface AnonymousLookupResponse {
+  users: AnonymousLookup[]
+  /** 库里真实的匹配人数（不受返回条数上限影响） */
+  total_users: number
+  /** 库里命中的记录总条数 */
+  total_records: number
+  /** 无用户标识（无法归到某个人）的记录条数 */
+  orphan_records: number
+  /** 本次返回的条目数（含无标识条目） */
+  returned: number
+  /** 本次返回的真实用户数（不含无标识条目） */
+  returned_users: number
+  limit: number
 }
 
 export function fetchUser(secUid: string) {

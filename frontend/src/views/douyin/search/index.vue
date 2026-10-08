@@ -9,26 +9,35 @@
         </div>
         <div class="min-w-0">
           <div class="dy-toolbar-title">信息查询</div>
-          <div class="flex items-center gap-2.5 mt-1.5 text-xs text-g-500 flex-wrap">
+          <div
+            class="flex items-center gap-2.5 mt-1.5 text-xs text-g-500 flex-nowrap min-w-0 overflow-hidden"
+            :title="
+              truncated
+                ? `「匹配用户」是库内全量；「参与场次 / 累计钻石」只统计本次显示的 ${returnedCount} 人`
+                : ''
+            "
+          >
             <!-- 加载中/失败时不显示（也不残留）上一轮的统计数字 -->
             <span v-if="loading">查询中…</span>
             <span v-else-if="queryError" class="text-danger">查询失败</span>
             <template v-else>
-              <span class="flex items-baseline gap-1">
+              <span class="flex items-baseline gap-1 shrink-0">
                 <b class="dy-count text-g-900">{{ searched ? resultTotal : 0 }}</b>个匹配用户
               </span>
-              <span class="w-px h-3 bg-g-300" />
-              <span class="flex items-baseline gap-1">
+              <span class="w-px h-3 bg-g-300 shrink-0" />
+              <span class="flex items-baseline gap-1 shrink-0">
                 <b class="dy-count text-g-900">{{ totalSessions }}</b>个参与场次
               </span>
-              <span class="w-px h-3 bg-g-300" />
-              <span class="flex items-baseline gap-1">
+              <span class="w-px h-3 bg-g-300 shrink-0" />
+              <span class="flex items-baseline gap-1 shrink-0">
                 <b class="dy-count text-theme">{{ fmtNum(totalDiamonds) }}</b>累计钻石
               </span>
-              <!-- 后两项是对本次返回结果求和，不是全库口径：被截断时必须说明 -->
-              <span v-if="truncated" class="text-g-400">
-                （后两项仅统计本次显示的 {{ returnedCount }} 人）
-              </span>
+              <!-- 口径说明改成悬浮提示（原来写在这一行里，查询后会把工具条撑成两行） -->
+              <ArtSvgIcon
+                v-if="truncated"
+                icon="ri:information-line"
+                class="text-g-400 shrink-0"
+              />
             </template>
           </div>
         </div>
@@ -44,27 +53,25 @@
           clearable
           filterable
           placeholder="全部直播间"
-          style="width: 160px"
+          style="width: 140px"
+          popper-class="dy-select-popper"
           @change="onScopeChanged"
         >
           <el-option label="全部直播间" value="" />
-          <el-option v-for="s in scopeOptions" :key="s.id" :label="s.name" :value="s.id">
-            <div class="flex items-center justify-between gap-3">
-              <span class="truncate">{{ s.name }}</span>
-              <span class="text-xs text-g-500 shrink-0">{{ s.session_count ?? 0 }} 场</span>
-            </div>
-          </el-option>
+          <el-option v-for="s in scopeOptions" :key="s.id" :label="s.name" :value="s.id" />
         </el-select>
         <!--
-          场次范围：与「直播间」配合缩小范围。
-          实测搜「神秘人」库里命中 2,266 人，靠关键词本身无法收敛，必须按直播间/场次缩圈。
+          场次范围：与「直播间」配合缩小范围 —— **必须先选直播间**才有场次可选
+          （未选时禁用；实测搜「神秘人」库里命中 2,266 人，靠关键词本身无法收敛）。
         -->
         <el-select
           v-model="sessionId"
           clearable
           filterable
-          placeholder="全部场次"
-          style="width: 230px"
+          :disabled="!scopeId"
+          :placeholder="scopeId ? '全部场次' : '请先选择直播间'"
+          style="width: 200px"
+          popper-class="dy-select-popper"
           :loading="sessionLoading"
           @change="onSessionChanged"
         >
@@ -78,7 +85,7 @@
         <el-input
           v-model="query"
           placeholder="输入昵称关键词，回车查询"
-          style="width: 240px"
+          style="width: 200px"
           clearable
           @keyup.enter="onQueryEnter"
           @clear="onQueryClear"
@@ -87,8 +94,15 @@
             <ArtSvgIcon icon="ri:search-line" class="text-g-400" />
           </template>
         </el-input>
-        <el-button type="primary" :loading="loading" @click="doSearch">
-          <ArtSvgIcon icon="ri:search-line" class="mr-1" />
+        <!-- 固定宽度：`loading` 会插入转圈图标，不固定就会在点击后变宽（用户反馈） -->
+        <el-button
+          type="primary"
+          :loading="loading"
+          style="width: 88px"
+          class="shrink-0"
+          @click="doSearch"
+        >
+          <ArtSvgIcon v-if="!loading" icon="ri:search-line" class="mr-1" />
           查询
         </el-button>
       </div>
@@ -446,7 +460,6 @@
     anonymousLookup,
     fetchStreamers,
     fetchSessions,
-    fetchAllSessions,
     type Streamer,
     type Session
   } from '@/api/douyin'
@@ -520,8 +533,13 @@
     const my = ++sessionSeq
     sessionLoading.value = true
     try {
+      // 场次必须先选直播间：未选时清空选项、不发请求（用户要求）
       const scoped = scopeId.value !== '' && scopeId.value != null
-      const list = scoped ? await fetchSessions(String(scopeId.value)) : await fetchAllSessions()
+      if (!scoped) {
+        sessionOptions.value = []
+        return
+      }
+      const list = await fetchSessions(String(scopeId.value))
       if (my !== sessionSeq) return // 连点两个直播间时，丢弃先发的响应
       sessionOptions.value = [...list].sort((a, b) => sessionTime(b).localeCompare(sessionTime(a)))
     } catch {

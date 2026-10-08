@@ -22,24 +22,7 @@
             <div class="text-xs text-g-400 mt-1">
               首次活跃 {{ fmtTs(profile?.firstSeen) }} · 最近活跃 {{ fmtTs(profile?.lastSeen) }}
             </div>
-            <!--
-              库里出现过的全部名字（含 douxxx / 神秘人 这类抖音自动生成的游客名，
-              generated=true 的用浅色标签区分）。搜索卡片上只展示真名，完整历史在这里看。
-            -->
-            <div v-if="profile?.nicknames?.length" class="flex items-center gap-1.5 mt-2 flex-wrap">
-              <span class="text-xs text-g-400 shrink-0">库内名字</span>
-              <el-tag
-                v-for="n in profile.nicknames"
-                :key="n.nickname"
-                size="small"
-                effect="plain"
-                :type="n.generated ? 'info' : 'primary'"
-                class="max-w-[220px] truncate"
-                :title="`${n.nickname} · 出现 ${n.count} 次`"
-              >
-                {{ n.nickname }}
-              </el-tag>
-            </div>
+            <!-- 顶部原来在这里展示"库内名字"，用户要求去掉（需要看名字历史可去信息查询页的别名入口） -->
           </div>
         </div>
 
@@ -134,7 +117,7 @@
             <!-- 条形行 + 整行可点（与总览「最近场次」同一套交互） -->
             <div class="flex flex-col gap-2.5 mt-4">
               <div
-                v-for="s in (profile?.activeSessions || []).slice(0, 8)"
+                v-for="s in profile?.activeSessions || []"
                 :key="s.id"
                 class="dy-row-link flex items-center gap-3 rounded-xl bg-g-100/50 px-3 py-2.5"
                 role="button"
@@ -144,7 +127,7 @@
                 @keydown.enter.prevent="goDetail(s.id)"
                 @keydown.space.prevent="goDetail(s.id)"
               >
-                <el-avatar :size="32" :src="s.avatar" class="shrink-0">{{
+                <el-avatar :size="32" :src="s.streamer_avatar" class="shrink-0">{{
                   s.streamer_name?.[0] || '场'
                 }}</el-avatar>
                 <div class="flex-1 min-w-0">
@@ -211,6 +194,9 @@
                   {{ a.type === 'gift' ? '礼物' : '弹幕' }}
                 </el-tag>
                 <span class="flex-1 min-w-0 truncate text-sm text-g-700">{{ a.content }}</span>
+                <span v-if="a.streamer" class="text-xs text-g-500 shrink-0 max-w-[120px] truncate">
+                  {{ a.streamer }}
+                </span>
                 <span class="text-xs text-g-400 shrink-0">{{ a.time }}</span>
               </div>
               <el-empty
@@ -225,7 +211,7 @@
             <div class="art-card-header"><div class="title"><h4>馈赠明细</h4></div></div>
             <div class="flex flex-col gap-2.5 mt-4">
               <div
-                v-for="(g, i) in (profile?.giftBreakdown || []).slice(0, 8)"
+                v-for="(g, i) in profile?.giftBreakdown || []"
                 :key="g.gift_name"
                 class="flex items-center gap-2.5 rounded-xl bg-g-100/50 px-3 py-2 min-h-[52px]"
               >

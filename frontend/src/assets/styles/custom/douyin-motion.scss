@@ -764,6 +764,52 @@
   padding-right: 0;
 }
 
+/* ==========================================================================
+ * 下拉浮层的滚动条美化
+ *
+ * Element Plus 默认滚动条（.el-scrollbar__bar）在浅色下几乎看不见、深色下发白，
+ * 场次下拉最多 300 项，滚动条太丑会很明显。这里只作用于挂了
+ * popper-class="dy-select-popper" 的下拉（抖音页的直播间/场次选择），不影响模板其它页面。
+ * ========================================================================== */
+.dy-select-popper .el-select-dropdown__wrap {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(0 0 0 / 18%) transparent;
+}
+
+.dy-select-popper .el-select-dropdown__wrap::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dy-select-popper .el-select-dropdown__wrap::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dy-select-popper .el-select-dropdown__wrap::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgb(0 0 0 / 18%);
+}
+
+.dy-select-popper .el-select-dropdown__wrap::-webkit-scrollbar-thumb:hover {
+  background: rgb(0 0 0 / 30%);
+}
+
+/* Element Plus 自己那套滚动条（同一下拉里两套会重叠，隐藏它） */
+.dy-select-popper .el-scrollbar__bar {
+  display: none;
+}
+
+html.dark .dy-select-popper .el-select-dropdown__wrap {
+  scrollbar-color: rgb(255 255 255 / 22%) transparent;
+}
+
+html.dark .dy-select-popper .el-select-dropdown__wrap::-webkit-scrollbar-thumb {
+  background: rgb(255 255 255 / 22%);
+}
+
+html.dark .dy-select-popper .el-select-dropdown__wrap::-webkit-scrollbar-thumb:hover {
+  background: rgb(255 255 255 / 34%);
+}
+
 /* 只在抖音监控页生效，避免影响模板其它页面 */
 .douyin-page {
   /* 主要文字 */

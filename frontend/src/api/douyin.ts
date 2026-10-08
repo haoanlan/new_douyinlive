@@ -218,6 +218,17 @@ export interface AnonymousLookup {
 export interface UserProfile {
   nickname: string
   avatar?: string
+  /**
+   * 库里出现过的全部名字（按出现次数降序），含抖音自动生成的游客名。
+   * generated=true 表示 douxxx / 神秘人… 这类自动生成的名字。
+   */
+  nicknames?: {
+    nickname: string
+    count: number
+    first?: number
+    last?: number
+    generated?: boolean
+  }[]
   /** 累计钻石 */
   total_diamonds?: number
   /** 累计送礼次数（连击去重后） */

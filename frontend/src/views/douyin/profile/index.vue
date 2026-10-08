@@ -22,6 +22,24 @@
             <div class="text-xs text-g-400 mt-1">
               首次活跃 {{ fmtTs(profile?.firstSeen) }} · 最近活跃 {{ fmtTs(profile?.lastSeen) }}
             </div>
+            <!--
+              库里出现过的全部名字（含 douxxx / 神秘人 这类抖音自动生成的游客名，
+              generated=true 的用浅色标签区分）。搜索卡片上只展示真名，完整历史在这里看。
+            -->
+            <div v-if="profile?.nicknames?.length" class="flex items-center gap-1.5 mt-2 flex-wrap">
+              <span class="text-xs text-g-400 shrink-0">库内名字</span>
+              <el-tag
+                v-for="n in profile.nicknames"
+                :key="n.nickname"
+                size="small"
+                effect="plain"
+                :type="n.generated ? 'info' : 'primary'"
+                class="max-w-[220px] truncate"
+                :title="`${n.nickname} · 出现 ${n.count} 次`"
+              >
+                {{ n.nickname }}
+              </el-tag>
+            </div>
           </div>
         </div>
 

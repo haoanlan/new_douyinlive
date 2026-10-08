@@ -535,16 +535,20 @@
     count: number
     first?: number
     last?: number
+    /** 是否为抖音自动生成的名字（douxxx / 神秘人…），由后端判定 */
+    generated?: boolean
   }
 
   function aliasList(u: any): AliasStat[] {
     if (Array.isArray(u?.nickname_stats) && u.nickname_stats.length) {
-      // 注意：这里必须把 first/last 一起带出来，否则 aliasNames 里的"最近/最早"排序拿不到时间
+      // 注意：这里必须把 first/last/generated 一起带出来，
+      // 否则 aliasNames 的"最近/最早"排序拿不到时间、generated 判定也失效
       return u.nickname_stats.map((s: any) => ({
         nickname: s.nickname,
         count: s.count || 0,
         first: s.first || 0,
-        last: s.last || 0
+        last: s.last || 0,
+        generated: !!s.generated
       }))
     }
     return (u?.db_nicknames || []).map((n: string) => ({ nickname: n, count: 0 }))
@@ -559,15 +563,18 @@
   }
 
   /**
-   * 抖音自动生成的名字：`dou` + 数字（未登录访客），以及「神秘人…」（匿名/隐藏身份）。
-   * 实测一个重度用户的 30 个名字里 28 个是这类 —— 它们是同一个人的游客身份，
-   * 摆在卡片上非常吵，所以不内联显示，收进「另有 N 个游客名」里点开看。
+   * 是否为自动生成的名字：优先用后端给的 generated 字段（判定规则只维护一处），
+   * 正则仅作兜底（例如后端未返回该字段时）。
    */
-  const TEMP_ALIAS_RE = /^(dou\d+|神秘人)/i
+  const GENERATED_ALIAS_RE = /^(dou\d+|神秘人)/i
+
+  function isGeneratedAlias(a: AliasStat): boolean {
+    return typeof a.generated === 'boolean' ? a.generated : GENERATED_ALIAS_RE.test(a.nickname)
+  }
 
   /** 真实昵称（不含自动生成的游客名），按出现次数降序（aliasList 已排好序） */
   function realAliases(u: any): AliasStat[] {
-    return aliasList(u).filter((a) => !TEMP_ALIAS_RE.test(a.nickname))
+    return aliasList(u).filter((a) => !isGeneratedAlias(a))
   }
 
   /**
@@ -593,7 +600,7 @@
 
   /** 自动生成的游客名，收进 popover 里"点开看全部" */
   function tempAliases(u: any): AliasStat[] {
-    return aliasList(u).filter((a) => TEMP_ALIAS_RE.test(a.nickname))
+    return aliasList(u).filter((a) => isGeneratedAlias(a))
   }
 
   /** 后端 detail 里带 [礼物] 前缀与表情，去掉多余前后缀让行更干净 */

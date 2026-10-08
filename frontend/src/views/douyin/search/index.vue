@@ -156,7 +156,7 @@
                       {{ u.user_gender === 1 ? '男' : '女' }}
                     </span>
                     <span v-if="u.is_private" class="text-xs text-warning">私密账号</span>
-                    <span v-if="!u.sec_uid" class="text-xs text-g-400">库里无 sec_uid</span>
+                    <span v-if="!u.sec_uid" class="text-xs text-g-400">库里没有用户标识</span>
                   </div>
                   <div
                     v-if="otherNicknames(u).length"

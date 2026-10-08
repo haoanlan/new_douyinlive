@@ -3,8 +3,8 @@
     <div>
       <div class="flex-c">
         <div
-          class="size-5 mr-2.5 text-xs font-medium text-white rounded-full flex-cc"
-          :style="{ background: randomColor() }"
+          class="size-5 mr-2.5 text-xs font-medium rounded-full flex-cc"
+          :style="{ background: avatarColor(comment.author), color: avatarTextColor(comment.author) }"
         >
           {{ comment.author.substring(0, 1) }}
         </div>
@@ -105,17 +105,27 @@
     return date.toLocaleString()
   }
 
-  let lastColor: string | null = null
+  /**
+   * 头像底色：按作者名做**稳定哈希**取色。
+   *
+   * 原来模板里直接调用 `randomColor()` —— 在渲染期掷骰子，于是任何一次重渲染
+   * （例如新发一条评论）都会让**所有**已存在的头像换色；而且主题色板偏亮，
+   * 配 `text-white` 实测约 2:1。现在颜色绑定到人，不在渲染期产生副作用。
+   */
+  const avatarColor = (name: string) => {
+    const palette = AppConfig.systemMainColor
+    let hash = 0
+    for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) % 100000
+    return palette[hash % palette.length]
+  }
 
-  const randomColor = () => {
-    let newColor: string
-
-    do {
-      const index = Math.floor(Math.random() * AppConfig.systemMainColor.length)
-      newColor = AppConfig.systemMainColor[index]
-    } while (newColor === lastColor)
-
-    lastColor = newColor
-    return newColor
+  /** 底色偏亮时用深字，保证徽标里的首字母看得清 */
+  const avatarTextColor = (name: string) => {
+    const c = avatarColor(name)
+    const r = parseInt(c.slice(1, 3), 16)
+    const g = parseInt(c.slice(3, 5), 16)
+    const b = parseInt(c.slice(5, 7), 16)
+    const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255
+    return lum > 0.62 ? '#1f2937' : '#ffffff'
   }
 </script>

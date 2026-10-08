@@ -98,7 +98,7 @@
           <div class="text-xs text-g-500">WebSocket 连接</div>
           <div class="flex items-baseline gap-1">
             <span class="text-lg font-bold text-g-900">{{ connectedCount }}</span>
-            <span class="text-xs text-g-500">/ {{ totalRooms }} 房间</span>
+            <span class="text-xs text-g-500">/ {{ totalRooms }} 个房间</span>
           </div>
         </div>
       </div>
@@ -200,7 +200,7 @@
                 :preview-src-list="[g.icon]"
                 preview-teleported
               />
-              <span v-else class="text-base shrink-0">🎁</span>
+              <ArtSvgIcon v-else icon="ri:gift-2-line" class="text-base shrink-0 text-g-500" />
               <span class="flex-1 min-w-0 truncate text-sm text-g-800">{{ g.name }}</span>
               <span class="text-sm font-bold text-theme shrink-0">{{ fmtNum(g.diamonds) }}钻</span>
             </div>
@@ -400,7 +400,7 @@
     { des: '直播场次', icon: 'ri:live-line', unit: '场' },
     { des: '总钻石', icon: 'ri:diamond-line', unit: '钻' },
     { des: '总弹幕', icon: 'ri:chat-3-line', unit: '条' },
-    { des: '活跃用户', icon: 'ri:user-heart-line', unit: '人' },
+    { des: '活跃用户', icon: 'ri:user-3-line', unit: '人' },
     { des: '总点赞', icon: 'ri:thumb-up-line', unit: '次' }
   ]
 

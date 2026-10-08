@@ -13,7 +13,7 @@
           <div class="flex items-center gap-2.5 mt-1.5 text-xs text-g-500">
             <span class="flex items-baseline gap-1">
               <b class="dy-count text-g-900">{{ rooms.length }}</b
-              >房间
+              > 个房间
             </span>
             <span class="w-px h-3 bg-g-300" />
             <span class="flex items-baseline gap-1">
@@ -802,14 +802,19 @@
    * 每张卡都是各自 ElCol 里的唯一子元素，nth-child 永远命中第 1 个，
    * 结果是所有卡片延迟都是 0ms（这个坑已经踩过一次）。
    */
+  /*
+   * 注意：这里**不能**再叫 `dy-card-in` —— 全局 douyin-motion.scss 里已有同名 keyframes，
+   * 本地重定义会覆盖它，而两处值不同（本地 6px/both，全局 8px/backwards），
+   * 改一处忘另一处就漂移。改名独立 + 值与全局对齐。
+   */
   .room-card {
-    animation: dy-card-in var(--dy-dur-slow) var(--dy-ease-out) both;
+    animation: dy-room-card-in var(--dy-dur-slow) var(--dy-ease-out) backwards;
   }
 
-  @keyframes dy-card-in {
+  @keyframes dy-room-card-in {
     from {
       opacity: 0;
-      transform: translateY(6px);
+      transform: translateY(8px);
     }
   }
 

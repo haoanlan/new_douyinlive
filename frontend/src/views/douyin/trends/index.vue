@@ -336,7 +336,7 @@
 
   /** 全部可选指标 */
   const allMetrics: { key: TrendMetricKey; label: string; icon: string; hint: string }[] = [
-    { key: 'peakOnline', label: '峰值在线', icon: 'ri:user-heart-line', hint: '每场最高同时在线人数' },
+    { key: 'peakOnline', label: '峰值在线', icon: 'ri:signal-wifi-line', hint: '每场最高同时在线人数' },
     { key: 'diamonds', label: '钻石', icon: 'ri:diamond-line', hint: '每场礼物收入（去重后）' },
     { key: 'danmaku', label: '弹幕', icon: 'ri:chat-3-line', hint: '每场弹幕条数' },
     { key: 'gifts', label: '礼物数', icon: 'ri:gift-2-line', hint: '每场礼物件数' },

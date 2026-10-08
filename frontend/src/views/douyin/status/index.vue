@@ -639,7 +639,7 @@
       action: {
         // 「重连」实际执行的是守护进程 restart/start，副作用远超"重连"二字
         // （会中断全部房间连接与正在进行的录制），文案必须如实写明。
-        text: daemonRunning.value ? '重启监控脚本' : '启动监控脚本',
+        text: daemonRunning.value ? '重启 Go 代理与监控脚本' : '启动 Go 代理与监控脚本',
         icon: daemonRunning.value ? 'ri:restart-line' : 'ri:play-line',
         act: (daemonRunning.value ? 'restart' : 'start') as ServiceAction
       }
@@ -870,12 +870,12 @@
   }
 
   .mon-bar-item__label {
-    font-size: 13px;
+    font-size: 12px;
     color: var(--dy-text-secondary);
   }
 
   .mon-bar-item__value {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     color: var(--dy-text-primary);
     font-variant-numeric: tabular-nums;

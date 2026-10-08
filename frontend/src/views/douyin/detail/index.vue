@@ -378,7 +378,7 @@
               :preview-src-list="[g.gift_icon]"
               preview-teleported
             />
-            <span v-else class="text-base shrink-0">🎁</span>
+            <ArtSvgIcon v-else icon="ri:gift-2-line" class="text-base shrink-0 text-g-500" />
             <div class="flex-1 min-w-0">
               <div class="text-sm text-g-800 truncate">{{ g.gift_name }}</div>
               <div v-if="g.to_nickname" class="text-xs text-g-500 truncate">

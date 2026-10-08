@@ -14,7 +14,7 @@
      内置 ease-out 太弱，进入/退出看不出"发力感"，所以用更强的自定义曲线。 */
   --dy-ease-out: cubic-bezier(0.23, 1, 0.32, 1); /* 进入 / 退出（默认用它） */
   --dy-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1); /* 屏内位移 / 变形 */
-  --dy-ease-drawer: cubic-bezier(0.32, 0.72, 0, 1); /* 抽屉 / 弹层 */
+  /* 曾经的 --dy-ease-drawer 全项目 0 引用，已删（P2；抽屉动画真要加时再补） */
 
   /* ===== 时长档位（UI 动效一律 < 300ms）===== */
   --dy-dur-press: 120ms; /* 按下反馈：必须极快，否则"没反应" */
@@ -477,7 +477,7 @@
 }
 
 .dy-feed-row__name {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--dy-text-primary);
   overflow: hidden;
@@ -489,7 +489,7 @@
 .dy-feed-row__tag {
   display: inline-block;
   flex-shrink: 0;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 16px;
   padding: 0 5px;
   border-radius: 4px;
@@ -510,7 +510,7 @@
 .dy-feed-row__text {
   display: block;
   margin-top: 3px;
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.5;
   color: var(--dy-text-secondary);
   word-break: break-word;
@@ -581,7 +581,7 @@
  */
 .douyin-page .el-check-tag,
 .douyin-page .el-check-tag.el-check-tag--primary {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--dy-text-secondary);
   background: var(--art-gray-100);
   transition:
@@ -845,6 +845,19 @@
   html.dark & .dy-rank--3 {
     color: #fdba74;
     background-color: rgb(154 52 18 / 30%);
+  }
+
+  /*
+   * 状态标签的颜色过渡。
+   * 模板层 `el-ui.scss` 用 `transition: all 0s !important` 把 el-tag 钉死，
+   * 于是同一张卡里标签瞬间跳色、卡片底色却是 160ms 渐变（口径不一致）。
+   * 这里按语义时长补回来（只过渡颜色类属性，不动 all）。
+   */
+  .el-tag {
+    transition:
+      color var(--dy-dur-fast) var(--dy-ease-out),
+      background-color var(--dy-dur-fast) var(--dy-ease-out),
+      border-color var(--dy-dur-fast) var(--dy-ease-out) !important;
   }
 
   .el-radio-button__inner {

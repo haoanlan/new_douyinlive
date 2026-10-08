@@ -11,7 +11,7 @@
           <div class="dy-toolbar-title">信息查询</div>
           <div class="flex items-center gap-2.5 mt-1.5 text-xs text-g-500 flex-wrap">
             <span class="flex items-baseline gap-1">
-              <b class="dy-count text-g-900">{{ users.length }}</b>个匹配用户
+              <b class="dy-count text-g-900">{{ searched ? resultTotal : 0 }}</b>个匹配用户
             </span>
             <span class="w-px h-3 bg-g-300" />
             <span class="flex items-baseline gap-1">
@@ -30,7 +30,13 @@
           查询范围：默认「全部直播间」；选中某个直播间时把 streamer_id 传给后端，
           SQL 只扫该直播间的场次，命中的用户变少 → 抖音接口补全调用量同步下降。
         -->
-        <el-select v-model="scopeId" clearable placeholder="全部直播间" style="width: 160px">
+        <el-select
+          v-model="scopeId"
+          clearable
+          placeholder="全部直播间"
+          style="width: 160px"
+          @change="onScopeChanged"
+        >
           <el-option label="全部直播间" value="" />
           <el-option v-for="s in scopeOptions" :key="s.id" :label="s.name" :value="s.id">
             <div class="flex items-center justify-between gap-3">
@@ -39,11 +45,25 @@
             </div>
           </el-option>
         </el-select>
-        <el-select v-model="sortKey" style="width: 130px">
-          <el-option label="按最近活跃" value="recent" />
-          <el-option label="按累计钻石" value="diamonds" />
-          <el-option label="按弹幕数" value="danmaku" />
-          <el-option label="按场次数" value="sessions" />
+        <!--
+          场次范围：与「直播间」配合缩小范围。
+          实测搜「神秘人」库里命中 2,266 人，靠关键词本身无法收敛，必须按直播间/场次缩圈。
+        -->
+        <el-select
+          v-model="sessionId"
+          clearable
+          filterable
+          placeholder="全部场次"
+          style="width: 230px"
+          :loading="sessionLoading"
+          @change="onSessionChanged"
+        >
+          <el-option
+            v-for="s in sessionOptions"
+            :key="s.id"
+            :label="sessionLabel(s)"
+            :value="s.id"
+          />
         </el-select>
         <el-input
           v-model="query"
@@ -116,9 +136,15 @@
              只剩这一行的高度（实测 36px 高的一条），看起来不知道是什么 -->
         <div v-if="!loading" class="flex items-center justify-between gap-3 mb-3 px-1">
           <span class="text-sm text-g-600 flex items-center gap-2 flex-wrap">
-            共 <b class="text-g-900">{{ sortedUsers.length }}</b> 个用户
+            共 <b class="text-g-900">{{ resultTotal }}</b> 个匹配用户
+            <span v-if="truncated" class="text-g-500">
+              · 本次显示前 {{ returnedCount }} 个（按最近活跃排序）—— 用上方「直播间 / 场次」缩小范围
+            </span>
             <span v-if="entryCount" class="text-g-400">
               · 其中仅进场 {{ entryCount }} 个（排在最后）
+            </span>
+            <span v-if="orphanRecords" class="text-g-400">
+              · 另有 {{ orphanRecords }} 条记录没有用户标识（单列在最后）
             </span>
             <!-- 本次查询条件：原来放在工具条左块，查询后出现会把整组操作挤到第二行 -->
             <el-tag v-if="lastQuery" size="small" effect="plain">关键词 {{ lastQuery }}</el-tag>
@@ -401,7 +427,14 @@
 <script setup lang="ts">
   import { computed, onMounted, ref } from 'vue'
   import { useRouter } from 'vue-router'
-  import { anonymousLookup, fetchStreamers, type Streamer } from '@/api/douyin'
+  import {
+    anonymousLookup,
+    fetchStreamers,
+    fetchSessions,
+    fetchAllSessions,
+    type Streamer,
+    type Session
+  } from '@/api/douyin'
   import { fmtAgo, fmtNum, fmtTitle, fmtSessionTime } from '@/utils/format'
   import { apiErrorMessage } from '@/utils/douyin-error'
 
@@ -418,7 +451,22 @@
   const searched = ref(false)
   /** 查询失败的真实原因；非空时显示错误态而不是「没有匹配的用户」（P0-3） */
   const queryError = ref('')
-  const sortKey = ref<'recent' | 'diamonds' | 'danmaku' | 'sessions'>('recent')
+  /**
+   * 场次范围（与「直播间」配合缩小范围）。
+   * 后端 anonymous-lookup 早就支持 session_id 过滤，这里把它露出来：
+   * 搜「神秘人」这类高频词时，库里真实命中 2,266 人，光靠关键词无法收敛。
+   */
+  const sessionId = ref<number | string>('')
+  const sessionOptions = ref<Session[]>([])
+  const sessionLoading = ref(false)
+
+  /** 本次查询的真实规模（后端返回，不受"返回条数上限"影响） */
+  const resultTotal = ref(0)
+  const returnedCount = ref(0)
+  const orphanRecords = ref(0)
+  const truncated = computed(
+    () => returnedCount.value > 0 && resultTotal.value > returnedCount.value
+  )
 
   /**
    * 查询范围（默认全部直播间）。
@@ -437,7 +485,45 @@
     }
   }
 
-  onMounted(loadScopeOptions)
+  /**
+   * 场次下拉：选了直播间就列该直播间的场次，否则列全部场次（只取最近 300 场，避免下拉过长）。
+   */
+  async function loadSessionOptions() {
+    sessionLoading.value = true
+    try {
+      const scoped = scopeId.value !== '' && scopeId.value != null
+      const list = scoped ? await fetchSessions(String(scopeId.value)) : await fetchAllSessions()
+      sessionOptions.value = [...list]
+        .sort((a, b) => String(b.start_time || '').localeCompare(String(a.start_time || '')))
+        .slice(0, 300)
+    } catch {
+      // 场次下拉是增强能力，拿不到就只剩「全部场次」，不打断查询
+      sessionOptions.value = []
+    } finally {
+      sessionLoading.value = false
+    }
+  }
+
+  /** 直播间变了：重载场次列表并清掉已选场次；已经查过就按新范围重查 */
+  async function onScopeChanged() {
+    sessionId.value = ''
+    await loadSessionOptions()
+    if (searched.value && query.value.trim()) doSearch()
+  }
+
+  /** 场次变了：已经查过就按新范围重查 */
+  function onSessionChanged() {
+    if (searched.value && query.value.trim()) doSearch()
+  }
+
+  function sessionLabel(s: any): string {
+    return `${s.streamer_name || '未知主播'} · ${String(s.start_time || '').slice(0, 16)}`
+  }
+
+  onMounted(() => {
+    loadScopeOptions()
+    loadSessionOptions()
+  })
 
   const hotKeywords = ['无限', '苏江', '林语巷', '神秘人']
 
@@ -456,25 +542,14 @@
   }
 
   const sortedUsers = computed(() => {
-    const list = [...users.value]
     const num = (v: any) => (typeof v === 'number' ? v : 0)
-    const bySort = (a: any, b: any) => {
-      switch (sortKey.value) {
-        case 'diamonds':
-          return num(b.total_diamonds) - num(a.total_diamonds)
-        case 'danmaku':
-          return num(b.danmaku_count) - num(a.danmaku_count)
-        case 'sessions':
-          return (b.sessions?.length || 0) - (a.sessions?.length || 0)
-        default:
-          return num(b.latest_action?.time) - num(a.latest_action?.time)
-      }
-    }
-    // 先按所选排序排好，再把「仅进场」整体挪到最后（组内相对顺序不变）
-    list.sort(bySort)
-    const interactive = list.filter((u) => !isEntryOnly(u))
-    const entryOnly = list.filter(isEntryOnly)
-    return [...interactive, ...entryOnly]
+    // 排序只按"最近活跃"（与后端取前 limit 个的排序保持一致；
+    // 原来的"按钻石/弹幕/场次"下拉已按用户要求去掉，改由直播间/场次缩小范围）
+    const list = [...users.value].sort(
+      (a, b) => num(b.latest_action?.time) - num(a.latest_action?.time)
+    )
+    // 「仅进场」整体挪到最后（组内相对顺序不变）
+    return [...list.filter((u) => !isEntryOnly(u)), ...list.filter(isEntryOnly)]
   })
 
   /** 结果里「仅进场」的数量（结果头与卡片降噪共用同一口径） */
@@ -500,10 +575,22 @@
     const scopeName = scoped
       ? scopeOptions.value.find((s) => String(s.id) === String(scopeId.value))?.name || ''
       : ''
-    lastScope.value = scoped ? `范围：${scopeName}的直播间` : '范围：全部直播间'
+    const sess =
+      sessionId.value !== '' && sessionId.value != null
+        ? sessionOptions.value.find((s) => String(s.id) === String(sessionId.value))
+        : null
+    lastScope.value = (scoped ? `范围：${scopeName}的直播间` : '范围：全部直播间') +
+      (sess ? ` · 场次 ${sessionLabel(sess)}` : '')
     try {
-      const res: any = await anonymousLookup(q, scoped ? String(scopeId.value) : undefined)
+      const res: any = await anonymousLookup(
+        q,
+        scoped ? String(scopeId.value) : undefined,
+        sess ? String(sess.id) : undefined
+      )
       results.value = res?.users || (Array.isArray(res) ? res : [])
+      resultTotal.value = Number(res?.total_users ?? results.value.length)
+      returnedCount.value = Number(res?.returned_users ?? res?.returned ?? results.value.length)
+      orphanRecords.value = Number(res?.orphan_records || 0)
       queryError.value = ''
     } catch (e) {
       results.value = []

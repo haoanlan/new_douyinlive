@@ -476,6 +476,14 @@ export function fetchSessions(hostId: string) {
   })
 }
 
+/**
+ * 全部场次（用于信息查询页的「场次」筛选：没选直播间时列出所有场次）。
+ * 只取最近若干场，避免下拉框太长。
+ */
+export function fetchAllSessions() {
+  return request.get<Session[]>({ url: '/api/sessions', showErrorMessage: false })
+}
+
 export function deleteSession(sessionId: string) {
   return request.post<{ ok: boolean }>({ url: `/api/sessions/${sessionId}/delete` })
 }

@@ -159,30 +159,28 @@
       <template v-else>
         <!-- 加载中不显示这行：首次查询时会闪一个「共 0 个用户」，而且 v-loading 的遮罩
              只剩这一行的高度（实测 36px 高的一条），看起来不知道是什么 -->
-        <div v-if="!loading" class="flex items-center justify-between gap-3 mb-3 px-1">
-          <span class="text-sm text-g-600 flex items-center gap-2 flex-wrap">
-            共 <b class="text-g-900">{{ resultTotal }}</b> 个匹配用户 ·
-            <b class="text-g-900">{{ fmtNum(totalRecords) }}</b> 条命中记录
-            <span v-if="truncated" class="text-g-500">
-              · 本次显示前 {{ returnedCount }} 个（按命中记录的最后出现时间排序）——
-              用上方「直播间 / 场次」缩小范围
-            </span>
-            <span v-if="entryCount" class="text-g-400">
-              · 其中仅进场 {{ entryCount }} 个（排在最后）
-            </span>
-            <span v-if="orphanRecords" class="text-g-400">
-              · 另有 {{ orphanRecords }} 条记录没有用户标识{{
-                truncated ? '（本次未列出）' : '（单列在最后）'
-              }}
-            </span>
-            <!-- 本次查询条件：原来放在工具条左块，查询后出现会把整组操作挤到第二行 -->
-            <el-tag v-if="lastQuery" size="small" effect="plain">关键词 {{ lastQuery }}</el-tag>
-            <el-tag v-if="lastScope" size="small" effect="plain" type="info">{{ lastScope }}</el-tag>
+        <!--
+          只留"共 N 个匹配用户 + 显示前 K"这几个必要信息，其余明细（命中记录数、排序依据、
+          仅进场数、无标识记录）收进 ⓘ 悬浮提示 —— 原来一行铺满两百多字没重点。
+          右侧「重新查询」已去掉：它和工具条的「查询」是同一个 doSearch，功能重复。
+        -->
+        <div v-if="!loading" class="flex items-center gap-2 mb-3 px-1 flex-wrap">
+          <span class="text-sm text-g-600 shrink-0">
+            共 <b class="text-g-900">{{ resultTotal }}</b> 个匹配用户
           </span>
-          <el-button size="small" text @click="doSearch">
-            <ArtSvgIcon icon="ri:refresh-line" class="mr-1" />
-            重新查询
-          </el-button>
+          <span v-if="truncated" class="text-xs text-g-500 shrink-0">
+            · 显示前 {{ returnedCount }} 个
+          </span>
+          <!-- 本次查询条件：原来放在工具条左块，查询后出现会把整组操作挤到第二行 -->
+          <el-tag v-if="lastQuery" size="small" effect="plain" class="shrink-0">
+            关键词 {{ lastQuery }}
+          </el-tag>
+          <el-tag v-if="lastScope" size="small" effect="plain" type="info" class="shrink-0">
+            {{ lastScope }}
+          </el-tag>
+          <el-tooltip placement="top" :content="detailTip" :show-after="150">
+            <ArtSvgIcon icon="ri:information-line" class="text-g-400 shrink-0 c-p" />
+          </el-tooltip>
         </div>
 
         <ElRow :gutter="20">
@@ -706,6 +704,24 @@
     if (e.isComposing) return
     doSearch()
   }
+
+  /** 结果头的明细说明（悬浮提示用）：原来这些直接铺在页面上，一行两百多字没重点 */
+  const detailTip = computed(() => {
+    const parts = [`库内命中 ${fmtNum(totalRecords.value)} 条记录`]
+    if (truncated.value) {
+      parts.push(
+        `按命中记录的最后出现时间排序，本次只显示前 ${returnedCount.value} 个 —— 可用上方「直播间 / 场次」缩小范围`
+      )
+    }
+    if (entryCount.value) parts.push(`其中仅进场 ${entryCount.value} 个，排在最后`)
+    if (orphanRecords.value) {
+      parts.push(
+        `另有 ${orphanRecords.value} 条记录没有用户标识` +
+          (truncated.value ? '（本次未列出）' : '（单列在最后）')
+      )
+    }
+    return parts.join('；')
+  })
 
   /**
    * 清空输入框：回到"未查询"引导态。

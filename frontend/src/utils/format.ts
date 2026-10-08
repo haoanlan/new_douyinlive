@@ -95,11 +95,18 @@ export function fmtTitle(n: number | null | undefined): string {
   return fmtFull(n)
 }
 
-/** 排名徽章样式（前三名高亮） */
+/**
+ * 排名徽章样式（前三名高亮）
+ *
+ * 底与字必须**成对**给定：原来返回 `bg-amber-100 text-amber-600` 这类 Tailwind 固定调色板，
+ * 而 `.douyin-page` 的语义色收口会把 `text-amber-*` / `text-orange-*` 改成"给深色底用的亮色"，
+ * 于是暗色下浅色底徽章实测只有 1.5:1 / 3.14:1（需 4.5）。现在交给 `.dy-rank--*`
+ * 在样式层配对（浅色/暗色各一套，见 custom/douyin-motion.scss）。
+ */
 export function rankClass(i: number): string {
-  if (i === 0) return 'bg-amber-100 text-amber-600'
-  if (i === 1) return 'bg-slate-200 text-slate-600'
-  if (i === 2) return 'bg-orange-100 text-orange-600'
+  if (i === 0) return 'dy-rank dy-rank--1'
+  if (i === 1) return 'dy-rank dy-rank--2'
+  if (i === 2) return 'dy-rank dy-rank--3'
   return 'bg-g-100 text-g-500'
 }
 

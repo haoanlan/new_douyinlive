@@ -809,6 +809,44 @@
     color: var(--dy-text-secondary);
   }
 
+  /*
+   * 名次徽章（1/2/3 名，`rankClass` 返回的 .dy-rank--*）。
+   *
+   * 为什么不再用 Tailwind 调色板：下面这层语义色收口会把 text-amber-* / text-orange-*
+   * 改成"给深色底用的亮色"，而这些徽章自带**浅色底** —— 暗色下实测 1 名 1.5:1、
+   * 3 名 3.14:1（需 4.5，见 scripts/ui-audit-dark.js）。这里把底与字成对给定。
+   */
+  .dy-rank--1 {
+    color: #92400e; /* amber-800 on amber-100 ≈ 6.4:1 */
+    background-color: #fef3c7;
+  }
+
+  .dy-rank--2 {
+    color: #334155; /* slate-700 on slate-200 ≈ 8.4:1 */
+    background-color: #e2e8f0;
+  }
+
+  .dy-rank--3 {
+    color: #9a3412; /* orange-800 on orange-100 ≈ 6.4:1 */
+    background-color: #ffedd5;
+  }
+
+  /* 暗色：亮字 + 半透明同色底（html.dark 在 html 上，所以用 html.dark & 提高特异性） */
+  html.dark & .dy-rank--1 {
+    color: #fcd34d;
+    background-color: rgb(180 83 9 / 25%);
+  }
+
+  html.dark & .dy-rank--2 {
+    color: #cbd5e1;
+    background-color: rgb(71 85 105 / 35%);
+  }
+
+  html.dark & .dy-rank--3 {
+    color: #fdba74;
+    background-color: rgb(154 52 18 / 30%);
+  }
+
   .el-radio-button__inner {
     /* 点按目标下限：实测趋势页时间范围 58×22（UI-AUDIT P1-9） */
     min-height: 24px;

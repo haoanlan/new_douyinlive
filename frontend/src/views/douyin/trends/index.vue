@@ -17,13 +17,7 @@
 -->
 <template>
   <div class="douyin-page p-4">
-    <!-- 面包屑：与其它抖音页一致 -->
-    <el-breadcrumb class="mb-5" separator="/">
-      <el-breadcrumb-item :to="{ path: '/douyin/dashboard' }">
-        <ArtSvgIcon icon="ri:live-line" class="text-sm text-g-500" /> 抖音监控
-      </el-breadcrumb-item>
-      <el-breadcrumb-item>趋势分析</el-breadcrumb-item>
-    </el-breadcrumb>
+    <!-- 面包屑统一由顶栏渲染（原来这里那份与顶栏内容一字不差地重复） -->
 
     <!-- 工具条：选房间 + 时间范围 + X 轴粒度 -->
     <div class="art-card dy-toolbar mb-5 flex items-center justify-between gap-4 flex-wrap">

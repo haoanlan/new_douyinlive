@@ -58,6 +58,23 @@
       return []
     }
 
+    /*
+     * 隐藏页（场次历史 / 场次详情 / 用户画像）在路由树里直接挂在 /douyin 下并标了 isHide，
+     * 顶栏只会显示「抖音监控 / 场次详情」—— 层级信息丢失。
+     * 这些页面带了 `meta.activePath`（表示它归属哪个菜单项，侧边栏与标签栏也用这个兜底），
+     * 这里用它换回首项，顶栏就变成「房间管理 / 场次详情」，且首项可点。
+     */
+    const activePath = route.meta?.activePath as string | undefined
+    if (activePath) {
+      const target = router.getRoutes().find((r) => r.path === activePath)
+      if (target?.meta?.title) {
+        return [
+          { path: activePath, meta: target.meta },
+          { path: route.path, meta: route.meta }
+        ]
+      }
+    }
+
     // 处理一级菜单和普通路由
     const firstRoute = matched[0]
     const isFirstLevel = firstRoute.meta?.isFirstLevel

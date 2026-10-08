@@ -1,15 +1,6 @@
 <template>
   <div v-loading="loading" class="douyin-page p-4" element-loading-text="加载中…">
-    <el-breadcrumb class="mb-5" separator="/">
-      <el-breadcrumb-item :to="{ path: '/douyin/rooms' }">
-        <ArtSvgIcon icon="ri:home-4-line" class="text-sm text-g-500" /> 房间管理
-      </el-breadcrumb-item>
-      <el-breadcrumb-item
-        :to="streamerId ? { path: '/douyin/sessions', query: { hostId: streamerId } } : undefined"
-        >场次历史</el-breadcrumb-item
-      >
-      <el-breadcrumb-item>场次 {{ sessionId }}</el-breadcrumb-item>
-    </el-breadcrumb>
+    <!-- 面包屑统一由顶栏渲染；"回到该主播场次列表"的入口移到下面的工具条上 -->
 
     <!-- 失败必须说出来（UI-AUDIT P1-11）：否则页面停在全 0 的假数据上 -->
     <QueryErrorState
@@ -44,9 +35,21 @@
           </div>
         </div>
       </div>
-      <el-button :loading="loading" :disabled="loading" @click="refresh">
-        <ArtSvgIcon icon="ri:refresh-line" class="mr-1" />刷新
-      </el-button>
+      <div class="flex items-center gap-2">
+        <!--
+          面包屑统一到顶栏后，"回到该主播的场次列表"（原来只存在于页面内面包屑、
+          且带着 hostId）需要一个新的明确入口 —— 这是详情页最主要的回退路径。
+        -->
+        <el-button
+          v-if="streamerId"
+          @click="router.push({ path: '/douyin/sessions', query: { hostId: streamerId } })"
+        >
+          <ArtSvgIcon icon="ri:arrow-left-line" class="mr-1" />场次列表
+        </el-button>
+        <el-button :loading="loading" :disabled="loading" @click="refresh">
+          <ArtSvgIcon icon="ri:refresh-line" class="mr-1" />刷新
+        </el-button>
+      </div>
     </div>
 
     <!-- 统计卡片 -->
@@ -451,7 +454,7 @@
 
 <script setup lang="ts">
   import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-  import { useRoute } from 'vue-router'
+  import { useRoute, useRouter } from 'vue-router'
   import { echarts } from '@/plugins/echarts'
   import {
     fetchSessionDetail,
@@ -484,6 +487,7 @@
   defineOptions({ name: 'DouyinDetail' })
 
   const route = useRoute()
+  const router = useRouter()
   const sessionId = String(route.params.sessionId)
   const detail = ref<SessionDetail | null>(null)
   const streamerId = computed(() => detail.value?.session?.streamer_id)

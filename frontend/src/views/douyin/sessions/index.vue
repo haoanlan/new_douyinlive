@@ -1,12 +1,6 @@
 <template>
   <div class="douyin-page p-4">
-    <!-- 面包屑导航 -->
-    <el-breadcrumb class="mb-5" separator="/">
-      <el-breadcrumb-item :to="{ path: '/douyin/rooms' }">
-        <ArtSvgIcon icon="ri:home-4-line" class="text-sm text-g-500" /> 房间管理
-      </el-breadcrumb-item>
-      <el-breadcrumb-item>场次历史</el-breadcrumb-item>
-    </el-breadcrumb>
+    <!-- 面包屑统一由顶栏渲染（art-breadcrumb 会按 meta.activePath 显示"房间管理 / 场次历史"） -->
 
     <!-- 顶部汇总 -->
     <ElRow :gutter="20">

@@ -196,19 +196,16 @@
                   <div class="flex items-center gap-1.5 mt-2 min-w-0 h-[22px] overflow-hidden">
                     <span class="text-xs text-g-400 shrink-0">库内别名</span>
                     <el-tag
-                      v-for="a in realAliases(u).slice(0, 2)"
+                      v-for="a in realAliases(u)"
                       :key="a.nickname"
                       size="small"
                       effect="plain"
                       type="info"
                       class="max-w-[150px] truncate"
+                      :title="a.nickname"
                     >
-                      {{ a.nickname
-                      }}<span v-if="a.count > 1" class="text-g-400"> ×{{ a.count }}</span>
+                      {{ a.nickname }}
                     </el-tag>
-                    <span v-if="realAliases(u).length > 2" class="text-xs text-g-500 shrink-0">
-                      +{{ realAliases(u).length - 2 }}
-                    </span>
                     <el-popover
                       v-if="tempAliases(u).length"
                       placement="top"
@@ -221,7 +218,7 @@
                         </button>
                       </template>
                       <div class="text-xs text-g-500 mb-2">
-                        抖音为未登录访客生成的名字（同一人的游客身份，按出现次数排序）：
+                        抖音自动生成的游客/匿名名字（不在卡片上展示）：
                       </div>
                       <div class="max-h-[220px] overflow-auto flex flex-wrap gap-1.5">
                         <el-tag
@@ -231,7 +228,7 @@
                           effect="plain"
                           type="info"
                         >
-                          {{ a.nickname }}<span class="text-g-400"> ×{{ a.count }}</span>
+                          {{ a.nickname }}
                         </el-tag>
                       </div>
                     </el-popover>
@@ -544,17 +541,18 @@
   }
 
   /**
-   * 抖音给未登录访客自动生成的名字（dou + 数字）。实测一个重度用户的 30 个名字里
-   * 有 28 个是这种 —— 它们是同一个人的游客身份，但摆在卡片上非常吵，所以单独收起来。
+   * 抖音自动生成的名字：`dou` + 数字（未登录访客），以及「神秘人…」（匿名/隐藏身份）。
+   * 实测一个重度用户的 30 个名字里 28 个是这类 —— 它们是同一个人的游客身份，
+   * 摆在卡片上非常吵，所以不内联显示，收进「另有 N 个游客名」里点开看。
    */
-  const TEMP_ALIAS_RE = /^dou\d+$/i
+  const TEMP_ALIAS_RE = /^(dou\d+|神秘人)/i
 
-  /** 像"真名"的别名（不含游客名），按出现次数降序（aliasList 已排好序） */
+  /** 真实昵称（不含自动生成的游客名），按出现次数降序（aliasList 已排好序） */
   function realAliases(u: any): { nickname: string; count: number }[] {
     return aliasList(u).filter((a) => !TEMP_ALIAS_RE.test(a.nickname))
   }
 
-  /** 游客名，收进 popover 里"点开看全部" */
+  /** 自动生成的游客名，收进 popover 里"点开看全部" */
   function tempAliases(u: any): { nickname: string; count: number }[] {
     return aliasList(u).filter((a) => TEMP_ALIAS_RE.test(a.nickname))
   }

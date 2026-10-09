@@ -59,7 +59,7 @@
             <span class="dy-switch-btn__label">自动刷新</span>
             <el-switch v-model="autoRefresh" />
           </span>
-          <el-button :loading="loading" @click="refresh">
+          <el-button :loading="loading" @click="refresh({ minSpinMs: 420 })">
             <ArtSvgIcon icon="ri:refresh-line" class="mr-1" />
             刷新状态
           </el-button>
@@ -67,7 +67,7 @@
             type="primary"
             :loading="busy === 'restart'"
             :disabled="Boolean(statusError) && !status"
-            @click="handleRestart"
+            @click="handleRestartAll"
           >
             <ArtSvgIcon icon="ri:restart-line" class="mr-1" />
             重启全部服务
@@ -1326,14 +1326,26 @@
     return 'text-success'
   }
 
-  async function refresh() {
-    if (!status.value) loading.value = true
+  /**
+   * 拉一次服务状态。
+   *
+   * `minSpinMs`：本地接口常常 20~50ms 就返回，按钮上的转圈一闪而过，
+   * 点下去"看起来没反应"（用户反馈过）—— 传了它就保证转圈至少显示这么久。
+   */
+  async function refresh(opts: { minSpinMs?: number } = {}) {
+    const spin = opts.minSpinMs || 0
+    const beganAt = Date.now()
+    loading.value = true
     try {
       status.value = await fetchServiceStatus()
       statusError.value = ''
     } catch (e) {
       statusError.value = apiErrorMessage(e, '服务状态获取失败')
     } finally {
+      if (spin) {
+        const rest = spin - (Date.now() - beganAt)
+        if (rest > 0) await new Promise((r) => setTimeout(r, rest))
+      }
       loading.value = false
     }
   }
@@ -1387,8 +1399,19 @@
     }
   }
 
-  /** 缺前置条件时点重启：直接讲清缺什么，而不是让按钮变灰 */
-  async function handleRestart() {
+  /**
+   * 「重启全部服务」= Go 代理 + 监控 worker，两个都要重启。
+   *
+   * 原来这里只调了 restart（那个动作在后端只重启监控 worker），
+   * 按钮却写着"全部服务" —— 用户按完看到"监控 worker 已重启"，
+   * 而 Go 代理还在用启动时的旧 config（于是页面又冒出
+   * "config.yaml 与 proxy-config.yaml 不一致"的警告，新 Cookie 也没生效）。
+   *
+   * 现在依次调两个已经验证过的接口，并把两边结果合起来如实汇报：
+   * 先重启代理（它会按 config.yaml 重新生成 proxy-config.yaml），
+   * 再重启 worker（此时 1088 已在监听，worker 不会再去抢着拉一个）。
+   */
+  async function handleRestartAll() {
     const s = status.value
     const reasons: string[] = []
     if (s && !s.proxy?.binaryExists) {
@@ -1412,7 +1435,45 @@
       return
     }
     if (!(await confirmDangerous('restart'))) return
-    await act('restart')
+
+    busy.value = 'restart'
+    const lines: string[] = []
+    let allOk = true
+    try {
+      const p: any = await performServiceAction('restart-proxy')
+      const pOk = p?.ok !== false
+      allOk = allOk && pOk
+      lines.push(
+        pOk
+          ? `① Go 抓取代理：${p?.message || '已重启'}`
+          : `① Go 抓取代理重启失败：${p?.error || p?.message || '未知原因'}`
+      )
+
+      const w: any = await performServiceAction('restart')
+      const wOk = w?.ok !== false
+      allOk = allOk && wOk
+      lines.push(
+        wOk
+          ? `② 监控脚本：${w?.message || '已重启'}`
+          : `② 监控脚本重启失败：${w?.error || w?.message || '未知原因'}`
+      )
+      if (allOk) lines.push('', '两个服务都已按当前 config.yaml 重新启动。')
+    } catch (e: any) {
+      allOk = false
+      lines.push(`请求失败：${e?.message || e}`)
+    } finally {
+      busy.value = ''
+    }
+
+    dialog.value = {
+      title: allOk ? '重启完成' : '重启未全部成功',
+      message: lines.join('\n'),
+      ok: allOk
+    }
+    dialogVisible.value = true
+    if (allOk) ElMessage.success('Go 代理与监控脚本都已重启')
+    else ElMessage.warning('有服务未重启成功，详情见弹窗')
+    await refresh()
   }
 
   async function actWithConfirm(action: ServiceAction) {

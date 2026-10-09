@@ -298,3 +298,13 @@ export function esc(s: string): string {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;')
 }
+
+/**
+ * 弹幕文本 → 可安全用于 v-html 的 HTML（先转义、再替换抖音表情代码）。
+ *
+ * 顺序不能反：先替换的话，后面 esc 会把刚插进去的 <img> 一起转义成文本。
+ * 表情代码形如 [比心]、[捂脸]，`esc` 不会动方括号，所以转义后再替换是安全的。
+ */
+export function emojiHtml(s?: string | null): string {
+  return replaceDouyinEmoji(esc(String(s ?? '')))
+}

@@ -203,7 +203,11 @@
                 >
                   {{ a.type === 'gift' ? '礼物' : a.type === 'member' ? '进场' : '弹幕' }}
                 </el-tag>
-                <span class="flex-1 min-w-0 truncate text-sm text-g-700">{{ a.content }}</span>
+                <!-- 弹幕内容里的 [比心] 这类是抖音表情代码，交给 emojiHtml 渲染成图，不要当纯文本显示 -->
+                <span
+                  class="flex-1 min-w-0 truncate text-sm text-g-700"
+                  v-html="emojiHtml(a.content)"
+                ></span>
                 <!-- 进场必须写明进了哪个直播间，所以这列不能省（后端已兜底"未知直播间"） -->
                 <span v-if="a.streamer" class="text-xs text-g-500 shrink-0 max-w-[120px] truncate">
                   {{ a.streamer }}
@@ -272,6 +276,7 @@
   import { useRoute, useRouter } from 'vue-router'
   import { fetchUser, type UserProfile } from '@/api/douyin'
   import { fmtNum, fmtTitle, rankClass } from '@/utils/format'
+  import { emojiHtml } from '@/utils/douyin-emoji'
   import { apiErrorMessage } from '@/utils/douyin-error'
 
   defineOptions({ name: 'DouyinProfile' })

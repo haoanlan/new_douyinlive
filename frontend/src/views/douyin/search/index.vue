@@ -383,9 +383,10 @@
               <div class="flex flex-col gap-2 mt-4 pt-3 border-t border-g-100/80">
                 <div v-if="latestOf(u, 'danmaku')" class="flex items-center gap-2 text-xs">
                   <span class="px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-500 shrink-0">弹幕</span>
-                  <span class="flex-1 min-w-0 truncate text-g-700">
-                    {{ cleanText(latestOf(u, 'danmaku').detail) }}
-                  </span>
+                  <span
+                    class="flex-1 min-w-0 truncate text-g-700"
+                    v-html="emojiHtml(latestOf(u, 'danmaku').detail)"
+                  ></span>
                   <span class="text-g-400 shrink-0">{{ fmtTime(latestOf(u, 'danmaku').time) }}</span>
                 </div>
                 <div v-else class="flex items-center gap-2 text-xs">
@@ -395,9 +396,10 @@
 
                 <div v-if="latestOf(u, 'gift')" class="flex items-center gap-2 text-xs">
                   <span class="px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-600 shrink-0">礼物</span>
-                  <span class="flex-1 min-w-0 truncate text-g-600">
-                    {{ cleanText(latestOf(u, 'gift').detail) }}
-                  </span>
+                  <span
+                    class="flex-1 min-w-0 truncate text-g-600"
+                    v-html="emojiHtml(latestOf(u, 'gift').detail)"
+                  ></span>
                   <span class="text-g-400 shrink-0">{{ fmtTime(latestOf(u, 'gift').time) }}</span>
                 </div>
                 <div v-else class="flex items-center gap-2 text-xs">
@@ -449,6 +451,7 @@
     type Session
   } from '@/api/douyin'
   import { fmtNum, fmtTime, fmtTitle, fmtSessionTime } from '@/utils/format'
+  import { emojiHtml } from '@/utils/douyin-emoji'
   import { ElMessage } from 'element-plus'
   import { apiErrorMessage } from '@/utils/douyin-error'
 
@@ -844,12 +847,14 @@
     return aliasList(u).filter((a) => isGeneratedAlias(a))
   }
 
-  /** 后端 detail 里带 [礼物] 前缀与表情，去掉多余前后缀让行更干净 */
-  function cleanText(s?: string | null): string {
-    if (!s) return ''
-    return String(s).replace(/^\[[^\]]+\]\s*/, '').trim()
-  }
-
+  /**
+   * 弹幕/动作文本里的抖音表情代码（[比心]、[捂脸]）交给 emojiHtml 渲染成图。
+   *
+   * 原来这里先用一个正则把开头的方括号段删掉，注释说是"去掉后端带的 [礼物] 前缀"——
+   * 但后端从来不产生这种前缀，而弹幕内容**本身就是** [xxx] 形式的表情代码，
+   * 于是整条弹幕是 [比心] 时会被整段删掉，卡片上那行变成空白（用户反馈）。
+   * 表情代码是内容的一部分，不能当噪音剥掉。
+   */
   function actionLabel(type?: string): string {
     if (type === 'gift') return '礼物'
     if (type === 'danmaku') return '弹幕'

@@ -29,7 +29,13 @@
     >
       <div class="flex items-center gap-3 flex-wrap">
         <span class="text-xs break-all">{{ statusError }}</span>
-        <el-button size="small" type="primary" plain :loading="loading" @click="refresh">
+        <el-button size="small" type="primary" plain @click="refresh({ minSpinMs: 420 })">
+          <!-- 同上：不用 :loading，用固定占位的转圈图标，宽度不变 -->
+          <ArtSvgIcon
+            icon="ri:loader-4-line"
+            class="mr-1"
+            :class="loading ? 'dy-spin' : 'invisible'"
+          />
           重试
         </el-button>
       </div>
@@ -59,17 +65,29 @@
             <span class="dy-switch-btn__label">自动刷新</span>
             <el-switch v-model="autoRefresh" />
           </span>
-          <el-button :loading="loading" @click="refresh({ minSpinMs: 420 })">
-            <ArtSvgIcon icon="ri:refresh-line" class="mr-1" />
+          <el-button @click="refresh({ minSpinMs: 420 })">
+            <!--
+              不用 el-button 的 :loading —— 它会在内容**前面再插一个**转圈图标，
+              而这里已经有一个图标了，点下去按钮会变宽（用户反馈"点击大小会变"）。
+              改成让原图标原地旋转：宽度恒定，反馈照样有。
+            -->
+            <ArtSvgIcon
+              icon="ri:refresh-line"
+              class="mr-1"
+              :class="loading ? 'dy-spin' : ''"
+            />
             刷新状态
           </el-button>
           <el-button
             type="primary"
-            :loading="busy === 'restart'"
             :disabled="Boolean(statusError) && !status"
             @click="handleRestartAll"
           >
-            <ArtSvgIcon icon="ri:restart-line" class="mr-1" />
+            <ArtSvgIcon
+              icon="ri:restart-line"
+              class="mr-1"
+              :class="busy === 'restart' ? 'dy-spin' : ''"
+            />
             重启全部服务
           </el-button>
         </div>
@@ -129,7 +147,6 @@
             size="small"
             plain
             class="shrink-0"
-            :loading="m.action.kind === 'service' && busy === m.action.act"
             :disabled="m.action.kind === 'service' && !statusKnown"
             :title="m.title || ''"
             @click="
@@ -140,7 +157,11 @@
                   : actWithConfirm(m.action.act)
             "
           >
-            <ArtSvgIcon :icon="m.action.icon" class="mr-1" />
+            <ArtSvgIcon
+              :icon="m.action.icon"
+              class="mr-1"
+              :class="m.action.kind === 'service' && busy === m.action.act ? 'dy-spin' : ''"
+            />
             {{ m.action.text }}
           </el-button>
         </div>
@@ -193,8 +214,12 @@
             title="改了 config.yaml 但代理还在用启动时的旧配置"
             >待重启生效</span
           >
-          <el-button type="primary" :loading="formLoading" @click="openEditor">
-            <ArtSvgIcon icon="ri:settings-3-line" class="mr-1" />
+          <el-button type="primary" @click="openEditor">
+            <ArtSvgIcon
+              icon="ri:settings-3-line"
+              class="mr-1"
+              :class="formLoading ? 'dy-spin' : ''"
+            />
             可视化配置
           </el-button>
         </div>
@@ -332,8 +357,12 @@
             <div class="pc-field">
               <div class="pc-field__head">
                 <label class="pc-label">默认 Cookie（cookie.douyin）</label>
-                <el-button size="small" type="primary" plain :loading="qrStarting" @click="openQrLogin">
-                  <ArtSvgIcon icon="ri:qr-scan-2-line" class="mr-1" />
+                <el-button size="small" type="primary" plain @click="openQrLogin">
+                  <ArtSvgIcon
+                    icon="ri:qr-scan-2-line"
+                    class="mr-1"
+                    :class="qrStarting ? 'dy-spin' : ''"
+                  />
                   扫码登录
                 </el-button>
               </div>
@@ -492,8 +521,25 @@
           </span>
           <div class="flex items-center gap-2">
             <el-button @click="editorOpen = false">取消</el-button>
-            <el-button :loading="saving === 'save'" @click="save(false)">只保存</el-button>
-            <el-button type="primary" :loading="saving === 'restart'" @click="save(true)">
+            <!--
+              这两个按钮本身没有图标，用「固定占位的转圈图标」——
+              平时不可见、转起来才出现，宽度全程不变（不然 el-button 的 :loading
+              会临时插一个图标把按钮撑宽，点一下尺寸就跳）。
+            -->
+            <el-button @click="save(false)">
+              <ArtSvgIcon
+                icon="ri:loader-4-line"
+                class="mr-1"
+                :class="saving === 'save' ? 'dy-spin' : 'invisible'"
+              />
+              只保存
+            </el-button>
+            <el-button type="primary" @click="save(true)">
+              <ArtSvgIcon
+                icon="ri:loader-4-line"
+                class="mr-1"
+                :class="saving === 'restart' ? 'dy-spin' : 'invisible'"
+              />
               保存并重启代理
             </el-button>
           </div>
@@ -772,11 +818,19 @@
               : s?.proxy?.foreignBinary
                 ? `${s.proxy.foreignBinary} 不是当前平台（${s.platform}）的构建`
                 : '未找到代理二进制',
-      action: {
-        text: proxyHealthy.value ? '重启' : '启动',
-        icon: proxyHealthy.value ? 'ri:restart-line' : 'ri:play-line',
-        act: (proxyHealthy.value ? 'restart-proxy' : 'start-proxy') as ServiceAction
-      }
+      /*
+       * 状态取不到时不给动作按钮：
+       * 那时既不知道服务在不在跑，按钮文案只能靠猜（之前会显示成「启动」），
+       * 而且禁用态文字是 Element 的浅灰（实测对白底只有 2.3:1，不达 AA）。
+       * 先让用户刷新/重试拿到状态，再决定点什么。
+       */
+      action: unknown
+        ? null
+        : {
+            text: proxyHealthy.value ? '重启' : '启动',
+            icon: proxyHealthy.value ? 'ri:restart-line' : 'ri:play-line',
+            act: (proxyHealthy.value ? 'restart-proxy' : 'start-proxy') as ServiceAction
+          }
     }
 
     const daemonItem = {
@@ -809,11 +863,14 @@
             : s?.configuredRooms
               ? '未运行（上次运行已退出），当前没有采集数据'
               : '未运行，且没有启用任何监控房间',
-      action: {
-        text: daemonRunning.value ? '重启' : '启动',
-        icon: daemonRunning.value ? 'ri:restart-line' : 'ri:play-line',
-        act: (daemonRunning.value ? 'restart' : 'start') as ServiceAction
-      }
+      // 同上：状态未知时不猜「启动」还是「重启」
+      action: unknown
+        ? null
+        : {
+            text: daemonRunning.value ? '重启' : '启动',
+            icon: daemonRunning.value ? 'ri:restart-line' : 'ri:play-line',
+            act: (daemonRunning.value ? 'restart' : 'start') as ServiceAction
+          }
     }
 
     /*
@@ -871,7 +928,7 @@
         footValue: unknown ? '—' : String(s?.daemon?.pid ?? '—'),
         footTone: 'text-g-700',
         title: daemonItem?.detail || '',
-        action: daemonItem
+        action: daemonItem?.action
           ? { text: daemonItem.action.text, icon: daemonItem.action.icon, act: daemonItem.action.act, kind: 'service' }
           : null
       },
@@ -892,7 +949,7 @@
               : '未运行',
         footTone: !unknown && proxyHealthy.value ? 'text-success' : 'text-g-700',
         title: proxyItem?.detail || '',
-        action: proxyItem
+        action: proxyItem?.action
           ? { text: proxyItem.action.text, icon: proxyItem.action.icon, act: proxyItem.action.act, kind: 'service' }
           : null
       },
@@ -1080,6 +1137,8 @@
   })
 
   async function openEditor() {
+    // 去掉 :loading 后按钮不再自锁，这里防重入
+    if (formLoading.value) return
     editorOpen.value = true
     formLoading.value = true
     saveError.value = ''
@@ -1167,6 +1226,8 @@
   }
 
   async function openQrLogin() {
+    // 去掉 :loading 后按钮不再自锁，这里防重入
+    if (qrStarting.value) return
     qrOpen.value = true
     qrStarting.value = true
     qr.value = { ok: true, state: 'starting', message: '正在打开登录窗口…' }
@@ -1333,6 +1394,8 @@
    * 点下去"看起来没反应"（用户反馈过）—— 传了它就保证转圈至少显示这么久。
    */
   async function refresh(opts: { minSpinMs?: number } = {}) {
+    // 去掉 :loading 后按钮不再自锁，这里防重复触发（自动刷新与手动点可能撞一起）
+    if (loading.value) return
     const spin = opts.minSpinMs || 0
     const beganAt = Date.now()
     loading.value = true
@@ -1412,6 +1475,7 @@
    * 再重启 worker（此时 1088 已在监听，worker 不会再去抢着拉一个）。
    */
   async function handleRestartAll() {
+    if (busy.value) return
     const s = status.value
     const reasons: string[] = []
     if (s && !s.proxy?.binaryExists) {
@@ -1482,6 +1546,7 @@
   }
 
   async function act(action: ServiceAction) {
+    if (busy.value) return
     busy.value = action
     try {
       const res: any = await performServiceAction(action)
@@ -1615,8 +1680,28 @@
     line-height: 1;
   }
 
-  /* ===== 控件行间距 =====
-     Element Plus 默认给相邻按钮加 margin-left: 12px。只要该行用了 flex gap，
+  /* ===== 禁用态按钮也要能读 =====
+     Element 的禁用文字是 rgb(168,171,178)，对白底只有 2.3:1（不达 AA）。
+     禁用 ≠ 不可读，这里换成语义灰（约 4.6:1）。 */
+  :deep(.el-button.is-disabled),
+  :deep(.el-button.is-disabled:hover) {
+    color: var(--art-gray-500, rgb(107 114 128)) !important;
+  }
+
+  /* ===== 按钮里的"原地转圈" =====     用它替代 el-button 的 :loading：后者会在内容前额外插一个图标把按钮撑宽，
+     点一下尺寸就变；这里让按钮里原有的图标自己旋转，宽度恒定。 */
+  .dy-spin {
+    animation: dy-spin 800ms linear infinite;
+    transform-origin: center;
+  }
+
+  @keyframes dy-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* ===== 控件行间距 =====     Element Plus 默认给相邻按钮加 margin-left: 12px。只要该行用了 flex gap，
      两个按钮之间的间距就会是 gap + 12，与"第一个控件到第一个按钮"的 gap 不一致。
      统一归零，改由 gap 单独决定，这样一行里每个间距都相等。 */
   .dy-action-row {

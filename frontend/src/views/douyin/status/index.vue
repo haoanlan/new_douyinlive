@@ -123,7 +123,13 @@
             :loading="busy === m.action.act"
             :disabled="!statusKnown"
             :title="m.title || ''"
-            @click="m.action.kind === 'editor' ? openEditor() : actWithConfirm(m.action.act)"
+            @click="
+              m.action.kind === 'issues'
+                ? (issuesOpen = true)
+                : m.action.kind === 'editor'
+                  ? openEditor()
+                  : actWithConfirm(m.action.act)
+            "
           >
             <ArtSvgIcon :icon="m.action.icon" class="mr-1" />
             {{ m.action.text }}
@@ -132,63 +138,33 @@
       </article>
     </section>
 
-    <!--
-      异常提醒整宽一条。
-      「服务明细」那张卡已经拆掉了 —— 服务状态与重启按钮上移到指标卡里，
-      其余事实（数据来源/新鲜度/控制通道）本来就和 tile 重复，代理进程移进「Go 代理配置」。
-    -->
-    <article class="art-card p-5">
-      <div class="flex flex-wrap items-start justify-between gap-3">
-        <div class="min-w-0">
-          <h3 class="text-lg font-semibold text-g-900 m-0">异常提醒</h3>
-          <p class="mt-1 text-sm leading-6 text-g-600">
-            {{ issues.length ? `${issues.length} 项待处理` : '代理、监控脚本与连接均正常' }}
-          </p>
-        </div>
-        <span v-if="!issues.length" class="mon-chip mon-chip--ok">无异常</span>
-      </div>
-
-      <div class="flex flex-col mt-3">
-        <template v-if="issues.length">
-          <div
-            v-for="(it, i) in issues"
-            :key="i"
-            class="flex items-start gap-2.5 py-2.5"
-            :class="i ? 'border-t border-g-100' : ''"
-          >
-            <ArtSvgIcon
-              :icon="it.level === 'error' ? 'ri:error-warning-line' : 'ri:alert-line'"
-              class="text-base mt-0.5 shrink-0"
-              :class="it.level === 'error' ? 'text-danger' : 'text-warning'"
-            />
-            <span
-              class="flex-1 min-w-0 text-sm leading-relaxed"
-              :class="it.level === 'error' ? 'text-danger' : 'text-warning'"
-            >
-              {{ it.text }}
-            </span>
-          </div>
-        </template>
-        <!--
-          无异常时压成一行。
-          原来是一个 24px 内边距的 dashed 大方框，占 ~80px 却只写"都正常"四个字。
-        -->
-        <div v-else class="flex items-center gap-2 rounded-lg bg-g-100/50 px-3 py-2.5 text-sm">
+    <!-- 异常详情（条目多/文案长时在这里看全文，不撑变形卡片） -->
+    <el-dialog v-model="issuesOpen" title="异常提醒" width="620px" class="dy-issues-dialog">
+      <div v-if="issues.length" class="flex flex-col">
+        <div
+          v-for="(it, i) in issues"
+          :key="i"
+          class="flex items-start gap-2.5 py-3"
+          :class="i ? 'border-t border-g-100' : ''"
+        >
           <ArtSvgIcon
-            :icon="statusKnown ? 'ri:checkbox-circle-line' : 'ri:question-line'"
-            class="text-base shrink-0"
-            :class="statusKnown ? 'text-success' : 'text-g-400'"
+            :icon="it.level === 'error' ? 'ri:error-warning-line' : 'ri:alert-line'"
+            class="text-base mt-0.5 shrink-0"
+            :class="it.level === 'error' ? 'text-danger' : 'text-warning'"
           />
-          <span :class="statusKnown ? 'text-g-600' : 'text-g-500'">
-            {{
-              statusKnown
-                ? '未发现异常，代理与监控脚本都在正常运行'
-                : '状态未知，暂时无法判断是否存在异常'
-            }}
-          </span>
+          <div class="min-w-0 flex-1">
+            <div class="text-xs mb-0.5" :class="it.level === 'error' ? 'text-danger' : 'text-warning'">
+              {{ it.level === 'error' ? '错误' : '警告' }}
+            </div>
+            <div class="text-sm leading-relaxed text-g-800 break-words">{{ it.text }}</div>
+          </div>
         </div>
       </div>
-    </article>
+      <div v-else class="py-6 text-center text-sm text-g-500">未发现异常</div>
+      <template #footer>
+        <el-button type="primary" @click="issuesOpen = false">知道了</el-button>
+      </template>
+    </el-dialog>
 
     <!-- ④ Go 代理配置（代理有自己一套 schema 与 Cookie 规则；可在此直接改） -->
     <article class="art-card p-5">
@@ -228,7 +204,7 @@
             <span class="pc-tag" :class="cookieBadge.cls">{{ cookieBadge.text }}</span>
           </div>
 
-          <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div v-for="f in cookieFacts" :key="f.label" class="mon-kv">
               <div class="mon-kv__label">{{ f.label }}</div>
               <div class="mon-kv__value" :class="f.tone || 'text-g-900'" :title="f.title || f.value">
@@ -627,6 +603,8 @@
   const statusError = ref('')
 
   const dialogVisible = ref(false)
+  /** 异常详情弹窗（第 4 张卡点「查看」时打开） */
+  const issuesOpen = ref(false)
   const dialog = ref<{ title: string; message: string; ok: boolean; logLines?: string[] }>({
     title: '',
     message: '',
@@ -637,6 +615,9 @@
   const proxyReachable = computed(() => Boolean(status.value?.proxy?.reachable))
   const daemonRunning = computed(() => Boolean(status.value?.daemon?.running))
   const issues = computed(() => status.value?.issues || [])
+  // 待处理项数 / 其中 error 级条数：第 4 张卡与下面的详情弹窗共用
+  const issueCount = computed(() => issues.value.length)
+  const errorCount = computed(() => issues.value.filter((i) => i.level === 'error').length)
   /**
    * 只有成功取到过、且当前没有报错，下面才表达真实状态；
    * 否则一律「状态未知」，绝不用红色「未运行」冒充结论。
@@ -924,17 +905,39 @@
         action: { text: '配置', icon: 'ri:settings-3-line', act: '', kind: 'editor' }
       },
       {
-        label: '数据来源',
-        icon: 'ri:database-2-line',
+        /*
+         * 第 4 张卡原来是「数据来源」，用户反馈"没什么意义" ——
+         * 它只是把内部实现（守护进程内存/监控日志）摊出来，正常与否上面两张卡已经表达。
+         * 换成「异常提醒」：大字给出待处理项数，底栏放最紧要那一条的摘要（悬停看全文），
+         * 条目多时点「查看」在弹窗里看完整列表 —— 这样长文案不会把卡片撑变形。
+         */
+        label: '异常提醒',
+        icon: errorCount.value
+          ? 'ri:error-warning-line'
+          : issueCount.value
+            ? 'ri:alert-line'
+            : 'ri:shield-check-line',
         count: null,
         suffix: '',
-        text: dataSourceText.value,
-        textTone: 'text-g-900',
-        footLabel: '数据新鲜度',
-        footValue: freshText.value,
-        footTone: freshText.value === '实时' ? 'text-success' : 'text-g-700',
-        title: '房间连接状态由监控脚本经控制通道上报；控制通道不可用时退回解析监控日志',
-        action: null
+        text: !statusKnown.value ? '状态未知' : issueCount.value ? `${issueCount.value} 项待处理` : '无异常',
+        textTone: !statusKnown.value
+          ? 'text-g-500'
+          : errorCount.value
+            ? 'text-danger'
+            : issueCount.value
+              ? 'text-warning'
+              : 'text-success',
+        footLabel: issueCount.value ? '最紧要一项' : '巡检结论',
+        footValue: !statusKnown.value
+          ? '无法判断'
+          : issueCount.value
+            ? issues.value[0].text.slice(0, 34) + (issues.value[0].text.length > 34 ? '…' : '')
+            : '代理与监控脚本均正常',
+        footTone: errorCount.value ? 'text-danger' : issueCount.value ? 'text-warning' : 'text-g-700',
+        title: issues.value.map((i) => i.text).join('\n') || '未发现异常',
+        action: issueCount.value
+          ? { text: '查看', icon: 'ri:list-check', act: '', kind: 'issues' }
+          : null
       }
     ]
   })
@@ -948,7 +951,11 @@
     return { text: '已配置（键未识别）', cls: 'bg-warning/12 text-warning' }
   })
 
-  /** Cookie 那三格事实 */
+  /**
+   * Cookie 那几格事实。
+   * 固定 4 格：这样和下面「其他配置」的四列网格宽度一致，整张卡是整齐的方格，
+   * 不会出现"三格撑满一行、每格都空一半"的观感。
+   */
   const cookieFacts = computed(() => {
     const c = proxyCfg.value?.cookie
     const d = c?.default
@@ -960,6 +967,12 @@
         title: d?.configured
           ? `共 ${d.keyCount} 个键，长度 ${d.length}；登录键：${d.loginKeys.join(', ') || '无'}`
           : '没配就靠代理自动获取匿名 ttwid'
+      },
+      {
+        label: '识别到的登录键',
+        value: !d?.configured ? '—' : d.loginKeys.length ? d.loginKeys.join(' / ') : '无（匿名态）',
+        tone: d?.loginKeys?.length ? 'text-success' : 'text-warning',
+        title: d?.anonKeys?.length ? `匿名键：${d.anonKeys.join(', ')}` : '没有识别到匿名键'
       },
       {
         label: 'cookie.use_stored',
@@ -1284,14 +1297,18 @@
       // 去掉之后这 8 项正好四列两行，不会有落单的第 9 格
       { label: '日志级别', value: p.logLevel || '—' },
       { label: '轮询间隔', value: p.monitor.pollInterval || '—' },
-      { label: '通知间隔', value: p.monitor.notifyInterval || '—' },
       { label: 'WebSocket 路径', value: p.websocket.path || '—' },
       { label: '允许域名', value: domains.length ? domains.join(', ') : '—' },
-      // 「服务明细」卡拆掉后，代理进程名挪到这里（本来就是环境/配置事实）
+      // 「服务明细」卡拆掉后挪进来的两项事实
       {
         label: '代理进程',
         value: status.value?.proxy?.binaryName || '—',
         title: status.value?.proxy?.binaryPath || ''
+      },
+      {
+        label: '连接数据来源',
+        value: `${dataSourceText.value} · ${freshText.value}`,
+        title: '房间连接状态由监控脚本经控制通道上报；控制通道不可用时退回解析监控日志，此时新鲜度会显示延迟'
       }
     ]
   })

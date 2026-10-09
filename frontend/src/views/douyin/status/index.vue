@@ -105,131 +105,90 @@
           </div>
         </div>
         <div
-          class="mt-4 flex items-center justify-between gap-3 border-t border-g-100 pt-3 text-xs"
+          class="mt-4 flex items-center justify-between gap-2 border-t border-g-100 pt-3 text-xs"
         >
-          <span class="text-g-500 shrink-0">{{ m.footLabel }}</span>
-          <span class="truncate font-medium" :class="m.footTone || 'text-g-700'">
-            {{ m.footValue }}
+          <span class="min-w-0 truncate text-g-500">
+            {{ m.footLabel }}
+            <b class="font-medium" :class="m.footTone || 'text-g-700'">{{ m.footValue }}</b>
           </span>
+          <!--
+            服务的状态与重启按钮直接放在这张卡里（原来还要单独一张「服务明细」卡再铺一遍），
+            想重启哪个就在哪个上点，不用往下找。aria/title 里带上具体状态说明。
+          -->
+          <el-button
+            v-if="m.action"
+            size="small"
+            plain
+            class="shrink-0"
+            :loading="busy === m.action.act"
+            :disabled="!statusKnown"
+            :title="m.title || ''"
+            @click="m.action.kind === 'editor' ? openEditor() : actWithConfirm(m.action.act)"
+          >
+            <ArtSvgIcon :icon="m.action.icon" class="mr-1" />
+            {{ m.action.text }}
+          </el-button>
         </div>
       </article>
     </section>
 
     <!--
-      ③ 服务明细（整宽）。
-      原来它和「异常提醒」并排成两栏，但两者内容量差了 2.5 倍，等高拉伸会在短卡里留
-      226px 的洞、改成 items-start 又变成卡片下方一片空背景；异常提醒已提到指标卡下面
-      整宽展示，这里就整宽铺开（kv 四列一行 + 两行服务），不再有配对留白。
+      异常提醒整宽一条。
+      「服务明细」那张卡已经拆掉了 —— 服务状态与重启按钮上移到指标卡里，
+      其余事实（数据来源/新鲜度/控制通道）本来就和 tile 重复，代理进程移进「Go 代理配置」。
     -->
     <article class="art-card p-5">
-      <div class="flex flex-wrap items-start justify-between gap-4">
+      <div class="flex flex-wrap items-start justify-between gap-3">
         <div class="min-w-0">
-          <h3 class="text-lg font-semibold text-g-900 m-0">服务明细</h3>
-          <p class="mt-1 text-sm leading-6 text-g-600">每项可单独重启，互不影响。</p>
+          <h3 class="text-lg font-semibold text-g-900 m-0">异常提醒</h3>
+          <p class="mt-1 text-sm leading-6 text-g-600">
+            {{ issues.length ? `${issues.length} 项待处理` : '代理、监控脚本与连接均正常' }}
+          </p>
         </div>
-        <!-- 这里原来还有一个和 Hero 右上完全相同的状态 chip，同一结论并排出现两次 -->
+        <span v-if="!issues.length" class="mon-chip mon-chip--ok">无异常</span>
       </div>
 
-      <!-- 服务事实 kv：4 格一行（整宽够放，值长了有 title 兜底） -->
-      <div class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div v-for="f in serviceKv" :key="f.label" class="mon-kv">
-          <div class="mon-kv__label">{{ f.label }}</div>
-          <div class="mon-kv__value text-g-900" :title="f.value">{{ f.value }}</div>
-        </div>
-      </div>
-
-      <!-- 服务行（保留逐项重启） -->
-      <div class="mt-5" v-loading="loading && !status" element-loading-text="检测中…">
-        <div
-          v-for="(item, i) in items"
-          :key="item.key"
-          class="mon-service"
-          :class="i ? 'border-t border-g-100' : ''"
-        >
-            <ArtSvgIcon :icon="item.icon" class="text-base shrink-0" :class="item.iconTone" />
-            <div class="min-w-0 flex-1">
-              <div class="flex items-center gap-2">
-                <span class="text-sm font-medium text-g-900">{{ item.name }}</span>
-                <span class="mon-dot" :class="item.dotClass" />
-                <span class="text-xs font-medium" :class="item.tone">{{ item.stateText }}</span>
-              </div>
-              <div class="text-xs text-g-500 mt-1 truncate" :title="item.detail">
-                {{ item.detail }}
-              </div>
-            </div>
-            <el-button
-              size="small"
-              plain
-              class="shrink-0"
-              :loading="busy === item.action.act"
-              :disabled="!statusKnown"
-              @click="actWithConfirm(item.action.act)"
-            >
-              <ArtSvgIcon :icon="item.action.icon" class="mr-1" />
-              {{ item.action.text }}
-            </el-button>
-          </div>
-        </div>
-      </article>
-
-      <!--
-        异常提醒整宽一条。
-        原来它和「服务明细」并排成两栏，但两者内容量差 2.5 倍（150px vs 405px）：
-        等高拉伸会在短卡里留 226px 的洞，改成 items-start 又变成卡片下方一片空背景。
-        现在两张卡都整宽、各自按内容定高，长文案也不用挤在 490px 里折成三行。
-      -->
-      <article class="art-card p-5">
-        <div class="flex flex-wrap items-start justify-between gap-3">
-          <div class="min-w-0">
-            <h3 class="text-lg font-semibold text-g-900 m-0">异常提醒</h3>
-            <p class="mt-1 text-sm leading-6 text-g-600">
-              {{ issues.length ? `${issues.length} 项待处理` : '代理、监控脚本与连接均正常' }}
-            </p>
-          </div>
-          <span v-if="!issues.length" class="mon-chip mon-chip--ok">无异常</span>
-        </div>
-
-        <div class="flex flex-col mt-3">
-          <template v-if="issues.length">
-            <div
-              v-for="(it, i) in issues"
-              :key="i"
-              class="flex items-start gap-2.5 py-2.5"
-              :class="i ? 'border-t border-g-100' : ''"
-            >
-              <ArtSvgIcon
-                :icon="it.level === 'error' ? 'ri:error-warning-line' : 'ri:alert-line'"
-                class="text-base mt-0.5 shrink-0"
-                :class="it.level === 'error' ? 'text-danger' : 'text-warning'"
-              />
-              <span
-                class="flex-1 min-w-0 text-sm leading-relaxed"
-                :class="it.level === 'error' ? 'text-danger' : 'text-warning'"
-              >
-                {{ it.text }}
-              </span>
-            </div>
-          </template>
-          <!--
-            无异常时压成一行。
-            原来是一个 24px 内边距的 dashed 大方框，占 ~80px 却只写"都正常"四个字。
-          -->
-          <div v-else class="flex items-center gap-2 rounded-lg bg-g-100/50 px-3 py-2.5 text-sm">
+      <div class="flex flex-col mt-3">
+        <template v-if="issues.length">
+          <div
+            v-for="(it, i) in issues"
+            :key="i"
+            class="flex items-start gap-2.5 py-2.5"
+            :class="i ? 'border-t border-g-100' : ''"
+          >
             <ArtSvgIcon
-              :icon="statusKnown ? 'ri:checkbox-circle-line' : 'ri:question-line'"
-              class="text-base shrink-0"
-              :class="statusKnown ? 'text-success' : 'text-g-400'"
+              :icon="it.level === 'error' ? 'ri:error-warning-line' : 'ri:alert-line'"
+              class="text-base mt-0.5 shrink-0"
+              :class="it.level === 'error' ? 'text-danger' : 'text-warning'"
             />
-            <span :class="statusKnown ? 'text-g-600' : 'text-g-500'">
-              {{
-                statusKnown
-                  ? '未发现异常，代理与监控脚本都在正常运行'
-                  : '状态未知，暂时无法判断是否存在异常'
-              }}
+            <span
+              class="flex-1 min-w-0 text-sm leading-relaxed"
+              :class="it.level === 'error' ? 'text-danger' : 'text-warning'"
+            >
+              {{ it.text }}
             </span>
           </div>
+        </template>
+        <!--
+          无异常时压成一行。
+          原来是一个 24px 内边距的 dashed 大方框，占 ~80px 却只写"都正常"四个字。
+        -->
+        <div v-else class="flex items-center gap-2 rounded-lg bg-g-100/50 px-3 py-2.5 text-sm">
+          <ArtSvgIcon
+            :icon="statusKnown ? 'ri:checkbox-circle-line' : 'ri:question-line'"
+            class="text-base shrink-0"
+            :class="statusKnown ? 'text-success' : 'text-g-400'"
+          />
+          <span :class="statusKnown ? 'text-g-600' : 'text-g-500'">
+            {{
+              statusKnown
+                ? '未发现异常，代理与监控脚本都在正常运行'
+                : '状态未知，暂时无法判断是否存在异常'
+            }}
+          </span>
         </div>
-      </article>
+      </div>
+    </article>
 
     <!-- ④ Go 代理配置（代理有自己一套 schema 与 Cookie 规则；可在此直接改） -->
     <article class="art-card p-5">
@@ -765,90 +724,6 @@
     return '无'
   })
 
-  /**
-   * 四张指标 tile：只看「代理 + 监控脚本」这两件事。
-   *
-   * 原来还有「监控房间 / 正在直播 / 正在录制」三张 —— 房间状态归「房间管理」页，
-   * 而且房间会增减，放在这里既重复又要跟着变。每张卡也不再画进度条：
-   * 四根条里三根是废的（连接率重复、录制率配直播文案、布尔值配进度条）。
-   */
-  const tiles = computed(() => {
-    const s = status.value
-    const unknown = !statusKnown.value
-    const daemonTone = unknown
-      ? 'text-g-900'
-      : daemonRunning.value
-        ? 'text-success'
-        : s?.daemon?.pidStale
-          ? 'text-warning'
-          : 'text-danger'
-    const proxyCfgInfo = proxyCfg.value
-    const cookieState = !proxyCfgInfo?.exists
-      ? '未知'
-      : !proxyCfgInfo.cookie?.default?.configured
-        ? '未配置'
-        : proxyCfgInfo.cookie.default.auth === 'login'
-          ? '登录态'
-          : '匿名态'
-    return [
-      {
-        label: '监控脚本',
-        icon: 'ri:robot-2-line',
-        count: null,
-        suffix: '',
-        text: unknown
-          ? '—'
-          : daemonRunning.value
-            ? '运行中'
-            : s?.daemon?.pidStale
-              ? '状态异常'
-              : '未运行',
-        textTone: daemonTone,
-        footLabel: '监控 PID',
-        footValue: unknown ? '—' : String(s?.daemon?.pid ?? '—'),
-        footTone: 'text-g-700'
-      },
-      {
-        label: 'Go 抓取代理',
-        icon: 'ri:server-line',
-        count: null,
-        suffix: '',
-        text: unknown ? '—' : s?.proxy?.health?.tag || `:${s?.proxy?.port ?? 1088}`,
-        textTone: unknown ? 'text-g-900' : proxyHealthy.value ? 'text-g-900' : 'text-danger',
-        footLabel: '健康检查 / 端口',
-        footValue: unknown
-          ? '—'
-          : proxyHealthy.value
-            ? `通过 · ${s?.proxy?.port ?? 1088}`
-            : proxyReachable.value
-              ? '异常'
-              : '未运行',
-        footTone: !unknown && proxyHealthy.value ? 'text-success' : 'text-g-700'
-      },
-      {
-        label: '代理 Cookie',
-        icon: 'ri:key-2-line',
-        count: null,
-        suffix: '',
-        text: cookieState,
-        textTone: cookieState === '登录态' ? 'text-success' : cookieState === '未配置' ? 'text-g-500' : 'text-warning',
-        footLabel: '配置是否已生效',
-        footValue: !proxyCfgInfo?.exists ? '—' : proxyCfgInfo.inSync ? '已生效' : '待重启代理',
-        footTone: proxyCfgInfo?.inSync === false ? 'text-warning' : 'text-g-700'
-      },
-      {
-        label: '数据来源',
-        icon: 'ri:database-2-line',
-        count: null,
-        suffix: '',
-        text: dataSourceText.value,
-        textTone: 'text-g-900',
-        footLabel: '数据新鲜度',
-        footValue: freshText.value,
-        footTone: freshText.value === '实时' ? 'text-success' : 'text-g-700'
-      }
-    ]
-  })
 
   /** 数据新鲜度：实时来源是 0ms，日志来源会累积 */
   const freshText = computed(() => {
@@ -862,29 +737,14 @@
     return `${Math.round(mins / 1440)} 天前`
   })
 
-  /**
-   * 「服务明细」顶部 kv —— 与 Hero kv / tile / 服务行去重后剩下的实时事实。
-   * 原来这里的「代理地址 / 代理版本」在下面服务行的副标题里又写了一遍，
-   * 「监控 PID / 控制通道」同样重复。
-   */
-  const serviceKv = computed(() => {
-    const s = status.value
-    const unknown = !statusKnown.value
-    return [
-      {
-        label: '控制通道',
-        value: unknown ? '状态未知' : s?.daemon?.controlChannel ? '正常' : '不可用'
-      },
-      {
-        label: '数据来源',
-        value: dataSourceText.value
-      },
-      { label: '数据新鲜度', value: freshText.value },
-      { label: '代理进程', value: unknown ? '—' : s?.proxy?.binaryName || '—' }
-    ]
-  })
 
-  /** 两行服务明细（Go 抓取代理 / 监控脚本），每行带对应的重启/启动按钮 */
+  /**
+   * 两个服务（Go 抓取代理 / 监控脚本）的当前状态与要按的动作。
+   *
+   * 原来是渲染成「服务明细」那张卡的一行行；那张卡已拆掉 ——
+   * 状态与重启按钮上移到顶部指标卡里（想重启哪个就在哪张卡上点），
+   * 这里的 stateText / detail / action 被 tile 复用，避免两份判断逻辑各写一遍。
+   */
   const items = computed(() => {
     const s = status.value
     // 状态未知时不猜测：显示灰色「状态未知」，也不提供会把服务搞得更乱的操作
@@ -990,6 +850,94 @@
    */
   const proxyCfg = computed(() => status.value?.proxyConfig || null)
   const proxyRuntime = computed(() => proxyCfg.value?.runtime || null)
+
+  /**
+   * 四张指标 tile：只看「代理 + 监控脚本」这两件事。
+   *
+   * 原来还有「监控房间 / 正在直播 / 正在录制」三张 —— 房间状态归「房间管理」页，
+   * 而且房间会增减，放在这里既重复又要跟着变。每张卡也不再画进度条：
+   * 四根条里三根是废的（连接率重复、录制率配直播文案、布尔值配进度条）。
+   */
+  const tiles = computed(() => {
+    const s = status.value
+    const unknown = !statusKnown.value
+    // 服务行（含状态词、说明、该按哪个动作）复用来喂 tile，避免两份判断逻辑漂移
+    const proxyItem = items.value.find((i) => i.key === 'proxy')
+    const daemonItem = items.value.find((i) => i.key === 'daemon')
+    const proxyCfgInfo = proxyCfg.value
+    const cookieState = !proxyCfgInfo?.exists
+      ? '未知'
+      : !proxyCfgInfo.cookie?.default?.configured
+        ? '未配置'
+        : proxyCfgInfo.cookie.default.auth === 'login'
+          ? '登录态'
+          : '匿名态'
+    return [
+      {
+        label: '监控脚本',
+        icon: 'ri:robot-2-line',
+        count: null,
+        suffix: '',
+        text: unknown ? '—' : daemonItem?.stateText || '—',
+        textTone: unknown ? 'text-g-900' : daemonItem?.tone || 'text-g-900',
+        footLabel: '监控 PID',
+        footValue: unknown ? '—' : String(s?.daemon?.pid ?? '—'),
+        footTone: 'text-g-700',
+        title: daemonItem?.detail || '',
+        action: daemonItem
+          ? { text: daemonItem.action.text, icon: daemonItem.action.icon, act: daemonItem.action.act, kind: 'service' }
+          : null
+      },
+      {
+        label: 'Go 抓取代理',
+        icon: 'ri:server-line',
+        count: null,
+        suffix: '',
+        text: unknown ? '—' : s?.proxy?.health?.tag || `:${s?.proxy?.port ?? 1088}`,
+        textTone: unknown ? 'text-g-900' : proxyHealthy.value ? 'text-g-900' : 'text-danger',
+        footLabel: '健康检查',
+        footValue: unknown
+          ? '—'
+          : proxyHealthy.value
+            ? `通过 · ${s?.proxy?.port ?? 1088}`
+            : proxyReachable.value
+              ? '异常'
+              : '未运行',
+        footTone: !unknown && proxyHealthy.value ? 'text-success' : 'text-g-700',
+        title: proxyItem?.detail || '',
+        action: proxyItem
+          ? { text: proxyItem.action.text, icon: proxyItem.action.icon, act: proxyItem.action.act, kind: 'service' }
+          : null
+      },
+      {
+        label: '代理 Cookie',
+        icon: 'ri:key-2-line',
+        count: null,
+        suffix: '',
+        text: cookieState,
+        textTone:
+          cookieState === '登录态' ? 'text-success' : cookieState === '未配置' ? 'text-g-500' : 'text-warning',
+        footLabel: '配置是否已生效',
+        footValue: !proxyCfgInfo?.exists ? '—' : proxyCfgInfo.inSync ? '已生效' : '待重启代理',
+        footTone: proxyCfgInfo?.inSync === false ? 'text-warning' : 'text-g-700',
+        title: 'Cookie 的取值规则与可见化配置都在下方「Go 代理配置」里',
+        action: { text: '配置', icon: 'ri:settings-3-line', act: '', kind: 'editor' }
+      },
+      {
+        label: '数据来源',
+        icon: 'ri:database-2-line',
+        count: null,
+        suffix: '',
+        text: dataSourceText.value,
+        textTone: 'text-g-900',
+        footLabel: '数据新鲜度',
+        footValue: freshText.value,
+        footTone: freshText.value === '实时' ? 'text-success' : 'text-g-700',
+        title: '房间连接状态由监控脚本经控制通道上报；控制通道不可用时退回解析监控日志',
+        action: null
+      }
+    ]
+  })
 
   const cookieBadge = computed(() => {
     const d = proxyCfg.value?.cookie?.default
@@ -1332,16 +1280,24 @@
         value: p.api.hasKey ? '已配置' : '未配置',
         title: p.api.hasKey ? '接口需带 Bearer' : '/metrics 等接口无需认证'
       },
-      { label: '监听端口', value: p.port || '—' },
+      // 监听端口不在这里重复（Hero 的「代理地址」已经是 127.0.0.1:1088），
+      // 去掉之后这 8 项正好四列两行，不会有落单的第 9 格
       { label: '日志级别', value: p.logLevel || '—' },
       { label: '轮询间隔', value: p.monitor.pollInterval || '—' },
       { label: '通知间隔', value: p.monitor.notifyInterval || '—' },
       { label: 'WebSocket 路径', value: p.websocket.path || '—' },
-      { label: '允许域名', value: domains.length ? domains.join(', ') : '—' }
+      { label: '允许域名', value: domains.length ? domains.join(', ') : '—' },
+      // 「服务明细」卡拆掉后，代理进程名挪到这里（本来就是环境/配置事实）
+      {
+        label: '代理进程',
+        value: status.value?.proxy?.binaryName || '—',
+        title: status.value?.proxy?.binaryPath || ''
+      }
     ]
   })
 
-  /** 日志来源着色（用语义色，深色模式下才不会看不清） */  function logColor(src: string): string {
+  /** 日志来源着色（用语义色，深色模式下才不会看不清） */
+  function logColor(src: string): string {
     if (src === 'proxy') return 'text-theme'
     if (src === 'daemon') return 'text-warning'
     return 'text-success'

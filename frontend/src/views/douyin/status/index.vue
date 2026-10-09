@@ -46,10 +46,9 @@
           </p>
         </div>
         <div class="flex flex-wrap items-center gap-3">
-          <span class="mon-chip" :class="overall.chipClass">
-            <ArtSvgIcon :icon="overall.icon" class="text-xs" />
-            {{ overall.chip }}
-          </span>
+          <!-- 这里原来还有一个「运行正常 / 风险 / 未知」的 chip：
+               同一结论在下面指标卡里已经逐项表达（脚本运行中 / 代理健康 / Cookie 状态 / 异常提醒），
+               顶部再放一个总结反而重复，按用户要求去掉。 -->
           <span class="dy-switch-btn">
             <span class="dy-switch-btn__label">自动刷新</span>
             <el-switch v-model="autoRefresh" />
@@ -114,14 +113,18 @@
           <!--
             服务的状态与重启按钮直接放在这张卡里（原来还要单独一张「服务明细」卡再铺一遍），
             想重启哪个就在哪个上点，不用往下找。aria/title 里带上具体状态说明。
+
+            注意 loading / disabled 只对「服务动作」生效：
+            它不是服务动作（查看异常、打开配置）时 act 是空串，而 busy 的初值也是空串，
+            `busy === act` 会恒真 → 按钮一直转圈、点不动（用户反馈过）。
           -->
           <el-button
             v-if="m.action"
             size="small"
             plain
             class="shrink-0"
-            :loading="busy === m.action.act"
-            :disabled="!statusKnown"
+            :loading="m.action.kind === 'service' && busy === m.action.act"
+            :disabled="m.action.kind === 'service' && !statusKnown"
             :title="m.title || ''"
             @click="
               m.action.kind === 'issues'
@@ -192,38 +195,25 @@
       </div>
 
       <!--
-        上下两段而不是左右两栏：
-        原来左栏（Cookie + 运行期提示 + 档位）比右栏（其他配置）高出一截，
-        右栏底下就空出一块。现在每段自己占满整宽，高度正好由内容决定。
+        左右两栏（用户反馈：这样一屏内看到的东西更多、占的地方更小）。
+        高度是配平的：左栏 Cookie 四格排 2×2、右栏其他配置八格排 2×4，
+        两边都约 330px；运行期提示横跨两栏放在下面（文案长，需要整宽）。
       -->
-      <div class="mt-5 flex flex-col gap-5">
-        <!-- 上段：Cookie 规则（重点） -->
+      <div class="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
+        <!-- 左：Cookie 规则（重点） -->
         <div class="min-w-0">
           <div class="flex items-center gap-2">
             <h4 class="text-base font-semibold text-g-900 m-0">Cookie</h4>
             <span class="pc-tag" :class="cookieBadge.cls">{{ cookieBadge.text }}</span>
           </div>
 
-          <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div v-for="f in cookieFacts" :key="f.label" class="mon-kv">
               <div class="mon-kv__label">{{ f.label }}</div>
               <div class="mon-kv__value" :class="f.tone || 'text-g-900'" :title="f.title || f.value">
                 {{ f.value }}
               </div>
             </div>
-          </div>
-
-          <!-- 运行期信号：配置里"填了"≠运行时"能用"（整宽一行，长文案不用折成三行） -->
-          <div
-            v-if="cookieRuntime.length"
-            class="mt-3 rounded-lg border px-3 py-2 text-xs leading-6"
-            :class="
-              proxyRuntime?.verificationPage || proxyRuntime?.ttwidMissing
-                ? 'border-warning/30 bg-warning/10 text-warning'
-                : 'border-g-200 bg-g-100/40 text-g-600'
-            "
-          >
-            <div v-for="(line, i) in cookieRuntime" :key="i">{{ line }}</div>
           </div>
 
           <!--
@@ -255,12 +245,29 @@
               没有房间配专用 Cookie，全部按默认 Cookie / 自动获取取值
             </div>
           </div>
+
+          <!--
+            运行期信号放在左栏（而不是横跨两栏）：
+            它讲的就是 Cookie 到底能不能用，和上面的 Cookie 事实是一组；
+            而且这样左栏高度 ≈ 右栏（实测两栏内容底边差 0），不会在某一栏底下留一块空白。
+          -->
+          <div
+            v-if="cookieRuntime.length"
+            class="mt-3 rounded-lg border px-3 py-2 text-xs leading-6"
+            :class="
+              proxyRuntime?.verificationPage || proxyRuntime?.ttwidMissing
+                ? 'border-warning/30 bg-warning/10 text-warning'
+                : 'border-g-200 bg-g-100/40 text-g-600'
+            "
+          >
+            <div v-for="(line, i) in cookieRuntime" :key="i">{{ line }}</div>
+          </div>
         </div>
 
-        <!-- 下段：其余配置事实（整宽四列，两行排完，不留栏间空白） -->
-        <div class="min-w-0 border-t border-g-100 pt-4">
+        <!-- 右：其余配置事实（两列四行） -->
+        <div class="min-w-0">
           <h4 class="text-base font-semibold text-g-900 m-0">其他配置</h4>
-          <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div v-for="f in proxyFacts" :key="f.label" class="mon-kv">
               <div class="mon-kv__label">{{ f.label }}</div>
               <div class="mon-kv__value" :class="f.tone || 'text-g-900'" :title="f.title || f.value">
@@ -268,15 +275,19 @@
               </div>
             </div>
           </div>
-          <p v-if="blockedSections.length" class="mt-3 text-xs leading-5 text-g-500">
-            当前二进制不支持的段（不写入，避免代理启动失败）：{{
-              blockedSections.map((b) => b.key).join(' / ')
-            }}
-          </p>
-          <p v-else class="mt-3 text-xs leading-5 text-g-500">
-            改完 config.yaml 需要重启代理才生效 —— 代理只在启动时读一次配置。
-          </p>
         </div>
+
+        <p
+          v-if="blockedSections.length"
+          class="min-w-0 text-xs leading-5 text-g-500 xl:col-span-2"
+        >
+          当前二进制不支持的段（不写入，避免代理启动失败）：{{
+            blockedSections.map((b) => b.key).join(' / ')
+          }}；改完 config.yaml 需要重启代理才生效。
+        </p>
+        <p v-else class="min-w-0 text-xs leading-5 text-g-500 xl:col-span-2">
+          改完 config.yaml 需要重启代理才生效 —— 代理只在启动时读一次配置。
+        </p>
       </div>
     </article>
 
@@ -288,144 +299,166 @@
       class="dy-proxy-drawer"
       :close-on-click-modal="false"
     >
-      <div v-if="form" class="text-sm">
-        <p class="text-xs leading-5 text-g-500">
-          写入根目录 <code class="pc-code">config.yaml</code>，代理启动时生成
-          <code class="pc-code">proxy-config.yaml</code>；保存后需要重启代理才生效。
-        </p>
-
-        <!-- Cookie 段放最前：最常改的就是它 -->
-        <div class="mt-4 rounded-xl border border-g-200/70 p-4">
-          <div class="flex items-center justify-between gap-3">
-            <h4 class="text-base font-semibold text-g-900 m-0">Cookie</h4>
-            <span class="pc-tag" :class="draftBadge.cls">{{ draftBadge.text }}</span>
-          </div>
-
-          <div class="mt-3 flex items-center justify-between gap-3">
-            <div class="min-w-0">
-              <div class="text-g-800">使用预存 Cookie（cookie.use_stored）</div>
-              <div class="text-xs text-g-500 mt-0.5">
-                关掉后预存 Cookie 被忽略，只剩代理自动获取的匿名 ttwid
-              </div>
-            </div>
-            <el-switch v-model="draft['cookie.use_stored']" />
-          </div>
-
-          <div class="mt-4">
-            <div class="flex items-center justify-between gap-3">
-              <div class="text-g-800">默认 Cookie（cookie.douyin）</div>
-              <el-button size="small" type="primary" plain :loading="qrStarting" @click="openQrLogin">
-                <ArtSvgIcon icon="ri:qr-scan-2-line" class="mr-1" />
-                扫码登录
-              </el-button>
-            </div>
-            <div class="text-xs text-g-500 mt-0.5 mb-2">
-              浏览器登录 <code class="pc-code">live.douyin.com</code> 后从任意请求头复制完整 Cookie；含
-              <code class="pc-code">sessionid</code> 才算登录态。懒得复制就点右边「扫码登录」
-            </div>
-            <el-input
-              v-model="draft['cookie.douyin']"
-              type="textarea"
-              :rows="3"
-              placeholder="ttwid=...; sessionid=...（留空 = 匿名态）"
-            />
-          </div>
-
-          <div class="mt-4">
-            <div class="flex items-center justify-between gap-3">
-              <div class="text-g-800">房间专用 Cookie（cookie.rooms）</div>
-              <el-button size="small" text type="primary" @click="addRoomCookie">添加</el-button>
-            </div>
-            <div class="text-xs text-g-500 mt-0.5 mb-2">
-              某个直播间要用别的账号时配这里；没配的房间回退到默认 Cookie
-            </div>
-            <div v-if="roomCookieRows.length" class="flex flex-col gap-2">
-              <div v-for="(row, i) in roomCookieRows" :key="i" class="flex items-start gap-2">
-                <el-select
-                  v-model="row.roomId"
-                  filterable
-                  allow-create
-                  default-first-option
-                  placeholder="选择或输入直播间ID"
-                  class="!w-[190px] shrink-0"
-                  size="small"
-                >
-                  <el-option
-                    v-for="r in monitoredRooms"
-                    :key="r.roomId"
-                    :label="r.name || r.roomId"
-                    :value="r.roomId"
-                  />
-                </el-select>
-                <el-input v-model="row.cookie" size="small" placeholder="该房间的 Cookie" />
-                <el-button size="small" text type="danger" @click="roomCookieRows.splice(i, 1)">
-                  <ArtSvgIcon icon="ri:delete-bin-line" />
-                </el-button>
-              </div>
-            </div>
-            <div v-else class="text-xs text-g-400">没有房间专用 Cookie</div>
+      <div v-if="form" class="pc-drawer text-sm">
+        <!-- 顶部说明条：一句话讲清"写到哪、什么时候生效" -->
+        <div class="pc-note">
+          <ArtSvgIcon icon="ri:information-line" class="pc-note__icon" />
+          <div class="min-w-0">
+            这里改的是根目录 <code class="pc-code">config.yaml</code>（代理启动时生成
+            <code class="pc-code">proxy-config.yaml</code>）。
+            <template v-if="proxyCfg && !proxyCfg.inSync">
+              <span class="text-warning font-medium">当前有改动尚未生效，需重启代理。</span>
+            </template>
+            <template v-else>保存后需重启代理才生效。</template>
           </div>
         </div>
 
-        <!-- 其余字段 -->
-        <div class="mt-4 rounded-xl border border-g-200/70 p-4">
-          <h4 class="text-base font-semibold text-g-900 m-0">其他</h4>
-          <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <div class="text-g-800 mb-1">日志级别</div>
-              <el-select v-model="draft['log.level']" class="w-full" size="small">
+        <!-- ===== Cookie（最常改，放最前） ===== -->
+        <section class="pc-section">
+          <header class="pc-section__head">
+            <ArtSvgIcon icon="ri:key-2-line" class="pc-section__icon" />
+            <h4 class="pc-section__title">Cookie</h4>
+            <span class="pc-tag" :class="draftBadge.cls">{{ draftBadge.text }}</span>
+            <span class="pc-section__hint">临时 &gt; 房间专用 &gt; 默认 &gt; 自动获取</span>
+          </header>
+
+          <div class="pc-section__body">
+            <div class="pc-field">
+              <div class="pc-field__head">
+                <label class="pc-label">默认 Cookie（cookie.douyin）</label>
+                <el-button size="small" type="primary" plain :loading="qrStarting" @click="openQrLogin">
+                  <ArtSvgIcon icon="ri:qr-scan-2-line" class="mr-1" />
+                  扫码登录
+                </el-button>
+              </div>
+              <el-input
+                v-model="draft['cookie.douyin']"
+                type="textarea"
+                :rows="3"
+                placeholder="ttwid=...; sessionid=...（留空 = 匿名态）"
+              />
+              <div class="pc-field__hint">
+                浏览器登录 <code class="pc-code">live.douyin.com</code> 后从任意请求头复制完整 Cookie；含
+                <code class="pc-code">sessionid</code> 才算登录态
+              </div>
+            </div>
+
+            <div class="pc-switch-row">
+              <div class="min-w-0">
+                <div class="pc-label">使用预存 Cookie（cookie.use_stored）</div>
+                <div class="pc-field__hint">关掉后预存 Cookie 被忽略，只剩代理自动获取的匿名 ttwid</div>
+              </div>
+              <el-switch v-model="draft['cookie.use_stored']" />
+            </div>
+
+            <div class="pc-field">
+              <div class="pc-field__head">
+                <label class="pc-label">房间专用 Cookie（cookie.rooms）</label>
+                <el-button size="small" text type="primary" @click="addRoomCookie">
+                  <ArtSvgIcon icon="ri:add-line" class="mr-1" />
+                  添加
+                </el-button>
+              </div>
+              <div class="pc-field__hint">某个直播间要用别的账号时配这里；没配的房间回退到默认 Cookie</div>
+
+              <div v-if="roomCookieRows.length" class="pc-room-list">
+                <div class="pc-room-list__head">
+                  <span>直播间</span>
+                  <span>该房间的 Cookie</span>
+                  <span></span>
+                </div>
+                <div v-for="(row, i) in roomCookieRows" :key="i" class="pc-room-row">
+                  <el-select
+                    v-model="row.roomId"
+                    filterable
+                    allow-create
+                    default-first-option
+                    placeholder="选择或输入直播间ID"
+                    class="pc-room-row__id"
+                  >
+                    <el-option
+                      v-for="r in monitoredRooms"
+                      :key="r.roomId"
+                      :label="r.name || r.roomId"
+                      :value="r.roomId"
+                    />
+                  </el-select>
+                  <el-input v-model="row.cookie" placeholder="该房间的 Cookie" />
+                  <el-button class="pc-room-row__del" text type="danger" @click="roomCookieRows.splice(i, 1)">
+                    <ArtSvgIcon icon="ri:delete-bin-line" />
+                  </el-button>
+                </div>
+              </div>
+              <div v-else class="pc-empty">没有房间专用 Cookie，全部走默认 Cookie / 自动获取</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== 其他字段 ===== -->
+        <section class="pc-section">
+          <header class="pc-section__head">
+            <ArtSvgIcon icon="ri:settings-3-line" class="pc-section__icon" />
+            <h4 class="pc-section__title">其他</h4>
+            <span class="pc-section__hint">留空即用代理默认值</span>
+          </header>
+
+          <div class="pc-section__body pc-grid">
+            <div class="pc-field">
+              <label class="pc-label">日志级别</label>
+              <el-select v-model="draft['log.level']" class="w-full">
                 <el-option v-for="o in ['debug', 'info', 'warn', 'error']" :key="o" :label="o" :value="o" />
               </el-select>
             </div>
-            <div>
-              <div class="text-g-800 mb-1">签名方式（sign.provider）</div>
-              <el-select v-model="draft['sign.provider']" class="w-full" size="small">
+            <div class="pc-field">
+              <label class="pc-label">签名方式（sign.provider）</label>
+              <el-select v-model="draft['sign.provider']" class="w-full">
                 <el-option label="留空（默认 local）" value="" />
                 <el-option label="local（内置）" value="local" />
                 <el-option label="tikhub（在线）" value="tikhub" />
               </el-select>
             </div>
-            <div>
-              <div class="text-g-800 mb-1">
+            <div class="pc-field">
+              <label class="pc-label">
                 TikHub Key
-                <span v-if="draft['sign.provider'] === 'tikhub'" class="text-danger">（必填）</span>
-              </div>
+                <span v-if="draft['sign.provider'] === 'tikhub'" class="text-danger">必填</span>
+              </label>
               <el-input
                 v-model="draft['tikhub.key']"
-                size="small"
                 type="password"
                 show-password
                 placeholder="选 tikhub 时必须填，否则代理启动失败"
               />
             </div>
-            <div>
-              <div class="text-g-800 mb-1">API Key（api.key）</div>
+            <div class="pc-field">
+              <label class="pc-label">API Key（api.key）</label>
               <el-input
                 v-model="draft['api.key']"
-                size="small"
                 type="password"
                 show-password
                 placeholder="留空 = 接口不认证"
               />
             </div>
-            <div>
-              <div class="text-g-800 mb-1">未开播轮询间隔</div>
-              <el-input v-model="draft['monitor.poll_interval']" size="small" placeholder="15s" />
+            <div class="pc-field">
+              <label class="pc-label">未开播轮询间隔</label>
+              <el-input v-model="draft['monitor.poll_interval']" placeholder="15s" />
             </div>
-            <div>
-              <div class="text-g-800 mb-1">状态通知间隔</div>
-              <el-input v-model="draft['monitor.notify_interval']" size="small" placeholder="30s" />
+            <div class="pc-field">
+              <label class="pc-label">状态通知间隔</label>
+              <el-input v-model="draft['monitor.notify_interval']" placeholder="30s" />
             </div>
-            <div>
-              <div class="text-g-800 mb-1">WebSocket 路径</div>
-              <el-input v-model="draft['websocket.path']" size="small" placeholder="/ws" />
+            <div class="pc-field pc-grid__full">
+              <label class="pc-label">WebSocket 路径</label>
+              <el-input v-model="draft['websocket.path']" placeholder="/ws" />
             </div>
           </div>
 
-          <div v-if="blockedSections.length" class="mt-3 text-xs leading-5 text-g-500">
-            <div v-for="b in blockedSections" :key="b.key">· {{ b.reason }}</div>
+          <div v-if="blockedSections.length" class="pc-blocked">
+            <div v-for="b in blockedSections" :key="b.key" class="flex items-start gap-1.5">
+              <ArtSvgIcon icon="ri:forbid-2-line" class="mt-0.5 shrink-0" />
+              <span>{{ b.reason }}</span>
+            </div>
           </div>
-        </div>
+        </section>
 
         <el-alert
           v-if="saveError"
@@ -447,12 +480,17 @@
       </div>
 
       <template #footer>
-        <div class="flex items-center justify-end gap-2">
-          <el-button @click="editorOpen = false">取消</el-button>
-          <el-button :loading="saving === 'save'" @click="save(false)">只保存</el-button>
-          <el-button type="primary" :loading="saving === 'restart'" @click="save(true)">
-            保存并重启代理
-          </el-button>
+        <div class="flex items-center justify-between gap-3">
+          <span class="text-xs text-g-500">
+            {{ draftBadge.text === '未保存' ? '有改动未保存' : '没有未保存的改动' }}
+          </span>
+          <div class="flex items-center gap-2">
+            <el-button @click="editorOpen = false">取消</el-button>
+            <el-button :loading="saving === 'save'" @click="save(false)">只保存</el-button>
+            <el-button type="primary" :loading="saving === 'restart'" @click="save(true)">
+              保存并重启代理
+            </el-button>
+          </div>
         </div>
       </template>
     </el-drawer>
@@ -627,44 +665,6 @@
   const configuredRooms = computed(() => status.value?.configuredRooms || 0)
   const connectedRooms = computed(() => status.value?.ws?.rooms ?? 0)
 
-  /**
-   * 总体状态。`unknown` 是独立语义 —— 取不到状态时既不能说"正常"也不能说"异常"。
-   * chipClass 用模板的浅色标签风格（绿=低/正常、红=风险、灰=未知）。
-   */
-  const overall = computed(() => {
-    if (!statusKnown.value) {
-      return {
-        chip: '未知',
-        chipClass: 'mon-chip--unknown',
-        icon: 'ri:question-line',
-        detail: statusError.value || '未能取到服务状态，无法判断当前是否正常'
-      }
-    }
-    if (issues.value.some((i) => i.level === 'error')) {
-      return {
-        chip: '异常',
-        chipClass: 'mon-chip--danger',
-        icon: 'ri:error-warning-line',
-        detail: `检测到 ${issues.value.length} 项异常，详见下方「异常提醒」`
-      }
-    }
-    if (!proxyHealthy.value || !daemonRunning.value) {
-      return {
-        chip: '风险',
-        chipClass: 'mon-chip--danger',
-        icon: 'ri:alert-line',
-        detail: '监控未完全运行，部分功能不可用，请逐项检查「服务明细」'
-      }
-    }
-    return {
-      // 文案用「运行正常」而不是「已连接」：后者是下面「已连接 5 / 5」那格的标签，
-      // 同一个词在两处表示两个不同的东西容易误读
-      chip: '运行正常',
-      chipClass: 'mon-chip--ok',
-      icon: 'ri:link',
-      detail: `代理与监控脚本运行正常，采集指标读取正常（${connectedRooms.value}/${configuredRooms.value} 个房间连接就绪）`
-    }
-  })
 
   /**
    * Hero 内嵌 kv 小卡 —— 只放「环境事实」，且全页不重复。
@@ -1546,6 +1546,170 @@
     border-radius: 6px;
     font-size: 12px;
     line-height: 1;
+  }
+
+  /* ===== 可视化配置抽屉 =====
+     目标：分节成卡片、标签与提示层级清楚、输入框尺寸统一，
+     而不是一段段裸 div 堆在一起。配色全部走语义色变量，深色模式自动跟随。 */
+  .pc-drawer {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .pc-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: var(--art-gray-100, rgb(243 244 246));
+    color: var(--art-gray-600, rgb(75 85 99));
+    font-size: 12px;
+    line-height: 20px;
+  }
+
+  .pc-note__icon {
+    margin-top: 2px;
+    flex-shrink: 0;
+    font-size: 14px;
+    color: var(--art-gray-500, rgb(107 114 128));
+  }
+
+  .pc-section {
+    border: 1px solid var(--art-gray-200, rgb(229 231 235));
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .pc-section__head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--art-gray-100, rgb(243 244 246));
+    border-bottom: 1px solid var(--art-gray-200, rgb(229 231 235));
+  }
+
+  .pc-section__icon {
+    font-size: 15px;
+    color: var(--art-gray-600, rgb(75 85 99));
+  }
+
+  .pc-section__title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--art-gray-900, rgb(17 24 39));
+  }
+
+  .pc-section__hint {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--art-gray-500, rgb(107 114 128));
+  }
+
+  .pc-section__body {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 14px;
+  }
+
+  .pc-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .pc-field__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 24px;
+  }
+
+  .pc-label {
+    font-size: 13px;
+    color: var(--art-gray-800, rgb(31 41 55));
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .pc-field__hint {
+    font-size: 12px;
+    line-height: 18px;
+    color: var(--art-gray-500, rgb(107 114 128));
+  }
+
+  .pc-switch-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: var(--art-gray-100, rgb(243 244 246));
+  }
+
+  .pc-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .pc-grid__full {
+    grid-column: 1 / -1;
+  }
+
+  .pc-room-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 2px;
+  }
+
+  .pc-room-list__head {
+    display: grid;
+    grid-template-columns: 180px minmax(0, 1fr) 32px;
+    gap: 8px;
+    padding: 0 2px;
+    font-size: 12px;
+    color: var(--art-gray-500, rgb(107 114 128));
+  }
+
+  .pc-room-row {
+    display: grid;
+    grid-template-columns: 180px minmax(0, 1fr) 32px;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .pc-room-row__del {
+    width: 32px;
+    padding: 0;
+  }
+
+  .pc-empty {
+    padding: 12px;
+    border: 1px dashed var(--art-gray-300, rgb(209 213 219));
+    border-radius: 10px;
+    font-size: 12px;
+    color: var(--art-gray-500, rgb(107 114 128));
+    text-align: center;
+  }
+
+  .pc-blocked {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 0 14px 14px;
+    font-size: 12px;
+    line-height: 18px;
+    color: var(--art-gray-500, rgb(107 114 128));
   }
 
   /* ===== 日志折叠 ===== */

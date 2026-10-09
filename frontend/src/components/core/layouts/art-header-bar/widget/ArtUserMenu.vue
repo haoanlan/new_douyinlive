@@ -45,6 +45,11 @@
             <ArtSvgIcon icon="ri:live-line" />
             <span>房间管理</span>
           </li>
+          <!-- 只有管理员有账号管理权限（路由侧也按 roles 过滤） -->
+          <li v-if="isSuper" class="btn-item" @click="goPage('/account/users')">
+            <ArtSvgIcon icon="ri:user-settings-line" />
+            <span>用户管理</span>
+          </li>
           <li class="btn-item" @click="lockScreen()">
             <ArtSvgIcon icon="ri:lock-line" />
             <span>{{ $t('topBar.user.lockScreen') }}</span>
@@ -82,6 +87,8 @@
     if (role === 'R_GUEST') return '普通用户'
     return role || ''
   })
+
+  const isSuper = computed(() => (userInfo.value.roles?.[0] || '') === 'R_SUPER')
 
   /**
    * 页面跳转

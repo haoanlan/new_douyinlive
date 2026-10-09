@@ -171,6 +171,23 @@
     @apply border-t border-[var(--default-border)];
   }
 
+  /*
+   * 按钮里的"原地转圈"。
+   * 用它替代 el-button 的 :loading —— 后者会在内容前**再插一个**转圈图标，
+   * 本来就有图标的按钮点一下就会变宽（用户反馈过"点击大小会变"）。
+   * 全局定义：状态监控、场次详情等页面共用。
+   */
+  .dy-spin {
+    animation: dy-spin 800ms linear infinite;
+    transform-origin: center;
+  }
+
+  @keyframes dy-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
   .border-l-d {
     @apply border-l border-[var(--default-border)];
   }

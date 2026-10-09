@@ -1719,18 +1719,6 @@
     color: var(--art-gray-500, rgb(107 114 128)) !important;
   }
 
-  /* ===== 按钮里的"原地转圈" =====     用它替代 el-button 的 :loading：后者会在内容前额外插一个图标把按钮撑宽，
-     点一下尺寸就变；这里让按钮里原有的图标自己旋转，宽度恒定。 */
-  .dy-spin {
-    animation: dy-spin 800ms linear infinite;
-    transform-origin: center;
-  }
-
-  @keyframes dy-spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
 
   /* ===== 控件行间距 =====     Element Plus 默认给相邻按钮加 margin-left: 12px。只要该行用了 flex gap，
      两个按钮之间的间距就会是 gap + 12，与"第一个控件到第一个按钮"的 gap 不一致。

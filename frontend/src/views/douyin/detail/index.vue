@@ -46,8 +46,14 @@
         >
           <ArtSvgIcon icon="ri:arrow-left-line" class="mr-1" />场次列表
         </el-button>
-        <el-button :loading="loading" :disabled="loading" @click="refresh">
-          <ArtSvgIcon icon="ri:refresh-line" class="mr-1" />刷新
+        <el-button :disabled="loading" @click="refresh">
+          <!-- 同状态监控页：不用 el-button 的 :loading（会在图标前再插一个转圈把按钮撑宽），
+               改成图标原地旋转，宽度恒定 -->
+          <ArtSvgIcon
+            icon="ri:refresh-line"
+            class="mr-1"
+            :class="loading ? 'dy-spin' : ''"
+          />刷新
         </el-button>
       </div>
     </div>
@@ -346,7 +352,7 @@
       align-center
     >
       <div class="px-5 py-4">
-        <div class="flex items-center gap-3 pb-3.5 border-b border-dashed border-t-d">
+        <div class="flex items-center gap-3 pb-3.5 border-b border-dashed">
           <el-avatar :size="40" :src="giftDialogAvatar" class="shrink-0">{{
             giftDialogUser?.[0]
           }}</el-avatar>
@@ -408,7 +414,7 @@
       align-center
     >
       <div class="px-5 py-4">
-        <div class="flex items-center gap-3 pb-3.5 border-b border-dashed border-t-d">
+        <div class="flex items-center gap-3 pb-3.5 border-b border-dashed">
           <el-avatar :size="40" :src="peopleAnchorAvatar" class="shrink-0">{{
             peopleAnchorName?.[0]
           }}</el-avatar>

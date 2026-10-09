@@ -146,15 +146,29 @@
       </div>
     </div>
 
-    <div
-      v-else
-      v-loading="loading"
-      element-loading-text="查询中…"
-      :class="loading ? 'min-h-[360px]' : ''"
-    >
+    <div v-else>
+      <!--
+        加载态不再用 v-loading 大面积遮罩：
+        那会在结果区盖一块白板（用户反馈"遮罩下有大片矩形空白，不是无感"）。
+        改成——首次查询显示与卡片同形的骨架屏；已有结果时保留旧结果并轻微变淡，
+        由工具条上的「查询中…」提示进度，视觉上几乎没有跳变。
+      -->
+      <div v-if="loading && !sortedUsers.length" class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+        <div v-for="i in 4" :key="i" class="art-card p-5">
+          <div class="flex items-center gap-4">
+            <el-skeleton-item variant="circle" style="width: 56px; height: 56px" />
+            <div class="flex-1 min-w-0">
+              <el-skeleton-item variant="h3" style="width: 40%" />
+              <el-skeleton-item variant="text" style="width: 70%; margin-top: 8px" />
+            </div>
+          </div>
+          <el-skeleton :rows="3" animated class="mt-4" />
+        </div>
+      </div>
+
       <!-- 失败：与「没有结果」明确区分（P0-3） -->
       <QueryErrorState
-        v-if="!loading && queryError"
+        v-else-if="!loading && queryError"
         :message="queryError"
         :retrying="loading"
         @retry="doSearch"
@@ -165,7 +179,7 @@
         <el-empty :description="`没有匹配「${lastQuery}」的用户`" :image-size="80" />
       </div>
 
-      <!-- 结果卡片 -->
+      <!-- 结果卡片（重新查询时保留上一批并轻微变淡，避免"整块白板一闪"） -->
       <template v-else>
         <!--
           结果区不再有汇总行：「多少人有匹配 / 列出前几个」都在上方工具条那一行里，
@@ -175,6 +189,7 @@
           :key="`${lastQuery}|${lastScope}|${resultTotal}|${returnedCount}`"
           :gutter="20"
           class="dy-fade-in"
+          :class="loading ? 'opacity-60 transition-opacity duration-200' : 'transition-opacity duration-200'"
         >
           <ElCol
             v-for="u in sortedUsers"
@@ -243,8 +258,12 @@
                     名字长时可以换行（不截断），最少占一行。
                   -->
                   <!--
-                    只在有需要时换行：名字长的时候宁可换行也不要截断（max-w 220px 只是兜底，
-                    实测库里最长的昵称「深情磊🌝（爱吃牛肉炒饭版）」约 186px，能完整显示）
+                    名字长时**换行**而不是截断。
+                    原来写的是 `max-w-[220px] truncate` —— 与注释相反，而且
+                    el-tag 的文字在**内层 span**（.el-tag__content）里，
+                    外层 truncate 拦不住它：长名字会溢出标签、压到旁边的字上
+                    （用户反馈的"库内别名存在被截断的遮挡"）。
+                    现在放开高度、允许断行：!h-auto + whitespace-normal + break-all。
                   -->
                   <div class="flex flex-wrap items-center gap-1.5 mt-2 min-w-0 min-h-[22px]">
                     <span class="text-xs text-g-400 shrink-0">库内别名</span>
@@ -254,7 +273,7 @@
                       size="small"
                       effect="plain"
                       type="info"
-                      class="max-w-[220px] truncate"
+                      class="!h-auto max-w-full whitespace-normal break-all leading-5 !py-0.5"
                       :title="n"
                     >
                       {{ n }}

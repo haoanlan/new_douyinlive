@@ -7,8 +7,27 @@
     <QueryErrorState v-if="error" :message="error" :retrying="loading" @retry="load" />
 
     <template v-else>
+      <!--
+        加载态不用 v-loading 大遮罩（会在头部盖一块白板，转场很硬）。
+        改成"骨架屏与真实头部同形"：头像圆 + 两行文字 + 指标格，
+        加载完直接替换，视觉上几乎无跳变。
+      -->
+      <div v-if="loading" class="art-card p-5 mb-4">
+        <div class="flex items-center gap-4 flex-wrap">
+          <el-skeleton-item variant="circle" style="width: 56px; height: 56px" />
+          <div class="flex-1 min-w-0">
+            <el-skeleton-item variant="h3" style="width: 30%" />
+            <el-skeleton-item variant="text" style="width: 45%; margin-top: 8px" />
+            <el-skeleton-item variant="text" style="width: 60%; margin-top: 8px" />
+          </div>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mt-4 pt-4 border-t border-g-100">
+          <el-skeleton v-for="i in 5" :key="i" :rows="2" animated />
+        </div>
+      </div>
+
       <!-- 头部 -->
-      <div class="art-card p-5 mb-4" v-loading="loading">
+      <div v-else class="art-card p-5 mb-4">
         <div class="flex items-center gap-4 flex-wrap">
           <div class="relative shrink-0 flex">
             <el-avatar :size="56" :src="profile?.avatar">{{ profile?.nickname?.[0] }}</el-avatar>
@@ -47,7 +66,8 @@
       </div>
 
       <!-- 底部 6 个模块排成矩形网格（两列、行内等高、底边齐平），见 douyin-motion.scss 的 .dy-profile-grid -->
-      <el-row :gutter="20" class="dy-profile-grid">
+      <!-- 加载中先不渲染：只显示上面的骨架，避免"空图 + 骨架"混着跳一下 -->
+      <el-row v-if="!loading" :gutter="20" class="dy-profile-grid">
         <!-- 左列 -->
         <el-col :sm="24" :md="12">
           <div class="art-card p-5 mb-5">

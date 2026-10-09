@@ -9,13 +9,13 @@
         </div>
         <div class="min-w-0">
           <div class="dy-toolbar-title">信息查询</div>
+          <!--
+            全页唯一一处结果汇总：多少人有匹配、列出前几个、参与场次、累计钻石。
+            原来结果区上方还单独有一行「共 N 个匹配用户 · 显示前 K」，和这里同一个数
+            出现两次（用户反馈），已合并到这一行。
+          -->
           <div
             class="flex items-center gap-2.5 mt-1.5 text-xs text-g-500 flex-nowrap min-w-0 overflow-hidden"
-            :title="
-              truncated
-                ? `「匹配用户」是库内全量；「参与场次 / 累计钻石」只统计本次显示的 ${returnedCount} 人`
-                : ''
-            "
           >
             <!-- 加载中/失败时不显示（也不残留）上一轮的统计数字 -->
             <span v-if="loading">查询中…</span>
@@ -23,6 +23,9 @@
             <template v-else>
               <span class="flex items-baseline gap-1 shrink-0">
                 <b class="dy-count text-g-900">{{ searched ? resultTotal : 0 }}</b>个匹配用户
+              </span>
+              <span v-if="truncated" class="shrink-0 text-g-500">
+                · 列出前 {{ returnedCount }} 个
               </span>
               <span class="w-px h-3 bg-g-300 shrink-0" />
               <span class="flex items-baseline gap-1 shrink-0">
@@ -32,12 +35,19 @@
               <span class="flex items-baseline gap-1 shrink-0">
                 <b class="dy-count text-theme">{{ fmtNum(totalDiamonds) }}</b>累计钻石
               </span>
-              <!-- 口径说明改成悬浮提示（原来写在这一行里，查询后会把工具条撑成两行） -->
-              <ArtSvgIcon
-                v-if="truncated"
-                icon="ri:information-line"
-                class="text-g-400 shrink-0"
-              />
+              <!-- 口径说明 + 明细都收进这一个 ⓘ（原来口径挂在 title 上、明细在结果区另一个 ⓘ） -->
+              <el-tooltip placement="top" :show-after="100">
+                <span
+                  class="inline-flex items-center justify-center size-5 shrink-0 rounded-full c-p hover:bg-g-100/70"
+                  role="img"
+                  aria-label="查询结果说明"
+                >
+                  <ArtSvgIcon icon="ri:information-line" class="text-sm text-g-400" />
+                </span>
+                <template #content>
+                  <div class="max-w-[320px] leading-relaxed">{{ toolbarTip }}</div>
+                </template>
+              </el-tooltip>
             </template>
           </div>
         </div>
@@ -157,46 +167,9 @@
 
       <!-- 结果卡片 -->
       <template v-else>
-        <!-- 加载中不显示这行：首次查询时会闪一个「共 0 个用户」，而且 v-loading 的遮罩
-             只剩这一行的高度（实测 36px 高的一条），看起来不知道是什么 -->
         <!--
-          只留"共 N 个匹配用户 + 显示前 K"这几个必要信息，其余明细（命中记录数、排序依据、
-          仅进场数、无标识记录）收进 ⓘ 悬浮提示 —— 原来一行铺满两百多字没重点。
-          右侧「重新查询」已去掉：它和工具条的「查询」是同一个 doSearch，功能重复。
-        -->
-        <div v-if="!loading" class="flex items-center gap-2 mb-3 px-1 flex-wrap">
-          <span class="text-sm text-g-600 shrink-0">
-            共 <b class="text-g-900">{{ resultTotal }}</b> 个匹配用户
-          </span>
-          <span v-if="truncated" class="text-xs text-g-500 shrink-0">
-            · 显示前 {{ returnedCount }} 个
-          </span>
-          <!--
-            这里不再重复「关键词 xxx / 范围：xxx」两个标签：
-            输入框与两个下拉就在这一行上方，读的人一眼能看到自己搜了什么，
-            再复述一遍纯属占地方（用户反馈"这个也是重复信息"）。
-            lastScope 仍留着 —— 结果区的 :key 用它，换范围时重新触发淡入。
-          -->
-          <el-tooltip placement="top" :show-after="100">
-            <!-- 触发元素必须是有明确尺寸的盒子：直接拿 SVG 当触发区时命中范围只有图标本身，
-                 经常 hover 不到（用户反馈 ⓘ 不显示内容） -->
-            <span
-              class="inline-flex items-center justify-center size-5 shrink-0 rounded-full c-p hover:bg-g-100/70"
-              role="img"
-              aria-label="查询结果说明"
-            >
-              <ArtSvgIcon icon="ri:information-line" class="text-sm text-g-400" />
-            </span>
-            <template #content>
-              <!-- 限宽换行：不然 Element Plus 会渲染成一条 1090px 的单行（实测） -->
-              <div class="max-w-[320px] leading-relaxed">{{ detailTip }}</div>
-            </template>
-          </el-tooltip>
-        </div>
-
-        <!--
-          key 里带上查询条件：每次新结果都重新渲染 → 120ms 淡入重新触发
-          （否则动画只在首次挂载时播一次，之后换结果仍是"直接出现"）
+          结果区不再有汇总行：「多少人有匹配 / 列出前几个」都在上方工具条那一行里，
+          明细在它的 ⓘ 里（原来这里单独一行 + 另一个 ⓘ，同一条信息出现两次）。
         -->
         <ElRow
           :key="`${lastQuery}|${lastScope}|${resultTotal}|${returnedCount}`"
@@ -718,6 +691,19 @@
     if (e.isComposing) return
     doSearch()
   }
+
+  /**
+   * 工具条 ⓘ 的内容：口径说明（哪些数字是"本次列出的人"的口径）+ 明细。
+   * 两段原来分别挂在工具条的 title 和结果区的另一个 ⓘ 上，现在合成一个提示。
+   */
+  const toolbarTip = computed(() => {
+    const parts = []
+    if (truncated.value) {
+      parts.push(`「匹配用户」是库内全量；「参与场次 / 累计钻石」只统计本次列出的 ${returnedCount.value} 人`)
+    }
+    parts.push(detailTip.value)
+    return parts.join('。')
+  })
 
   /** 结果头的明细说明（悬浮提示用）：原来这些直接铺在页面上，一行两百多字没重点 */
   const detailTip = computed(() => {

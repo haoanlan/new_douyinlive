@@ -34,6 +34,9 @@ node_modules/
 config.yaml
 .env
 
+# 扫码登录用的独立浏览器配置（含登录态 cookie，绝不入库）
+.qrlogin-profile/
+
 # Docker
 compose.yaml
 

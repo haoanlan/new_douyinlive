@@ -868,6 +868,45 @@ export function saveProxyConfig(patch: Record<string, any>) {
   })
 }
 
+/**
+ * 扫码登录（拿抖音 web 端 Cookie）。
+ *
+ * 注意：后端会**弹一个可见的浏览器窗口** —— 实测无头浏览器（含 --headless=new）
+ * 会被抖音风控挡住、连二维码接口都不发，所以扫码那一下必须由人完成。
+ */
+export interface QrLoginState {
+  ok: boolean
+  id?: string
+  /** starting/loading=开窗口，waiting=等扫码，scanned=已扫码待确认，saved=已写入，其余为终止态 */
+  state?: 'starting' | 'loading' | 'waiting' | 'scanned' | 'saved' | 'error' | 'cancelled' | 'timeout'
+  message?: string
+  /** 二维码（data:image/png;base64,…），等待扫码期间由后端截图给出 */
+  qr?: string | null
+  error?: string
+  browser?: string
+  reused?: boolean
+  scannedAt?: number | null
+  savedAt?: number | null
+}
+
+export function startQrLogin() {
+  return request.post<QrLoginState>({ url: '/api/douyin/qrlogin/start', data: {} })
+}
+
+export function fetchQrLoginStatus(id: string) {
+  return request.get<QrLoginState>({
+    url: `/api/douyin/qrlogin/status?id=${encodeURIComponent(id)}`,
+    showErrorMessage: false
+  })
+}
+
+export function cancelQrLogin(id: string) {
+  return request.post<{ ok: boolean; message?: string }>({
+    url: '/api/douyin/qrlogin/cancel',
+    data: { id }
+  })
+}
+
 /** 状态监控页每 8 秒轮询此项，失败由页面展示错误态而非反复弹 toast（P0-3/P0-4）。 */
 export function fetchServiceStatus() {
   return request.get<ServiceStatus>({

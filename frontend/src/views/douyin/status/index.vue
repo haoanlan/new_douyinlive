@@ -355,10 +355,16 @@
           </div>
 
           <div class="mt-4">
-            <div class="text-g-800">默认 Cookie（cookie.douyin）</div>
+            <div class="flex items-center justify-between gap-3">
+              <div class="text-g-800">默认 Cookie（cookie.douyin）</div>
+              <el-button size="small" type="primary" plain :loading="qrStarting" @click="openQrLogin">
+                <ArtSvgIcon icon="ri:qr-scan-2-line" class="mr-1" />
+                扫码登录
+              </el-button>
+            </div>
             <div class="text-xs text-g-500 mt-0.5 mb-2">
               浏览器登录 <code class="pc-code">live.douyin.com</code> 后从任意请求头复制完整 Cookie；含
-              <code class="pc-code">sessionid</code> 才算登录态
+              <code class="pc-code">sessionid</code> 才算登录态。懒得复制就点右边「扫码登录」
             </div>
             <el-input
               v-model="draft['cookie.douyin']"
@@ -559,6 +565,50 @@
         <el-button type="primary" @click="refresh">刷新状态</el-button>
       </template>
     </el-dialog>
+    <!-- 扫码登录 -->
+    <el-dialog
+      v-model="qrOpen"
+      title="扫码登录抖音"
+      width="460px"
+      class="dy-qr-dialog"
+      :close-on-click-modal="false"
+      @closed="onQrDialogClosed"
+    >
+      <div class="flex flex-col items-center text-center">
+        <!--
+          为什么要有这一步：抖音的扫码接口带 JS 风险指纹 + 无感验证，
+          直接请求会返回 4031「检测到安全风险，已阻止此次访问」，
+          无头浏览器更连二维码都拿不到 —— 只有真窗口能出码。
+        -->
+        <p class="text-xs leading-5 text-g-500 m-0">
+          已弹出一个<strong>专用浏览器窗口</strong>（独立配置，不影响你日常浏览器）。<br />
+          用抖音 App 扫码即可，登录成功后 Cookie 会自动写入 config.yaml。
+        </p>
+
+        <div class="mt-4 flex-cc rounded-xl border border-g-200 bg-white" style="width: 208px; height: 208px">
+          <img v-if="qr.qr" :src="qr.qr" alt="登录二维码" style="width: 192px; height: 192px" />
+          <div v-else class="text-xs text-g-500 px-4">
+            {{ qrStarting ? '正在打开登录窗口并获取二维码…' : '暂无二维码' }}
+          </div>
+        </div>
+
+        <div class="mt-3 flex items-center gap-2 text-sm" :class="qrTone">
+          <ArtSvgIcon :icon="qrIcon" />
+          <span>{{ qr.message || '准备中…' }}</span>
+        </div>
+
+        <el-checkbox v-model="qrRestartAfter" class="mt-3" :disabled="qr.state === 'saved'">
+          登录成功后自动重启代理（让新 Cookie 立即生效）
+        </el-checkbox>
+      </div>
+
+      <template #footer>
+        <div class="flex items-center justify-end gap-2">
+          <el-button v-if="!qrTerminal" @click="cancelQrLogin">取消并关闭窗口</el-button>
+          <el-button type="primary" @click="qrOpen = false">{{ qrTerminal ? '关闭' : '隐藏' }}</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -569,8 +619,12 @@
     fetchServiceStatus,
     fetchProxyConfigForm,
     saveProxyConfig,
+    startQrLogin,
+    fetchQrLoginStatus,
+    cancelQrLogin as cancelQrLoginApi,
     performServiceAction,
     type ProxyConfigForm,
+    type QrLoginState,
     type ServiceAction,
     type ServiceStatus
   } from '@/api/douyin'
@@ -1058,6 +1112,125 @@
 
   function addRoomCookie() {
     roomCookieRows.value.push({ roomId: '', cookie: '' })
+  }
+
+  // ===== 扫码登录 =====
+  const qrOpen = ref(false)
+  const qrStarting = ref(false)
+  const qrRestartAfter = ref(true)
+  const qr = ref<QrLoginState>({ ok: true, state: 'starting', message: '准备中…' })
+  let qrTimer: number | undefined
+
+  const qrTerminal = computed(() =>
+    ['saved', 'error', 'cancelled', 'timeout'].includes(String(qr.value.state || ''))
+  )
+  const qrIcon = computed(() => {
+    switch (qr.value.state) {
+      case 'saved':
+        return 'ri:checkbox-circle-line'
+      case 'scanned':
+        return 'ri:smartphone-line'
+      case 'error':
+      case 'timeout':
+        return 'ri:error-warning-line'
+      default:
+        return 'ri:qr-scan-2-line'
+    }
+  })
+  const qrTone = computed(() => {
+    switch (qr.value.state) {
+      case 'saved':
+        return 'text-success'
+      case 'scanned':
+        return 'text-theme'
+      case 'error':
+      case 'timeout':
+        return 'text-danger'
+      default:
+        return 'text-g-600'
+    }
+  })
+
+  function stopQrPolling() {
+    if (qrTimer) clearInterval(qrTimer)
+    qrTimer = undefined
+  }
+
+  /** 扫码成功后：把新 Cookie 读回抽屉（后端已写入 config.yaml） */
+  async function afterQrSaved() {
+    stopQrPolling()
+    try {
+      const f = await fetchProxyConfigForm()
+      form.value = f
+      draft.value = { ...(draft.value), 'cookie.douyin': f.values?.['cookie.douyin'] || '' }
+    } catch {
+      /* 读不回来也不影响已写入的结果 */
+    }
+    if (qrRestartAfter.value) {
+      ElMessage.success('Cookie 已写入，正在重启代理…')
+      const act = await performServiceAction('restart-proxy')
+      if (act?.ok) ElMessage.success(act.message || '代理已重启')
+      else ElMessage.warning(act?.error || act?.message || '代理重启未成功')
+      await refresh()
+    } else {
+      ElMessage.success('Cookie 已写入 config.yaml（重启代理后生效）')
+    }
+  }
+
+  async function openQrLogin() {
+    qrOpen.value = true
+    qrStarting.value = true
+    qr.value = { ok: true, state: 'starting', message: '正在打开登录窗口…' }
+    stopQrPolling()
+    try {
+      const st = await startQrLogin()
+      if (!st?.ok) {
+        qr.value = { ok: false, state: 'error', message: st?.error || '启动扫码登录失败' }
+        return
+      }
+      qr.value = st
+      if (st.id) {
+        qrTimer = window.setInterval(async () => {
+          try {
+            const s = await fetchQrLoginStatus(String(st.id))
+            if (s?.ok) {
+              qr.value = s
+              if (s.state === 'saved') await afterQrSaved()
+              else if (['error', 'timeout', 'cancelled'].includes(String(s.state))) stopQrPolling()
+            }
+          } catch {
+            /* 轮询失败就等下一轮 */
+          }
+        }, 1500)
+      }
+    } catch (e) {
+      qr.value = { ok: false, state: 'error', message: apiErrorMessage(e, '启动扫码登录失败') }
+    } finally {
+      qrStarting.value = false
+    }
+  }
+
+  async function cancelQrLogin() {
+    stopQrPolling()
+    const id = qr.value.id
+    if (id) {
+      try {
+        await cancelQrLoginApi(String(id))
+      } catch {
+        /* 窗口可能已经关了 */
+      }
+    }
+    qr.value = { ...qr.value, state: 'cancelled', message: '已取消' }
+    qrOpen.value = false
+  }
+
+  /** 关闭对话框：没走到终态就顺手把浏览器窗口关掉，避免留下孤立窗口 */
+  function onQrDialogClosed() {
+    stopQrPolling()
+    if (!qrTerminal.value && qr.value.id) {
+      cancelQrLoginApi(String(qr.value.id)).catch(() => {})
+      qr.value = { ...qr.value, state: 'cancelled', message: '已取消' }
+    }
   }
 
   /** 组装 patch：只提交表单里真正有的字段 */

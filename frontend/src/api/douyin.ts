@@ -384,6 +384,14 @@ export interface RoomStatus {
 export interface DaemonStatus {
   ok?: boolean
   error?: string
+  /** 轻量代理探活（后端随 /api/status 一起给；只有这一份数据时才不会把代理状态看错） */
+  proxy?: {
+    port: number
+    reachable: boolean
+    healthy: boolean
+    tag: string | null
+    error?: string
+  }
   data?: {
     running: boolean
     pid: number
@@ -759,6 +767,14 @@ export interface ProxyConfigInfo {
   /** 配置文件名（代理读的那份） */
   file: string
   exists: boolean
+  /**
+   * 与根 config.yaml 的渲染结果是否一致。
+   * false = config.yaml 改了但代理还没重启（代理只在启动时读一次配置）。
+   * 注意：重启**监控脚本**不会让它重新读，只会一直显示不一致。
+   */
+  inSync: boolean
+  /** 不一致时具体哪几个字段不同（例如 ['log.level','cookie.douyin']） */
+  changed?: string[]
   /** 是否由 lib/proxy-binary.js 自动生成（Cookie 从根 config.yaml 同步过来） */
   generated: boolean
   port: string

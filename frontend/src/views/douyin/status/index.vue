@@ -211,9 +211,26 @@
           <span
             v-if="proxyCfg && !proxyCfg.inSync"
             class="pc-tag bg-warning/12 text-warning"
-            title="改了 config.yaml 但代理还在用启动时的旧配置"
+            :title="pendingChangeTitle"
             >待重启生效</span
           >
+          <!--
+            发现"改了配置还没生效"时，把动作也放在这里：
+            提示只说"不一致"会让人以为重启监控脚本就行（脚本根本不改配置），
+            一键重启代理才是真正生效的那步。
+          -->
+          <el-button
+            v-if="proxyCfg && !proxyCfg.inSync"
+            :title="pendingChangeTitle"
+            @click="actWithConfirm('restart-proxy')"
+          >
+            <ArtSvgIcon
+              icon="ri:restart-line"
+              class="mr-1"
+              :class="busy === 'restart-proxy' ? 'dy-spin' : ''"
+            />
+            重启代理
+          </el-button>
           <el-button type="primary" @click="openEditor">
             <ArtSvgIcon
               icon="ri:settings-3-line"
@@ -901,6 +918,13 @@
    */
   const proxyCfg = computed(() => status.value?.proxyConfig || null)
   const proxyRuntime = computed(() => proxyCfg.value?.runtime || null)
+
+  /** 「待重启生效」的说明：列出到底哪几项改了，避免用户以为是重启监控脚本引起的 */
+  const pendingChangeTitle = computed(() => {
+    const fields = proxyCfg.value?.changed || []
+    const list = fields.length ? `改动的字段：${fields.join('、')}` : '配置内容有改动'
+    return `${list}\n代理只在启动时读一次配置；重启监控脚本不会让它重新读 —— 需要重启代理。`
+  })
 
   /**
    * 四张指标 tile：只看「代理 + 监控脚本」这两件事。

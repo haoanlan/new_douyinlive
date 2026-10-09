@@ -329,9 +329,9 @@
                       <div
                         class="text-xl font-medium leading-none truncate"
                         :class="hasSessions(u) ? 'text-g-900' : 'text-g-400'"
-                        :title="hasSessions(u) ? String(u.sessions.length) : ''"
+                        :title="hasSessions(u) ? String(participatedSessions(u)) : ''"
                       >
-                        {{ hasSessions(u) ? u.sessions.length : '—' }}
+                        {{ hasSessions(u) ? fmtNum(participatedSessions(u)) : '—' }}
                       </div>
                       <div class="text-xs text-g-500 mt-1.5">参与场次</div>
                     </div>
@@ -762,6 +762,19 @@
 
   function hasSessions(u: any): boolean {
     return Boolean(u?.sessions?.length)
+  }
+
+  /**
+   * 参与场次：优先用后端给的 `session_count`（COUNT 查询，与画像页同一口径）。
+   *
+   * 原来这里用 `u.sessions.length` —— 那个数组来自 collectNameHistory 的
+   * **≤5000 行**历史，活跃用户会被截断，于是卡片数字比画像页小一大截
+   * （用户反馈的"信息查询卡片参与场次、弹幕数和画像页不一致"）。
+   * `sessions` 仍然保留给"最近场次入口"用，只是不再拿它的长度当统计值。
+   */
+  function participatedSessions(u: any): number {
+    const n = Number(u?.session_count)
+    return Number.isFinite(n) && n > 0 ? n : (u?.sessions?.length ?? 0)
   }
 
   /**

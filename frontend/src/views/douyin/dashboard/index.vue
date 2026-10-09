@@ -81,12 +81,24 @@
         </div>
         <div class="min-w-0">
           <div class="text-xs text-g-500">Go 代理</div>
+          <!--
+            这里原来也用 daemonRunning —— 于是"监控脚本在跑"就等于"代理正常"，
+            代理挂了（或者根本没启动）照样绿。现在用后端随 /api/status 给的代理探活结果。
+          -->
           <el-tag
-            :type="statusError ? 'info' : daemonRunning ? 'success' : 'danger'"
+            :type="statusError ? 'info' : proxyHealthy ? 'success' : proxyReachable ? 'warning' : 'danger'"
             size="small"
             effect="light"
           >
-            {{ statusError ? '状态未知' : daemonRunning ? '正常' : '未知' }}
+            {{
+              statusError
+                ? '状态未知'
+                : proxyHealthy
+                  ? `正常${proxyTag ? ' · ' + proxyTag : ''}`
+                  : proxyReachable
+                    ? '响应异常'
+                    : '未运行'
+            }}
           </el-tag>
         </div>
       </div>
@@ -389,6 +401,10 @@
   const staleSeconds = ref(0)
 
   const daemonRunning = computed(() => Boolean(daemon.value?.data?.running))
+  /** Go 代理的真实状态（后端随 /api/status 给的轻量探活，不再拿守护进程顶替） */
+  const proxyHealthy = computed(() => Boolean(daemon.value?.proxy?.healthy))
+  const proxyReachable = computed(() => Boolean(daemon.value?.proxy?.reachable))
+  const proxyTag = computed(() => daemon.value?.proxy?.tag || '')
   const roomStatusList = computed(() => {
     const rooms = daemon.value?.data?.rooms || {}
     return Object.values(rooms).map((s) => ({

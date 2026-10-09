@@ -175,15 +175,16 @@
 
     <!--
       移除房间：两个动作分开呈现。
-      「删除历史数据」不可逆，所以单独成一个红色按钮并再确认一次；
-      「取消」永远安全。
+      「删除历史数据」不可逆 —— 原来点了它会**再弹一层确认框压在这个弹窗上**，
+      两层弹窗叠着很乱。现在改成同一个弹窗内联确认：
+      勾选"我知道"之后那个红按钮才可点，取消永远是安全的。
     -->
     <el-dialog
       v-model="removeVisible"
       title="移除房间"
       width="440px"
       align-center
-      @closed="removeTarget = null"
+      @closed="onRemoveClosed"
     >
       <div class="text-sm text-g-800 leading-relaxed">
         要如何处理
@@ -197,12 +198,34 @@
         仅停止监控：<b>保留全部历史数据</b>，以后可以再添加回来继续采集。<br />
         删除历史数据：连同场次、弹幕、礼物、进场记录一起删除，<b>无法恢复</b>。
       </div>
+
+      <!-- 有历史数据才需要这道二次确认；没有数据时删除本身没什么可丢的 -->
+      <div
+        v-if="removeTarget?.session_count"
+        class="mt-3 rounded-xl border border-danger/30 bg-danger/5 px-3.5 py-3"
+      >
+        <el-checkbox v-model="confirmDeleteData" class="items-start">
+          <span class="text-xs leading-5 text-g-700">
+            我知道这会删除
+            <b>{{ removeTarget.session_count }} 个场次</b>
+            的弹幕、礼物与进场记录，且<b>无法恢复</b>
+          </span>
+        </el-checkbox>
+      </div>
+
       <template #footer>
         <div class="flex items-center justify-between gap-3 flex-wrap">
           <el-button text @click="closeRemove">取消</el-button>
           <div class="flex items-center gap-2">
             <el-button type="primary" @click="removeKeepData">仅停止监控</el-button>
-            <el-button type="danger" plain @click="removeWithData">删除历史数据</el-button>
+            <el-button
+              type="danger"
+              plain
+              :disabled="Boolean(removeTarget?.session_count) && !confirmDeleteData"
+              @click="removeWithData"
+            >
+              删除历史数据
+            </el-button>
           </div>
         </div>
       </template>
@@ -661,15 +684,24 @@
    */
   const removeVisible = ref(false)
   const removeTarget = ref<Room | null>(null)
+  /** 删除历史数据的二次确认（在同一个弹窗里勾选，不再叠一层 confirm） */
+  const confirmDeleteData = ref(false)
 
   function openRemove(row: Room) {
     removeTarget.value = row
+    confirmDeleteData.value = false
     removeVisible.value = true
   }
 
   function closeRemove() {
     removeVisible.value = false
     removeTarget.value = null
+    confirmDeleteData.value = false
+  }
+
+  function onRemoveClosed() {
+    removeTarget.value = null
+    confirmDeleteData.value = false
   }
 
   /** 仅停止监控：保留全部历史数据 */
@@ -680,28 +712,14 @@
     await doRemove(row, false)
   }
 
-  /** 危险路径：删除房间并连同全部历史数据，必须再确认一次 */
+  /**
+   * 危险路径：删除房间并连同全部历史数据。
+   * 确认在弹窗内完成（勾选框 + 按钮禁用），所以这里直接执行，不再弹第二层。
+   */
   async function removeWithData() {
     const row = removeTarget.value
     if (!row) return
-    const name = escapeHtml(displayName(row))
-    const sessions = row.session_count ?? 0
-    try {
-      await ElMessageBox.confirm(
-        `确定要删除 <b>${name}</b> 及其<b>全部历史数据</b>吗？`
-          + (sessions ? `<br><br>这包含 <b>${sessions} 个场次</b>的弹幕、礼物与进场记录。` : '')
-          + '<br><br><b>删除后无法恢复。</b>',
-        '删除房间及历史数据',
-        {
-          confirmButtonText: '删除房间和历史数据',
-          cancelButtonText: '取消',
-          type: 'warning',
-          dangerouslyUseHTMLString: true
-        }
-      )
-    } catch {
-      return // 取消：留在原弹窗，什么都不做
-    }
+    if (row.session_count && !confirmDeleteData.value) return
     closeRemove()
     await doRemove(row, true)
   }

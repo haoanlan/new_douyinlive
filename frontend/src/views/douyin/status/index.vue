@@ -266,7 +266,98 @@
       </article>
     </section>
 
-    <!-- ④ 运行日志 -->
+    <!-- ④ Go 代理配置（代理有自己一套 schema 与 Cookie 规则） -->
+    <article class="art-card p-5">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div class="min-w-0">
+          <h3 class="text-lg font-semibold text-g-900 m-0">Go 代理配置</h3>
+          <p class="mt-1 text-sm leading-6 text-g-600">
+            代理读的是自己那份 <code class="pc-code">proxy-config.yaml</code
+            >（由本工具生成），Cookie 按「临时 &gt; 房间专用 &gt; 默认 &gt; 自动获取」取值。
+          </p>
+        </div>
+        <span class="mon-chip" :class="proxyCfg?.exists ? 'mon-chip--ok' : 'mon-chip--unknown'">
+          {{ proxyCfg?.exists ? '配置就绪' : '无配置文件' }}
+        </span>      </div>
+
+      <div class="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)]">
+        <!-- 左：Cookie 规则（重点） -->
+        <div class="min-w-0">
+          <div class="flex items-center gap-2">
+            <h4 class="text-base font-semibold text-g-900 m-0">Cookie</h4>
+            <span class="pc-tag" :class="cookieBadge.cls">{{ cookieBadge.text }}</span>
+          </div>
+
+          <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div v-for="f in cookieFacts" :key="f.label" class="mon-kv">
+              <div class="mon-kv__label">{{ f.label }}</div>
+              <div class="mon-kv__value" :class="f.tone || 'text-g-900'" :title="f.title || f.value">
+                {{ f.value }}
+              </div>
+            </div>
+          </div>
+
+          <!-- 运行期信号：配置里"填了"≠运行时"能用" -->
+          <div
+            v-if="cookieRuntime.length"
+            class="mt-3 rounded-lg border px-3 py-2 text-xs leading-6"
+            :class="
+              proxyRuntime?.verificationPage || proxyRuntime?.ttwidMissing
+                ? 'border-warning/30 bg-warning/10 text-warning'
+                : 'border-g-200 bg-g-100/40 text-g-600'
+            "
+          >
+            <div v-for="(line, i) in cookieRuntime" :key="i">{{ line }}</div>
+          </div>
+
+          <!-- 每房间生效的 Cookie 档位 -->
+          <div class="mt-4">
+            <div class="flex items-center justify-between gap-3">
+              <span class="text-sm font-medium text-g-700">每个房间生效的 Cookie</span>
+              <span class="text-xs text-g-500">共 {{ effectiveCookies.length }} 个房间</span>
+            </div>
+            <div
+              v-if="effectiveCookies.length"
+              class="mt-2 flex flex-col max-h-[220px] overflow-y-auto dy-scroll pr-1"
+            >
+              <div
+                v-for="(r, i) in effectiveCookies"
+                :key="r.roomId"
+                class="flex items-center gap-2 py-2"
+                :class="i ? 'border-t border-g-100' : ''"
+              >
+                <span class="text-sm text-g-800 truncate min-w-0 flex-1" :title="r.name || r.roomId">
+                  {{ r.name || r.roomId }}
+                </span>
+                <span class="text-xs shrink-0" :class="sourceTone(r.source, r.auth)">
+                  {{ sourceText(r.source, r.auth) }}
+                </span>
+              </div>
+            </div>
+            <div v-else class="mt-2 text-xs text-g-500">当前没有监控房间</div>
+          </div>
+        </div>
+
+        <!-- 右：其余配置事实 -->
+        <div class="min-w-0">
+          <h4 class="text-base font-semibold text-g-900 m-0">其他配置</h4>
+          <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div v-for="f in proxyFacts" :key="f.label" class="mon-kv">
+              <div class="mon-kv__label">{{ f.label }}</div>
+              <div class="mon-kv__value" :class="f.tone || 'text-g-900'" :title="f.title || f.value">
+                {{ f.value }}
+              </div>
+            </div>
+          </div>
+          <p class="mt-3 text-xs leading-5 text-g-500">
+            这份文件由 <code class="pc-code">lib/proxy-binary.js</code> 在每次启动代理前重新生成，
+            Cookie 从根目录 <code class="pc-code">config.yaml</code> 同步；改了 Cookie 需要重启代理才生效。
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <!-- ⑤ 运行日志 -->
     <article class="art-card p-5">
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div class="min-w-0">
@@ -731,8 +822,129 @@
     return [proxyItem, daemonItem]
   })
 
-  /** 日志来源着色（用语义色，深色模式下才不会看不清） */
-  function logColor(src: string): string {
+  /**
+   * 代理侧配置（proxy-config.yaml）。
+   *
+   * 为什么单独做一块：代理有自己一套 config schema，Cookie 是四级优先级
+   * （WebSocket 临时 > cookie.rooms[房间] > cookie.douyin > 自动获取），
+   * 而且自动获取的 ttwid 属于**匿名态** —— 官方文档明确说"has_cookie=true 不代表已有登录态"，
+   * 所以这里把 Cookie 分成 未配置 / 匿名态 / 登录态 三档显示，而不是"填没填"。
+   */
+  const proxyCfg = computed(() => status.value?.proxyConfig || null)
+  const proxyRuntime = computed(() => proxyCfg.value?.runtime || null)
+
+  const cookieBadge = computed(() => {
+    const d = proxyCfg.value?.cookie?.default
+    if (!proxyCfg.value?.exists) return { text: '未知', cls: 'bg-g-100 text-g-600' }
+    if (!d?.configured) return { text: '未配置', cls: 'bg-g-100 text-g-600' }
+    if (d.auth === 'login') return { text: '登录态', cls: 'bg-success/12 text-success' }
+    if (d.auth === 'anonymous') return { text: '匿名态（只有 ttwid）', cls: 'bg-warning/12 text-warning' }
+    return { text: '已配置（键未识别）', cls: 'bg-warning/12 text-warning' }
+  })
+
+  /** Cookie 那三格事实 */
+  const cookieFacts = computed(() => {
+    const c = proxyCfg.value?.cookie
+    const d = c?.default
+    return [
+      {
+        label: '默认 Cookie（cookie.douyin）',
+        value: !d?.configured ? '未配置' : d.auth === 'login' ? '登录态' : '匿名态',
+        tone: !d?.configured ? 'text-g-500' : d.auth === 'login' ? 'text-success' : 'text-warning',
+        title: d?.configured
+          ? `共 ${d.keyCount} 个键，长度 ${d.length}；登录键：${d.loginKeys.join(', ') || '无'}`
+          : '没配就靠代理自动获取匿名 ttwid'
+      },
+      {
+        label: 'cookie.use_stored',
+        value: c?.useStored === false ? '已关闭' : '开启',
+        tone: c?.useStored === false ? 'text-warning' : 'text-g-900',
+        title:
+          c?.useStored === false
+            ? '关闭后预存 Cookie 被忽略，只剩匿名 ttwid'
+            : '使用预存 Cookie（临时 Cookie 仍优先）'
+      },
+      {
+        label: '房间专用 Cookie',
+        value: `${c?.rooms?.count || 0} 个`,
+        tone: c?.rooms?.count ? 'text-success' : 'text-g-900',
+        title: (c?.rooms?.entries || []).map((e) => `${e.roomId}（${e.auth}）`).join('、') || '没有按房间单独配'
+      }
+    ]
+  })
+
+  /** 运行期 Cookie 信号（来自代理日志） */
+  const cookieRuntime = computed(() => {
+    const rt = proxyRuntime.value
+    if (!rt?.logExists) return []
+    const out: string[] = []
+    out.push(
+      `最近一次连接尝试：${rt.lastActivityAt || '—'}${rt.livePageOffline ? `（未开播轮询 ${rt.livePageOffline} 次）` : ''}`
+    )
+    if (rt.verificationPage) {
+      out.push(
+        `拿到验证页（直播页状态不存在）${rt.verificationPage} 次，最后一次 ${
+          (rt.verificationPageAt || '').slice(0, 16) || '—'
+        }${rt.verificationPageRecent ? ` —— 最近 30 分钟内还有 ${rt.verificationPageRecent} 次，正在发生` : ''}`
+      )
+    }
+    if (rt.ttwidMissing) {
+      out.push(
+        `未取到 TTWID ${rt.ttwidMissing} 次，最后一次 ${(rt.ttwidMissingAt || '').slice(0, 16) || '—'}${
+          rt.ttwidMissingRecent ? `（最近 30 分钟 ${rt.ttwidMissingRecent} 次）` : ''
+        }`
+      )
+    }
+    const fail = (rt.lastErrors || []).filter((e) => e.level === 'ERROR')
+    if (fail.length) out.push(`最近 ${fail.length} 个房间报错，详见下方「异常提醒」`)
+    return out
+  })
+
+  /** 每个房间生效的 Cookie 档位 */
+  const effectiveCookies = computed(() => proxyCfg.value?.effective || [])
+
+  function sourceText(source: string, auth: string): string {
+    if (source === 'room') return `房间专用（${auth === 'login' ? '登录态' : '匿名态'}）`
+    if (source === 'default') return `默认 Cookie（${auth === 'login' ? '登录态' : '匿名态'}）`
+    return '自动获取（匿名 ttwid）'
+  }
+
+  function sourceTone(source: string, auth: string): string {
+    if (auth === 'login') return 'text-success'
+    if (source === 'auto') return 'text-warning'
+    return 'text-g-600'
+  }
+
+  /** 右侧其它配置事实 */
+  const proxyFacts = computed(() => {
+    const p = proxyCfg.value
+    if (!p) return []
+    const domains = p.api.allowedDomains || []
+    return [
+      {
+        label: '签名方式',
+        value: p.sign.effective === 'tikhub' ? 'tikhub（在线）' : 'local（内置）',
+        tone: p.sign.effective === 'tikhub' && !p.tikhub.hasKey ? 'text-danger' : 'text-g-900',
+        title:
+          p.sign.effective === 'tikhub' && !p.tikhub.hasKey
+            ? '选了 tikhub 但没填 key，代理会启动失败'
+            : `配置值：${p.sign.provider || '（留空，用默认 local）'}`
+      },
+      {
+        label: 'API Key',
+        value: p.api.hasKey ? '已配置' : '未配置',
+        title: p.api.hasKey ? '接口需带 Bearer' : '/metrics 等接口无需认证'
+      },
+      { label: '监听端口', value: p.port || '—' },
+      { label: '日志级别', value: p.logLevel || '—' },
+      { label: '轮询间隔', value: p.monitor.pollInterval || '—' },
+      { label: '通知间隔', value: p.monitor.notifyInterval || '—' },
+      { label: 'WebSocket 路径', value: p.websocket.path || '—' },
+      { label: '允许域名', value: domains.length ? domains.join(', ') : '—' }
+    ]
+  })
+
+  /** 日志来源着色（用语义色，深色模式下才不会看不清） */  function logColor(src: string): string {
     if (src === 'proxy') return 'text-theme'
     if (src === 'daemon') return 'text-warning'
     return 'text-success'
@@ -945,6 +1157,25 @@
     align-items: center;
     gap: 10px;
     padding: 10px 0;
+  }
+
+  /* ===== Go 代理配置卡 ===== */
+  .pc-code {
+    padding: 1px 4px;
+    border-radius: 4px;
+    background: var(--art-gray-100, rgb(243 244 246));
+    font-size: 12px;
+  }
+
+  /* 只留尺寸，配色走 Tailwind 的语义色工具类（bg-success/12 等，全站同一套） */
+  .pc-tag {
+    display: inline-flex;
+    align-items: center;
+    height: 20px;
+    padding: 0 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    line-height: 1;
   }
 
   /* ===== 日志折叠 ===== */

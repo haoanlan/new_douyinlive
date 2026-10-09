@@ -741,10 +741,72 @@ export interface ServiceStatus {
   configuredRooms: number
   /** 数据库里登记的房间总数（「房间管理」页看到的就是这些） */
   totalRooms: number
+  /**
+   * 代理侧配置（proxy-config.yaml）+ 运行期 Cookie / 风控信号。
+   *
+   * 代理有自己一套 config schema（与 Node 端 config.yaml 不通用），
+   * Cookie 优先级是「WebSocket 临时 > cookie.rooms[房间] > cookie.douyin > 自动获取」，
+   * 且自动获取的 ttwid 属于**匿名态**（日志里的 has_cookie=true 不代表已登录）。
+   */
+  proxyConfig?: ProxyConfigInfo
   /** 房间名 → 房间号 */
   nameToId: Record<string, string>
   issues: ServiceIssue[]
   logLines: { src: 'monitor' | 'proxy' | 'daemon'; text: string }[]
+}
+
+export interface ProxyConfigInfo {
+  /** 配置文件名（代理读的那份） */
+  file: string
+  exists: boolean
+  /** 是否由 lib/proxy-binary.js 自动生成（Cookie 从根 config.yaml 同步过来） */
+  generated: boolean
+  port: string
+  logLevel: string
+  websocket: { path: string; allowedOrigins: string[] }
+  protocol: { mode: string }
+  sign: { provider: string; /** 留空时二进制的默认值就是 local */ effective: string }
+  tikhub: { hasKey: boolean }
+  api: { hasKey: boolean; allowedDomains: string[] }
+  monitor: { pollInterval: string; notifyInterval: string }
+  /** v2.2.x 的二进制 schema 不含 proxy 段，写了会启动失败 */
+  proxy: { present: boolean; url: string; roomCount: number }
+  cookie: {
+    /** false = 忽略预存 Cookie（临时 Cookie 仍优先） */
+    useStored: boolean
+    default: CookieInfo
+    rooms: { count: number; entries: ({ roomId: string } & CookieInfo)[] }
+  }
+  /** 代理日志里的运行期信号（配置里"填了"≠运行时"能用"） */
+  runtime: {
+    logExists: boolean
+    lastActivityAt: string
+    ttwidMissing: number
+    ttwidMissingAt: string
+    /** 最近 30 分钟内的次数（用来区分"历史发生过"和"现在还在发生"） */
+    ttwidMissingRecent: number
+    /** 拿到验证页的次数（官方文档：匿名请求遇风控，建议配登录 Cookie 或换出口 IP） */
+    verificationPage: number
+    verificationPageAt: string
+    verificationPageRecent: number
+    livePageOffline: number
+    upstreamDial: number
+    hasCookie: boolean | null
+    lastErrors: { roomId: string; level: string; time: string; error: string }[]
+  }
+  /** 每个监控房间最终会用哪一档 Cookie */
+  effective: { roomId: string; name: string; source: 'room' | 'default' | 'auto'; auth: string }[]
+}
+
+/** Cookie 只回传判定结果与键名，不回传值本身 */
+export interface CookieInfo {
+  configured: boolean
+  length: number
+  /** none=没配；anonymous=只有 ttwid 这类匿名键；login=有 sessionid 等登录键 */
+  auth: 'none' | 'anonymous' | 'login' | 'unknown'
+  loginKeys: string[]
+  anonKeys: string[]
+  keyCount: number
 }
 
 export interface ServiceActionResult {

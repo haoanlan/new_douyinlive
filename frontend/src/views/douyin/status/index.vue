@@ -115,34 +115,37 @@
       </article>
     </section>
 
-    <!-- ③ 两栏：服务明细 / 连接健康 + 异常提醒 -->
-    <section class="grid grid-cols-1 xl:grid-cols-[minmax(0,1.38fr)_minmax(360px,0.8fr)] gap-4">
-      <!-- 左：服务明细 -->
-      <article class="art-card p-5">
-        <div class="flex flex-wrap items-start justify-between gap-4">
-          <div class="min-w-0">
-            <h3 class="text-lg font-semibold text-g-900 m-0">服务明细</h3>
-            <p class="mt-1 text-sm leading-6 text-g-600">每项可单独重启，互不影响。</p>
-          </div>
-          <!-- 这里原来还有一个和 Hero 右上完全相同的状态 chip，同一结论并排出现两次 -->
+    <!--
+      ③ 服务明细（整宽）。
+      原来它和「异常提醒」并排成两栏，但两者内容量差了 2.5 倍，等高拉伸会在短卡里留
+      226px 的洞、改成 items-start 又变成卡片下方一片空背景；异常提醒已提到指标卡下面
+      整宽展示，这里就整宽铺开（kv 四列一行 + 两行服务），不再有配对留白。
+    -->
+    <article class="art-card p-5">
+      <div class="flex flex-wrap items-start justify-between gap-4">
+        <div class="min-w-0">
+          <h3 class="text-lg font-semibold text-g-900 m-0">服务明细</h3>
+          <p class="mt-1 text-sm leading-6 text-g-600">每项可单独重启，互不影响。</p>
         </div>
+        <!-- 这里原来还有一个和 Hero 右上完全相同的状态 chip，同一结论并排出现两次 -->
+      </div>
 
-        <!-- 服务事实 kv：4 格用两列排（三列时第 4 格会单独占一行，看着像漏了一个） -->
-        <div class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div v-for="f in serviceKv" :key="f.label" class="mon-kv">
-            <div class="mon-kv__label">{{ f.label }}</div>
-            <div class="mon-kv__value text-g-900" :title="f.value">{{ f.value }}</div>
-          </div>
+      <!-- 服务事实 kv：4 格一行（整宽够放，值长了有 title 兜底） -->
+      <div class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div v-for="f in serviceKv" :key="f.label" class="mon-kv">
+          <div class="mon-kv__label">{{ f.label }}</div>
+          <div class="mon-kv__value text-g-900" :title="f.value">{{ f.value }}</div>
         </div>
+      </div>
 
-        <!-- 服务行（保留逐项重启） -->
-        <div class="mt-5" v-loading="loading && !status" element-loading-text="检测中…">
-          <div
-            v-for="(item, i) in items"
-            :key="item.key"
-            class="mon-service"
-            :class="i ? 'border-t border-g-100' : ''"
-          >
+      <!-- 服务行（保留逐项重启） -->
+      <div class="mt-5" v-loading="loading && !status" element-loading-text="检测中…">
+        <div
+          v-for="(item, i) in items"
+          :key="item.key"
+          class="mon-service"
+          :class="i ? 'border-t border-g-100' : ''"
+        >
             <ArtSvgIcon :icon="item.icon" class="text-base shrink-0" :class="item.iconTone" />
             <div class="min-w-0 flex-1">
               <div class="flex items-center gap-2">
@@ -169,7 +172,12 @@
         </div>
       </article>
 
-      <!-- 右：异常提醒（房间列表归「房间管理」页，这里不放） -->
+      <!--
+        异常提醒整宽一条。
+        原来它和「服务明细」并排成两栏，但两者内容量差 2.5 倍（150px vs 405px）：
+        等高拉伸会在短卡里留 226px 的洞，改成 items-start 又变成卡片下方一片空背景。
+        现在两张卡都整宽、各自按内容定高，长文案也不用挤在 490px 里折成三行。
+      -->
       <article class="art-card p-5">
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div class="min-w-0">
@@ -202,17 +210,26 @@
               </span>
             </div>
           </template>
-          <!-- 官方 dashed 空态 -->
-          <div
-            v-else
-            class="rounded-lg border border-dashed border-g-200 px-4 py-6 text-center text-sm"
-            :class="statusKnown ? 'text-g-500' : 'text-g-600'"
-          >
-            {{ statusKnown ? '代理、监控脚本与连接均正常' : '状态未知，无法判断是否存在异常' }}
+          <!--
+            无异常时压成一行。
+            原来是一个 24px 内边距的 dashed 大方框，占 ~80px 却只写"都正常"四个字。
+          -->
+          <div v-else class="flex items-center gap-2 rounded-lg bg-g-100/50 px-3 py-2.5 text-sm">
+            <ArtSvgIcon
+              :icon="statusKnown ? 'ri:checkbox-circle-line' : 'ri:question-line'"
+              class="text-base shrink-0"
+              :class="statusKnown ? 'text-success' : 'text-g-400'"
+            />
+            <span :class="statusKnown ? 'text-g-600' : 'text-g-500'">
+              {{
+                statusKnown
+                  ? '未发现异常，代理与监控脚本都在正常运行'
+                  : '状态未知，暂时无法判断是否存在异常'
+              }}
+            </span>
           </div>
         </div>
       </article>
-    </section>
 
     <!-- ④ Go 代理配置（代理有自己一套 schema 与 Cookie 规则；可在此直接改） -->
     <article class="art-card p-5">
@@ -239,8 +256,13 @@
         </div>
       </div>
 
-      <div class="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)]">
-        <!-- 左：Cookie 规则（重点） -->
+      <!--
+        上下两段而不是左右两栏：
+        原来左栏（Cookie + 运行期提示 + 档位）比右栏（其他配置）高出一截，
+        右栏底下就空出一块。现在每段自己占满整宽，高度正好由内容决定。
+      -->
+      <div class="mt-5 flex flex-col gap-5">
+        <!-- 上段：Cookie 规则（重点） -->
         <div class="min-w-0">
           <div class="flex items-center gap-2">
             <h4 class="text-base font-semibold text-g-900 m-0">Cookie</h4>
@@ -256,7 +278,7 @@
             </div>
           </div>
 
-          <!-- 运行期信号：配置里"填了"≠运行时"能用" -->
+          <!-- 运行期信号：配置里"填了"≠运行时"能用"（整宽一行，长文案不用折成三行） -->
           <div
             v-if="cookieRuntime.length"
             class="mt-3 rounded-lg border px-3 py-2 text-xs leading-6"
@@ -274,16 +296,16 @@
             房间会增减、状态本身在「房间管理」页，这里铺 5 行既会变长又没信息量 ——
             真正要看的只有"哪些房间没用默认值"。
           -->
-          <div class="mt-4">
+          <div class="mt-3">
             <div class="flex items-center justify-between gap-3">
               <span class="text-sm font-medium text-g-700">Cookie 档位命中</span>
               <span class="text-xs text-g-500">{{ cookieSourceSummary }}</span>
             </div>
-            <div v-if="roomsWithOwnCookie.length" class="mt-2 flex flex-col">
+            <div v-if="roomsWithOwnCookie.length" class="mt-1 flex flex-col">
               <div
                 v-for="(r, i) in roomsWithOwnCookie"
                 :key="r.roomId"
-                class="flex items-center gap-2 py-2"
+                class="flex items-center gap-2 py-1.5"
                 :class="i ? 'border-t border-g-100' : ''"
               >
                 <span class="text-sm text-g-800 truncate min-w-0 flex-1" :title="r.name || r.roomId">
@@ -294,16 +316,16 @@
                 </span>
               </div>
             </div>
-            <div v-else class="mt-2 text-xs text-g-500">
+            <div v-else class="mt-1 text-xs text-g-500">
               没有房间配专用 Cookie，全部按默认 Cookie / 自动获取取值
             </div>
           </div>
         </div>
 
-        <!-- 右：其余配置事实 -->
-        <div class="min-w-0">
+        <!-- 下段：其余配置事实（整宽四列，两行排完，不留栏间空白） -->
+        <div class="min-w-0 border-t border-g-100 pt-4">
           <h4 class="text-base font-semibold text-g-900 m-0">其他配置</h4>
-          <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div v-for="f in proxyFacts" :key="f.label" class="mon-kv">
               <div class="mon-kv__label">{{ f.label }}</div>
               <div class="mon-kv__value" :class="f.tone || 'text-g-900'" :title="f.title || f.value">
@@ -500,14 +522,14 @@
       </template>
     </el-drawer>
 
-    <!-- ⑤ 运行日志 -->
+    <!-- ⑤ 运行日志（折叠时只留一行标题，别用两行文字占 98px） -->
     <article class="art-card p-5">
-      <div class="flex flex-wrap items-start justify-between gap-3">
-        <div class="min-w-0">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-baseline gap-2 min-w-0">
           <h3 class="text-lg font-semibold text-g-900 m-0">运行日志</h3>
-          <p class="mt-1 text-sm leading-6 text-g-600">
-            代理与监控脚本的最近输出 · {{ status?.logLines?.length || 0 }} 行
-          </p>
+          <span class="text-xs text-g-500">
+            代理与监控脚本最近 {{ status?.logLines?.length || 0 }} 行
+          </span>
         </div>
         <!-- 按钮原来写「运行日志（18 行）」，与左边的 h3 重复了一遍「运行日志」 -->
         <button

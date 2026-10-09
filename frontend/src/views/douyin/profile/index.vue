@@ -185,8 +185,12 @@
                 <p>进场每间直播间只显示最近一次</p>
               </div>
             </div>
-            <!-- 原来是 el-timeline（带竖线 + 圆点）→ 改成与总览一致的条形行 -->
-            <div class="flex flex-col gap-2.5 mt-4">
+            <!--
+              原来是 el-timeline（带竖线 + 圆点）→ 改成与总览一致的条形行。
+              固定高度 + 卡内滚动：最多 10 条会把整行撑到 500px+，
+              与旁边"活跃时段"以及下面的"活跃场次 / 馈赠明细"高度口径不一致。
+            -->
+            <div class="flex flex-col gap-2.5 mt-4 max-h-[360px] overflow-y-auto dy-scroll pr-1">
               <div
                 v-for="(a, i) in (profile?.recent_actions || []).slice(0, 10)"
                 :key="i"

@@ -171,13 +171,12 @@
           <span v-if="truncated" class="text-xs text-g-500 shrink-0">
             · 显示前 {{ returnedCount }} 个
           </span>
-          <!-- 本次查询条件：原来放在工具条左块，查询后出现会把整组操作挤到第二行 -->
-          <el-tag v-if="lastQuery" size="small" effect="plain" class="shrink-0">
-            关键词 {{ lastQuery }}
-          </el-tag>
-          <el-tag v-if="lastScope" size="small" effect="plain" type="info" class="shrink-0">
-            {{ lastScope }}
-          </el-tag>
+          <!--
+            这里不再重复「关键词 xxx / 范围：xxx」两个标签：
+            输入框与两个下拉就在这一行上方，读的人一眼能看到自己搜了什么，
+            再复述一遍纯属占地方（用户反馈"这个也是重复信息"）。
+            lastScope 仍留着 —— 结果区的 :key 用它，换范围时重新触发淡入。
+          -->
           <el-tooltip placement="top" :show-after="100">
             <!-- 触发元素必须是有明确尺寸的盒子：直接拿 SVG 当触发区时命中范围只有图标本身，
                  经常 hover 不到（用户反馈 ⓘ 不显示内容） -->

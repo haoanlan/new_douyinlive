@@ -200,13 +200,16 @@ async function init() {
       password TEXT NOT NULL,
       role TEXT NOT NULL DEFAULT 'R_GUEST',
       enabled INTEGER NOT NULL DEFAULT 1,
-      create_time TEXT DEFAULT (datetime('now','localtime'))
+      create_time TEXT DEFAULT (datetime('now','localtime')),
+      last_login_time TEXT DEFAULT NULL
     )`
   ];
 
   for (const sql of sqls) {
     d.exec(sql);
   }
+  // 旧库补列（个人中心要显示"上次登录"）
+  try { d.exec(`ALTER TABLE dashboard_users ADD COLUMN last_login_time TEXT DEFAULT NULL`); } catch (e) { /* 已存在 */ }
   // 添加 agg 聚合字段（兼容旧库）
   const aggCols = ['agg_gifts', 'agg_diamonds', 'agg_danmaku', 'agg_users'];
   for (const col of aggCols) {

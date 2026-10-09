@@ -35,8 +35,18 @@ douyinRequest.interceptors.response.use(
       error.response?.data?.error || error.response?.data?.message || ''
     if (backendMsg) (error as { backendMessage?: string }).backendMessage = backendMsg
 
-    if (status === 401) {
-      ElMessage.error('认证失败，请重新登录')
+    /*
+     * 401 的两种含义要分开：
+     *   - 登录接口的 401 = 用户名/密码错，应把后端那句话原样告诉用户，**不能**当成会话过期；
+     *     原来一律走 logOut()，于是"密码输错"被提示成"认证失败，请重新登录"，
+     *     而且 logOut 还会把登录页自己写进 redirect，导致之后登录成功又被推回登录页。
+     *   - 其它接口的 401 = 令牌失效（仪表盘重启后就是这条），清会话回登录页。
+     */
+    const url = String(error.config?.url || '')
+    const isLoginRequest = /\/api\/auth\/login(\?|$)/.test(url)
+
+    if (status === 401 && !isLoginRequest) {
+      ElMessage.error(backendMsg || '登录已失效，请重新登录')
       useUserStore().logOut()
     } else if (cfg.showErrorMessage !== false) {
       // 优先展示后端给的真实原因，没有才退回状态码文案

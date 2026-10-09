@@ -29,21 +29,21 @@
             <span class="block text-sm font-medium text-g-800 truncate">{{
               userInfo.userName
             }}</span>
-            <span class="block mt-0.5 text-xs text-g-500 truncate">{{ userInfo.email }}</span>
+            <span class="block mt-0.5 text-xs text-g-500 truncate">{{ roleLabel }}</span>
           </div>
         </div>
         <ul class="py-4 mt-3 border-t border-g-300/80">
-          <li class="btn-item" @click="goPage('/system/user-center')">
+          <li class="btn-item" @click="goPage('/douyin/account')">
             <ArtSvgIcon icon="ri:user-3-line" />
             <span>{{ $t('topBar.user.userCenter') }}</span>
           </li>
-          <li class="btn-item" @click="toDocs()">
-            <ArtSvgIcon icon="ri:book-2-line" />
-            <span>{{ $t('topBar.user.docs') }}</span>
+          <li class="btn-item" @click="goPage('/douyin/status')">
+            <ArtSvgIcon icon="ri:pulse-line" />
+            <span>状态监控</span>
           </li>
-          <li class="btn-item" @click="toGithub()">
-            <ArtSvgIcon icon="ri:github-line" />
-            <span>{{ $t('topBar.user.github') }}</span>
+          <li class="btn-item" @click="goPage('/douyin/rooms')">
+            <ArtSvgIcon icon="ri:live-line" />
+            <span>房间管理</span>
           </li>
           <li class="btn-item" @click="lockScreen()">
             <ArtSvgIcon icon="ri:lock-line" />
@@ -64,7 +64,6 @@
   import { useRouter } from 'vue-router'
   import { ElMessageBox } from 'element-plus'
   import { useUserStore } from '@/store/modules/user'
-  import { WEB_LINKS } from '@/utils/constants'
   import { mittBus } from '@/utils/sys'
 
   defineOptions({ name: 'ArtUserMenu' })
@@ -76,26 +75,21 @@
   const { getUserInfo: userInfo } = storeToRefs(userStore)
   const userMenuPopover = ref()
 
+  /** 这个项目没有昵称/邮箱字段，原来那行显示的是空的 userInfo.email —— 改成角色 */
+  const roleLabel = computed(() => {
+    const role = userInfo.value.roles?.[0] || ''
+    if (role === 'R_SUPER') return '管理员'
+    if (role === 'R_GUEST') return '普通用户'
+    return role || ''
+  })
+
   /**
    * 页面跳转
    * @param {string} path - 目标路径
    */
   const goPage = (path: string): void => {
+    closeUserMenu()
     router.push(path)
-  }
-
-  /**
-   * 打开文档页面
-   */
-  const toDocs = (): void => {
-    window.open(WEB_LINKS.DOCS)
-  }
-
-  /**
-   * 打开 GitHub 页面
-   */
-  const toGithub = (): void => {
-    window.open(WEB_LINKS.GITHUB)
   }
 
   /**

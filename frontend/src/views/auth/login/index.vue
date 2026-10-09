@@ -18,23 +18,12 @@
             @keyup.enter="handleSubmit"
             style="margin-top: 25px"
           >
-            <ElFormItem prop="account">
-              <ElSelect v-model="formData.account" @change="setupAccount">
-                <ElOption
-                  v-for="account in accounts"
-                  :key="account.key"
-                  :label="account.label"
-                  :value="account.key"
-                >
-                  <span>{{ account.label }}</span>
-                </ElOption>
-              </ElSelect>
-            </ElFormItem>
             <ElFormItem prop="username">
               <ElInput
                 class="custom-height"
                 :placeholder="$t('login.placeholder.username')"
                 v-model.trim="formData.username"
+                autocomplete="username"
               />
             </ElFormItem>
             <ElFormItem prop="password">
@@ -74,12 +63,11 @@
             </div>
 
             <div class="flex-cb mt-2 text-sm">
-              <ElCheckbox v-model="formData.rememberPassword">{{
-                $t('login.rememberPwd')
-              }}</ElCheckbox>
-              <RouterLink class="text-theme" :to="{ name: 'ForgetPassword' }">{{
-                $t('login.forgetPwd')
-              }}</RouterLink>
+              <!-- 密码不做任何记住（令牌每次启动都会失效），这里只说明用户名已带出来 -->
+              <span class="text-xs text-g-500">{{
+                formData.username ? `已带出上次登录的用户名：${formData.username}` : '请输入用户名与密码'
+              }}</span>
+              <span class="text-xs text-g-500">忘记密码？见下方说明</span>
             </div>
 
             <div style="margin-top: 30px">
@@ -94,11 +82,12 @@
               </ElButton>
             </div>
 
-            <div class="mt-5 text-sm text-gray-600">
-              <span>{{ $t('login.noAccount') }}</span>
-              <RouterLink class="text-theme" :to="{ name: 'Register' }">{{
-                $t('login.register')
-              }}</RouterLink>
+            <div class="mt-5 text-xs leading-5 text-g-500">
+              <p class="m-0">· 仪表盘<b>每次启动后都需要重新登录</b>（登录令牌只在本次运行期间有效）。</p>
+              <p class="m-0 mt-1">
+                · 忘记密码：在项目目录执行
+                <code class="pc-code">node scripts/reset-dashboard-password.js 新密码</code>
+              </p>
             </div>
           </ElForm>
         </div>
@@ -111,9 +100,8 @@
   import AppConfig from '@/config'
   import { useUserStore } from '@/store/modules/user'
   import { useI18n } from 'vue-i18n'
-  import { HttpError } from '@/utils/http/error'
   import { fetchLogin } from '@/api/auth-douyin'
-  import { ElNotification, type FormInstance, type FormRules } from 'element-plus'
+  import { ElMessage, ElNotification, type FormInstance, type FormRules } from 'element-plus'
   import { useSettingStore } from '@/store/modules/setting'
 
   defineOptions({ name: 'Login' })
@@ -139,27 +127,19 @@
   const systemName = AppConfig.systemInfo.name
   const formRef = ref<FormInstance>()
 
-  type AccountKey = 'super' | 'guest'
-
-  interface Account {
-    key: AccountKey
-    label: string
-    userName: string
-    password: string
-    roles: string[]
-  }
-
-  const accounts: Account[] = [
-    { key: 'super', label: '管理员', userName: 'admin', password: '123456', roles: ['R_SUPER'] },
-    { key: 'guest', label: '游客', userName: 'guest', password: '123456', roles: ['R_GUEST'] }
-  ]
-
+  /**
+   * 登录表单。
+   *
+   * 原来这里有个「管理员 / 游客」下拉，把 admin/123456 直接预填进表单 ——
+   * 等于把默认口令写在页面上，谁点一下都能进。已去掉，改成手输用户名密码。
+   */
   const formData = reactive({
-    account: 'super',
     username: '',
-    password: '',
-    rememberPassword: true
+    password: ''
   })
+
+  /** 上次登录的用户名（只记用户名，不记密码） */
+  const LAST_USER_KEY = 'douyin-dashboard-last-user'
 
   const rules = computed<FormRules>(() => ({
     username: [{ required: true, message: t('login.placeholder.username'), trigger: 'blur' }],
@@ -175,16 +155,14 @@
       userStore.setToken('')
       userStore.setUserInfo({} as any)
     }
-    setupAccount('super')
+    // 带出上次登录的用户名，省得每次手打（密码不记住）
+    try {
+      const last = localStorage.getItem(LAST_USER_KEY)
+      if (last) formData.username = last
+    } catch {
+      /* 隐私模式下 localStorage 可能不可用 */
+    }
   })
-
-  // 设置账号
-  const setupAccount = (key: AccountKey) => {
-    const selectedAccount = accounts.find((account: Account) => account.key === key)
-    formData.account = key
-    formData.username = selectedAccount?.userName ?? ''
-    formData.password = selectedAccount?.password ?? ''
-  }
 
   // 登录
   const handleSubmit = async () => {
@@ -214,24 +192,40 @@
       userStore.setUserInfo({ userId, userName, roles } as any)
       userStore.setLoginStatus(true)
 
+      // 记住用户名（只记用户名）
+      try {
+        localStorage.setItem(LAST_USER_KEY, userName)
+      } catch {
+        /* 忽略 */
+      }
+
       // 登录成功处理
       showLoginSuccessNotice()
 
       // 获取 redirect 参数，如果存在则跳转到指定页面，否则跳转到首页
-      const redirect = route.query.redirect as string
-      router.push(redirect || '/')
+      // （只认站内、且不指向登录页本身的目标，避免 redirect 套娃把自己转回来）
+      const raw = String(route.query.redirect || '')
+      const redirect = raw && !raw.startsWith('/auth/login') ? raw : '/'
+      router.push(redirect)
     } catch (error) {
-      // 处理 HttpError
-      if (error instanceof HttpError) {
-        // console.log(error.code)
-      } else {
-        // 处理非 HttpError
-        // ElMessage.error('登录失败，请稍后重试')
-        console.error('[Login] Unexpected error:', error)
+      /*
+       * 原来这里把错误吞掉了（只在 HttpError 分支写了句注释），
+       * 密码输错时页面毫无反应，用户不知道是错在哪。
+       * 现在把后端给的真实原因显出来。
+       */
+      const beMsg = (error as { backendMessage?: string })?.backendMessage
+      const status = (error as { response?: { status?: number } })?.response?.status
+      if (status === 401 && !beMsg) {
+        ElMessage.error('用户名或密码错误')
+      } else if (!beMsg) {
+        ElMessage.error((error as Error)?.message || '登录失败，请稍后重试')
       }
+      // 失败时把滑块复位，避免"验证通过"的假象
+      isPassing.value = false
+      resetDragVerify()
     } finally {
       loading.value = false
-      resetDragVerify()
+      if (isPassing.value) resetDragVerify()
     }
   }
 

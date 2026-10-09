@@ -104,6 +104,28 @@ export const douyinRoutes: AppRouteRecord = {
         roles: ['R_SUPER', 'R_GUEST']
       },
       props: true
+    },
+    {
+      /*
+       * 个人中心。
+       *
+       * 原来头像菜单里的「个人中心」指向 /system/user-center，但本项目的
+       * routeModules 只挂了 douyin 模块（systemRoutes 根本没注册），
+       * 那个链接**一直是 404**。这里把它作为隐藏子页真正挂上。
+       * 组件复用 views/system/user-center（路由路径与组件目录本来就可以不同）。
+       */
+      path: 'account',
+      name: 'UserCenter',
+      component: '/system/user-center',
+      meta: {
+        title: '个人中心',
+        icon: 'ri:user-3-line',
+        isHide: true,
+        isHideTab: true,
+        keepAlive: true,
+        activePath: '/douyin/status',
+        roles: ['R_SUPER', 'R_GUEST']
+      }
     }
   ]
 }

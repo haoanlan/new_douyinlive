@@ -46,25 +46,27 @@ const AUTH_TOKEN = getDashboardToken();
 const AUTH_USERNAME = getDashboardUsername();
 const AUTH_PASSWORD = getDashboardPassword();
 
+/*
+ * 登录令牌按**进程**签发：secret 每次启动随机生成，只存在内存里。
+ * 于是重启仪表盘后旧令牌全部失效 → 前端下一次请求收到 401 → 自动回登录页。
+ * 这就是"每次启动都要登录"的实现方式（详见 lib/auth-token.js 顶部说明）。
+ */
+const authToken = require('./lib/auth-token');
+authToken.init();
+
 // ====== 认证中间件 ======
 function checkAuth(req, res) {
-  // 登录入口与用户列表免认证（列表仅本机演示）
   const { pathname } = parseQuery(req.url);
-  if (pathname === '/api/auth/login' || pathname === '/api/user/list') return true;
-  const auth = String(req.headers.authorization || '');
-  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
-  const userName = token ? Buffer.from(token, 'base64').toString().split(':')[0] : '';
-  if (!userName) {
-    res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify({ error: '未授权，请先登录' }));
-    return false;
-  }
-  const user = db.getDb().prepare(
-    'SELECT id, username, enabled FROM dashboard_users WHERE username = ?'
-  ).get(userName);
+  // 只有登录入口免认证；用户列表现在也要登录（原来免认证，会把账号列表暴露出去）
+  if (pathname === '/api/auth/login') return true;
+
+  const session = authToken.fromRequest(req);
+  const user = session
+    ? db.getDb().prepare('SELECT id, username, enabled FROM dashboard_users WHERE username = ?').get(session.userName)
+    : null;
   if (!user || user.enabled !== 1) {
     res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify({ error: '未授权，请先登录' }));
+    res.end(JSON.stringify({ error: session ? '登录已失效，请重新登录' : '未授权，请先登录' }));
     return false;
   }
   return true;

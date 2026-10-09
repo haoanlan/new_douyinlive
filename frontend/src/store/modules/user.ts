@@ -168,7 +168,16 @@ export const useUserStore = defineStore(
       resetRouterState(500)
       // 跳转到登录页，携带当前路由作为 redirect 参数
       const currentRoute = router.currentRoute.value
-      const redirect = currentRoute.path !== '/login' ? currentRoute.fullPath : undefined
+      /*
+       * 只有"不在登录页"才记 redirect。
+       * 原来判断的是 `currentRoute.path !== '/login'`，而本项目的登录路由是
+       * `/auth/login`（name 为 Login）—— 判断永远成立，于是令牌失效时会把
+       * 登录页自己写进 redirect，变成 `redirect=/auth/login?redirect=/`，
+       * 之后登录成功执行 router.push(redirect) 又被推回登录页。
+       */
+      const onLoginPage =
+        currentRoute.name === 'Login' || String(currentRoute.path).startsWith('/auth/login')
+      const redirect = !onLoginPage ? currentRoute.fullPath : undefined
       router.push({
         name: 'Login',
         query: redirect ? { redirect } : undefined

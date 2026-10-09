@@ -2,117 +2,80 @@
 <template>
   <div class="w-full h-full p-0 bg-transparent border-none shadow-none">
     <div class="relative flex-b mt-2.5 max-md:block max-md:mt-1">
+      <!-- 左：账号卡片（全部是真实数据，原来这里是模板的假资料） -->
       <div class="w-112 mr-5 max-md:w-full max-md:mr-0">
         <div class="art-card-sm relative p-9 pb-6 overflow-hidden text-center">
-          <img class="absolute top-0 left-0 w-full h-50 object-cover" src="@imgs/user/bg.webp" />
-          <img
-            class="relative z-10 w-20 h-20 mt-30 mx-auto object-cover border-2 border-white rounded-full"
-            src="@imgs/user/avatar.webp"
-          />
-          <h2 class="mt-5 text-xl font-normal">{{ userInfo.userName }}</h2>
-          <p class="mt-5 text-sm">专注于用户体验跟视觉设计</p>
+          <div
+            class="relative z-10 w-20 h-20 mt-8 mx-auto rounded-full flex-cc text-2xl font-medium text-white"
+            style="background: var(--main-color)"
+          >
+            {{ avatarText }}
+          </div>
+          <h2 class="mt-5 text-xl font-normal">{{ userInfo.userName || '—' }}</h2>
+          <p class="mt-2 text-sm text-g-500">{{ roleLabel }}</p>
 
           <div class="w-75 mx-auto mt-7.5 text-left">
-            <div class="mt-2.5">
-              <ArtSvgIcon icon="ri:mail-line" class="text-g-700" />
-              <span class="ml-2 text-sm">jdkjjfnndf@mall.com</span>
-            </div>
-            <div class="mt-2.5">
-              <ArtSvgIcon icon="ri:user-3-line" class="text-g-700" />
-              <span class="ml-2 text-sm">交互专家</span>
-            </div>
-            <div class="mt-2.5">
-              <ArtSvgIcon icon="ri:map-pin-line" class="text-g-700" />
-              <span class="ml-2 text-sm">广东省深圳市</span>
-            </div>
-            <div class="mt-2.5">
-              <ArtSvgIcon icon="ri:dribbble-fill" class="text-g-700" />
-              <span class="ml-2 text-sm">字节跳动－某某平台部－UED</span>
+            <div v-for="f in accountFacts" :key="f.label" class="flex items-start gap-2 mt-3">
+              <ArtSvgIcon :icon="f.icon" class="text-g-700 mt-0.5 shrink-0" />
+              <span class="min-w-0 flex-1">
+                <span class="block text-xs text-g-500">{{ f.label }}</span>
+                <span class="block text-sm break-all">{{ f.value }}</span>
+              </span>
             </div>
           </div>
 
-          <div class="mt-10">
-            <h3 class="text-sm font-medium">标签</h3>
-            <div class="flex flex-wrap justify-center mt-3.5">
-              <div
-                v-for="item in lableList"
-                :key="item"
-                class="py-1 px-1.5 mr-2.5 mb-2.5 text-xs border border-g-300 rounded"
-              >
-                {{ item }}
-              </div>
-            </div>
+          <div class="mt-8">
+            <ElButton class="w-full" @click="handleLogout">退出登录</ElButton>
           </div>
         </div>
       </div>
+
       <div class="flex-1 overflow-hidden max-md:w-full max-md:mt-3.5">
+        <!-- 账号信息（只读：这些字段由后端账号表决定，不能在这里改） -->
         <div class="art-card-sm">
-          <h1 class="p-4 text-xl font-normal border-b border-g-300">基本设置</h1>
-
-          <ElForm
-            :model="form"
-            class="box-border p-5 [&>.el-row_.el-form-item]:w-[calc(50%-10px)] [&>.el-row_.el-input]:w-full [&>.el-row_.el-select]:w-full"
-            ref="ruleFormRef"
-            :rules="rules"
-            label-width="86px"
-            label-position="top"
-          >
-            <ElRow>
-              <ElFormItem label="姓名" prop="realName">
-                <ElInput v-model="form.realName" :disabled="!isEdit" />
-              </ElFormItem>
-              <ElFormItem label="性别" prop="sex" class="ml-5">
-                <ElSelect v-model="form.sex" placeholder="Select" :disabled="!isEdit">
-                  <ElOption
-                    v-for="item in options"
-                    :key="item.value"
-                    :label="item.label"
-                    :value="item.value"
-                  />
-                </ElSelect>
-              </ElFormItem>
-            </ElRow>
-
-            <ElRow>
-              <ElFormItem label="昵称" prop="nikeName">
-                <ElInput v-model="form.nikeName" :disabled="!isEdit" />
-              </ElFormItem>
-              <ElFormItem label="邮箱" prop="email" class="ml-5">
-                <ElInput v-model="form.email" :disabled="!isEdit" />
-              </ElFormItem>
-            </ElRow>
-
-            <ElRow>
-              <ElFormItem label="手机" prop="mobile">
-                <ElInput v-model="form.mobile" :disabled="!isEdit" />
-              </ElFormItem>
-              <ElFormItem label="地址" prop="address" class="ml-5">
-                <ElInput v-model="form.address" :disabled="!isEdit" />
-              </ElFormItem>
-            </ElRow>
-
-            <ElFormItem label="个人介绍" prop="des" class="h-32">
-              <ElInput type="textarea" :rows="4" v-model="form.des" :disabled="!isEdit" />
-            </ElFormItem>
-
-            <div class="flex-c justify-end [&_.el-button]:!w-27.5">
-              <ElButton type="primary" class="w-22.5" v-ripple @click="edit">
-                {{ isEdit ? '保存' : '编辑' }}
-              </ElButton>
+          <h1 class="p-4 text-xl font-normal border-b border-g-300">账号信息</h1>
+          <div class="p-5">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div v-for="f in accountFacts" :key="f.label" class="mon-kv">
+                <div class="mon-kv__label">{{ f.label }}</div>
+                <div class="mon-kv__value text-g-900" :title="f.value">{{ f.value }}</div>
+              </div>
             </div>
-          </ElForm>
+
+            <el-alert
+              class="mt-4"
+              type="info"
+              :closable="false"
+              show-icon
+              :title="tokenPolicy"
+            />
+
+            <p class="mt-3 mb-0 text-xs leading-5 text-g-500">
+              账号只有用户名 / 角色 / 密码三项，没有昵称、邮箱、头像这些资料 ——
+              所以这里不做"保存资料"的表单（原来那个表单填了也不会存到任何地方）。
+            </p>
+          </div>
         </div>
 
+        <!-- 更改密码（真接口） -->
         <div class="art-card-sm my-5">
           <h1 class="p-4 text-xl font-normal border-b border-g-300">更改密码</h1>
 
-          <ElForm :model="pwdForm" class="box-border p-5" label-width="86px" label-position="top">
-            <ElFormItem label="当前密码" prop="password">
+          <ElForm
+            ref="pwdFormRef"
+            :model="pwdForm"
+            :rules="pwdRules"
+            class="box-border p-5"
+            label-width="86px"
+            label-position="top"
+          >
+            <ElFormItem label="当前密码" prop="oldPassword">
               <ElInput
-                v-model="pwdForm.password"
+                v-model="pwdForm.oldPassword"
                 type="password"
-                :disabled="!isEditPwd"
                 show-password
+                autocomplete="current-password"
+                placeholder="登录时用的密码"
               />
             </ElFormItem>
 
@@ -120,8 +83,9 @@
               <ElInput
                 v-model="pwdForm.newPassword"
                 type="password"
-                :disabled="!isEditPwd"
                 show-password
+                autocomplete="new-password"
+                placeholder="至少 6 位"
               />
             </ElFormItem>
 
@@ -129,17 +93,22 @@
               <ElInput
                 v-model="pwdForm.confirmPassword"
                 type="password"
-                :disabled="!isEditPwd"
                 show-password
+                autocomplete="new-password"
+                placeholder="再输一次"
               />
             </ElFormItem>
 
-            <div class="flex-c justify-end [&_.el-button]:!w-27.5">
-              <ElButton type="primary" class="w-22.5" v-ripple @click="editPwd">
-                {{ isEditPwd ? '保存' : '编辑' }}
+            <div class="flex-c justify-end">
+              <ElButton type="primary" :loading="saving" @click="submitPassword">
+                保存新密码
               </ElButton>
             </div>
           </ElForm>
+
+          <p class="px-5 pb-5 -mt-2 mb-0 text-xs leading-5 text-g-500">
+            改完需要<b>用新密码重新登录</b>（登录令牌与本次运行绑定，改密码后旧会话一并作废）。
+          </p>
         </div>
       </div>
     </div>
@@ -148,100 +117,111 @@
 
 <script setup lang="ts">
   import { useUserStore } from '@/store/modules/user'
-  import type { FormInstance, FormRules } from 'element-plus'
+  import { changePassword, fetchGetUserInfo, type UserInfo } from '@/api/auth-douyin'
+  import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 
   defineOptions({ name: 'UserCenter' })
 
   const userStore = useUserStore()
   const userInfo = computed(() => userStore.getUserInfo)
 
-  const isEdit = ref(false)
-  const isEditPwd = ref(false)
-  const date = ref('')
-  const ruleFormRef = ref<FormInstance>()
+  /** 页面自己再拉一次用户信息：store 里的是登录时那份，可能没有创建时间/上次登录 */
+  const detail = ref<Partial<UserInfo>>({})
 
-  /**
-   * 用户信息表单
-   */
-  const form = reactive({
-    realName: 'John Snow',
-    nikeName: '皮卡丘',
-    email: '59301283@mall.com',
-    mobile: '18888888888',
-    address: '广东省深圳市宝安区西乡街道101栋201',
-    sex: '2',
-    des: 'Art Design Pro 是一款兼具设计美学与高效开发的后台系统.'
+  const roleLabel = computed(() => {
+    const role = detail.value.role || userInfo.value.roles?.[0] || ''
+    if (role === 'R_SUPER') return '管理员（可配置代理与监控）'
+    if (role === 'R_GUEST') return '普通用户（只读）'
+    return role || '—'
   })
 
-  /**
-   * 密码修改表单
-   */
-  const pwdForm = reactive({
-    password: '123456',
-    newPassword: '123456',
-    confirmPassword: '123456'
+  const avatarText = computed(() => {
+    const name = String(userInfo.value.userName || '?')
+    return name.slice(0, 1).toUpperCase()
   })
 
-  /**
-   * 表单验证规则
-   */
-  const rules = reactive<FormRules>({
-    realName: [
-      { required: true, message: '请输入姓名', trigger: 'blur' },
-      { min: 2, max: 50, message: '长度在 2 到 50 个字符', trigger: 'blur' }
+  const tokenPolicy = computed(
+    () =>
+      detail.value.tokenPolicy ||
+      '仪表盘每次启动后都需要重新登录（登录令牌只在本次运行期间有效）'
+  )
+
+  const accountFacts = computed(() => [
+    { label: '用户名', value: userInfo.value.userName || '—', icon: 'ri:user-3-line' },
+    { label: '角色', value: roleLabel.value, icon: 'ri:shield-user-line' },
+    { label: '创建时间', value: detail.value.createTime || '—', icon: 'ri:calendar-line' },
+    { label: '上次登录', value: detail.value.lastLoginTime || '—', icon: 'ri:history-line' }
+  ])
+
+  const pwdFormRef = ref<FormInstance>()
+  const saving = ref(false)
+  const pwdForm = reactive({ oldPassword: '', newPassword: '', confirmPassword: '' })
+
+  const pwdRules = computed<FormRules>(() => ({
+    oldPassword: [{ required: true, message: '请输入当前密码', trigger: 'blur' }],
+    newPassword: [
+      { required: true, message: '请输入新密码', trigger: 'blur' },
+      { min: 6, max: 64, message: '新密码 6~64 位', trigger: 'blur' },
+      {
+        validator: (_r: unknown, v: string, cb: (e?: Error) => void) =>
+          v && v === pwdForm.oldPassword ? cb(new Error('新密码不能与当前密码相同')) : cb(),
+        trigger: 'blur'
+      }
     ],
-    nikeName: [
-      { required: true, message: '请输入昵称', trigger: 'blur' },
-      { min: 2, max: 50, message: '长度在 2 到 50 个字符', trigger: 'blur' }
-    ],
-    email: [{ required: true, message: '请输入邮箱', trigger: 'blur' }],
-    mobile: [{ required: true, message: '请输入手机号码', trigger: 'blur' }],
-    address: [{ required: true, message: '请输入地址', trigger: 'blur' }],
-    sex: [{ required: true, message: '请选择性别', trigger: 'blur' }]
-  })
+    confirmPassword: [
+      { required: true, message: '请再输一次新密码', trigger: 'blur' },
+      {
+        validator: (_r: unknown, v: string, cb: (e?: Error) => void) =>
+          v === pwdForm.newPassword ? cb() : cb(new Error('两次输入的新密码不一致')),
+        trigger: 'blur'
+      }
+    ]
+  }))
 
-  /**
-   * 性别选项
-   */
-  const options = [
-    { value: '1', label: '男' },
-    { value: '2', label: '女' }
-  ]
-
-  /**
-   * 用户标签列表
-   */
-  const lableList: Array<string> = ['专注设计', '很有想法', '辣~', '大长腿', '川妹子', '海纳百川']
-
-  onMounted(() => {
-    getDate()
-  })
-
-  /**
-   * 根据当前时间获取问候语
-   */
-  const getDate = () => {
-    const h = new Date().getHours()
-
-    if (h >= 6 && h < 9) date.value = '早上好'
-    else if (h >= 9 && h < 11) date.value = '上午好'
-    else if (h >= 11 && h < 13) date.value = '中午好'
-    else if (h >= 13 && h < 18) date.value = '下午好'
-    else if (h >= 18 && h < 24) date.value = '晚上好'
-    else date.value = '很晚了，早点睡'
+  async function loadDetail() {
+    try {
+      detail.value = await fetchGetUserInfo()
+    } catch {
+      /* 401 由拦截器处理；这里不额外提示 */
+    }
   }
 
-  /**
-   * 切换用户信息编辑状态
-   */
-  const edit = () => {
-    isEdit.value = !isEdit.value
+  async function submitPassword() {
+    if (!pwdFormRef.value) return
+    const valid = await pwdFormRef.value.validate().catch(() => false)
+    if (!valid) return
+    saving.value = true
+    try {
+      const res = await changePassword({
+        oldPassword: pwdForm.oldPassword,
+        newPassword: pwdForm.newPassword
+      })
+      ElMessage.success(res?.message || '密码已修改')
+      pwdForm.oldPassword = ''
+      pwdForm.newPassword = ''
+      pwdForm.confirmPassword = ''
+      // 令牌与旧密码无关，但为了不留旧会话，统一退出重登
+      setTimeout(() => userStore.logOut(), 800)
+    } catch {
+      // 失败原因已由 HTTP 拦截器提示（例如"当前密码不正确"），这里只吞掉拒绝避免未捕获错误
+    } finally {
+      saving.value = false
+    }
   }
 
-  /**
-   * 切换密码编辑状态
-   */
-  const editPwd = () => {
-    isEditPwd.value = !isEditPwd.value
+  async function handleLogout() {
+    try {
+      await ElMessageBox.confirm('退出后需要重新输入用户名密码登录。', '确认退出登录？', {
+        confirmButtonText: '退出登录',
+        cancelButtonText: '取消',
+        type: 'warning'
+      })
+    } catch {
+      return
+    }
+    userStore.logOut()
   }
+
+  onMounted(loadDetail)
+  onActivated(loadDetail)
 </script>

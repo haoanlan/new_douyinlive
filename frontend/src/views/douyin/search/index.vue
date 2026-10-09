@@ -212,8 +212,12 @@
             :lg="12"
             class="mb-5"
           >
-            <!-- 间距放在 el-col 上、卡片 h-full 撑满列高：同一行里内容行数不同的卡片才不会高低不齐 -->
-            <div class="art-card relative px-5 py-4 h-full">
+            <!--
+              间距放在 el-col 上、卡片 h-full 撑满列高：同一行里内容行数不同的卡片才不会高低不齐。
+              卡片本身是纵向 flex，底部「最近参与」用 mt-auto 贴底 ——
+              否则同一行里内容多的那张卡片分隔线在底部、内容少的悬在中间，两条线错开很扎眼。
+            -->
+            <div class="art-card relative px-5 py-4 h-full flex flex-col">
               <!-- 头部：头像 + 昵称 + 别名 -->
               <div class="flex items-start gap-3.5">
                 <el-avatar :size="48" :src="u.avatar" class="shrink-0">
@@ -429,6 +433,9 @@
                   <span class="flex-1 min-w-0 text-g-400">无记录</span>
                 </div>
               </div>
+
+              <!-- 贴底占位：mt-auto 把剩余高度吃掉，底部分隔线上方仍保留固定的 12px 间隙 -->
+              <div class="mt-auto" aria-hidden="true"></div>
 
               <!-- 底部：参与场次入口（恒定渲染、强制单行：只放最近 1 场，多的用"还有 N 场"，
                    否则长主播名会把这一行折成两行、卡片高度又不一致） -->

@@ -79,7 +79,7 @@
       </div>
     </section>
 
-    <!-- ② 四张指标 tile -->
+    <!-- ② 四张指标 tile（无进度条：每张只放一组互不重复的事实） -->
     <section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
       <article v-for="m in tiles" :key="m.label" class="art-card p-5">
         <div class="flex items-start justify-between gap-3">
@@ -92,7 +92,11 @@
               :duration="1200"
               :suffix="m.suffix"
             />
-            <div v-else class="mt-3 truncate text-3xl font-semibold leading-none text-g-900">
+            <div
+              v-else
+              class="mt-3 truncate text-3xl font-semibold leading-none"
+              :class="m.textTone || 'text-g-900'"
+            >
               {{ m.text }}
             </div>
           </div>
@@ -100,15 +104,13 @@
             <ArtSvgIcon :icon="m.icon" class="text-base text-theme" />
           </div>
         </div>
-        <div class="mt-4 h-2 overflow-hidden rounded-full bg-g-100">
-          <div
-            class="h-full rounded-full"
-            :style="{ width: m.bar.percent + '%', backgroundColor: m.bar.color }"
-          />
-        </div>
-        <div class="mt-3 flex items-center justify-between gap-3 text-xs">
-          <span class="text-g-500">{{ m.footLabel }}</span>
-          <span class="truncate font-medium text-g-700">{{ m.footValue }}</span>
+        <div
+          class="mt-4 flex items-center justify-between gap-3 border-t border-g-100 pt-3 text-xs"
+        >
+          <span class="text-g-500 shrink-0">{{ m.footLabel }}</span>
+          <span class="truncate font-medium" :class="m.footTone || 'text-g-700'">
+            {{ m.footValue }}
+          </span>
         </div>
       </article>
     </section>
@@ -122,11 +124,11 @@
             <h3 class="text-lg font-semibold text-g-900 m-0">服务明细</h3>
             <p class="mt-1 text-sm leading-6 text-g-600">每项可单独重启，互不影响。</p>
           </div>
-          <span class="mon-chip" :class="overall.chipClass">{{ overall.chip }}</span>
+          <!-- 这里原来还有一个和 Hero 右上完全相同的状态 chip，同一结论并排出现两次 -->
         </div>
 
-        <!-- 服务事实 kv -->
-        <div class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <!-- 服务事实 kv：4 格用两列排（三列时第 4 格会单独占一行，看着像漏了一个） -->
+        <div class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div v-for="f in serviceKv" :key="f.label" class="mon-kv">
             <div class="mon-kv__label">{{ f.label }}</div>
             <div class="mon-kv__value text-g-900" :title="f.value">{{ f.value }}</div>
@@ -167,25 +169,58 @@
         </div>
       </article>
 
-      <!-- 右：连接健康 + 异常提醒 -->
+      <!-- 右：房间连接（每房间一行）+ 异常提醒 -->
       <article class="art-card p-5">
-        <h3 class="text-lg font-semibold text-g-900 m-0">连接健康</h3>
-        <p class="mt-1 text-sm leading-6 text-g-600">各房间 WebSocket 连接与采集概况。</p>
+        <h3 class="text-lg font-semibold text-g-900 m-0">房间连接</h3>
+        <p class="mt-1 text-sm leading-6 text-g-600">
+          每个监控房间的 WebSocket 与直播状态。
+        </p>
 
-        <div class="mt-5">
-          <div v-for="b in bars" :key="b.label" class="mon-bar-item">
-            <div class="mon-bar-item__row">
-              <span class="mon-bar-item__label">{{ b.label }}</span>
-              <span class="mon-bar-item__value">{{ b.text }}</span>
+        <!--
+          这里原来还有一行小结「已连接 5 / 5 · 直播中 0 · 录制中 0」——
+          那三个数正是上面三张 tile 的数字，属于同一个数出现两次，去掉。
+          每行房间自己的状态已经在下面列着了，聚合数看 tile。
+        -->
+        <p v-if="roomSourceNote" class="mt-4 text-xs leading-5 text-warning">
+          {{ roomSourceNote }}
+        </p>
+
+        <div
+          v-if="roomRows.length"
+          class="flex flex-col mt-3 max-h-[260px] overflow-y-auto dy-scroll pr-1"
+        >
+          <div
+            v-for="(r, i) in roomRows"
+            :key="r.key"
+            class="mon-room"
+            :class="i ? 'border-t border-g-100' : ''"
+          >
+            <span class="mon-dot" :class="r.dotClass" />
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="text-sm font-medium text-g-900 truncate" :title="r.name">
+                  {{ r.name }}
+                </span>
+                <span class="text-xs font-medium shrink-0" :class="r.tone">{{ r.stateText }}</span>
+                <span
+                  v-if="r.recording"
+                  class="shrink-0 rounded-md bg-danger/12 px-1.5 py-0.5 text-[11px] leading-none text-danger"
+                  >录制中</span
+                >
+              </div>
+              <div v-if="r.title" class="text-xs text-g-500 mt-0.5 truncate" :title="r.title">
+                {{ r.title }}
+              </div>
             </div>
-            <el-progress
-              :percentage="b.percentage"
-              :stroke-width="6"
-              :show-text="false"
-              :color="b.color"
-              class="[&_.el-progress-bar__outer]:bg-[rgb(240_240_240)]"
-            />
           </div>
+        </div>
+        <!-- 空态：没有房间可比"暂无数据"说得更具体 -->
+        <div
+          v-else
+          class="mt-3 rounded-lg border border-dashed border-g-200 px-4 py-6 text-center text-sm"
+          :class="statusKnown ? 'text-g-500' : 'text-g-600'"
+        >
+          {{ roomsEmptyText }}
         </div>
 
         <div class="mon-panel__divider"></div>
@@ -236,8 +271,11 @@
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div class="min-w-0">
           <h3 class="text-lg font-semibold text-g-900 m-0">运行日志</h3>
-          <p class="mt-1 text-sm leading-6 text-g-600">代理与监控脚本的最近输出。</p>
+          <p class="mt-1 text-sm leading-6 text-g-600">
+            代理与监控脚本的最近输出 · {{ status?.logLines?.length || 0 }} 行
+          </p>
         </div>
+        <!-- 按钮原来写「运行日志（18 行）」，与左边的 h3 重复了一遍「运行日志」 -->
         <button
           type="button"
           class="dy-pressable inline-flex min-h-6 items-center gap-1 text-xs text-g-500 select-none hover:text-theme"
@@ -245,7 +283,7 @@
           :aria-expanded="showLog"
           @click="showLog = !showLog"
         >
-          运行日志（{{ status?.logLines?.length || 0 }} 行）
+          {{ showLog ? '收起' : '展开' }}
           <ArtSvgIcon
             :icon="showLog ? 'ri:arrow-up-s-line' : 'ri:arrow-down-s-line'"
             class="log-caret"
@@ -374,37 +412,53 @@
       }
     }
     return {
-      chip: '已连接',
+      // 文案用「运行正常」而不是「已连接」：后者是下面「已连接 5 / 5」那格的标签，
+      // 同一个词在两处表示两个不同的东西容易误读
+      chip: '运行正常',
       chipClass: 'mon-chip--ok',
       icon: 'ri:link',
       detail: `代理与监控脚本运行正常，${connectedRooms.value}/${configuredRooms.value} 个房间连接就绪，采集指标读取正常`
     }
   })
 
-  /** Hero 内嵌 kv 小卡（缓存监控页 hero 的「引擎/状态/Key 数量/内存」位） */
+  /**
+   * Hero 内嵌 kv 小卡 —— 只放「环境事实」，且全页不重复。
+   *
+   * 原来这四格是「运行模式 / 监控脚本 / 监控房间 / 最近检查」：
+   *   - 运行模式写死「嵌入式监控」，是个常量不是数据；
+   *   - 监控房间 5 个 与下面第一张 tile 完全同一个数；
+   *   - 监控脚本 运行中 与「服务明细」行、tile 三处重复。
+   * 现在四格各自出现在全页唯一一处。
+   */
   const heroKv = computed(() => {
+    const s = status.value
     const unknown = !statusKnown.value
     return [
-      { label: '运行模式', value: unknown ? '—' : '嵌入式监控' },
+      { label: '运行平台', value: unknown ? '—' : s?.platform || '—' },
+      { label: '代理地址', value: unknown ? '—' : `127.0.0.1:${s?.proxy?.port ?? 1088}` },
       {
-        label: '监控脚本',
-        value: unknown ? '状态未知' : daemonRunning.value ? '运行中' : '未运行',
-        tone: unknown ? 'text-g-500' : daemonRunning.value ? 'text-success' : 'text-danger'
-      },
-      {
-        label: '监控房间',
-        value: unknown ? '—' : `${configuredRooms.value} 个`,
-        tone: 'text-g-900'
+        // 库内房间 ≠ 已启用监控的房间：房间管理里可能有历史房间没启用，两个数都要看得见
+        label: '库内房间',
+        value: unknown ? '—' : `${s?.totalRooms ?? 0} 个`
       },
       {
         label: '最近检查',
-        value: status.value?.checkedAt ? fmtClock(status.value.checkedAt) : '—',
+        value: s?.checkedAt ? fmtClock(s.checkedAt) : '—',
         tone: 'text-g-900'
       }
     ]
   })
 
-  /** 四张指标 tile（缓存监控页的命中率/Key 数量/Ops/s/客户端连接位） */
+  /**
+   * 四张指标 tile：**数字 + 各自不同的副标题，不再画进度条**。
+   *
+   * 原来每张卡底下都有一根条，四根里三根没有意义：
+   *   - 「监控房间 5 个」的条量的是"已连接占比"，与右邻卡「WebSocket 连接 5/5 · 连接率 100%」
+   *     是同一个数画两遍，它 footer 的「已连接 5 个」是第三遍；
+   *   - 「录制中」的条量录制率、footer 却写「正在直播」—— 一根条一个指标、旁边标另一个；
+   *   - 「Go 抓取代理」的条是布尔值（true→100% / false→0%），版本号配进度条纯装饰。
+   * 现在每张卡只负责一组互不重复的事实。
+   */
   const tiles = computed(() => {
     const s = status.value
     const unknown = !statusKnown.value
@@ -412,43 +466,51 @@
     const connected = connectedRooms.value
     const recording = recordingRooms.value
     const live = liveRooms.value
-    const pct = (n: number) => (unknown || !rooms ? 0 : Math.round((n / rooms) * 100))
+    const daemonTone = unknown
+      ? 'text-g-900'
+      : daemonRunning.value
+        ? 'text-success'
+        : s?.daemon?.pidStale
+          ? 'text-warning'
+          : 'text-danger'
     return [
+      {
+        label: '监控脚本',
+        icon: 'ri:robot-2-line',
+        count: null,
+        suffix: '',
+        text: unknown
+          ? '—'
+          : daemonRunning.value
+            ? '运行中'
+            : s?.daemon?.pidStale
+              ? '状态异常'
+              : '未运行',
+        textTone: daemonTone,
+        footLabel: '监控 PID',
+        footValue: unknown ? '—' : String(s?.daemon?.pid ?? '—'),
+        footTone: 'text-g-700'
+      },
       {
         label: '监控房间',
         icon: 'ri:live-line',
         count: unknown ? 0 : rooms,
         suffix: ' 个',
         text: '',
-        bar: { percent: pct(connected), color: 'var(--dy-text-success)' },
         footLabel: '已连接',
-        footValue: unknown ? '—' : `${connected} 个`
+        footValue: unknown || !rooms ? '—' : `${connected} / ${rooms}`,
+        footTone:
+          !unknown && rooms && connected === rooms ? 'text-success' : 'text-g-700'
       },
       {
-        label: 'WebSocket 连接',
-        icon: 'ri:link',
-        count: unknown ? 0 : connected,
-        suffix: rooms ? ` / ${rooms}` : ' 个',
-        text: '',
-        bar: {
-          percent: pct(connected),
-          color:
-            !unknown && connected === rooms && rooms > 0
-              ? 'var(--dy-text-success)'
-              : 'var(--dy-text-warning)'
-        },
-        footLabel: '连接率',
-        footValue: unknown || !rooms ? '—' : `${pct(connected)}%`
-      },
-      {
-        label: '录制中',
+        label: '正在直播',
         icon: 'ri:radio-line',
-        count: unknown ? 0 : recording,
+        count: unknown ? 0 : live,
         suffix: ' 个',
         text: '',
-        bar: { percent: pct(recording), color: 'var(--dy-text-danger)' },
-        footLabel: '正在直播',
-        footValue: unknown ? '—' : `${live} 个`
+        footLabel: '正在录制',
+        footValue: unknown ? '—' : `${recording} 个`,
+        footTone: recording ? 'text-danger' : 'text-g-700'
       },
       {
         // 代理版本是字符串，用不了滚动数字
@@ -457,10 +519,7 @@
         count: null,
         suffix: '',
         text: unknown ? '—' : s?.proxy?.health?.tag || `:${s?.proxy?.port ?? 1088}`,
-        bar: {
-          percent: unknown ? 0 : proxyHealthy.value ? 100 : 0,
-          color: !unknown && proxyHealthy.value ? 'var(--dy-text-success)' : 'var(--dy-text-danger)'
-        },
+        textTone: unknown ? 'text-g-900' : proxyHealthy.value ? 'text-g-900' : 'text-danger',
         footLabel: '健康检查',
         footValue: unknown
           ? '—'
@@ -468,19 +527,91 @@
             ? '通过'
             : proxyReachable.value
               ? '异常'
-              : '未运行'
+              : '未运行',
+        footTone: !unknown && proxyHealthy.value ? 'text-success' : 'text-g-700'
       }
     ]
   })
 
-  /** 「服务明细」顶部 kv（缓存监控页「连接与指标」的 kv grid 位） */
+  /**
+   * 每房间一行的连接明细（取代原来「连接健康」的三根聚合进度条）。
+   *
+   * 那三根条画的是「连接就绪 5/5 / 正在直播 0/5 / 正在录制 0/5」——这三个数 tile 里都有；
+   * 而且 0/5 画成 0% 就是一条灰色空槽，不表达任何信息。
+   * 后端 /api/service/status 的 `ws.states` 本来就返回了每个房间的明细，直接列出来更有用。
+   */
+  const roomRows = computed(() => {
+    const unknown = !statusKnown.value
+    return (status.value?.ws?.states || []).map((r) => {
+      const connected = r.connected === true
+      const live = r.liveStatus === true
+      return {
+        key: `${r.roomId}-${r.name || ''}`,
+        name: r.name || r.roomId,
+        title: r.title || '',
+        /*
+         * 圆点只表达"连接"：连上=绿、断开=红。
+         * 原来"已连接但没开播"给的是琥珀色，5 个房间全没开播时整列都是警告色，
+         * 看着像出了问题 —— 而未开播是主播没播，不是我们的故障。
+         */
+        dotClass: unknown ? 'bg-g-300' : connected ? 'bg-success' : 'bg-danger',
+        stateText: unknown ? '状态未知' : connected ? (live ? '直播中' : '未开播') : '未连接',
+        tone: unknown
+          ? 'text-g-500'
+          : connected
+            ? live
+              ? 'text-success'
+              : 'text-g-600'
+            : 'text-danger',
+        recording: r.recording === true,
+        stale: Boolean(r.stale)
+      }
+    })
+  })
+
+  /** 房间列为空时，说清为什么空 —— 「暂无数据」等于没说 */
+  const roomsEmptyText = computed(() => {
+    if (!statusKnown.value) return '状态未知，无法列出房间'
+    const src = status.value?.ws?.source
+    if (src === 'log-stale') return '监控脚本未运行，日志里也没有房间状态'
+    if (!daemonRunning.value) return '监控脚本未运行，没有房间连接'
+    if (!configuredRooms.value) {
+      return status.value?.totalRooms
+        ? `未启用任何监控房间（房间管理里的 ${status.value.totalRooms} 个都未启用）`
+        : '尚未配置监控房间，请先在「房间管理」里添加并启用'
+    }
+    return '已配置房间，但监控脚本尚未回报连接状态'
+  })
+
+  /** 房间状态来源说明：日志来源时明确写出"可能延迟"，别让人当成实时 */
+  const roomSourceNote = computed(() => {
+    const src = status.value?.ws?.source
+    if (src === 'log') return '控制通道不可用，房间状态取自监控日志（可能略有延迟）'
+    if (src === 'log-stale') return '监控脚本未运行，下面是历史日志里的连接状态，仅供参考'
+    return ''
+  })
+
+  /** 数据新鲜度：实时来源是 0ms，日志来源会累积 */
+  const freshText = computed(() => {
+    const age = status.value?.ws?.ageMs
+    if (!statusKnown.value) return '—'
+    if (age === null || age === undefined) return '—'
+    if (age < 5000) return '实时'
+    const mins = Math.round(age / 60000)
+    if (mins < 60) return `${mins} 分钟前`
+    if (mins < 1440) return `${Math.round(mins / 60)} 小时前`
+    return `${Math.round(mins / 1440)} 天前`
+  })
+
+  /**
+   * 「服务明细」顶部 kv —— 与 Hero kv / tile / 服务行去重后剩下的实时事实。
+   * 原来这里的「代理地址 / 代理版本」在下面服务行的副标题里又写了一遍，
+   * 「监控 PID / 控制通道」同样重复。
+   */
   const serviceKv = computed(() => {
     const s = status.value
     const unknown = !statusKnown.value
     return [
-      { label: '代理地址', value: unknown ? '—' : `127.0.0.1:${s?.proxy?.port ?? 1088}` },
-      { label: '代理版本', value: unknown ? '—' : s?.proxy?.health?.tag || '—' },
-      { label: '监控 PID', value: unknown ? '—' : String(s?.daemon?.pid ?? '—') },
       {
         label: '控制通道',
         value: unknown ? '状态未知' : s?.daemon?.controlChannel ? '正常' : '不可用'
@@ -489,55 +620,24 @@
         label: '数据来源',
         value: unknown
           ? '—'
-          : s?.ws?.source === 'log'
-            ? '监控日志'
+          : s?.ws?.source === 'memory'
+            ? '守护进程内存'
             : s?.ws?.source === 'socket'
               ? '控制通道'
-              : '无'
+              : s?.ws?.source === 'log'
+                ? '监控日志'
+                : s?.ws?.source === 'log-stale'
+                  ? '历史日志'
+                  : '无'
       },
-      { label: '运行平台', value: unknown ? '—' : s?.platform || '—' }
+      { label: '数据新鲜度', value: freshText.value },
+      { label: '代理进程', value: unknown ? '—' : s?.proxy?.binaryName || '—' }
     ]
   })
 
-  /** 连接健康进度条 */
-  const bars = computed(() => {
-    const unknown = !statusKnown.value
-    const rooms = configuredRooms.value
-    const connected = connectedRooms.value
-    const live = liveRooms.value
-    const recording = recordingRooms.value
-    const pct = (n: number) => (unknown || !rooms ? 0 : Math.round((n / rooms) * 100))
-    return [
-      {
-        label: '连接就绪',
-        text: unknown ? '未知' : `${connected} / ${rooms}`,
-        percentage: pct(connected),
-        color: unknown
-          ? 'var(--dy-text-muted)'
-          : connected === rooms && rooms > 0
-            ? 'var(--dy-text-success)'
-            : 'var(--dy-text-warning)'
-      },
-      {
-        label: '正在直播',
-        text: unknown ? '未知' : `${live} / ${rooms}`,
-        percentage: pct(live),
-        color: unknown ? 'var(--dy-text-muted)' : 'var(--dy-text-accent)'
-      },
-      {
-        label: '正在录制',
-        text: unknown ? '未知' : `${recording} / ${rooms}`,
-        percentage: pct(recording),
-        color: unknown ? 'var(--dy-text-muted)' : 'var(--dy-text-danger)'
-      }
-    ]
-  })
-
-  /** 三行服务明细，每行都带对应的重启/启动按钮 */
+  /** 两行服务明细（Go 抓取代理 / 监控脚本），每行带对应的重启/启动按钮 */
   const items = computed(() => {
     const s = status.value
-    const w = s?.ws
-    const tag = s?.proxy?.health?.tag
     // 状态未知时不猜测：显示灰色「状态未知」，也不提供会把服务搞得更乱的操作
     const unknown = !statusKnown.value
     const tone = (ok: boolean, warn = false) =>
@@ -564,7 +664,11 @@
       detail: unknown
         ? '未能取到状态，无法判断代理是否正常'
         : proxyHealthy.value
-          ? `127.0.0.1:${s?.proxy?.port ?? 1088}${tag ? ' · ' + tag : ''} · 健康检查通过`
+          ? // 不再重复"地址 · 版本 · 健康检查通过"（地址在 Hero kv、版本是那张 tile 的数字、
+            // 健康结论是它 footer），这里只说还额外验证了什么
+            `端口 ${s?.proxy?.port ?? 1088} 在监听，/health 通过${
+              s?.proxy?.wsProbe?.upgraded ? '，WebSocket 探测正常' : ''
+            }`
           : proxyReachable.value
             ? `127.0.0.1:${s?.proxy?.port ?? 1088} 端口在监听但 /health 不通过`
             : s?.proxy?.binaryExists
@@ -593,10 +697,17 @@
           : s?.daemon?.pidStale
             ? '状态异常'
             : '未运行',
+      /*
+       * 运行中时不在这一行重复 PID 与「控制通道正常」：
+       * PID 在「监控脚本」tile 的 footer 里，控制通道在左侧 kv 里。
+       * 这里只说状态是怎么来的（实时上报 / 从日志解析）。
+       */
       detail: unknown
         ? '未能取到状态，无法判断监控脚本是否在运行'
         : daemonRunning.value
-          ? `PID ${s?.daemon?.pid}${s?.daemon?.controlChannel ? ' · 控制通道正常' : ' · 控制通道不可用（房间状态取自日志）'}`
+          ? s?.daemon?.controlChannel
+            ? '房间状态经控制通道实时上报'
+            : '控制通道不可用，房间状态改从监控日志解析'
           : s?.daemon?.pidStale
             ? 'PID 文件残留（上次异常退出），重启可清理'
             : s?.configuredRooms
@@ -609,43 +720,15 @@
       }
     }
 
-    const wsAllOk = Boolean(w?.rooms && w.connected === w.rooms)
-    const stale = w?.source === 'log-stale'
-    const wsItem = {
-      key: 'ws',
-      name: 'WebSocket 连接',
-      icon: 'ri:link',
-      dotClass: !w?.rooms ? 'bg-g-300' : wsAllOk ? 'bg-success' : 'bg-warning',
-      tone: !w?.rooms ? 'text-g-500' : tone(wsAllOk, true),
-      iconTone: !w?.rooms ? 'text-g-400' : iconTone(wsAllOk, true),
-      stateText: unknown ? '状态未知' : !w?.rooms ? '无连接' : wsAllOk ? '全部已连接' : '部分断开',
-      detail: unknown
-        ? '未能取到状态，无法判断连接情况'
-        : w?.rooms
-          ? `${w.connected} / ${w.rooms} 已连接 · 直播中 ${w.live} · 录制中 ${w.recording}${
-              stale ? '（来自历史日志）' : ''
-            }`
-          : !daemonRunning.value
-            ? s?.configuredRooms
-              ? `监控脚本未运行，${s.configuredRooms} 个监控房间的连接已中断`
-              : s?.totalRooms
-                ? `未启用任何监控房间（房间管理里的 ${s.totalRooms} 个是历史房间，需在房间管理里启用）`
-                : '监控脚本未运行，启动后自动建立连接'
-            : !s?.daemon?.controlChannel
-              ? '控制通道不可用，连接数读不到'
-              : s?.configuredRooms
-                ? `已配置 ${s.configuredRooms} 个房间，尚未回报连接`
-                : '尚未配置监控房间',
-      action: {
-        // 「重连」实际执行的是守护进程 restart/start，副作用远超"重连"二字
-        // （会中断全部房间连接与正在进行的录制），文案必须如实写明。
-        text: daemonRunning.value ? '重启 Go 代理与监控脚本' : '启动 Go 代理与监控脚本',
-        icon: daemonRunning.value ? 'ri:restart-line' : 'ri:play-line',
-        act: (daemonRunning.value ? 'restart' : 'start') as ServiceAction
-      }
-    }
-
-    return [proxyItem, daemonItem, wsItem]
+    /*
+     * 只保留两个真正的服务行。
+     *
+     * 原来还有第三行「WebSocket 连接」，但它的按钮执行的是 **daemon 的 restart/start**，
+     * 与上一行「监控脚本」的按钮是同一个 action —— 一个动作两个入口，
+     * 而且这一行讲的"连接"根本不是它能重启的东西。
+     * 连接情况现在由右栏「房间连接」按房间列出，比一行聚合文字更有用。
+     */
+    return [proxyItem, daemonItem]
   })
 
   /** 日志来源着色（用语义色，深色模式下才不会看不清） */
@@ -856,29 +939,12 @@
     flex-shrink: 0;
   }
 
-  /* 连接健康进度条 */
-  .mon-bar-item + .mon-bar-item {
-    margin-top: 16px;
-  }
-
-  .mon-bar-item__row {
+  /* 房间连接行 */
+  .mon-room {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 8px;
-  }
-
-  .mon-bar-item__label {
-    font-size: 12px;
-    color: var(--dy-text-secondary);
-  }
-
-  .mon-bar-item__value {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--dy-text-primary);
-    font-variant-numeric: tabular-nums;
+    gap: 10px;
+    padding: 10px 0;
   }
 
   /* ===== 日志折叠 ===== */

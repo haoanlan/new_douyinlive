@@ -702,8 +702,18 @@ export interface ServiceStatus {
     recording: number
     live: number
     connectedIds: string[]
-    /** socket = 来自控制通道；log = 控制通道不可用时取自监控日志 */
-    source: 'socket' | 'log' | 'none'
+    /**
+     * 房间状态来源：
+     *   memory    = 守护进程内嵌模式（本进程内存，实时）
+     *   socket    = 控制通道（worker 独立进程时）
+     *   log       = 控制通道不可用，取自监控日志（略有延迟）
+     *   log-stale = 监控脚本没在跑，日志是历史记录
+     *   none      = 拿不到任何房间状态
+     */
+    source: 'memory' | 'socket' | 'log' | 'log-stale' | 'none'
+    /** 日志来源的数据年龄（毫秒）；实时来源为 0 */
+    ageMs?: number | null
+    /** 每个监控房间的明细（「房间连接」那一列直接用这个渲染） */
     states: {
       roomId: string
       name: string
@@ -712,6 +722,13 @@ export interface ServiceStatus {
       liveStatus: boolean | null
       statusCode: string | null
       title: string | null
+      /** 该房间已收到的弹幕 / 礼物条数（控制通道来源才有） */
+      danmaku?: number | null
+      gift?: number | null
+      /** 这条状态的年龄：超过阈值即 stale */
+      ageMs?: number | null
+      stale?: boolean
+      active?: boolean
     }[]
   }
   checks: {

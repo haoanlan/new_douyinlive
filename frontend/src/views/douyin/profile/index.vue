@@ -179,7 +179,12 @@
           </div>
 
           <div class="art-card p-5 mb-5">
-            <div class="art-card-header"><div class="title"><h4>近期行为</h4></div></div>
+            <div class="art-card-header">
+              <div class="title">
+                <h4>近期行为</h4>
+                <p>进场每间直播间只显示最近一次</p>
+              </div>
+            </div>
             <!-- 原来是 el-timeline（带竖线 + 圆点）→ 改成与总览一致的条形行 -->
             <div class="flex flex-col gap-2.5 mt-4">
               <div
@@ -189,14 +194,18 @@
               >
                 <el-tag
                   size="small"
-                  :type="a.type === 'gift' ? 'warning' : 'info'"
+                  :type="a.type === 'gift' ? 'warning' : a.type === 'member' ? 'success' : 'info'"
                   class="shrink-0 !border-none"
                 >
-                  {{ a.type === 'gift' ? '礼物' : '弹幕' }}
+                  {{ a.type === 'gift' ? '礼物' : a.type === 'member' ? '进场' : '弹幕' }}
                 </el-tag>
                 <span class="flex-1 min-w-0 truncate text-sm text-g-700">{{ a.content }}</span>
+                <!-- 进场必须写明进了哪个直播间，所以这列不能省（后端已兜底"未知直播间"） -->
                 <span v-if="a.streamer" class="text-xs text-g-500 shrink-0 max-w-[120px] truncate">
                   {{ a.streamer }}
+                </span>
+                <span v-else-if="a.type === 'member'" class="text-xs text-g-500 shrink-0">
+                  未知直播间
                 </span>
                 <span class="text-xs text-g-400 shrink-0">{{ a.time }}</span>
               </div>

@@ -279,9 +279,11 @@ export interface UserProfile {
 }
 
 export interface UserAction {
-  type: 'danmaku' | 'gift'
+  type: 'danmaku' | 'gift' | 'member'
   content: string
   time: string
+  /** 该动作发生在哪个直播间（进场记录靠它写明"进了哪个直播间"） */
+  streamer?: string
 }
 
 export interface UserSession {

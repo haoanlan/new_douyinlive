@@ -820,6 +820,54 @@ export interface ServiceActionResult {
 
 export type ServiceAction = 'start' | 'stop' | 'restart' | 'start-proxy' | 'restart-proxy'
 
+/** 可编辑的代理配置字段（GET /api/service/proxy-config 的 editable 项） */
+export interface ProxyEditableField {
+  key: string
+  label: string
+  type: 'string' | 'enum' | 'secret' | 'boolean' | 'map' | 'duration'
+  options?: string[]
+}
+
+export interface ProxyConfigForm {
+  ok: boolean
+  file: string
+  exists: boolean
+  editable: ProxyEditableField[]
+  /** 当前值：键名与 editable 的 key 对应（含 cookie 明文，所以单独接口取、不进轮询） */
+  values: Record<string, any>
+  /** 当前二进制不认、因而不允许写的段（protocol / proxy） */
+  unsupported: { key: string; reason: string }[]
+  blockedSections: { key: string; reason: string }[]
+  inSync: boolean
+}
+
+export interface ProxyConfigSaveResult {
+  ok: boolean
+  error?: string
+  errors?: string[]
+  warnings?: string[]
+  changed?: string[]
+  ignored?: string[]
+  message?: string
+  inSync?: boolean
+}
+
+/** 读取可视化配置（含 cookie 明文，按需调用，不要跟着状态轮询走） */
+export function fetchProxyConfigForm() {
+  return request.get<ProxyConfigForm>({
+    url: '/api/service/proxy-config',
+    showErrorMessage: false
+  })
+}
+
+/** 保存配置：只写白名单字段，写回根 config.yaml（重启代理后生效） */
+export function saveProxyConfig(patch: Record<string, any>) {
+  return request.post<ProxyConfigSaveResult>({
+    url: '/api/service/proxy-config',
+    data: { patch }
+  })
+}
+
 /** 状态监控页每 8 秒轮询此项，失败由页面展示错误态而非反复弹 toast（P0-3/P0-4）。 */
 export function fetchServiceStatus() {
   return request.get<ServiceStatus>({

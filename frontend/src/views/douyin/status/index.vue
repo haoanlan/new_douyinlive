@@ -169,68 +169,16 @@
         </div>
       </article>
 
-      <!-- 右：房间连接（每房间一行）+ 异常提醒 -->
+      <!-- 右：异常提醒（房间列表归「房间管理」页，这里不放） -->
       <article class="art-card p-5">
-        <h3 class="text-lg font-semibold text-g-900 m-0">房间连接</h3>
-        <p class="mt-1 text-sm leading-6 text-g-600">
-          每个监控房间的 WebSocket 与直播状态。
-        </p>
-
-        <!--
-          这里原来还有一行小结「已连接 5 / 5 · 直播中 0 · 录制中 0」——
-          那三个数正是上面三张 tile 的数字，属于同一个数出现两次，去掉。
-          每行房间自己的状态已经在下面列着了，聚合数看 tile。
-        -->
-        <p v-if="roomSourceNote" class="mt-4 text-xs leading-5 text-warning">
-          {{ roomSourceNote }}
-        </p>
-
-        <div
-          v-if="roomRows.length"
-          class="flex flex-col mt-3 max-h-[260px] overflow-y-auto dy-scroll pr-1"
-        >
-          <div
-            v-for="(r, i) in roomRows"
-            :key="r.key"
-            class="mon-room"
-            :class="i ? 'border-t border-g-100' : ''"
-          >
-            <span class="mon-dot" :class="r.dotClass" />
-            <div class="min-w-0 flex-1">
-              <div class="flex items-center gap-2 min-w-0">
-                <span class="text-sm font-medium text-g-900 truncate" :title="r.name">
-                  {{ r.name }}
-                </span>
-                <span class="text-xs font-medium shrink-0" :class="r.tone">{{ r.stateText }}</span>
-                <span
-                  v-if="r.recording"
-                  class="shrink-0 rounded-md bg-danger/12 px-1.5 py-0.5 text-[11px] leading-none text-danger"
-                  >录制中</span
-                >
-              </div>
-              <div v-if="r.title" class="text-xs text-g-500 mt-0.5 truncate" :title="r.title">
-                {{ r.title }}
-              </div>
-            </div>
-          </div>
-        </div>
-        <!-- 空态：没有房间可比"暂无数据"说得更具体 -->
-        <div
-          v-else
-          class="mt-3 rounded-lg border border-dashed border-g-200 px-4 py-6 text-center text-sm"
-          :class="statusKnown ? 'text-g-500' : 'text-g-600'"
-        >
-          {{ roomsEmptyText }}
-        </div>
-
-        <div class="mon-panel__divider"></div>
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div class="min-w-0">
-            <h4 class="text-base font-semibold text-g-900 m-0">异常提醒</h4>
-            <p class="mt-1 text-xs leading-5 text-g-500">
-              {{ issues.length ? `${issues.length} 项待处理` : '未发现异常' }}
+            <h3 class="text-lg font-semibold text-g-900 m-0">异常提醒</h3>
+            <p class="mt-1 text-sm leading-6 text-g-600">
+              {{ issues.length ? `${issues.length} 项待处理` : '代理、监控脚本与连接均正常' }}
             </p>
           </div>
+          <span v-if="!issues.length" class="mon-chip mon-chip--ok">无异常</span>
         </div>
 
         <div class="flex flex-col mt-3">
@@ -266,19 +214,30 @@
       </article>
     </section>
 
-    <!-- ④ Go 代理配置（代理有自己一套 schema 与 Cookie 规则） -->
+    <!-- ④ Go 代理配置（代理有自己一套 schema 与 Cookie 规则；可在此直接改） -->
     <article class="art-card p-5">
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div class="min-w-0">
           <h3 class="text-lg font-semibold text-g-900 m-0">Go 代理配置</h3>
           <p class="mt-1 text-sm leading-6 text-g-600">
-            代理读的是自己那份 <code class="pc-code">proxy-config.yaml</code
-            >（由本工具生成），Cookie 按「临时 &gt; 房间专用 &gt; 默认 &gt; 自动获取」取值。
+            配置源是根目录 <code class="pc-code">config.yaml</code>，代理启动时按它生成
+            <code class="pc-code">proxy-config.yaml</code>；Cookie 按「临时 &gt; 房间专用 &gt; 默认 &gt;
+            自动获取」取值。
           </p>
         </div>
-        <span class="mon-chip" :class="proxyCfg?.exists ? 'mon-chip--ok' : 'mon-chip--unknown'">
-          {{ proxyCfg?.exists ? '配置就绪' : '无配置文件' }}
-        </span>      </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <span
+            v-if="proxyCfg && !proxyCfg.inSync"
+            class="pc-tag bg-warning/12 text-warning"
+            title="改了 config.yaml 但代理还在用启动时的旧配置"
+            >待重启生效</span
+          >
+          <el-button type="primary" :loading="formLoading" @click="openEditor">
+            <ArtSvgIcon icon="ri:settings-3-line" class="mr-1" />
+            可视化配置
+          </el-button>
+        </div>
+      </div>
 
       <div class="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)]">
         <!-- 左：Cookie 规则（重点） -->
@@ -310,18 +269,19 @@
             <div v-for="(line, i) in cookieRuntime" :key="i">{{ line }}</div>
           </div>
 
-          <!-- 每房间生效的 Cookie 档位 -->
+          <!--
+            Cookie 档位只列"例外"：走专用 Cookie 的房间。
+            房间会增减、状态本身在「房间管理」页，这里铺 5 行既会变长又没信息量 ——
+            真正要看的只有"哪些房间没用默认值"。
+          -->
           <div class="mt-4">
             <div class="flex items-center justify-between gap-3">
-              <span class="text-sm font-medium text-g-700">每个房间生效的 Cookie</span>
-              <span class="text-xs text-g-500">共 {{ effectiveCookies.length }} 个房间</span>
+              <span class="text-sm font-medium text-g-700">Cookie 档位命中</span>
+              <span class="text-xs text-g-500">{{ cookieSourceSummary }}</span>
             </div>
-            <div
-              v-if="effectiveCookies.length"
-              class="mt-2 flex flex-col max-h-[220px] overflow-y-auto dy-scroll pr-1"
-            >
+            <div v-if="roomsWithOwnCookie.length" class="mt-2 flex flex-col">
               <div
-                v-for="(r, i) in effectiveCookies"
+                v-for="(r, i) in roomsWithOwnCookie"
                 :key="r.roomId"
                 class="flex items-center gap-2 py-2"
                 :class="i ? 'border-t border-g-100' : ''"
@@ -334,7 +294,9 @@
                 </span>
               </div>
             </div>
-            <div v-else class="mt-2 text-xs text-g-500">当前没有监控房间</div>
+            <div v-else class="mt-2 text-xs text-g-500">
+              没有房间配专用 Cookie，全部按默认 Cookie / 自动获取取值
+            </div>
           </div>
         </div>
 
@@ -349,13 +311,188 @@
               </div>
             </div>
           </div>
-          <p class="mt-3 text-xs leading-5 text-g-500">
-            这份文件由 <code class="pc-code">lib/proxy-binary.js</code> 在每次启动代理前重新生成，
-            Cookie 从根目录 <code class="pc-code">config.yaml</code> 同步；改了 Cookie 需要重启代理才生效。
+          <p v-if="blockedSections.length" class="mt-3 text-xs leading-5 text-g-500">
+            当前二进制不支持的段（不写入，避免代理启动失败）：{{
+              blockedSections.map((b) => b.key).join(' / ')
+            }}
+          </p>
+          <p v-else class="mt-3 text-xs leading-5 text-g-500">
+            改完 config.yaml 需要重启代理才生效 —— 代理只在启动时读一次配置。
           </p>
         </div>
       </div>
     </article>
+
+    <!-- 可视化配置抽屉 -->
+    <el-drawer
+      v-model="editorOpen"
+      title="代理配置"
+      size="620px"
+      class="dy-proxy-drawer"
+      :close-on-click-modal="false"
+    >
+      <div v-if="form" class="text-sm">
+        <p class="text-xs leading-5 text-g-500">
+          写入根目录 <code class="pc-code">config.yaml</code>，代理启动时生成
+          <code class="pc-code">proxy-config.yaml</code>；保存后需要重启代理才生效。
+        </p>
+
+        <!-- Cookie 段放最前：最常改的就是它 -->
+        <div class="mt-4 rounded-xl border border-g-200/70 p-4">
+          <div class="flex items-center justify-between gap-3">
+            <h4 class="text-base font-semibold text-g-900 m-0">Cookie</h4>
+            <span class="pc-tag" :class="draftBadge.cls">{{ draftBadge.text }}</span>
+          </div>
+
+          <div class="mt-3 flex items-center justify-between gap-3">
+            <div class="min-w-0">
+              <div class="text-g-800">使用预存 Cookie（cookie.use_stored）</div>
+              <div class="text-xs text-g-500 mt-0.5">
+                关掉后预存 Cookie 被忽略，只剩代理自动获取的匿名 ttwid
+              </div>
+            </div>
+            <el-switch v-model="draft['cookie.use_stored']" />
+          </div>
+
+          <div class="mt-4">
+            <div class="text-g-800">默认 Cookie（cookie.douyin）</div>
+            <div class="text-xs text-g-500 mt-0.5 mb-2">
+              浏览器登录 <code class="pc-code">live.douyin.com</code> 后从任意请求头复制完整 Cookie；含
+              <code class="pc-code">sessionid</code> 才算登录态
+            </div>
+            <el-input
+              v-model="draft['cookie.douyin']"
+              type="textarea"
+              :rows="3"
+              placeholder="ttwid=...; sessionid=...（留空 = 匿名态）"
+            />
+          </div>
+
+          <div class="mt-4">
+            <div class="flex items-center justify-between gap-3">
+              <div class="text-g-800">房间专用 Cookie（cookie.rooms）</div>
+              <el-button size="small" text type="primary" @click="addRoomCookie">添加</el-button>
+            </div>
+            <div class="text-xs text-g-500 mt-0.5 mb-2">
+              某个直播间要用别的账号时配这里；没配的房间回退到默认 Cookie
+            </div>
+            <div v-if="roomCookieRows.length" class="flex flex-col gap-2">
+              <div v-for="(row, i) in roomCookieRows" :key="i" class="flex items-start gap-2">
+                <el-select
+                  v-model="row.roomId"
+                  filterable
+                  allow-create
+                  default-first-option
+                  placeholder="选择或输入直播间ID"
+                  class="!w-[190px] shrink-0"
+                  size="small"
+                >
+                  <el-option
+                    v-for="r in monitoredRooms"
+                    :key="r.roomId"
+                    :label="r.name || r.roomId"
+                    :value="r.roomId"
+                  />
+                </el-select>
+                <el-input v-model="row.cookie" size="small" placeholder="该房间的 Cookie" />
+                <el-button size="small" text type="danger" @click="roomCookieRows.splice(i, 1)">
+                  <ArtSvgIcon icon="ri:delete-bin-line" />
+                </el-button>
+              </div>
+            </div>
+            <div v-else class="text-xs text-g-400">没有房间专用 Cookie</div>
+          </div>
+        </div>
+
+        <!-- 其余字段 -->
+        <div class="mt-4 rounded-xl border border-g-200/70 p-4">
+          <h4 class="text-base font-semibold text-g-900 m-0">其他</h4>
+          <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <div class="text-g-800 mb-1">日志级别</div>
+              <el-select v-model="draft['log.level']" class="w-full" size="small">
+                <el-option v-for="o in ['debug', 'info', 'warn', 'error']" :key="o" :label="o" :value="o" />
+              </el-select>
+            </div>
+            <div>
+              <div class="text-g-800 mb-1">签名方式（sign.provider）</div>
+              <el-select v-model="draft['sign.provider']" class="w-full" size="small">
+                <el-option label="留空（默认 local）" value="" />
+                <el-option label="local（内置）" value="local" />
+                <el-option label="tikhub（在线）" value="tikhub" />
+              </el-select>
+            </div>
+            <div>
+              <div class="text-g-800 mb-1">
+                TikHub Key
+                <span v-if="draft['sign.provider'] === 'tikhub'" class="text-danger">（必填）</span>
+              </div>
+              <el-input
+                v-model="draft['tikhub.key']"
+                size="small"
+                type="password"
+                show-password
+                placeholder="选 tikhub 时必须填，否则代理启动失败"
+              />
+            </div>
+            <div>
+              <div class="text-g-800 mb-1">API Key（api.key）</div>
+              <el-input
+                v-model="draft['api.key']"
+                size="small"
+                type="password"
+                show-password
+                placeholder="留空 = 接口不认证"
+              />
+            </div>
+            <div>
+              <div class="text-g-800 mb-1">未开播轮询间隔</div>
+              <el-input v-model="draft['monitor.poll_interval']" size="small" placeholder="15s" />
+            </div>
+            <div>
+              <div class="text-g-800 mb-1">状态通知间隔</div>
+              <el-input v-model="draft['monitor.notify_interval']" size="small" placeholder="30s" />
+            </div>
+            <div>
+              <div class="text-g-800 mb-1">WebSocket 路径</div>
+              <el-input v-model="draft['websocket.path']" size="small" placeholder="/ws" />
+            </div>
+          </div>
+
+          <div v-if="blockedSections.length" class="mt-3 text-xs leading-5 text-g-500">
+            <div v-for="b in blockedSections" :key="b.key">· {{ b.reason }}</div>
+          </div>
+        </div>
+
+        <el-alert
+          v-if="saveError"
+          class="mt-4"
+          type="error"
+          :closable="false"
+          show-icon
+          :title="saveError"
+        />
+        <el-alert
+          v-for="(w, i) in saveWarnings"
+          :key="i"
+          class="mt-3"
+          type="warning"
+          :closable="false"
+          show-icon
+          :title="w"
+        />
+      </div>
+
+      <template #footer>
+        <div class="flex items-center justify-end gap-2">
+          <el-button @click="editorOpen = false">取消</el-button>
+          <el-button :loading="saving === 'save'" @click="save(false)">只保存</el-button>
+          <el-button type="primary" :loading="saving === 'restart'" @click="save(true)">
+            保存并重启代理
+          </el-button>
+        </div>
+      </template>
+    </el-drawer>
 
     <!-- ⑤ 运行日志 -->
     <article class="art-card p-5">
@@ -430,7 +567,10 @@
   import { ElMessage, ElMessageBox } from 'element-plus'
   import {
     fetchServiceStatus,
+    fetchProxyConfigForm,
+    saveProxyConfig,
     performServiceAction,
+    type ProxyConfigForm,
     type ServiceAction,
     type ServiceStatus
   } from '@/api/douyin'
@@ -470,8 +610,6 @@
 
   const configuredRooms = computed(() => status.value?.configuredRooms || 0)
   const connectedRooms = computed(() => status.value?.ws?.rooms ?? 0)
-  const liveRooms = computed(() => status.value?.ws?.live ?? 0)
-  const recordingRooms = computed(() => status.value?.ws?.recording ?? 0)
 
   /**
    * 总体状态。`unknown` 是独立语义 —— 取不到状态时既不能说"正常"也不能说"异常"。
@@ -508,7 +646,7 @@
       chip: '运行正常',
       chipClass: 'mon-chip--ok',
       icon: 'ri:link',
-      detail: `代理与监控脚本运行正常，${connectedRooms.value}/${configuredRooms.value} 个房间连接就绪，采集指标读取正常`
+      detail: `代理与监控脚本运行正常，采集指标读取正常（${connectedRooms.value}/${configuredRooms.value} 个房间连接就绪）`
     }
   })
 
@@ -540,23 +678,27 @@
     ]
   })
 
+  /** 连接状态的数据来源（控制通道 / 监控日志 / 历史日志 / 无） */
+  const dataSourceText = computed(() => {
+    if (!statusKnown.value) return '—'
+    const src = status.value?.ws?.source
+    if (src === 'memory') return '守护进程内存'
+    if (src === 'socket') return '控制通道'
+    if (src === 'log') return '监控日志'
+    if (src === 'log-stale') return '历史日志'
+    return '无'
+  })
+
   /**
-   * 四张指标 tile：**数字 + 各自不同的副标题，不再画进度条**。
+   * 四张指标 tile：只看「代理 + 监控脚本」这两件事。
    *
-   * 原来每张卡底下都有一根条，四根里三根没有意义：
-   *   - 「监控房间 5 个」的条量的是"已连接占比"，与右邻卡「WebSocket 连接 5/5 · 连接率 100%」
-   *     是同一个数画两遍，它 footer 的「已连接 5 个」是第三遍；
-   *   - 「录制中」的条量录制率、footer 却写「正在直播」—— 一根条一个指标、旁边标另一个；
-   *   - 「Go 抓取代理」的条是布尔值（true→100% / false→0%），版本号配进度条纯装饰。
-   * 现在每张卡只负责一组互不重复的事实。
+   * 原来还有「监控房间 / 正在直播 / 正在录制」三张 —— 房间状态归「房间管理」页，
+   * 而且房间会增减，放在这里既重复又要跟着变。每张卡也不再画进度条：
+   * 四根条里三根是废的（连接率重复、录制率配直播文案、布尔值配进度条）。
    */
   const tiles = computed(() => {
     const s = status.value
     const unknown = !statusKnown.value
-    const rooms = configuredRooms.value
-    const connected = connectedRooms.value
-    const recording = recordingRooms.value
-    const live = liveRooms.value
     const daemonTone = unknown
       ? 'text-g-900'
       : daemonRunning.value
@@ -564,6 +706,14 @@
         : s?.daemon?.pidStale
           ? 'text-warning'
           : 'text-danger'
+    const proxyCfgInfo = proxyCfg.value
+    const cookieState = !proxyCfgInfo?.exists
+      ? '未知'
+      : !proxyCfgInfo.cookie?.default?.configured
+        ? '未配置'
+        : proxyCfgInfo.cookie.default.auth === 'login'
+          ? '登录态'
+          : '匿名态'
     return [
       {
         label: '监控脚本',
@@ -583,103 +733,45 @@
         footTone: 'text-g-700'
       },
       {
-        label: '监控房间',
-        icon: 'ri:live-line',
-        count: unknown ? 0 : rooms,
-        suffix: ' 个',
-        text: '',
-        footLabel: '已连接',
-        footValue: unknown || !rooms ? '—' : `${connected} / ${rooms}`,
-        footTone:
-          !unknown && rooms && connected === rooms ? 'text-success' : 'text-g-700'
-      },
-      {
-        label: '正在直播',
-        icon: 'ri:radio-line',
-        count: unknown ? 0 : live,
-        suffix: ' 个',
-        text: '',
-        footLabel: '正在录制',
-        footValue: unknown ? '—' : `${recording} 个`,
-        footTone: recording ? 'text-danger' : 'text-g-700'
-      },
-      {
-        // 代理版本是字符串，用不了滚动数字
         label: 'Go 抓取代理',
         icon: 'ri:server-line',
         count: null,
         suffix: '',
         text: unknown ? '—' : s?.proxy?.health?.tag || `:${s?.proxy?.port ?? 1088}`,
         textTone: unknown ? 'text-g-900' : proxyHealthy.value ? 'text-g-900' : 'text-danger',
-        footLabel: '健康检查',
+        footLabel: '健康检查 / 端口',
         footValue: unknown
           ? '—'
           : proxyHealthy.value
-            ? '通过'
+            ? `通过 · ${s?.proxy?.port ?? 1088}`
             : proxyReachable.value
               ? '异常'
               : '未运行',
         footTone: !unknown && proxyHealthy.value ? 'text-success' : 'text-g-700'
+      },
+      {
+        label: '代理 Cookie',
+        icon: 'ri:key-2-line',
+        count: null,
+        suffix: '',
+        text: cookieState,
+        textTone: cookieState === '登录态' ? 'text-success' : cookieState === '未配置' ? 'text-g-500' : 'text-warning',
+        footLabel: '配置是否已生效',
+        footValue: !proxyCfgInfo?.exists ? '—' : proxyCfgInfo.inSync ? '已生效' : '待重启代理',
+        footTone: proxyCfgInfo?.inSync === false ? 'text-warning' : 'text-g-700'
+      },
+      {
+        label: '数据来源',
+        icon: 'ri:database-2-line',
+        count: null,
+        suffix: '',
+        text: dataSourceText.value,
+        textTone: 'text-g-900',
+        footLabel: '数据新鲜度',
+        footValue: freshText.value,
+        footTone: freshText.value === '实时' ? 'text-success' : 'text-g-700'
       }
     ]
-  })
-
-  /**
-   * 每房间一行的连接明细（取代原来「连接健康」的三根聚合进度条）。
-   *
-   * 那三根条画的是「连接就绪 5/5 / 正在直播 0/5 / 正在录制 0/5」——这三个数 tile 里都有；
-   * 而且 0/5 画成 0% 就是一条灰色空槽，不表达任何信息。
-   * 后端 /api/service/status 的 `ws.states` 本来就返回了每个房间的明细，直接列出来更有用。
-   */
-  const roomRows = computed(() => {
-    const unknown = !statusKnown.value
-    return (status.value?.ws?.states || []).map((r) => {
-      const connected = r.connected === true
-      const live = r.liveStatus === true
-      return {
-        key: `${r.roomId}-${r.name || ''}`,
-        name: r.name || r.roomId,
-        title: r.title || '',
-        /*
-         * 圆点只表达"连接"：连上=绿、断开=红。
-         * 原来"已连接但没开播"给的是琥珀色，5 个房间全没开播时整列都是警告色，
-         * 看着像出了问题 —— 而未开播是主播没播，不是我们的故障。
-         */
-        dotClass: unknown ? 'bg-g-300' : connected ? 'bg-success' : 'bg-danger',
-        stateText: unknown ? '状态未知' : connected ? (live ? '直播中' : '未开播') : '未连接',
-        tone: unknown
-          ? 'text-g-500'
-          : connected
-            ? live
-              ? 'text-success'
-              : 'text-g-600'
-            : 'text-danger',
-        recording: r.recording === true,
-        stale: Boolean(r.stale)
-      }
-    })
-  })
-
-  /** 房间列为空时，说清为什么空 —— 「暂无数据」等于没说 */
-  const roomsEmptyText = computed(() => {
-    if (!statusKnown.value) return '状态未知，无法列出房间'
-    const src = status.value?.ws?.source
-    if (src === 'log-stale') return '监控脚本未运行，日志里也没有房间状态'
-    if (!daemonRunning.value) return '监控脚本未运行，没有房间连接'
-    if (!configuredRooms.value) {
-      return status.value?.totalRooms
-        ? `未启用任何监控房间（房间管理里的 ${status.value.totalRooms} 个都未启用）`
-        : '尚未配置监控房间，请先在「房间管理」里添加并启用'
-    }
-    return '已配置房间，但监控脚本尚未回报连接状态'
-  })
-
-  /** 房间状态来源说明：日志来源时明确写出"可能延迟"，别让人当成实时 */
-  const roomSourceNote = computed(() => {
-    const src = status.value?.ws?.source
-    if (src === 'log') return '控制通道不可用，房间状态取自监控日志（可能略有延迟）'
-    if (src === 'log-stale') return '监控脚本未运行，下面是历史日志里的连接状态，仅供参考'
-    return ''
   })
 
   /** 数据新鲜度：实时来源是 0ms，日志来源会累积 */
@@ -709,17 +801,7 @@
       },
       {
         label: '数据来源',
-        value: unknown
-          ? '—'
-          : s?.ws?.source === 'memory'
-            ? '守护进程内存'
-            : s?.ws?.source === 'socket'
-              ? '控制通道'
-              : s?.ws?.source === 'log'
-                ? '监控日志'
-                : s?.ws?.source === 'log-stale'
-                  ? '历史日志'
-                  : '无'
+        value: dataSourceText.value
       },
       { label: '数据新鲜度', value: freshText.value },
       { label: '代理进程', value: unknown ? '—' : s?.proxy?.binaryName || '—' }
@@ -882,10 +964,17 @@
       `最近一次连接尝试：${rt.lastActivityAt || '—'}${rt.livePageOffline ? `（未开播轮询 ${rt.livePageOffline} 次）` : ''}`
     )
     if (rt.verificationPage) {
+      const recent = rt.verificationPageRecent
       out.push(
         `拿到验证页（直播页状态不存在）${rt.verificationPage} 次，最后一次 ${
           (rt.verificationPageAt || '').slice(0, 16) || '—'
-        }${rt.verificationPageRecent ? ` —— 最近 30 分钟内还有 ${rt.verificationPageRecent} 次，正在发生` : ''}`
+        }${
+          recent
+            ? recent >= rt.verificationPage
+              ? ' —— 全部发生在最近 30 分钟内，正在发生'
+              : ` —— 其中最近 30 分钟 ${recent} 次，正在发生`
+            : ''
+        }`
       )
     }
     if (rt.ttwidMissing) {
@@ -902,6 +991,119 @@
 
   /** 每个房间生效的 Cookie 档位 */
   const effectiveCookies = computed(() => proxyCfg.value?.effective || [])
+
+  /** 只列"走专用 Cookie"的房间（例外才有信息量，房间数会增减） */
+  const roomsWithOwnCookie = computed(() => effectiveCookies.value.filter((r) => r.source === 'room'))
+
+  /** 档位命中概况：专用 / 默认 / 自动各几个房间 */
+  const cookieSourceSummary = computed(() => {
+    const list = effectiveCookies.value
+    if (!list.length) return '当前没有监控房间'
+    const n = (s: string) => list.filter((r) => r.source === s).length
+    const parts = []
+    if (n('room')) parts.push(`专用 ${n('room')} 个`)
+    if (n('default')) parts.push(`默认 ${n('default')} 个`)
+    if (n('auto')) parts.push(`自动获取 ${n('auto')} 个`)
+    return `共 ${list.length} 个房间：${parts.join(' · ')}`
+  })
+
+  /** 当前监控的房间（供「房间专用 Cookie」下拉选择；房间本身的管理在「房间管理」页） */
+  const monitoredRooms = computed(() =>
+    (status.value?.ws?.states || []).map((r) => ({ roomId: r.roomId, name: r.name || '' }))
+  )
+
+  const blockedSections = computed(() => form.value?.blockedSections || [])
+
+  // ===== 可视化配置抽屉 =====
+  const editorOpen = ref(false)
+  const formLoading = ref(false)
+  const saving = ref<'' | 'save' | 'restart'>('')
+  const form = ref<ProxyConfigForm | null>(null)
+  const draft = ref<Record<string, any>>({})
+  const roomCookieRows = ref<{ roomId: string; cookie: string }[]>([])
+  const saveError = ref('')
+  const saveWarnings = ref<string[]>([])
+
+  /** 草稿里的 Cookie 是什么档位（跟卡片上同一套判定，改之前就能看出效果） */
+  const draftBadge = computed(() => {
+    const v = String(draft.value['cookie.douyin'] || '')
+    if (!v.trim()) return { text: '未配置（匿名态）', cls: 'bg-g-100 text-g-600' }
+    const login = /(?:^|;\s*)(sessionid|sessionid_ss|sid_tt|uid_tt|sso_uid_tt|sid_ucp_v1|passport_assist_user)=/.test(v)
+    if (login) return { text: '登录态', cls: 'bg-success/12 text-success' }
+    if (/(?:^|;\s*)(ttwid|odin_tt|msToken|s_v_web_id)=/.test(v)) {
+      return { text: '匿名态（只有 ttwid 这类）', cls: 'bg-warning/12 text-warning' }
+    }
+    return { text: '已填写（键未识别）', cls: 'bg-warning/12 text-warning' }
+  })
+
+  async function openEditor() {
+    editorOpen.value = true
+    formLoading.value = true
+    saveError.value = ''
+    saveWarnings.value = []
+    try {
+      const f = await fetchProxyConfigForm()
+      form.value = f
+      draft.value = { ...(f.values || {}) }
+      roomCookieRows.value = Object.entries(f.values?.['cookie.rooms'] || {}).map(([roomId, cookie]) => ({
+        roomId,
+        cookie: String(cookie)
+      }))
+    } catch (e) {
+      saveError.value = apiErrorMessage(e, '读取代理配置失败')
+    } finally {
+      formLoading.value = false
+    }
+  }
+
+  function addRoomCookie() {
+    roomCookieRows.value.push({ roomId: '', cookie: '' })
+  }
+
+  /** 组装 patch：只提交表单里真正有的字段 */
+  async function save(restart: boolean) {
+    saving.value = restart ? 'restart' : 'save'
+    saveError.value = ''
+    saveWarnings.value = []
+    try {
+      const rooms: Record<string, string> = {}
+      for (const row of roomCookieRows.value) {
+        const id = String(row.roomId || '').trim()
+        if (id && String(row.cookie || '').trim()) rooms[id] = String(row.cookie).trim()
+      }
+      const patch: Record<string, any> = {
+        'log.level': draft.value['log.level'] || 'info',
+        'sign.provider': draft.value['sign.provider'] ?? '',
+        'tikhub.key': draft.value['tikhub.key'] || '',
+        'api.key': draft.value['api.key'] || '',
+        'monitor.poll_interval': draft.value['monitor.poll_interval'] || '15s',
+        'monitor.notify_interval': draft.value['monitor.notify_interval'] || '30s',
+        'websocket.path': draft.value['websocket.path'] || '/ws',
+        'cookie.use_stored': draft.value['cookie.use_stored'] !== false,
+        'cookie.douyin': draft.value['cookie.douyin'] || '',
+        'cookie.rooms': rooms
+      }
+      const res = await saveProxyConfig(patch)
+      if (!res?.ok) {
+        saveError.value = res?.error || '保存失败'
+        saveWarnings.value = res?.warnings || []
+        return
+      }
+      saveWarnings.value = res?.warnings || []
+      ElMessage.success(restart ? '已保存，正在重启代理…' : '已保存到 config.yaml（重启代理后生效）')
+      if (restart) {
+        const act = await performServiceAction('restart-proxy')
+        if (act?.ok) ElMessage.success(act.message || '代理已重启')
+        else ElMessage.warning(act?.error || act?.message || '代理重启未成功，请查看运行日志')
+      }
+      await refresh()
+      editorOpen.value = false
+    } catch (e) {
+      saveError.value = apiErrorMessage(e, '保存失败')
+    } finally {
+      saving.value = ''
+    }
+  }
 
   function sourceText(source: string, auth: string): string {
     if (source === 'room') return `房间专用（${auth === 'login' ? '登录态' : '匿名态'}）`

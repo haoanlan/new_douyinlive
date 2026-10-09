@@ -261,9 +261,14 @@ async function handleDynamicRoutes(
   // 标记初始化进行中
   routeInitInProgress = true
 
-  // 显示 loading
-  pendingLoading = true
-  loadingService.showLoading()
+  /*
+   * 这里原来会 loadingService.showLoading() —— 一层全屏遮罩 + 转圈，
+   * 盖在空白页面上，是"廉价感"最重的一处（而且本地接口很快，遮罩闪一下更难看）。
+   * 现在只靠顶部的 NProgress 细条（showNprogress 已默认打开）+ 各页面自己的骨架屏：
+   * 进度条不遮挡内容，骨架屏让"正在加载"看起来是有结构的。
+   * pendingLoading 仍然置位，hideLoading 依旧兜底调用（幂等）。
+   */
+  pendingLoading = false
 
   try {
     // 1. 获取用户信息

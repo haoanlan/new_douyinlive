@@ -1,5 +1,14 @@
 <template>
-  <div v-loading="loading" class="douyin-page p-4" element-loading-text="加载中…">
+  <!--
+    不再用 v-loading 全屏遮罩：这一页的数据没到时本来就有完整骨架
+    （标题回落成"场次详情"、统计卡是 0、列表是空态），
+    再盖一层白板既多余又廉价。改成"有内容时刷新才轻微变淡" + 工具条的刷新按钮转圈。
+  -->
+  <div
+    class="douyin-page dy-stagger p-4"
+    :class="loading && detail ? 'opacity-60' : ''"
+    style="transition: opacity 200ms cubic-bezier(0.23, 1, 0.32, 1)"
+  >
     <!-- 面包屑统一由顶栏渲染；"回到该主播场次列表"的入口移到下面的工具条上 -->
 
     <!-- 失败必须说出来（UI-AUDIT P1-11）：否则页面停在全 0 的假数据上 -->

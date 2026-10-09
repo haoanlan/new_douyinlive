@@ -1,5 +1,5 @@
 <template>
-  <div class="douyin-page p-4">
+  <div class="douyin-page dy-stagger p-4">
     <!-- 工具条 -->
     <div
       class="art-card dy-toolbar room-toolbar mb-5 flex items-center justify-between gap-4 flex-wrap"

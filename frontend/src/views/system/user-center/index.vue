@@ -1,6 +1,6 @@
 <!-- 个人中心页面 -->
 <template>
-  <div class="w-full h-full p-0 bg-transparent border-none shadow-none">
+  <div class="douyin-page dy-stagger w-full h-full p-0 bg-transparent border-none shadow-none">
     <div class="relative flex-b mt-2.5 max-md:block max-md:mt-1">
       <!-- 左：账号卡片（全部是真实数据，原来这里是模板的假资料） -->
       <div class="w-112 mr-5 max-md:w-full max-md:mr-0">

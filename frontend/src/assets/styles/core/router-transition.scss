@@ -25,6 +25,38 @@ $fade-easing: transition-config('fade-easing');
 
 // === 动画类 ===
 
+// ── fade-lift：默认的页面切换（淡入 + 轻微上浮） ──
+//
+// 为什么不用横向 slide：横向整页位移是移动端 Tab 的手感，放到后台里会显得"晃"，
+// 而且新旧两页在 250ms 内横向错位，观感更廉价（用户反馈"有点太山寨"）。
+// 这里改成"进入时从下 8px 淡入（200ms，ease-out）、离开时淡出（120ms，ease-in）"：
+//   进出时长不对称 —— 退场要快（别挡着新页面），进场要稳（内容铺开有交代）。
+.dy-fade-lift {
+  &-enter-active {
+    transition:
+      opacity 200ms cubic-bezier(0.23, 1, 0.32, 1),
+      transform 200ms cubic-bezier(0.23, 1, 0.32, 1);
+    will-change: opacity, transform;
+  }
+
+  &-leave-active {
+    transition:
+      opacity 120ms cubic-bezier(0.4, 0, 1, 1),
+      transform 120ms cubic-bezier(0.4, 0, 1, 1);
+    will-change: opacity, transform;
+  }
+
+  &-enter-from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+
+  &-leave-to {
+    opacity: 0;
+    transform: translate3d(0, -4px, 0);
+  }
+}
+
 // 淡入淡出动画
 .fade {
   &-enter-active,
@@ -110,6 +142,7 @@ $fade-easing: transition-config('fade-easing');
 // 两个 .art-page-view）。让"正在离开"的那一页绝对定位即可，总时长不变、也不会跳。
 // 定位祖先是 .layout-content（已设为 position: relative）。
 .art-page-view.fade-leave-active,
+.art-page-view.dy-fade-lift-leave-active,
 .art-page-view.slide-left-leave-active,
 .art-page-view.slide-right-leave-active,
 .art-page-view.slide-top-leave-active,
@@ -127,6 +160,8 @@ $fade-easing: transition-config('fade-easing');
 @media (prefers-reduced-motion: reduce) {
   .fade-enter-active,
   .fade-leave-active,
+  .dy-fade-lift-enter-active,
+  .dy-fade-lift-leave-active,
   .slide-left-enter-active,
   .slide-left-leave-active,
   .slide-right-enter-active,
@@ -146,7 +181,9 @@ $fade-easing: transition-config('fade-easing');
   .slide-left-leave-to,
   .slide-right-leave-to,
   .slide-top-leave-to,
-  .slide-bottom-leave-to {
+  .slide-bottom-leave-to,
+  .dy-fade-lift-enter-from,
+  .dy-fade-lift-leave-to {
     transform: none;
   }
 }

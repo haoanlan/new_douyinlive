@@ -94,6 +94,69 @@
   transition: transform var(--dy-dur-slow) var(--dy-ease-out);
 }
 
+/* ==========================================================================
+ * 页面内容分组入场（.dy-stagger）
+ *
+ * 目的：现在页面"啪"一下整块出现，是廉价感的主要来源之一。
+ * 给页面根节点加这个类后，它的**直接子元素**会按序上浮淡入（30ms 步进，最多 8 个），
+ * 形成"内容一层层铺开"的节奏。
+ *
+ * 几个刻意的选择：
+ *   - 位移只有 10px：位移越大越像"飞入"，越小越像"就位"；
+ *   - 时长 320ms + --dy-ease-out（先快后慢），收尾干净；
+ *   - 只作用于直接子元素 —— 子元素内部的列表/卡片有自己的动效，不叠加，
+ *     否则一屏几十个元素同时位移，反而更乱；
+ *   - animation-fill-mode: both，动画结束后 transform 归零，
+ *     不会让内部的 fixed 定位元素（弹层等）被父级 transform 影响；
+ *   - KeepAlive 缓存的页面只在首次挂载播一次（组件没重建，动画不会重放）。
+ * ========================================================================== */
+@keyframes dy-rise-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.dy-stagger > * {
+  animation: dy-rise-in 320ms var(--dy-ease-out) both;
+}
+
+.dy-stagger > *:nth-child(1) { animation-delay: 0ms; }
+.dy-stagger > *:nth-child(2) { animation-delay: 30ms; }
+.dy-stagger > *:nth-child(3) { animation-delay: 60ms; }
+.dy-stagger > *:nth-child(4) { animation-delay: 90ms; }
+.dy-stagger > *:nth-child(5) { animation-delay: 120ms; }
+.dy-stagger > *:nth-child(6) { animation-delay: 150ms; }
+.dy-stagger > *:nth-child(7) { animation-delay: 180ms; }
+.dy-stagger > *:nth-child(n + 8) { animation-delay: 210ms; }
+
+/* ==========================================================================
+ * 图片/头像/礼物图标淡入
+ *
+ * 原来图片是"加载完就硬替换"，列表里一排头像/礼物图标会同时闪一下，很毛躁。
+ * 这里不给每个图片加 JS 监听（数量多、还会因虚拟滚动反复挂载），
+ * 改成在元素**挂载时**淡入 240ms：配合数据到达的时机，视觉上就是"图片柔和出现"。
+ * 只作用于抖音页内的图片容器，不动模板其它页面的图标与背景图。
+ * ========================================================================== */
+@keyframes dy-img-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.douyin-page .el-avatar img,
+.douyin-page .el-image__inner,
+.douyin-page .el-avatar > img {
+  animation: dy-img-in 240ms var(--dy-ease-out) both;
+}
+
 /**
  * 减弱动效：不是"全部关掉"——颜色与透明度变化有助于理解状态，保留；
  * 位移/缩放类动效去掉（前庭失调用户会不适）。
@@ -113,6 +176,16 @@
   .dy-list-leave-active,
   .dy-list-move {
     transition-duration: 1ms;
+  }
+
+  /* 分组入场的位移去掉，只保留极短的淡入 */
+  .dy-stagger > * {
+    animation: dy-img-in 120ms linear both;
+  }
+
+  .douyin-page .el-avatar img,
+  .douyin-page .el-image__inner {
+    animation-duration: 1ms;
   }
 }
 

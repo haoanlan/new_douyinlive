@@ -1,5 +1,5 @@
 <template>
-  <div class="douyin-page p-4">
+  <div class="douyin-page dy-stagger p-4">
     <!--
       汇总卡片。
       与「场次历史 / 场次详情」的同款卡片对齐口径（原来这里是自己一套）：
@@ -57,8 +57,26 @@
       :title="`状态数据已 ${staleSeconds} 秒未更新，自动刷新可能已停止`"
     />
 
-    <!-- 监控状态 —— 立即显示，无阻塞 -->
-    <div v-loading="!daemon" class="flex flex-wrap gap-5 mb-5" element-loading-text="连接中…">
+    <!--
+      监控状态 —— 立即显示，无阻塞。
+      原来这里是 `v-loading="!daemon"`：一块行内白板盖在状态卡上（用户反馈"遮罩大片空白、不够优雅"）。
+      改成同形的骨架卡：宽度/高度与真实卡片一致，数据到位直接替换，没有"盖住—揭开"的过程。
+    -->
+    <div v-if="!daemon && !statusError" class="flex flex-wrap gap-5 mb-5">
+      <div
+        v-for="i in 4"
+        :key="i"
+        class="art-card relative flex-1 min-w-[160px] flex items-center gap-3 h-20 px-5"
+      >
+        <el-skeleton-item variant="button" style="width: 36px; height: 36px; border-radius: 8px" />
+        <div class="min-w-0 flex-1">
+          <el-skeleton-item variant="text" style="width: 40%" />
+          <el-skeleton-item variant="text" style="width: 60%; margin-top: 8px" />
+        </div>
+      </div>
+    </div>
+
+    <div v-else class="flex flex-wrap gap-5 mb-5">
       <div class="art-card relative flex-1 min-w-[160px] flex items-center gap-3 h-20 px-5">
         <div class="size-9 rounded-lg flex-cc bg-theme/10 shrink-0">
           <ArtSvgIcon icon="ri:server-line" class="text-base text-theme" />

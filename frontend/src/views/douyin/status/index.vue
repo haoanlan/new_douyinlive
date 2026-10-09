@@ -14,7 +14,7 @@
     - 重启类操作走 confirmDangerous 二次确认，且文案里写明影响面。
 -->
 <template>
-  <div class="douyin-page p-4 flex flex-col gap-4">
+  <div class="douyin-page dy-stagger p-4 flex flex-col gap-4">
     <!-- 状态取不到：明确说明，而不是把下面渲染成红色「未运行」 -->
     <el-alert
       v-if="statusError"

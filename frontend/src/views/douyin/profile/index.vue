@@ -1,5 +1,5 @@
 <template>
-  <div class="douyin-page p-4">
+  <div class="douyin-page dy-stagger p-4">
     <!--
       加载失败：用共用错误态（不是空态插图），并把重试的进行中状态接上。
       原来这里是 el-empty + 一个没有 loading 的「重试」按钮（UI-AUDIT P1-10）。

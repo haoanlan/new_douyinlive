@@ -55,8 +55,8 @@ export const SETTING_DEFAULT_CONFIG = {
   showWorkTab: true,
   /** 是否显示语言切换 */
   showLanguage: true,
-  /** 是否显示进度条 */
-  showNprogress: false,
+  /** 是否显示进度条（页面切换时的顶部细条：比全屏遮罩优雅，也不再挡内容） */
+  showNprogress: true,
   /** 是否显示设置引导 */
   showSettingGuide: true,
   /** 是否显示节日文本 */
@@ -75,8 +75,8 @@ export const SETTING_DEFAULT_CONFIG = {
   holidayFireworksLoaded: false,
   /** 边框模式 */
   boxBorderMode: true,
-  /** 页面过渡效果 */
-  pageTransition: 'slide-left',
+  /** 页面过渡效果：dy-fade-lift = 淡入 + 8px 上浮（横向 slide 手感偏移动端，后台里显廉价） */
+  pageTransition: 'dy-fade-lift',
   /** 标签页样式 */
   tabStyle: 'tab-default',
   /** 自定义圆角 */

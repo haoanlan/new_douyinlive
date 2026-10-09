@@ -1,5 +1,5 @@
 <template>
-  <div class="douyin-page p-4">
+  <div class="douyin-page dy-stagger p-4">
     <!-- 面包屑统一由顶栏渲染（art-breadcrumb 会按 meta.activePath 显示"房间管理 / 场次历史"） -->
 
     <!-- 顶部汇总 -->

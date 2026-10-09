@@ -1,6 +1,6 @@
 <!-- 信息查询（原「匿名查询」）—— 按总览页卡片风格重做 -->
 <template>
-  <div class="douyin-page p-4">
+  <div class="douyin-page dy-stagger p-4">
     <!-- 顶部工具条 -->
     <div class="art-card dy-toolbar mb-5 flex items-center justify-between gap-4 flex-wrap">
       <div class="flex items-center gap-3 min-w-0">

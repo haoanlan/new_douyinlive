@@ -1,6 +1,6 @@
 <!-- 用户管理（仅管理员可见） -->
 <template>
-  <div class="douyin-page p-4">
+  <div class="douyin-page dy-stagger p-4">
     <article class="art-card p-5">
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div class="min-w-0">

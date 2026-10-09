@@ -40,7 +40,14 @@ export function renderWordCloud(words: any[], canvasEl?: HTMLCanvasElement | nul
     if (!/[\u4e00-\u9fa5a-zA-Z0-9]/.test(text)) return
     const clean = text.replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '')
     if (clean.length >= 2 && clean.length <= 10) wordFreq[clean] = (wordFreq[clean] || 0) + w.cnt
-    if (text.length <= 8 && text !== clean) wordFreq[text] = (wordFreq[text] || 0) + w.cnt
+    /*
+     * 带抖音表情代码的原文不再单独进词云：上面按"去掉非文字字符"统计过一版，
+     * 已经把词频记进去了，再放一份带方括号的只会让画布上出现一串 [捂脸][捂脸]。
+     * （实测全库最高频的一条弹幕就是 [捂脸][捂脸] 1590 次，会直接顶到词云最大那档。）
+     */
+    const hasEmojiCode = /\[[^\]]+\]/.test(text)
+    if (!hasEmojiCode && text.length <= 8 && text !== clean)
+      wordFreq[text] = (wordFreq[text] || 0) + w.cnt
   })
 
   // 去重排序（上限 70：原来 40 个填不满画布）

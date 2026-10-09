@@ -45,7 +45,13 @@
             连接的健康状态，用于快速判断当前是否在正常采集。
           </p>
         </div>
-        <div class="flex flex-wrap items-center gap-3">
+        <!--
+          dy-action-row：这一行的间距统一交给 flex gap 管。
+          Element Plus 会给「相邻的 el-button」再加一条 margin-left: 12px，
+          叠在 gap-3(12px) 上就变成：自动刷新→刷新状态 12px、刷新状态→重启全部服务 24px，
+          两个间距不一样（用户看出来了）。这里把那条 margin 归零。
+        -->
+        <div class="dy-action-row flex flex-wrap items-center gap-3">
           <!-- 这里原来还有一个「运行正常 / 风险 / 未知」的 chip：
                同一结论在下面指标卡里已经逐项表达（脚本运行中 / 代理健康 / Cookie 状态 / 异常提醒），
                顶部再放一个总结反而重复，按用户要求去掉。 -->
@@ -1546,6 +1552,16 @@
     border-radius: 6px;
     font-size: 12px;
     line-height: 1;
+  }
+
+  /* ===== 控件行间距 =====
+     Element Plus 默认给相邻按钮加 margin-left: 12px。只要该行用了 flex gap，
+     两个按钮之间的间距就会是 gap + 12，与"第一个控件到第一个按钮"的 gap 不一致。
+     统一归零，改由 gap 单独决定，这样一行里每个间距都相等。 */
+  .dy-action-row {
+    :deep(.el-button + .el-button) {
+      margin-left: 0;
+    }
   }
 
   /* ===== 可视化配置抽屉 =====

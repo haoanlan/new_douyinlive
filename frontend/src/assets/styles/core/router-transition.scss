@@ -29,31 +29,48 @@ $fade-easing: transition-config('fade-easing');
 //
 // 为什么不用横向 slide：横向整页位移是移动端 Tab 的手感，放到后台里会显得"晃"，
 // 而且新旧两页在 250ms 内横向错位，观感更廉价（用户反馈"有点太山寨"）。
-// 这里改成"进入时从下 8px 淡入（200ms，ease-out）、离开时淡出（120ms，ease-in）"：
-//   进出时长不对称 —— 退场要快（别挡着新页面），进场要稳（内容铺开有交代）。
+//
+// 为什么用 @keyframes（animation）而不是 transition：
+//   返回缓存页时（场次详情 → 场次列表），KeepAlive 复用同一个 DOM 节点，
+//   "插入元素"与"移除 enter-from"落在同一帧，浏览器没有中间态可绘制 →
+//   transition 版动画会被整段跳过（实测 t=10ms 就已经 op=1、类名清空），
+//   表现就是硬切。animation 由浏览器自行排期，元素一插入必定从头播，
+//   这也让交叉淡入（新旧两页同时在）重新可用，不必退化成 out-in 那种先空一帧的写法。
+//
+// 时长与方向：
+//   进场 180ms ease-out（先快后慢，缓缓就位）；退场 100ms ease-in（干脆离场，别拖）；
+//   旧页向上 -4px 走、新页从下 +8px 进 —— 一段连续的纵向运动。
+@keyframes dy-page-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes dy-page-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(0, -4px, 0);
+  }
+}
+
 .dy-fade-lift {
   &-enter-active {
-    transition:
-      opacity 200ms cubic-bezier(0.23, 1, 0.32, 1),
-      transform 200ms cubic-bezier(0.23, 1, 0.32, 1);
+    animation: dy-page-in 180ms cubic-bezier(0.23, 1, 0.32, 1) both;
     will-change: opacity, transform;
   }
 
   &-leave-active {
-    transition:
-      opacity 120ms cubic-bezier(0.4, 0, 1, 1),
-      transform 120ms cubic-bezier(0.4, 0, 1, 1);
+    animation: dy-page-out 100ms cubic-bezier(0.4, 0, 1, 1) both;
     will-change: opacity, transform;
-  }
-
-  &-enter-from {
-    opacity: 0;
-    transform: translate3d(0, 8px, 0);
-  }
-
-  &-leave-to {
-    opacity: 0;
-    transform: translate3d(0, -4px, 0);
   }
 }
 
@@ -181,9 +198,13 @@ $fade-easing: transition-config('fade-easing');
   .slide-left-leave-to,
   .slide-right-leave-to,
   .slide-top-leave-to,
-  .slide-bottom-leave-to,
-  .dy-fade-lift-enter-from,
-  .dy-fade-lift-leave-to {
+  .slide-bottom-leave-to {
     transform: none;
+  }
+
+  /* 位移类动画降级：时长压到 1ms（只保留状态切换） */
+  .dy-fade-lift-enter-active,
+  .dy-fade-lift-leave-active {
+    animation-duration: 1ms !important;
   }
 }

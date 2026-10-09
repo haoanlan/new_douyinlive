@@ -16,30 +16,34 @@
 
     <RouterView v-if="isRefresh" v-slot="{ Component, route }" :style="contentStyle">
       <!--
-        缓存路由动画（UI-AUDIT P1-5）：原来这里只有 KeepAlive、没有 Transition，
-        于是 5 个 keepAlive 页（dashboard/rooms/sessions/trends/status）之间互跳是硬切，
-        只有非缓存的 search/detail/profile 有动画 —— 观感上"点搜索结果反而更顺"。
-        Transition 包住 KeepAlive 是 Vue 官方支持的写法。
-      -->
-      <Transition :name="showTransitionMask ? '' : actualTransition">
-        <KeepAlive :max="10" :exclude="keepAliveExclude">
-          <component
-            class="art-page-view"
-            :is="Component"
-            :key="route.path"
-            v-if="route.meta.keepAlive"
-          />
-        </KeepAlive>
-      </Transition>
+        单一个 Transition + KeepAlive（原来拆成"缓存页/非缓存页"两个 Transition）。
+        拆开的问题：两个 Transition 各自独立，**跨越两者的切换无法协调**；
+        而且返回一个缓存页时（详情 → 场次列表），KeepAlive 复用同一个 DOM 节点，
+        enter-from 的添加与移除落在同一帧，浏览器没机会绘制中间态 → 动画整段被跳过，
+        观感就是"啪"地硬切（用户指出的正是这一跳）。
 
-      <!-- 非缓存路由动画 -->
-      <Transition :name="showTransitionMask ? '' : actualTransition">
-        <component
-          class="art-page-view"
-          :is="Component"
-          :key="route.path"
-          v-if="!route.meta.keepAlive"
-        />
+        现在：
+        - Transition 包 KeepAlive（Vue 官方推荐结构），进出都由同一实例管；
+        - **:css="false" + JS 钩子（Web Animations API）**：
+          CSS 类名版有两个坑 ——（1）返回缓存页时 KeepAlive 复用同一 DOM 节点，
+          "插入"与"移除 enter-from"同帧发生，浏览器没有中间态可绘制；
+          （2）改用 @keyframes 后 Vue 判定不到时长，会立刻摘掉 active 类，动画被截断
+          （实测进场 20ms 就到位）。交给浏览器排期最稳：元素一进 DOM 就必定从头播。
+        - 不加 mode="out-in"：交叉淡入更连续（离开页在钩子里设为绝对定位，不参与布局）；
+        - 缓存白名单用 :include（按路由 meta.keepAlive 生成）——
+          原来靠 v-if 分流来区分缓存，合并后必须显式告诉 KeepAlive 只缓存这些页面，
+          否则搜索/详情/画像也会被缓存（筛选条件、场次 id 全留在内存里）。
+      -->
+      <Transition
+        :css="false"
+        :name="showTransitionMask ? '' : actualTransition"
+        @enter="onPageEnter"
+        @leave="onPageLeave"
+        @leave-cancelled="onPageLeaveCancelled"
+      >
+        <KeepAlive :max="10" :include="keepAliveInclude" :exclude="keepAliveExclude">
+          <component class="art-page-view" :is="Component" :key="route.path" />
+        </KeepAlive>
       </Transition>
     </RouterView>
 
@@ -62,9 +66,24 @@
   defineOptions({ name: 'ArtPageContent' })
 
   const route = useRoute()
+  const router = useRouter()
   const { containerMinHeight } = useAutoLayoutHeight()
   const { pageTransition, containerWidth, refresh } = storeToRefs(useSettingStore())
   const { keepAliveExclude } = storeToRefs(useWorktabStore())
+
+  /**
+   * KeepAlive 的缓存白名单：只缓存路由 meta.keepAlive 为真的页面。
+   *
+   * 合并成一个 Transition 之后，所有页面都会流经同一个 KeepAlive，
+   * 所以要显式用 include 圈定范围（原来靠模板里的 v-if 分流）。
+   * 组件名与路由 name 一一对应（各页 defineOptions({ name }) 都对齐过）。
+   */
+  const keepAliveInclude = computed(() =>
+    router
+      .getRoutes()
+      .filter((r) => r.meta?.keepAlive && r.name)
+      .map((r) => String(r.name))
+  )
 
   const isRefresh = shallowRef(true)
   const isOpenRouteInfo = import.meta.env.VITE_OPEN_ROUTE_INFO
@@ -127,6 +146,85 @@
     nextTick(() => {
       isRefresh.value = true
     })
+  }
+
+  /* ===== 页面进出动画（Web Animations API） =====
+   *
+   * 为什么要走 JS 钩子而不是 CSS 类名，见模板里的注释（缓存页复用节点时
+   * CSS 版动画会被跳过或被 Vue 提前截断）。
+   *
+   * 时长取值的依据（实测）：
+   *   退场那一段在"离开缓存页"时会被 KeepAlive 移动节点而提前结束（实测 ~40–70ms），
+   *   所以**主要观感交给进场**：240ms 从下 10px 淡入，配 cubic-bezier(0.4,0,0.2,1)
+   *   （比 0.23,1,0.32,1 均衡，不会 20ms 就冲到 0.97），读起来是"新页缓缓就位"；
+   *   退场只作收尾：120ms 向上 4px 淡出。
+   */
+  const PAGE_IN_MS = 240
+  const PAGE_IN_EASE = 'cubic-bezier(0.4, 0, 0.2, 1)'
+  const PAGE_OUT_MS = 120
+  const PAGE_OUT_EASE = 'cubic-bezier(0.4, 0, 1, 1)'
+  const PAGE_IN_SHIFT = 10
+
+  const reduceMotion = () =>
+    typeof window !== 'undefined' &&
+    window.matchMedia &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+  /** 离开页脱离文档流：交叉淡入时两页同时存在，否则滚动高度翻倍、滚动条会跳 */
+  const detachForLeave = (el: HTMLElement) => {
+    el.style.position = 'absolute'
+    el.style.top = '0'
+    el.style.right = '0'
+    el.style.left = '0'
+  }
+  const reattach = (el: HTMLElement) => {
+    el.style.position = ''
+    el.style.top = ''
+    el.style.right = ''
+    el.style.left = ''
+  }
+
+  const onPageEnter = (el: Element, done: () => void) => {
+    const node = el as HTMLElement
+    reattach(node)
+    if (!actualTransition.value || reduceMotion()) return done()
+    node
+      .animate(
+        [
+          { opacity: 0, transform: `translate3d(0, ${PAGE_IN_SHIFT}px, 0)` },
+          { opacity: 1, transform: 'none' }
+        ],
+        { duration: PAGE_IN_MS, easing: PAGE_IN_EASE, fill: 'both' }
+      )
+      .finished.then(done, done)
+  }
+
+  const onPageLeave = (el: Element, done: () => void) => {
+    const node = el as HTMLElement
+    detachForLeave(node)
+    if (!actualTransition.value || reduceMotion()) {
+      reattach(node)
+      return done()
+    }
+    node
+      .animate(
+        [
+          { opacity: 1, transform: 'none' },
+          { opacity: 0, transform: 'translate3d(0, -4px, 0)' }
+        ],
+        { duration: PAGE_OUT_MS, easing: PAGE_OUT_EASE, fill: 'both' }
+      )
+      .finished.then(() => {
+        reattach(node)
+        done()
+      }, () => {
+        reattach(node)
+        done()
+      })
+  }
+
+  const onPageLeaveCancelled = (el: Element) => {
+    reattach(el as HTMLElement)
   }
 
   watch(refresh, reload, { flush: 'post' })

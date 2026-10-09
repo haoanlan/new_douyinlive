@@ -52,6 +52,7 @@ import { fetchGetUserInfo } from '@/api/auth-douyin'
 import { ApiStatus } from '@/utils/http/status'
 import { isHttpError } from '@/utils/http/error'
 import { RouteRegistry, MenuProcessor, IframeRouteManager, RoutePermissionValidator } from '../core'
+import { scrollMemory, rememberNavigation } from '../index'
 
 // 路由注册器实例
 let routeRegistry: RouteRegistry | null = null
@@ -61,6 +62,14 @@ const menuProcessor = new MenuProcessor()
 
 // 跟踪是否需要关闭 loading
 let pendingLoading = false
+
+/** 把当前滚动位置记到 router 的 scrollMemory 里（供"返回父级页面"时恢复） */
+function saveScrollPosition(fullPath: string): void {
+  if (!fullPath) return
+  const container = document.getElementById('app-main')
+  if (!container) return
+  scrollMemory.set(fullPath, container.scrollTop)
+}
 
 // 路由初始化失败标记，防止死循环
 // 一旦设置为 true，只有刷新页面或重新登录才能重置
@@ -150,6 +159,14 @@ async function handleRouteGuard(
   if (settingStore.showNprogress) {
     NProgress.start()
   }
+
+  /*
+   * 记下**当前**页面的滚动位置（此刻 DOM 还没换），并把目标页压入导航栈。
+   * 配合 router 的 scrollBehavior：点「返回」回到上一页时恢复原来的位置，
+   * 而不是被弹回顶部（见 router/index.ts 的 scrollMemory / navStack）。
+   */
+  saveScrollPosition(from.fullPath)
+  rememberNavigation(to.fullPath)
 
   // 1. 检查登录状态
   if (!handleLoginStatus(to, userStore, next)) {

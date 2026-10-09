@@ -6,7 +6,8 @@
   "scripts": {
     "test": "node --test",
     "test:watch": "node --test --watch",
-    "check:modules": "node scripts/vite-module-check.js"
+    "check:modules": "node scripts/vite-module-check.js",
+    "check:imports": "node scripts/import-check.js"
   },
   "keywords": [],
   "author": "",

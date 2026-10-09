@@ -681,7 +681,14 @@
   defineOptions({ name: 'DouyinStatus' })
 
   const status = ref<ServiceStatus | null>(null)
-  const loading = ref(true)
+  /*
+   * 初值必须是 false。
+   * 原来是 true（当初为了首屏就转圈，配合 `if (!status.value) loading.value = true`），
+   * 但 refresh() 现在开头有防重入 `if (loading.value) return` ——
+   * 初值 true 会把**第一次**刷新也挡回去：状态永远拿不到，整页显示"状态未知"、
+   * 连 8 秒轮询也不会发请求。首屏的转圈由 refresh() 自己置位就够了。
+   */
+  const loading = ref(false)
   const autoRefresh = ref(true)
   const busy = ref<ServiceAction | ''>('')
   const showLog = ref(false)

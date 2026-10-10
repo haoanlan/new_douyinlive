@@ -56,22 +56,23 @@
   }
 
   /*
-   * 遮罩：只做"轻蒙一层 + 点它收起抽屉"，不要重色。
-   * 实测反馈（用户）：0.35 的黑罩太压、像故障。降到 0.18 并加一点点模糊，
-   * 既提示"后面不可点"，又不至于把整屏压黑。
+   * 遮罩：只保留"点空白处收起抽屉"的作用，**不做任何视觉遮罩**（用户明确不要灰黑遮罩 + 模糊）。
    *
-   * top 从顶栏下方开始（顶栏 h-15 = 60px）：抽屉打开时顶栏仍然可点 ——
-   * 否则齿轮/菜单/头像全被盖住（实测 elementFromPoint 命中 div.mobile-sidebar-mask，
-   * 用户反馈"顶部设置点不开"就是这里 + 下面第 4 节的 display:none 一起造成的）。
+   * 层级必须**低于侧栏**：
+   *   侧栏的 z-index 是 views/index/style.scss 里定的 300，那是组件样式，
+   *   注入顺序在我的全局样式之后 —— 我在这里写多少都会被它盖掉（实测写了 320 仍然是 300）。
+   *   第一版我把遮罩设成 310、侧栏以为自己在 320，结果 elementFromPoint 在菜单项位置
+   *   全部命中 div.mobile-sidebar-mask：点菜单变成"点在遮罩上"，只关抽屉不跳转。
+   *   现在取 290：仍然盖住页面内容（#app-main 无 z-index、顶栏 50），但一定在抽屉之下。
+   *
+   * top 从顶栏下方（h-15 = 60px）开始，顶栏保持可点。
    */
   .mobile-sidebar-mask {
     position: fixed;
     inset: 60px 0 0;
-    z-index: 310;
+    z-index: 290;
     display: block;
-    background: rgb(0 0 0 / 18%);
-    backdrop-filter: blur(1px);
-    animation: dy-mask-in 200ms ease both;
+    background: transparent;
   }
 
   @keyframes dy-mask-in {

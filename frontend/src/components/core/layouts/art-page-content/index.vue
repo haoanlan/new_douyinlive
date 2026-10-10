@@ -188,15 +188,31 @@
     const node = el as HTMLElement
     reattach(node)
     if (!actualTransition.value || reduceMotion()) return done()
-    node
-      .animate(
-        [
-          { opacity: 0, transform: `translate3d(0, ${PAGE_IN_SHIFT}px, 0)` },
-          { opacity: 1, transform: 'none' }
-        ],
-        { duration: PAGE_IN_MS, easing: PAGE_IN_EASE, fill: 'both' }
-      )
-      .finished.then(done, done)
+    const anim = node.animate(
+      [
+        { opacity: 0, transform: `translate3d(0, ${PAGE_IN_SHIFT}px, 0)` },
+        { opacity: 1, transform: 'none' }
+      ],
+      { duration: PAGE_IN_MS, easing: PAGE_IN_EASE, fill: 'both' }
+    )
+    /*
+     * 播完必须 cancel()，不能只靠 fill: 'both' 留在最后状态。
+     * fill 会让动画效果持续生效，getComputedStyle 的 transform 也就一直是
+     * matrix(1,0,0,1,0,0)（非 none）—— 页面根节点因此成为 **position: fixed 的包含块**，
+     * 而 el-dialog / el-drawer 默认不 teleport 到 body，它们的 .el-overlay 就在这棵子树里：
+     * 实测弹窗被摆到页面内部（27,1365，本该视口居中）、遮罩变成页面大小 360×2766、
+     * 打开时还会闪。cancel() 之后动画效果消失，transform 回到 none。
+     */
+    anim.finished.then(
+      () => {
+        anim.cancel()
+        done()
+      },
+      () => {
+        anim.cancel()
+        done()
+      }
+    )
   }
 
   const onPageLeave = (el: Element, done: () => void) => {
@@ -206,21 +222,20 @@
       reattach(node)
       return done()
     }
-    node
-      .animate(
-        [
-          { opacity: 1, transform: 'none' },
-          { opacity: 0, transform: 'translate3d(0, -4px, 0)' }
-        ],
-        { duration: PAGE_OUT_MS, easing: PAGE_OUT_EASE, fill: 'both' }
-      )
-      .finished.then(() => {
-        reattach(node)
-        done()
-      }, () => {
-        reattach(node)
-        done()
-      })
+    const anim = node.animate(
+      [
+        { opacity: 1, transform: 'none' },
+        { opacity: 0, transform: 'translate3d(0, -4px, 0)' }
+      ],
+      { duration: PAGE_OUT_MS, easing: PAGE_OUT_EASE, fill: 'both' }
+    )
+    const finish = () => {
+      // 同 onPageEnter：播完取消动画效果，别把 transform 留在页面上
+      anim.cancel()
+      reattach(node)
+      done()
+    }
+    anim.finished.then(finish, finish)
   }
 
   const onPageLeaveCancelled = (el: Element) => {

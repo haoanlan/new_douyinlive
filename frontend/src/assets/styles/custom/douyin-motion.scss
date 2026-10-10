@@ -106,8 +106,12 @@
  *   - 时长 320ms + --dy-ease-out（先快后慢），收尾干净；
  *   - 只作用于直接子元素 —— 子元素内部的列表/卡片有自己的动效，不叠加，
  *     否则一屏几十个元素同时位移，反而更乱；
- *   - animation-fill-mode: both，动画结束后 transform 归零，
- *     不会让内部的 fixed 定位元素（弹层等）被父级 transform 影响；
+ *   - **必须排除 Element 的浮层**（见下面的选择器）：el-dialog / el-drawer 默认
+ *     不 teleport 到 body，它们的 .el-overlay 就是页面根节点的直接子元素。
+ *     （旧注释里写"fill-mode: both，动画结束后 transform 归零，所以不影响内部 fixed 元素"
+ *      是**错的** —— 实测动画结束后 getComputedStyle 的 transform 仍是
+ *      matrix(1,0,0,1,0,0)（非 none），因此依然是 position: fixed 的包含块：
+ *      弹窗被摆到页面内部（27,1365，本该视口居中）、遮罩变成页面大小 360×2766、打开时闪烁。）
  *   - KeepAlive 缓存的页面只在首次挂载播一次（组件没重建，动画不会重放）。
  * ========================================================================== */
 @keyframes dy-rise-in {
@@ -121,7 +125,18 @@
   }
 }
 
-.dy-stagger > * {
+/*
+ * 入场动画只加在"内容块"上，Element 的浮层一律排除：
+ *   .el-overlay      弹窗/抽屉的遮罩（fixed，被祖先 transform 拽住的受害者）
+ *   .el-drawer       抽屉本体
+ *   .el-dialog       弹窗本体
+ *   .el-message-box  确认框
+ *   .el-loading-mask 加载遮罩
+ * 这些元素要么自身是 fixed，要么内部有 fixed 后代，一旦被加上带动画的 transform
+ * 就会以该元素为包含块定位（实测症状见上面的注释）。
+ */
+.dy-stagger
+  > *:not(.el-overlay):not(.el-drawer):not(.el-dialog):not(.el-message-box):not(.el-loading-mask) {
   animation: dy-rise-in 320ms var(--dy-ease-out) both;
 }
 

@@ -247,6 +247,46 @@
 }
 
 /* ============================================================
+ * 一·补五、窄屏"抽屉占满宽度"
+ *
+ * 状态页的「代理配置」抽屉写死 size="620px"（给桌面的）。390 视口下实测：
+ * 抽屉 left=-230、宽 620 —— 左侧 230px 被推出屏幕外，说明文字与 Cookie 行开头全被切掉。
+ * 窄屏让它占满视口（抽屉本身也有 .dy-proxy-drawer 类，这里按类精确命中，
+ * 不动设置面板那个 300px 的抽屉）。
+ * ============================================================ */
+@media (max-width: 800px) {
+  .el-drawer.dy-proxy-drawer {
+    width: 100vw !important;
+    max-width: 100vw !important;
+  }
+
+  /*
+   * 抽屉底部：`[未保存提示][取消/只保存/保存并重启代理]` 一行排不下
+   * （三个按钮约 290px + 间距，抽屉内宽 ~340px），提示会被压成一字一行（实测截图）。
+   * 窄屏改成上下两行：提示单独一行（nowrap），按钮行右对齐并允许换行。
+   */
+  .dy-proxy-drawer .el-drawer__footer > div {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .dy-proxy-drawer .el-drawer__footer .text-xs {
+    white-space: nowrap;
+  }
+
+  .dy-proxy-drawer .el-drawer__footer .el-button + .el-button {
+    margin-left: 0;
+  }
+
+  .dy-proxy-drawer .el-drawer__footer div[class*='gap-2'] {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+}
+
+/* ============================================================
  * 二、触控目标尺寸
  *
  * 实测问题（390×844 巡检）：顶栏图标按钮 34×34、头像 26×26、

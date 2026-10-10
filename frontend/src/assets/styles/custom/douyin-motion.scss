@@ -441,6 +441,14 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   /*
+   * el-row 带 :gutter="20"，Element 会给它加 margin-left/right: -10px（原本靠列内边距抵消）。
+   * 但这里列被设成 display: contents、间距全交给 grid 的 gap，那 -10px 就没人抵消 ——
+   * 实测卡片整体**外扩 10px**（手机 5..385，而页面是 15..375；平板 10..758 / 页面 20..748），
+   * 与其它页面（卡片贴页面边）对不齐。直接归零。
+   */
+  margin-right: 0 !important;
+  margin-left: 0 !important;
+  /*
    * 必须同时给出显式行数：`grid-auto-flow: column` 在**没有显式行**时，
    * 每张卡都会新开一列（实测 6 列、卡片被拉到 2177px 高）。
    * 这里是固定的 6 个模块 → 3 行；多出来的模块会落到第 3 列（可接受的降级）。

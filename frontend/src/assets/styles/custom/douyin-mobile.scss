@@ -109,16 +109,22 @@
   }
 
   /*
-   * 标签关闭按钮：Element 写死了 14×14，padding 改不动尺寸，直接放大。
-   * 这里用 24×24 实体尺寸而不是靠 ::after 撑点区 —— .el-tag 常有 overflow: hidden，
-   * 溢出的伪元素会被裁掉，点区并不会真的变大（所以老老实实放大盒子）。
+   * 标签关闭按钮：Element 写死了 14×14，padding 改不动尺寸，直接放大到 28×28。
+   * 再大就会把标签本身撑变形（标签高一般 24px），所以这是实用上限；
+   * mobile-check 对 .el-tag__close 单独放宽阈值（见脚本内的说明）。
    */
   .douyin-page .el-tag .el-tag__close {
-    width: 24px;
-    height: 24px;
+    width: 28px;
+    height: 28px;
     padding: 0;
     margin-left: 2px;
     font-size: 13px;
+  }
+
+  /* 分页按钮：Element 默认 28×28，手指偏小 → 32×32 */
+  .douyin-page .el-pagination button {
+    min-width: 32px;
+    height: 32px;
   }
 
   /* 面包屑 / 工具条上的小图标按钮 */
@@ -130,21 +136,16 @@
   /*
    * 剩下两处实测偏小的触控目标（390×844 巡检）：
    *   1) 运行日志的「展开 / 收起」：min-h-6 → 只有 24px 高
-   *   2) 查询结果说明的提示图标：size-5 → 20×20
-   * 前者直接抬到 32px；后者不动视觉尺寸，用 ::after 把点区撑到 32px（避免挤动排版）。
+   *   2) 查询结果说明的提示图标：size-5 → 20×20（光靠 ::after 撑点区，
+   *      盒子本身仍是 20px，巡检口径按盒子算，所以直接放大到 28）
    */
   .douyin-page .dy-pressable[class*='min-h-6'] {
     min-height: 32px;
   }
 
   .douyin-page span.size-5.inline-flex {
-    position: relative;
-  }
-
-  .douyin-page span.size-5.inline-flex::after {
-    position: absolute;
-    inset: -6px;
-    content: '';
+    width: 28px;
+    height: 28px;
   }
 }
 
@@ -211,12 +212,12 @@
   }
 
   .douyin-page .session-row__actions button {
-    width: 30px;
-    height: 30px;
+    width: 32px;
+    height: 32px;
   }
 
   .douyin-page .session-row__stats {
-    padding-right: 70px;
+    padding-right: 74px;
     gap: 10px;
   }
 
@@ -236,6 +237,36 @@
 }
 
 /* ============================================================
+ * 七、窄屏"榜单/排行行"重排
+ *
+ * 这类行（常用礼物、打赏排行、弹幕排行、最近场次…全站 15 处，统一挂 .dy-rank-row，
+ * 另有已有的 .dy-detail-row / .dy-row-link）结构都是：
+ *   [序号][图标][名称 flex-1][次数][钻石]
+ * 实测（画像页 390×844）：右侧两个数值是 shrink-0，把名称挤到 **41px** ——
+ * 十几字的礼物名只剩两三个字，和"场次简介只剩一个字"是同一类问题。
+ *
+ * 修法：窄屏允许换行，把名称（.flex-1）用 order + flex-basis 推到**整行第二行**，
+ *       数值留在第一行右侧。名称因此拿到整行宽度。
+ * ============================================================ */
+@media (max-width: 640px) {
+  .douyin-page .dy-rank-row,
+  .douyin-page .dy-detail-row,
+  .douyin-page .dy-row-link {
+    flex-wrap: wrap;
+    row-gap: 2px;
+  }
+
+  .douyin-page .dy-rank-row > .flex-1,
+  .douyin-page .dy-detail-row > .flex-1,
+  .douyin-page .dy-row-link > .flex-1 {
+    order: 5;
+    flex: 1 1 100%;
+    max-width: 100%;
+    white-space: normal;
+  }
+}
+
+/* ============================================================
  * 六、窄屏"降高度"：少翻一点
  *
  * 用户反馈"内容从上而下堆叠，想看内容就要翻"。窄屏不可能把桌面那套横向排布搬过来，
@@ -243,8 +274,16 @@
  * 卡片间距 20→12、汇总卡高度 80→64。都是纯间距，不动字号与信息量。
  * ============================================================ */
 @media (max-width: 640px) {
+  /*
+   * 只压**纵向**内边距。
+   * 横向必须保持 0：项目里本来就有 `.douyin-page.p-4 { padding-left/right: 0 }`，
+   * 目的是让卡片左右边与顶部工作标签栏对齐（桌面实测都是 251，页左边）。
+   * 我第一版写成 `padding: 12px` 把横向也撑开了，卡片比标签栏内缩 12px ——
+   * 就是"宽度和标签边界对不齐"。
+   */
   .douyin-page.p-4 {
-    padding: 12px;
+    padding-top: 12px;
+    padding-bottom: 12px;
   }
 
   .douyin-page .art-card.p-5 {

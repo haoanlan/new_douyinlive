@@ -77,7 +77,7 @@
               <div
                 v-for="(g, i) in (profile?.topGiftsByCount || []).slice(0, 8)"
                 :key="g.gift_name"
-                class="flex items-center gap-2.5 rounded-xl bg-g-100/50 px-3 py-2 min-h-[52px]"
+                class="dy-rank-row flex items-center gap-2.5 rounded-xl bg-g-100/50 px-3 py-2 min-h-[52px]"
               >
                 <span
                   class="w-6 h-6 rounded-md flex-cc text-xs font-bold shrink-0"
@@ -179,7 +179,7 @@
               <div
                 v-for="(s, i) in profile?.topStreamers || []"
                 :key="s.name"
-                class="flex items-center gap-2.5 rounded-xl bg-g-100/50 px-3 py-2 min-h-[52px]"
+                class="dy-rank-row flex items-center gap-2.5 rounded-xl bg-g-100/50 px-3 py-2 min-h-[52px]"
               >
                 <span
                   class="w-6 h-6 rounded-md flex-cc text-xs font-bold shrink-0"
@@ -214,7 +214,7 @@
               <div
                 v-for="(a, i) in (profile?.recent_actions || []).slice(0, 10)"
                 :key="i"
-                class="flex items-center gap-2.5 rounded-xl bg-g-100/50 px-3 py-2"
+                class="dy-rank-row flex items-center gap-2.5 rounded-xl bg-g-100/50 px-3 py-2"
               >
                 <el-tag
                   size="small"
@@ -252,7 +252,7 @@
               <div
                 v-for="(g, i) in profile?.giftBreakdown || []"
                 :key="g.gift_name"
-                class="flex items-center gap-2.5 rounded-xl bg-g-100/50 px-3 py-2 min-h-[52px]"
+                class="dy-rank-row flex items-center gap-2.5 rounded-xl bg-g-100/50 px-3 py-2 min-h-[52px]"
               >
                 <span
                   class="w-6 h-6 rounded-md flex-cc text-xs font-bold shrink-0"

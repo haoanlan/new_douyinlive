@@ -176,7 +176,7 @@
             <div
               v-for="(p, i) in overview?.peakSessions || []"
               :key="p.id"
-              class="flex items-center gap-3 rounded-xl bg-g-100/50 px-3 py-2"
+              class="dy-rank-row flex items-center gap-3 rounded-xl bg-g-100/50 px-3 py-2"
             >
               <span
                 class="w-6 h-6 rounded-md flex-cc text-xs font-bold shrink-0"
@@ -218,7 +218,7 @@
             <div
               v-for="(g, i) in (overview?.topGifts || []).slice(0, 5)"
               :key="g.name"
-              class="flex items-center gap-2.5 rounded-xl bg-g-100/50 px-3 py-2 min-h-[52px]"
+              class="dy-rank-row flex items-center gap-2.5 rounded-xl bg-g-100/50 px-3 py-2 min-h-[52px]"
             >
               <span
                 class="w-6 h-6 rounded-md flex-cc text-xs font-bold shrink-0"
@@ -266,7 +266,7 @@
             <div
               v-for="(u, i) in overview?.topUsers || []"
               :key="u.sec_uid || u.nickname"
-              class="flex items-center gap-3 rounded-xl bg-g-100/50 px-3 py-2"
+              class="dy-rank-row flex items-center gap-3 rounded-xl bg-g-100/50 px-3 py-2"
             >
               <span
                 class="w-6 h-6 rounded-md flex-cc text-xs font-bold shrink-0"
@@ -294,7 +294,7 @@
             <div
               v-for="(d, i) in overview?.topDanmaku || []"
               :key="d.nickname"
-              class="flex items-center gap-3 rounded-xl bg-g-100/50 px-3 py-2"
+              class="dy-rank-row flex items-center gap-3 rounded-xl bg-g-100/50 px-3 py-2"
             >
               <span
                 class="w-6 h-6 rounded-md flex-cc text-xs font-bold shrink-0"

@@ -387,7 +387,7 @@
           <div
             v-for="(g, i) in giftDialogList"
             :key="i"
-            class="flex items-center gap-3 rounded-xl bg-g-100/50 px-3 py-2"
+            class="dy-rank-row flex items-center gap-3 rounded-xl bg-g-100/50 px-3 py-2"
           >
             <el-image
               v-if="g.gift_icon"
@@ -445,7 +445,7 @@
           <div
             v-for="(p, i) in peopleDialogList"
             :key="i"
-            class="flex items-center gap-3 rounded-xl bg-g-100/50 px-3 py-2"
+            class="dy-rank-row flex items-center gap-3 rounded-xl bg-g-100/50 px-3 py-2"
           >
             <span
               class="w-6 h-6 rounded-md flex-cc text-xs font-bold shrink-0"

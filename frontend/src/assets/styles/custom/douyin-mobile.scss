@@ -178,6 +178,75 @@
 }
 
 /* ============================================================
+ * 一·补四、窄屏"榜单行"加密（详情 / 画像的模块内滚动窗）
+ *
+ * 实测（390×844）：
+ *   场次详情 3.4 屏，3 个模块的滚动窗可视高 358px，但行高 **70px** → 只看得到 5 行
+ *     （窗内内容 1590/550/1590px，行数 20/7/20）。**直接去掉窗高限制会变成 19.3 屏**，
+ *     所以窗口必须保留 —— 真正的问题是行太高。
+ *   用户画像同类：行高 90 / 58px，窗口 360px。
+ * 这里把行压到 ~52-56px（padding、图标、字号、行距一起收），
+ * 窗口高度与页面总高都不变，但同样大的窗口能看到 7-9 行。
+ * 名称仍独占一行（上一轮为防"41px 名称"加的规则保持不变），只是每行更矮。
+ * ============================================================ */
+@media (max-width: 800px) {
+  .douyin-page .dy-rank-row,
+  .douyin-page .dy-detail-row {
+    /*
+     * 必须 flex-shrink: 0。
+     * 这些行是 `.dy-scroll`（flex column + overflow-y:auto）的子项，
+     * 我又用 min-height: 0 去掉了标记里的 min-h-[52px] —— 一旦允许压缩，
+     * 窗口内容超高时行会被压到 13px（比行内 24px 的头像还矮，内容直接裁掉）。
+     * 实测踩过：3 个窗口里 2 个的行高变成 13px。改成不压缩，超出部分交给窗口滚动。
+     */
+    flex: 0 0 auto;
+    min-height: 0 !important;
+    padding: 5px 8px !important;
+    column-gap: 6px !important;
+    row-gap: 1px !important;
+  }
+
+  /* 序号徽标 24 → 20；图标 28 → 24 */
+  .douyin-page .dy-rank-row > .w-6,
+  .douyin-page .dy-detail-row > .w-6 {
+    width: 20px !important;
+    height: 20px !important;
+    font-size: 10px !important;
+  }
+
+  .douyin-page .dy-rank-row .el-image,
+  .douyin-page .dy-detail-row .el-image,
+  .douyin-page .dy-rank-row .el-avatar,
+  .douyin-page .dy-detail-row .el-avatar {
+    width: 24px !important;
+    height: 24px !important;
+  }
+
+  .douyin-page .dy-rank-row > .flex-1,
+  .douyin-page .dy-detail-row > .flex-1 {
+    font-size: 12.5px !important;
+    line-height: 1.25 !important;
+  }
+
+  .douyin-page .dy-rank-row .text-xs,
+  .douyin-page .dy-detail-row .text-xs {
+    font-size: 10.5px !important;
+    line-height: 1.25 !important;
+  }
+
+  .douyin-page .dy-rank-row .text-sm,
+  .douyin-page .dy-detail-row .text-sm {
+    font-size: 12px !important;
+  }
+
+  /* 行间距 10 → 5px（窗口内一屏能多放一行） */
+  .douyin-page .dy-scroll.flex.flex-col,
+  .douyin-page .flex.flex-col.gap-2\.5.mt-4 {
+    gap: 5px !important;
+  }
+}
+
+/* ============================================================
  * 二、触控目标尺寸
  *
  * 实测问题（390×844 巡检）：顶栏图标按钮 34×34、头像 26×26、
@@ -349,6 +418,14 @@
  *
  * 修法：窄屏允许换行，把名称（.flex-1）用 order + flex-basis 推到**整行第二行**，
  *       数值留在第一行右侧。名称因此拿到整行宽度。
+ *
+ * 但要**有条件**（实测补正）：画像页「活跃场次」那类行（[头像][名称+时间][钻石][箭头]，
+ * 只有一个尾部数值）名称本来就够宽 —— 无条件把它推到第二行会白多占一行，
+ * 行高 90px、一个 360px 的窗口只看得到 4 行。
+ * 现在用 :has() 只对"行内确实有尾部小数值（次数那类 .text-xs.shrink-0）"的行生效：
+ *   礼物榜行（名称 + 次数 + 钻石）→ 名称独占一行（防 41px 挤压）
+ *   活跃场次行（名称 + 钻石 + 箭头）→ 名称留在第一行，行高 90 → ~50
+ * :has() 在 Chrome 105+ 支持；不支持的浏览器退化为"名称留在一行"，只是可能被挤窄。
  * ============================================================ */
 @media (max-width: 640px) {
   .douyin-page .dy-rank-row,
@@ -358,9 +435,8 @@
     row-gap: 2px;
   }
 
-  .douyin-page .dy-rank-row > .flex-1,
-  .douyin-page .dy-detail-row > .flex-1,
-  .douyin-page .dy-row-link > .flex-1 {
+  .douyin-page .dy-rank-row:has(> .text-xs.shrink-0) > .flex-1,
+  .douyin-page .dy-detail-row:has(> .text-xs.shrink-0) > .flex-1 {
     order: 5;
     flex: 1 1 100%;
     max-width: 100%;

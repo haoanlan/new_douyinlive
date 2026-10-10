@@ -67,12 +67,33 @@
   .app-layout {
     position: relative;
 
+    /*
+     * 窄屏：侧栏变抽屉。
+     *
+     * 这套规则必须写在**这个文件**里 —— 它带 scoped 属性（[data-v-xxx]），
+     * 特异性高于外部全局样式且在组件样式之后注入；我先前把抽屉写在
+     * assets/styles/custom/douyin-mobile.scss，试图用 `#app-sidebar:not(...)`
+     * 去压这里的 `left: 0`，实测压不动（同为 (0,2,1)，它后注入 ⇒ 它赢），
+     * 结果侧栏关不上（一直停在 left: 0）。
+     *
+     * 位移用 left 而不是 transform：transform（含 will-change: transform）
+     * 会让侧栏成为 fixed 后代的包含块 —— 模板自带的 .menu-model 遮罩是
+     * `position: fixed; width: 100%`，一旦被侧栏"框住"就从整屏缩成 230px，
+     * 在抽屉右缘露出一条深色窄带，顶栏也不再被遮罩覆盖（与模板原本的样子不一致）。
+     */
     #app-sidebar {
       position: fixed;
       top: 0;
-      left: 0;
-      z-index: 300;
-      height: 100vh;
+      left: -230px;
+      z-index: 320;
+      width: 230px;
+      height: 100dvh;
+      background: var(--default-box-color);
+      transition: left 240ms cubic-bezier(0.23, 1, 0.32, 1);
+
+      &.is-mobile-open {
+        left: 0;
+      }
     }
 
     #app-main {

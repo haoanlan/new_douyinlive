@@ -15,40 +15,27 @@
  */
 
 /* ============================================================
- * 一、窄屏侧栏 → 抽屉
+ * 一、窄屏侧栏 → 抽屉（样式在 views/index/style.scss）
  *
- * 没有遮罩层：模板原本就没有，我加过一版（为了"点空白处收起抽屉"），
- * 结果它压在抽屉之上吃掉菜单点击（z-index 被 views/index/style.scss 的 300 盖过），
- * 灰色蒙层也被当成故障 —— 整块删掉。收起抽屉只靠：顶栏菜单按钮 + 路由变化。
+ * 这里**不再**写 #app-sidebar 的任何规则 —— 那是踩过的坑：
+ *   模板的窄屏布局规则在 views/index/style.scss 里，带 scoped 属性（[data-v-xxx]），
+ *   特异性高且注入更晚；我在这个全局文件里写 `left: -230px` / `z-index: 320`
+ *   全都被它的 `left: 0; z-index: 300` 压掉（实测侧栏关不上，一直停在 left: 0）。
+ *   现在两份合成一份：抽屉（fixed + left 位移 + is-mobile-open）写在那份 scoped 文件里。
+ *
+ * 本文件只负责"移动端增强"那一层（触控尺寸、密度、列表重排等），
+ * 以及记录 .menu-model 这个模板自带遮罩的存在（见文件末尾说明）。
  * ============================================================ */
-@media (max-width: 800px) {
-  .app-layout {
-    position: relative;
 
-    #app-sidebar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      z-index: 320;
-      width: 230px;
-      height: 100dvh;
-      background: var(--default-box-color);
-      /* 关着的时候整体移出屏幕（留 2% 避免边缘阴影露出） */
-      transform: translateX(-102%);
-      transition: transform 240ms cubic-bezier(0.23, 1, 0.32, 1);
-      will-change: transform;
-
-      &.is-mobile-open {
-        transform: translateX(0);
-        box-shadow: 0 12px 32px rgb(0 0 0 / 18%);
-      }
-    }
-
-    #app-main {
-      width: 100%;
-    }
-  }
-}
+/*
+ * 模板自带的窄屏遮罩 .menu-model（art-sidebar-menu 组件内）：
+ *   position: fixed; top:0; left:0; width:100%; height:100vh;
+ *   background: rgba(#000,50%); z-index:-1; @click="toggleMenuVisibility"
+ * 它是**原本就有的**（我先前误判成自己加的，因为只翻了 views/index 两个文件）。
+ * 唯一要注意的是：侧栏不能有 transform / will-change: transform，
+ * 否则它会成为 fixed 后代的包含块，把整屏遮罩压成侧栏宽度（表现为右缘一条深色窄带）。
+ * 抽屉因此改用 left 位移。这里不需要给它写任何样式。
+ */
 
 /* ============================================================
  * 二、触控目标尺寸

@@ -51,7 +51,8 @@ export const globalComponentsConfig: GlobalComponentConfig[] = [
     component: defineAsyncComponent(
       () => import('@/components/core/layouts/art-chat-window/index.vue')
     ),
-    enabled: true
+    // 本项目不需要聊天（顶栏那个入口也已在 headerBar.ts 里关掉）
+    enabled: false
   },
   {
     name: '礼花效果',

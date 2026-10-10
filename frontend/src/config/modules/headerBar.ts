@@ -38,16 +38,27 @@ export const headerBarConfig: HeaderBarFeatureConfig = {
     enabled: true,
     description: '全屏切换功能'
   },
+  /*
+   * 通知中心 / 聊天 / 多语言切换：本项目不需要，2026-10 按用户要求关闭。
+   *
+   * 关掉这里的 enabled 即可：顶栏对应按钮不渲染（useHeaderBar 的 shouldShow* 都挂在
+   * isFeatureEnabled 上），设置面板里对应的开关也会一起消失
+   * （art-settings-panel 的 useSettingsConfig 会用 headerBarConfig 过滤设置项）。
+   * 聊天窗口是全局组件，另在 config/modules/component.ts 里把它 enabled 关掉，
+   * 这样连组件都不会挂载。
+   *
+   * 想恢复：把 enabled 改回 true（语言切换还额外需要 settingStore.showLanguage 为 true）。
+   */
   notification: {
-    enabled: true,
+    enabled: false,
     description: '通知中心，显示系统通知和消息'
   },
   chat: {
-    enabled: true,
+    enabled: false,
     description: '聊天功能，提供实时沟通'
   },
   language: {
-    enabled: true,
+    enabled: false,
     description: '多语言切换功能'
   },
   settings: {

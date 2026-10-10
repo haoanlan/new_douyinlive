@@ -168,8 +168,8 @@
     <!-- 标签页 -->
     <ArtWorkTab />
 
-    <!-- 通知 -->
-    <ArtNotification v-model:value="showNotice" ref="notice" />
+    <!-- 通知面板：功能已关闭（headerBarConfig.notification）→ 连组件都不挂载 -->
+    <ArtNotification v-if="shouldShowNotification" v-model:value="showNotice" ref="notice" />
   </div>
 </template>
 

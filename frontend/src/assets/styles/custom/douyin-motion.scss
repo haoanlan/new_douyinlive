@@ -134,10 +134,16 @@
  *   .el-loading-mask 加载遮罩
  * 这些元素要么自身是 fixed，要么内部有 fixed 后代，一旦被加上带动画的 transform
  * 就会以该元素为包含块定位（实测症状见上面的注释）。
+ *
+ * fill-mode 必须是 **backwards**，不能是 both：
+ *   - backwards：延迟期间应用 from 态（不会先亮一下再跳回透明）✓；
+ *     动画结束后**不再应用**任何效果 → 元素不会一直是包含块，也不会在后续重排时闪。
+ *   - both：结束后仍应用 to 态，getComputedStyle 的 transform 会一直是
+ *     matrix(1,0,0,1,0,0)（非 none）—— 实测就是"打开弹层时闪一下"的来源。
  */
 .dy-stagger
   > *:not(.el-overlay):not(.el-drawer):not(.el-dialog):not(.el-message-box):not(.el-loading-mask) {
-  animation: dy-rise-in 320ms var(--dy-ease-out) both;
+  animation: dy-rise-in 320ms var(--dy-ease-out) backwards;
 }
 
 .dy-stagger > *:nth-child(1) { animation-delay: 0ms; }
@@ -169,7 +175,7 @@
 .douyin-page .el-avatar img,
 .douyin-page .el-image__inner,
 .douyin-page .el-avatar > img {
-  animation: dy-img-in 240ms var(--dy-ease-out) both;
+  animation: dy-img-in 240ms var(--dy-ease-out) backwards;
 }
 
 /**
@@ -193,9 +199,9 @@
     transition-duration: 1ms;
   }
 
-  /* 分组入场的位移去掉，只保留极短的淡入 */
+  /* 分组入场的位移去掉，只保留极短的淡入（同样用 backwards，播完不残留效果） */
   .dy-stagger > * {
-    animation: dy-img-in 120ms linear both;
+    animation: dy-img-in 120ms linear backwards;
   }
 
   .douyin-page .el-avatar img,
@@ -922,8 +928,13 @@ html.dark .dy-select-popper .el-select-dropdown__wrap::-webkit-scrollbar-thumb:h
   }
 }
 
+/*
+ * 同样用 backwards：播完不再应用效果。
+ * 用 both 时这些元素会一直挂着已结束的动画 —— 实测详情页"弹窗打开前残留动画数 = 367"
+ * （每个头像/礼物图一个），重排/插入浮层时会重新参与合成，就是"闪一下"的来源。
+ */
 .dy-fade-in {
-  animation: dy-fade-in 120ms var(--dy-ease-out, ease-out) both;
+  animation: dy-fade-in 120ms var(--dy-ease-out, ease-out) backwards;
 }
 
 @media (prefers-reduced-motion: reduce) {

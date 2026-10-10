@@ -386,12 +386,41 @@ html.dark .el-card {
   }
 }
 
+/*
+ * 弹层动画补 fill-mode: backwards（修「打开弹窗先黑一下」）
+ *
+ * Element 的遮罩淡入是 @keyframes（modal-fade-in），默认**没有 fill-mode**，
+ * 而动画的开始会被推迟（主线程忙时实测推迟约 160ms）。
+ * 推迟期间元素按**自身状态**绘制：遮罩本身就是 rgba(0,0,0,0.5) → 整屏先黑一下。
+ *
+ * 逐帧 + MutationObserver 实测轨迹（手机 390 与桌面 1630 都一样）：
+ *   101ms  遮罩插入，class 已带 dialog-fade-enter-from，但 opacity 已经是 **1**
+ *   118ms  class 切到 enter-to
+ *   262ms  动画 modal-fade-in 才出第一帧（opacity 0.024）   ← 中间约 160ms 全黑
+ *   527ms  动画结束（opacity 0.996）
+ * 整屏均值对应地先掉到 122（≈白底叠 50% 黑）再回升。
+ *
+ * 两个要点：
+ *   1) 必须用**更高特异性**（.el-overlay.dialog-fade-enter-active）—— Element 是用
+ *      `animation` **简写**声明的，简写会把 fill-mode 重置为 none，
+ *      只写 `.el-overlay { animation-fill-mode: backwards }` 会被它压掉（实测 fill=none）。
+ *   2) 只补 fill-mode，不动动画本身，正常淡入观感不变。
+ * 补上之后：动画开始前就应用 0% 关键帧（opacity: 0）→ 那一两百毫秒不再是黑屏。
+ */
+.el-overlay.dialog-fade-enter-active,
+.el-overlay-dialog,
+.el-dialog.dialog-fade-enter-active,
+.el-message-box.dialog-fade-enter-active,
+.el-overlay.is-drawer,
+.el-drawer {
+  animation-fill-mode: backwards;
+}
+
 @keyframes dialog-open {
   0% {
     opacity: 0;
     transform: scale(0.2);
   }
-
   100% {
     opacity: 1;
     transform: scale(1);

@@ -95,7 +95,12 @@
 
       <!-- hero 内嵌 kv 小卡 -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5">
-        <div v-for="f in heroKv" :key="f.label" class="mon-kv">
+        <div
+          v-for="f in heroKv"
+          :key="f.label"
+          class="mon-kv"
+          :class="{ 'dy-kv--wide': (f.value || '').length > 16 }"
+        >
           <div class="mon-kv__label">{{ f.label }}</div>
           <div class="mon-kv__value" :class="f.tone || 'text-g-900'">{{ f.value }}</div>
         </div>
@@ -239,43 +244,17 @@
             />
             可视化配置
           </el-button>
-
-          <!--
-            折叠开关：只在小屏出现。
-            实测（390×844）：这张卡的内层网格高 1150px，占该页 2626px 的 44% ——
-            手机上"要一直翻"的主要来源。默认折叠后同页从 3.1 屏降到约 1.8 屏。
-            桌面不显示该按钮、且默认展开，观感与行为完全不变。
-          -->
-          <el-button v-if="isNarrow" :aria-expanded="showConfig" @click="showConfig = !showConfig">
-            {{ showConfig ? '收起' : '展开' }}
-            <ArtSvgIcon
-              class="ml-1 dy-caret"
-              :class="showConfig ? 'dy-caret--open' : ''"
-              icon="ri:arrow-down-s-line"
-            />
-          </el-button>
         </div>
       </div>
 
-      <!-- 折叠状态下的一行摘要：收起也要能一眼看到关键状态，不能只剩个标题 -->
-      <p v-if="isNarrow && !showConfig" class="mt-2 mb-0 text-xs text-g-600">
-        Cookie：<span :class="cookieBadge.cls">{{ cookieBadge.text }}</span>
-        <template v-if="proxyCfg">
-          · {{ proxyCfg.inSync ? '配置已生效' : '有待重启生效的改动' }}
-        </template>
-        <template v-if="blockedSections.length">
-          · 不支持的段 {{ blockedSections.length }} 个
-        </template>
-      </p>
-
-      <div class="dy-collapse" :class="showConfig ? 'dy-collapse--open' : ''">
-        <div class="dy-collapse__inner">
-          <!--
-            左右两栏（用户反馈：这样一屏内看到的东西更多、占的地方更小）。
-            高度是配平的：左栏 Cookie 四格排 2×2、右栏其他配置八格排 2×4，
-            两边都约 330px；运行期提示横跨两栏放在下面（文案长，需要整宽）。
-          -->
-          <div class="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
+      <!--
+        左右两栏（用户反馈：这样一屏内看到的东西更多、占的地方更小）。
+        高度是配平的：左栏 Cookie 四格排 2×2、右栏其他配置八格排 2×4，
+        两边都约 330px；运行期提示横跨两栏放在下面（文案长，需要整宽）。
+        窄屏下这几组事实网格也改成两列（见 douyin-mobile.scss 的 .mon-kv 密度规则）——
+        用户明确要求"排得下"，而不是把内容折叠起来（折叠的版本已撤销）。
+      -->
+      <div class="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
         <!-- 左：Cookie 规则（重点） -->
         <div class="min-w-0">
           <div class="flex items-center gap-2">
@@ -283,8 +262,13 @@
             <span class="pc-tag" :class="cookieBadge.cls">{{ cookieBadge.text }}</span>
           </div>
 
-          <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div v-for="f in cookieFacts" :key="f.label" class="mon-kv">
+          <div class="mt-3 grid grid-cols-2 gap-2.5 sm:gap-3">
+            <div
+          v-for="f in cookieFacts"
+          :key="f.label"
+          class="mon-kv"
+          :class="{ 'dy-kv--wide': (f.value || '').length > 16 }"
+        >
               <div class="mon-kv__label">{{ f.label }}</div>
               <div class="mon-kv__value" :class="f.tone || 'text-g-900'" :title="f.title || f.value">
                 {{ f.value }}
@@ -343,8 +327,13 @@
         <!-- 右：其余配置事实（两列四行） -->
         <div class="min-w-0">
           <h4 class="text-base font-semibold text-g-900 m-0">其他配置</h4>
-          <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div v-for="f in proxyFacts" :key="f.label" class="mon-kv">
+          <div class="mt-3 grid grid-cols-2 gap-2.5 sm:gap-3">
+            <div
+          v-for="f in proxyFacts"
+          :key="f.label"
+          class="mon-kv"
+          :class="{ 'dy-kv--wide': (f.value || '').length > 16 }"
+        >
               <div class="mon-kv__label">{{ f.label }}</div>
               <div class="mon-kv__value" :class="f.tone || 'text-g-900'" :title="f.title || f.value">
                 {{ f.value }}
@@ -364,8 +353,6 @@
         <p v-else class="min-w-0 text-xs leading-5 text-g-500 xl:col-span-2">
           改完 config.yaml 需要重启代理才生效 —— 代理只在启动时读一次配置。
         </p>
-          </div>
-        </div>
       </div>
     </article>
 
@@ -739,17 +726,6 @@
   const autoRefresh = ref(true)
   const busy = ref<ServiceAction | ''>('')
   const showLog = ref(false)
-
-  /**
-   * 是否窄屏（手机/平板竖屏）。
-   * 只用于"配置卡默认折叠"这一个决策：窄屏下那张卡的内层网格实测 1150px（占该页 44%），
-   * 是全页最吃高度的地方；桌面不折叠、也不显示切换按钮。
-   * 注意页面被 keepAlive 缓存：先在小屏打开再拉大窗口，折叠状态会保留到下次进入。
-   */
-  const isNarrow = ref(
-    typeof window !== 'undefined' && window.matchMedia('(max-width: 800px)').matches
-  )
-  const showConfig = ref(!isNarrow.value)
   /**
    * 状态取不到时不能把下面渲染成红色「未运行」。
    * `status` 为 null 有两种完全不同的含义 ——「还在检测」与「检测失败了」，

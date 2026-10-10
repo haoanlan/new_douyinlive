@@ -181,3 +181,98 @@
     margin-left: 0;
   }
 }
+
+/* ============================================================
+ * 五、窄屏列表行重排（场次卡片）
+ *
+ * 实测（390×844，带 hostId 的场次列表）：
+ *   卡片行内部一行要放下 [勾选 16][头像 36][标题?][状态标签 50][下载/删除 70] + 间距，
+ *   标题区（.flex-1）只剩 **70px** —— 长标题只能显示两三个字（用户反馈"简介只剩一个字"）。
+ *   元凶是两个操作按钮和状态标签都在同一行抢宽度。
+ *
+ * 修法：操作按钮在窄屏**脱出标题行**，绝对定位到"数据行"右侧（那里本来就有空白），
+ *       并给数据行右侧留出等宽内边距，避免压住统计数字。
+ *       这样标题拿到 ≈162px（2.3 倍），行高不变，不会因为改布局而多滚动。
+ * ============================================================ */
+@media (max-width: 640px) {
+  .douyin-page .session-row {
+    position: relative;
+    padding: 10px 12px;
+  }
+
+  .douyin-page .session-row__main {
+    gap: 8px;
+  }
+
+  .douyin-page .session-row__actions {
+    position: absolute;
+    right: 12px;
+    bottom: 8px;
+  }
+
+  .douyin-page .session-row__actions button {
+    width: 30px;
+    height: 30px;
+  }
+
+  .douyin-page .session-row__stats {
+    padding-right: 70px;
+    gap: 10px;
+  }
+
+  /*
+   * 标题（直播标题 / room_title）在窄屏**折两行**而不是截断。
+   * 即使标题区从 70px 提到 160px，一行也只够 7–8 个字 —— 直播标题常常十几个字，
+   * 截断后读不出意思。两行 clamp 多花约 20px 高度，换来可读性，值得。
+   */
+  .douyin-page .session-row__title > div:first-child {
+    display: -webkit-box;
+    overflow: hidden;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+}
+
+/* ============================================================
+ * 六、窄屏"降高度"：少翻一点
+ *
+ * 用户反馈"内容从上而下堆叠，想看内容就要翻"。窄屏不可能把桌面那套横向排布搬过来，
+ * 但可以把**每一块的垂直开销**压下来：页边距 16→12、卡片内边距 20→14、
+ * 卡片间距 20→12、汇总卡高度 80→64。都是纯间距，不动字号与信息量。
+ * ============================================================ */
+@media (max-width: 640px) {
+  .douyin-page.p-4 {
+    padding: 12px;
+  }
+
+  .douyin-page .art-card.p-5 {
+    padding: 14px;
+  }
+
+  .douyin-page .art-card.p-6 {
+    padding: 16px;
+  }
+
+  .douyin-page .art-card.h-20 {
+    height: 64px;
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  /* 卡片之间的纵向间距 */
+  .douyin-page .mb-5 {
+    margin-bottom: 12px;
+  }
+
+  .douyin-page .gap-5 {
+    gap: 12px;
+  }
+
+  /* 汇总卡里那个 36px 的图标块在窄屏缩小一档，给数字让位 */
+  .douyin-page .art-card.h-20 .size-9 {
+    width: 30px;
+    height: 30px;
+  }
+}

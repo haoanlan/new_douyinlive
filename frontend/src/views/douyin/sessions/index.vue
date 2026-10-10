@@ -116,7 +116,7 @@
             @keydown.space.prevent="router.push(`/douyin/detail/${row.id}`)"
           >
             <!-- 主行 -->
-            <div class="flex items-center gap-3">
+            <div class="session-row__main flex items-center gap-3">
               <el-checkbox
                 v-if="isAdmin"
                 :model-value="selectedIds.includes(row.id)"
@@ -127,7 +127,7 @@
               <el-avatar :size="36" :src="row.streamer_avatar" class="shrink-0">{{
                 row.streamer_name?.[0] || '场'
               }}</el-avatar>
-              <div class="flex-1 min-w-0">
+              <div class="session-row__title flex-1 min-w-0">
                 <div class="font-medium text-sm truncate text-g-900">{{
                   row.title || '场次 #' + row.id
                 }}</div>
@@ -142,11 +142,11 @@
                 :type="row.is_live ? 'danger' : 'info'"
                 size="small"
                 effect="light"
-                class="shrink-0 !border-none"
+                class="session-row__status shrink-0 !border-none"
               >
                 {{ row.is_live ? '直播中' : '已结束' }}
               </el-tag>
-              <div class="flex items-center gap-1.5 shrink-0" @click.stop>
+              <div class="session-row__actions flex items-center gap-1.5 shrink-0" @click.stop>
                 <el-tooltip content="下载报告" placement="top" :hide-after="0">
                   <button
                     class="dy-pressable size-8 rounded-lg flex-cc bg-g-100/70 text-g-500 hover:bg-theme/10 hover:text-theme disabled:opacity-50 disabled:cursor-not-allowed"
@@ -173,7 +173,7 @@
             </div>
             <!-- 数据行 -->
             <div
-              class="flex items-center gap-4 mt-2.5 pt-2.5 border-t border-dashed border-t-d text-xs text-g-600 flex-wrap"
+              class="session-row__stats flex items-center gap-4 mt-2.5 pt-2.5 border-t border-dashed border-t-d text-xs text-g-600 flex-wrap"
             >
               <span class="flex items-center gap-1">
                 <ArtSvgIcon icon="ri:diamond-line" class="text-g-400" />{{

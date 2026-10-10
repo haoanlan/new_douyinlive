@@ -94,6 +94,57 @@
 }
 
 /* ============================================================
+ * 一·补二、窄屏工具条：控件统一整行宽
+ *
+ * 用户截图反馈（信息查询）：顶部三个控件宽度是 140 / 200 / 200 + 按钮 88，
+ * 排在一起参差不齐。这些宽度写在内联 style 上，CSS 只能用 !important 覆盖。
+ * 窄屏统一成"每行一个、占满整宽"，按钮也变成整行（顺手把点击目标放大）。
+ * .dy-toolbar-actions 是全站工具条通用类，各页表现因此一致。
+ * ============================================================ */
+@media (max-width: 800px) {
+  .douyin-page .dy-toolbar-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .douyin-page .dy-toolbar-actions .el-select,
+  .douyin-page .dy-toolbar-actions .el-input,
+  .douyin-page .dy-toolbar-actions .el-date-editor,
+  .douyin-page .dy-toolbar-actions .el-button {
+    width: 100% !important;
+  }
+
+  /*
+   * 统计格（.dy-stat-tile，信息查询结果卡里的三格）：
+   * 原来是"图标 36px + gap 12 + px-4 32"的横向布局，在 3 列网格里（每格约 106px）
+   * 留给文字的只剩 ~26px —— "参与场次"只能一个字一行（用户截图里的竖排单字）。
+   * 窄屏改成"图标在上、文字在下"，文字拿到整格宽度，标签不再换行。
+   */
+  .douyin-page .dy-stat-tile {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 10px !important;
+  }
+
+  .douyin-page .dy-stat-tile > .size-9 {
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  .douyin-page .dy-stat-tile .text-xs {
+    white-space: nowrap;
+  }
+
+  .douyin-page .dy-stat-tile .text-xl {
+    font-size: 17px !important;
+  }
+}
+
+/* ============================================================
  * 二、触控目标尺寸
  *
  * 实测问题（390×844 巡检）：顶栏图标按钮 34×34、头像 26×26、

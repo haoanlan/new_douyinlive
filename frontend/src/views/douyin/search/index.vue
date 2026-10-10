@@ -340,7 +340,7 @@
               <template v-else>
                 <!-- 统计格：套官方 today-sales 的 tile 语言（实线框 + 图标块 + 数字上标签下） -->
                 <div class="grid grid-cols-3 gap-2.5 mt-4">
-                  <div class="flex items-center gap-3 px-4 py-3 border border-g-300/85 rounded-xl">
+                  <div class="dy-stat-tile flex items-center gap-3 px-4 py-3 border border-g-300/85 rounded-xl">
                     <div class="size-9 rounded-lg flex-cc bg-theme/10 shrink-0">
                       <ArtSvgIcon icon="ri:live-line" class="text-base text-theme" />
                     </div>
@@ -355,7 +355,7 @@
                       <div class="text-xs text-g-500 mt-1.5">参与场次</div>
                     </div>
                   </div>
-                  <div class="flex items-center gap-3 px-4 py-3 border border-g-300/85 rounded-xl">
+                  <div class="dy-stat-tile flex items-center gap-3 px-4 py-3 border border-g-300/85 rounded-xl">
                     <div class="size-9 rounded-lg flex-cc bg-theme/10 shrink-0">
                       <ArtSvgIcon icon="ri:diamond-line" class="text-base text-theme" />
                     </div>
@@ -370,7 +370,7 @@
                       <div class="text-xs text-g-500 mt-1.5">累计钻石</div>
                     </div>
                   </div>
-                  <div class="flex items-center gap-3 px-4 py-3 border border-g-300/85 rounded-xl">
+                  <div class="dy-stat-tile flex items-center gap-3 px-4 py-3 border border-g-300/85 rounded-xl">
                     <div class="size-9 rounded-lg flex-cc bg-theme/10 shrink-0">
                       <ArtSvgIcon icon="ri:chat-3-line" class="text-base text-theme" />
                     </div>

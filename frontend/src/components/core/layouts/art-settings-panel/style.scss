@@ -5,11 +5,17 @@
   background: transparent !important;
 
   .el-drawer {
-    // 背景滤镜效果
-    background: rgba($color: #fff, $alpha: 50%) !important;
+    /*
+     * 原来这里只有 `background: rgba(#fff, 50%)` + @include backdropBlur()（blur(30px)）：
+     *   1) 背景只 50% 白 + 30px 模糊 → 打开设置时**整页背景糊成一团**，
+     *      用户反馈"还有一层模糊遮罩不知道是什么东西"（实测就是这条规则）；
+     *   2) 硬编码白色 → 暗色模式下也是浅色面板（明暗主题不一致）。
+     * 现在：用主题面板色（88% 不透明）保证两个主题都对，模糊降到 6px 只做轻微毛玻璃。
+     */
+    background: color-mix(in srgb, var(--default-box-color) 88%, transparent) !important;
     box-shadow: 0 0 30px rgb(0 0 0 / 10%) !important;
-
-    @include backdropBlur();
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
 
     .setting-box-wrap {
       display: flex;
@@ -68,8 +74,12 @@
 .dark {
   .setting-modal {
     .el-drawer {
-      background: rgba($color: #000, $alpha: 50%) !important;
-
+      /*
+       * 这里原来还有一条 `background: rgba(#000, 50%) !important`：
+       * 特异性比基规则高，暗色下会把面板压到 50% 透明（背后内容透出来更多）。
+       * 基规则现在已用主题 token（--default-box-color）自动适配明暗，
+       * 所以这条硬编码删掉，避免两套色值互相打脸。
+       */
       .setting-item {
         .box {
           border: 2px solid transparent;

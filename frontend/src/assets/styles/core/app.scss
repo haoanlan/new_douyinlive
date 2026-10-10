@@ -48,6 +48,24 @@
   display: none;
 }
 
+/*
+ * 隐藏 Vue DevTools 扩展注进页面的悬浮面板
+ *
+ * 为什么要在应用里藏它：它不是本应用的元素，但会被扩展直接插到 body 上，
+ * 实测有四类（都带 vue-devtools 前缀，注意有两套前缀：vue-devtools__ 与 vue-devtools-）：
+ *   .vue-devtools__anchor--glowing  160×160 的 filter: blur(60px) 光晕（用户反馈的"一层模糊遮罩"）
+ *   .vue-devtools__panel            76×30 的面板入口
+ *   .vue-devtools__anchor-btn       30×30 的圆形按钮
+ *   .vue-devtools-resize*           面板的拖拽把手
+ * 它们位于页面底部中间、还带模糊，很容易被当成应用自己的浮层（我已经两次误判成模板组件）。
+ *
+ * 选择器用 `[class*='vue-devtools']` 覆盖两套前缀；已确认应用自身元素不含该子串。
+ * 想自己调试 DevTools 时，注释掉这一段即可（或直接在扩展设置里关掉悬浮面板）。
+ */
+[class*='vue-devtools'] {
+  display: none !important;
+}
+
 // 语言切换选中样式
 .langDropDownStyle {
   // 选中项背景颜色

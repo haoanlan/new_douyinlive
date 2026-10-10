@@ -435,8 +435,16 @@
     row-gap: 2px;
   }
 
-  .douyin-page .dy-rank-row:has(> .text-xs.shrink-0) > .flex-1,
-  .douyin-page .dy-detail-row:has(> .text-xs.shrink-0) > .flex-1 {
+  /*
+   * 选择器必须写成"名称(.flex-1)**后面紧跟**一个尾部小数值(.text-xs.shrink-0)"：
+   *   礼物榜行：[序号][图标][名称][次数(text-xs)][钻石] → 命中 → 名称独占一行（防 41px 挤压）
+   *   排行行：  [序号(text-xs!)][头像][名称][钻石(text-sm)] → **不命中** → 名称留在第一行
+   * 写 `:has(> .text-xs.shrink-0)` 会误命中**序号徽标**（它本身就是 text-xs + shrink-0），
+   * 结果排行行的名称也被推到第二行 —— 数值留在上面、名称掉到下面，看起来就是"歪了"
+   * （用户截图反馈的团播主播排名）。
+   */
+  .douyin-page .dy-rank-row:has(> .flex-1 + .text-xs.shrink-0) > .flex-1,
+  .douyin-page .dy-detail-row:has(> .flex-1 + .text-xs.shrink-0) > .flex-1 {
     order: 5;
     flex: 1 1 100%;
     max-width: 100%;

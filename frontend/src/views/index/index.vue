@@ -2,21 +2,17 @@
 <template>
   <div class="app-layout">
     <!--
-      手机/窄屏下侧栏是"抽屉"：由顶栏菜单按钮切换（menuOpen），
-      点遮罩或切换路由后自动收起。样式在 assets/styles/custom/douyin-mobile.scss
-      （原来这套移动端规则写在 ./style.scss 里，实测那份 CSS 根本没进浏览器，
-       所以窄屏下侧栏宽度一直是 0 —— 手机上压根没有能打开的菜单）。
+      手机/窄屏下侧栏是"抽屉"：由顶栏菜单按钮切换（menuOpen），切换路由后自动收起。
+      样式在 assets/styles/custom/douyin-mobile.scss。
+      注意：这里**没有遮罩层** —— 模板原本就没有，我加过一版（为了"点空白处收起"），
+      结果它带来一串问题：压在抽屉之上吃掉菜单点击、灰色蒙层被当成"故障"，
+      所以整块删掉。收起抽屉只靠两个可靠途径：
+        1) 顶栏菜单按钮（menuOpen 取反）
+        2) 点了菜单项 → 路由变化 → 下面的 watch 自动收起
     -->
     <aside id="app-sidebar" :class="{ 'is-mobile-open': menuOpen }">
       <ArtSidebarMenu />
     </aside>
-
-    <div
-      v-show="menuOpen"
-      class="mobile-sidebar-mask"
-      aria-hidden="true"
-      @click="closeMenu"
-    />
 
     <main id="app-main">
       <div id="app-header">

@@ -16,17 +16,11 @@
 
 /* ============================================================
  * 一、窄屏侧栏 → 抽屉
+ *
+ * 没有遮罩层：模板原本就没有，我加过一版（为了"点空白处收起抽屉"），
+ * 结果它压在抽屉之上吃掉菜单点击（z-index 被 views/index/style.scss 的 300 盖过），
+ * 灰色蒙层也被当成故障 —— 整块删掉。收起抽屉只靠：顶栏菜单按钮 + 路由变化。
  * ============================================================ */
-
-/*
- * 桌面端不显示遮罩（v-show 只控制 menuOpen，不区分端）。
- * 注意：这条基础规则必须写在下面的媒体查询**之前** ——
- * 否则同权重下它排在后面会把媒体查询里的 display:block 盖掉（第一版就踩了，遮罩一直不显示）。
- */
-.mobile-sidebar-mask {
-  display: none;
-}
-
 @media (max-width: 800px) {
   .app-layout {
     position: relative;
@@ -52,35 +46,6 @@
 
     #app-main {
       width: 100%;
-    }
-  }
-
-  /*
-   * 遮罩：只保留"点空白处收起抽屉"的作用，**不做任何视觉遮罩**（用户明确不要灰黑遮罩 + 模糊）。
-   *
-   * 层级必须**低于侧栏**：
-   *   侧栏的 z-index 是 views/index/style.scss 里定的 300，那是组件样式，
-   *   注入顺序在我的全局样式之后 —— 我在这里写多少都会被它盖掉（实测写了 320 仍然是 300）。
-   *   第一版我把遮罩设成 310、侧栏以为自己在 320，结果 elementFromPoint 在菜单项位置
-   *   全部命中 div.mobile-sidebar-mask：点菜单变成"点在遮罩上"，只关抽屉不跳转。
-   *   现在取 290：仍然盖住页面内容（#app-main 无 z-index、顶栏 50），但一定在抽屉之下。
-   *
-   * top 从顶栏下方（h-15 = 60px）开始，顶栏保持可点。
-   */
-  .mobile-sidebar-mask {
-    position: fixed;
-    inset: 60px 0 0;
-    z-index: 290;
-    display: block;
-    background: transparent;
-  }
-
-  @keyframes dy-mask-in {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
     }
   }
 }

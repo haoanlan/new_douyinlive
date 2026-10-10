@@ -239,15 +239,43 @@
             />
             可视化配置
           </el-button>
+
+          <!--
+            折叠开关：只在小屏出现。
+            实测（390×844）：这张卡的内层网格高 1150px，占该页 2626px 的 44% ——
+            手机上"要一直翻"的主要来源。默认折叠后同页从 3.1 屏降到约 1.8 屏。
+            桌面不显示该按钮、且默认展开，观感与行为完全不变。
+          -->
+          <el-button v-if="isNarrow" :aria-expanded="showConfig" @click="showConfig = !showConfig">
+            {{ showConfig ? '收起' : '展开' }}
+            <ArtSvgIcon
+              class="ml-1 dy-caret"
+              :class="showConfig ? 'dy-caret--open' : ''"
+              icon="ri:arrow-down-s-line"
+            />
+          </el-button>
         </div>
       </div>
 
-      <!--
-        左右两栏（用户反馈：这样一屏内看到的东西更多、占的地方更小）。
-        高度是配平的：左栏 Cookie 四格排 2×2、右栏其他配置八格排 2×4，
-        两边都约 330px；运行期提示横跨两栏放在下面（文案长，需要整宽）。
-      -->
-      <div class="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
+      <!-- 折叠状态下的一行摘要：收起也要能一眼看到关键状态，不能只剩个标题 -->
+      <p v-if="isNarrow && !showConfig" class="mt-2 mb-0 text-xs text-g-600">
+        Cookie：<span :class="cookieBadge.cls">{{ cookieBadge.text }}</span>
+        <template v-if="proxyCfg">
+          · {{ proxyCfg.inSync ? '配置已生效' : '有待重启生效的改动' }}
+        </template>
+        <template v-if="blockedSections.length">
+          · 不支持的段 {{ blockedSections.length }} 个
+        </template>
+      </p>
+
+      <div class="dy-collapse" :class="showConfig ? 'dy-collapse--open' : ''">
+        <div class="dy-collapse__inner">
+          <!--
+            左右两栏（用户反馈：这样一屏内看到的东西更多、占的地方更小）。
+            高度是配平的：左栏 Cookie 四格排 2×2、右栏其他配置八格排 2×4，
+            两边都约 330px；运行期提示横跨两栏放在下面（文案长，需要整宽）。
+          -->
+          <div class="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
         <!-- 左：Cookie 规则（重点） -->
         <div class="min-w-0">
           <div class="flex items-center gap-2">
@@ -336,6 +364,8 @@
         <p v-else class="min-w-0 text-xs leading-5 text-g-500 xl:col-span-2">
           改完 config.yaml 需要重启代理才生效 —— 代理只在启动时读一次配置。
         </p>
+          </div>
+        </div>
       </div>
     </article>
 
@@ -584,13 +614,13 @@
           {{ showLog ? '收起' : '展开' }}
           <ArtSvgIcon
             :icon="showLog ? 'ri:arrow-up-s-line' : 'ri:arrow-down-s-line'"
-            class="log-caret"
-            :class="showLog ? 'log-caret--open' : ''"
+            class="dy-caret"
+            :class="showLog ? 'dy-caret--open' : ''"
           />
         </button>
       </div>
-      <div class="log-collapse" :class="showLog ? 'log-collapse--open' : ''">
-        <div id="dy-status-log" class="log-collapse__inner">
+      <div class="dy-collapse" :class="showLog ? 'dy-collapse--open' : ''">
+        <div id="dy-status-log" class="dy-collapse__inner">
           <div class="rounded-xl bg-g-100/50 px-4 py-3 max-h-80 overflow-auto mt-3">
             <template v-if="status?.logLines?.length">
               <div
@@ -709,6 +739,17 @@
   const autoRefresh = ref(true)
   const busy = ref<ServiceAction | ''>('')
   const showLog = ref(false)
+
+  /**
+   * 是否窄屏（手机/平板竖屏）。
+   * 只用于"配置卡默认折叠"这一个决策：窄屏下那张卡的内层网格实测 1150px（占该页 44%），
+   * 是全页最吃高度的地方；桌面不折叠、也不显示切换按钮。
+   * 注意页面被 keepAlive 缓存：先在小屏打开再拉大窗口，折叠状态会保留到下次进入。
+   */
+  const isNarrow = ref(
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 800px)').matches
+  )
+  const showConfig = ref(!isNarrow.value)
   /**
    * 状态取不到时不能把下面渲染成红色「未运行」。
    * `status` 为 null 有两种完全不同的含义 ——「还在检测」与「检测失败了」，
@@ -1893,37 +1934,37 @@
     color: var(--art-gray-500, rgb(107 114 128));
   }
 
-  /* ===== 日志折叠 ===== */
-  .log-collapse {
+  /* ===== 折叠容器（运行日志 / Go 代理配置共用） ===== */
+  .dy-collapse {
     display: grid;
     grid-template-rows: 0fr;
     transition: grid-template-rows var(--dy-dur-slow) var(--dy-ease-in-out);
   }
 
-  .log-collapse--open {
+  .dy-collapse--open {
     grid-template-rows: 1fr;
   }
 
-  .log-collapse__inner {
+  .dy-collapse__inner {
     min-height: 0;
     overflow: hidden;
   }
 
-  .log-caret {
+  .dy-caret {
     transition: transform var(--dy-dur-base) var(--dy-ease-out);
   }
 
-  .log-caret--open {
+  .dy-caret--open {
     transform: rotate(180deg);
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .log-collapse,
-    .log-caret {
+    .dy-collapse,
+    .dy-caret {
       transition-duration: 1ms;
     }
 
-    .log-caret--open {
+    .dy-caret--open {
       transform: none;
     }
   }

@@ -1,7 +1,13 @@
 <!-- 个人中心页面 -->
 <template>
   <div class="douyin-page dy-stagger w-full h-full p-0 bg-transparent border-none shadow-none">
-    <div class="relative flex-b mt-2.5 max-md:block max-md:mt-1">
+    <!--
+      窄屏堆叠用 .dy-stack-mobile（全局、无 layer，见 styles/custom/douyin-mobile.scss）。
+      原来写的是 max-md:block —— 它和 .flex-b 同在 Tailwind 的 utilities 层里，
+      而自定义类写在生成产物之后，同层里后者胜出，display 一直是 flex，
+      右栏被压成宽度 0：手机上"账号信息 / 更改密码"整块看不见。
+    -->
+    <div class="relative flex-b mt-2.5 dy-stack-mobile">
       <!-- 左：账号卡片（全部是真实数据，原来这里是模板的假资料） -->
       <div class="w-112 mr-5 max-md:w-full max-md:mr-0">
         <div class="art-card-sm relative p-9 pb-6 overflow-hidden text-center">

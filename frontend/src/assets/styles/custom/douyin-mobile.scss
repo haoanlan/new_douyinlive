@@ -1,0 +1,183 @@
+/**
+ * 移动端适配（手机 / 窄屏）
+ *
+ * 为什么单独开这个文件、而不是改 views/index/style.scss：
+ *   那份 scoped 样式**实测一条规则都没进浏览器**（在 390×844 下遍历全部 styleSheets，
+ *   找不到任何 #app-sidebar / #app-main / .app-layout 规则），
+ *   于是它里面 @media (width <= 800px) 的"侧栏变抽屉"从来没生效过 ——
+ *   窄屏下侧栏宽度恒为 0，手机上根本没有能打开的菜单。
+ *   这里挂在确定会加载的全局链路（assets/styles/index.scss → custom/）上。
+ *
+ * 另一条经验：本文件**不要包在 @layer 里**。
+ *   Tailwind 的自定义类 @layer utilities 写在生成产物之后，同层里会盖掉 max-md:* 变体
+ *   （个人中心那行就是被 .flex-b 的 display:flex 压掉了 max-md:block，右栏宽度变成 0）。
+ *   无 layer 的规则层级更高，用它做移动端覆盖最稳。
+ */
+
+/* ============================================================
+ * 一、窄屏侧栏 → 抽屉
+ * ============================================================ */
+
+/*
+ * 桌面端不显示遮罩（v-show 只控制 menuOpen，不区分端）。
+ * 注意：这条基础规则必须写在下面的媒体查询**之前** ——
+ * 否则同权重下它排在后面会把媒体查询里的 display:block 盖掉（第一版就踩了，遮罩一直不显示）。
+ */
+.mobile-sidebar-mask {
+  display: none;
+}
+
+@media (max-width: 800px) {
+  .app-layout {
+    position: relative;
+
+    #app-sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 320;
+      width: 230px;
+      height: 100dvh;
+      background: var(--default-box-color);
+      /* 关着的时候整体移出屏幕（留 2% 避免边缘阴影露出） */
+      transform: translateX(-102%);
+      transition: transform 240ms cubic-bezier(0.23, 1, 0.32, 1);
+      will-change: transform;
+
+      &.is-mobile-open {
+        transform: translateX(0);
+        box-shadow: 0 12px 32px rgb(0 0 0 / 18%);
+      }
+    }
+
+    #app-main {
+      width: 100%;
+    }
+  }
+
+  .mobile-sidebar-mask {
+    position: fixed;
+    inset: 0;
+    z-index: 310;
+    display: block;
+    background: rgb(0 0 0 / 35%);
+    animation: dy-mask-in 200ms ease both;
+  }
+
+  @keyframes dy-mask-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
+
+/* ============================================================
+ * 二、触控目标尺寸
+ *
+ * 实测问题（390×844 巡检）：顶栏图标按钮 34×34、头像 26×26、
+ * el-button--small 只有 24px 高、el-tag 关闭按钮 14×14 ——
+ * 手指点不准（移动端建议 ≥ 40px 视觉尺寸、≥ 32px 高度是底线）。
+ * ============================================================ */
+@media (max-width: 800px) {
+  /* 顶栏图标按钮 34 → 40 */
+  #app-header [class*='size-8.5'] {
+    width: 40px;
+    height: 40px;
+  }
+
+  /* 顶栏头像 26 → 34 */
+  #app-header img[class*='size-8.5'],
+  #app-header img.max-sm\:w-6\.5 {
+    width: 34px;
+    height: 34px;
+  }
+
+  /*
+   * 小号按钮 24 → 34 高（表格行内"详情/删除"、状态页"重启/配置"这类）。
+   * 注意特异性：项目里有 `.douyin-page .el-button--small { min-height: 24px }`（两个类），
+   * 只写 `.el-button--small` 会被它压住（实测仍是 24px），所以这里对齐成同样的两个类，
+   * 且本文件在 index.scss 里最后加载 → 同权重下后加载者胜出。
+   * Element 自己还有 `.el-button--small { height: var(--el-button-size) }`，用 height:auto 放开。
+   */
+  .douyin-page .el-button--small {
+    height: auto;
+    min-height: 34px;
+    line-height: 1.4;
+  }
+
+  /*
+   * 标签关闭按钮：Element 写死了 14×14，padding 改不动尺寸，直接放大。
+   * 这里用 24×24 实体尺寸而不是靠 ::after 撑点区 —— .el-tag 常有 overflow: hidden，
+   * 溢出的伪元素会被裁掉，点区并不会真的变大（所以老老实实放大盒子）。
+   */
+  .douyin-page .el-tag .el-tag__close {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    margin-left: 2px;
+    font-size: 13px;
+  }
+
+  /* 面包屑 / 工具条上的小图标按钮 */
+  .douyin-page .el-button.is-text,
+  .douyin-page .el-button.is-link {
+    min-height: 32px;
+  }
+
+  /*
+   * 剩下两处实测偏小的触控目标（390×844 巡检）：
+   *   1) 运行日志的「展开 / 收起」：min-h-6 → 只有 24px 高
+   *   2) 查询结果说明的提示图标：size-5 → 20×20
+   * 前者直接抬到 32px；后者不动视觉尺寸，用 ::after 把点区撑到 32px（避免挤动排版）。
+   */
+  .douyin-page .dy-pressable[class*='min-h-6'] {
+    min-height: 32px;
+  }
+
+  .douyin-page span.size-5.inline-flex {
+    position: relative;
+  }
+
+  .douyin-page span.size-5.inline-flex::after {
+    position: absolute;
+    inset: -6px;
+    content: '';
+  }
+}
+
+/* ============================================================
+ * 四、窄屏隐藏模板级的悬浮件
+ *
+ * 实测（390×844 截图）：art-design-pro 的"设置面板"悬浮按钮固定在底部中间，
+ * 手机上一屏就那么点高度，它正好压在卡片内容和分页上；引导气泡（已在顶栏用
+ * width >= 800 关掉）同理。这类模板自带的东西在手机上没有使用价值，直接隐藏。
+ * ============================================================ */
+@media (max-width: 800px) {
+  .layout-settings {
+    display: none;
+  }
+}
+
+/* ============================================================
+ * 三、窄屏下改为纵向堆叠的容器
+ *
+ * 用法：给"桌面横向、手机纵向"的行加 .dy-stack-mobile。
+ * 之前这类地方写的是 max-md:block，会被同层的 .flex-b/.flex-cc 盖掉（见文件头说明）。
+ * 个人中心就是受害者：右栏宽度被压成 0，手机上"账号信息/更改密码"整块看不见。
+ * ============================================================ */
+@media (max-width: 768px) {
+  .douyin-page .dy-stack-mobile {
+    display: block;
+  }
+
+  /* 子项一律占满整行：包括写死宽度的左卡（w-112 = 448px） */
+  .douyin-page .dy-stack-mobile > * {
+    width: 100%;
+    min-width: 0;
+    margin-right: 0;
+    margin-left: 0;
+  }
+}

@@ -129,9 +129,14 @@
           <div class="breathing-dot absolute top-2 right-2 size-1.5 !bg-success rounded-full"></div>
         </ArtIconButton>
 
-        <!-- 设置按钮 -->
+        <!-- 设置按钮；引导气泡只在宽屏显示（窄屏上它会盖住工作标签和内容，挡住真正要点的东西） -->
         <div v-if="shouldShowSettings">
-          <ElPopover :visible="showSettingGuide" placement="bottom-start" :width="190" :offset="0">
+          <ElPopover
+            :visible="showSettingGuide && width >= 800"
+            placement="bottom-start"
+            :width="190"
+            :offset="0"
+          >
             <template #reference>
               <div class="flex-cc">
                 <ArtIconButton icon="ri:settings-line" class="setting-btn" @click="openSetting" />

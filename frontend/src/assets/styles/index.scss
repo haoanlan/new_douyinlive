@@ -24,3 +24,6 @@
 
 // 抖音监控页：动效 token 与统一交互态（按下反馈 / 列表进出过渡）
 @use './custom/douyin-motion.scss';
+
+// 移动端适配（窄屏抽屉侧栏 / 触控目标尺寸 / 纵向堆叠）
+@use './custom/douyin-mobile.scss';

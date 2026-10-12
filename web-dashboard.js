@@ -188,13 +188,38 @@ async function serveStatic(req, res) {
     res.writeHead(403); res.end('Forbidden'); return;
   }
 
-  // 屏蔽敏感文件（config、备份、数据库、日志）
-  const blockedExts = ['.yaml', '.yml', '.bak', '.db', '.db-journal', '.jsonl'];
-  if (blockedExts.some(e => filePath.endsWith(e)) || filePath.endsWith('.log') || path.basename(filePath).startsWith('.')) {
+  /*
+   * 静态文件只放行"白名单扩展名"，不再用黑名单。
+   *
+   * 原实现是黑名单（.yaml/.yml/.bak/.db/.db-journal/.jsonl/.log + basename 以点开头），
+   * 实测有三个洞（未认证即可访问，均已复现）：
+   *   GET /db/douyin.db-wal        → 200  （黑名单漏了 -wal / -shm，5.26MB 最近写入的原始页）
+   *   GET /db/douyin.DB            → 200  （endsWith 区分大小写，Windows 不区分 → 1.04GB 主库）
+   *   GET /.git/config、/.git/HEAD → 200  （basename 判断只看最后一段，嵌套点目录没拦住）
+   *   GET /.qrlogin-profile/...    → 200  （同上；扫码登录用的浏览器配置/历史）
+   * 白名单 + "路径任一段以点开头即拒绝" 可以一次性覆盖这三类。
+   *
+   * 注意执行顺序：白名单只能对**实际存在的文件**生效。
+   * 无扩展名的路径（如 /douyin/dashboard）是 SPA 路由，要放它走到下面的 index.html 回退，
+   * 否则前端构建产物打开时会 403。
+   */
+  const ALLOWED_EXT = new Set([
+    '.html', '.htm', '.css', '.js', '.mjs', '.json', '.map',
+    '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.ico',
+    '.woff', '.woff2', '.ttf', '.eot', '.mp4', '.webm'
+  ]);
+  const dotSegment = pathname.split('/').some((seg) => seg.startsWith('.'));
+  const inDbDir = pathname === '/db' || pathname.startsWith('/db/');
+  if (dotSegment || inDbDir) {
     res.writeHead(403); res.end('Forbidden'); return;
   }
 
-  if (!await fs.promises.access(filePath).then(() => true).catch(() => false)) {
+  const fileExists = await fs.promises.access(filePath).then(() => true).catch(() => false);
+  if (fileExists && !ALLOWED_EXT.has(path.extname(filePath).toLowerCase())) {
+    res.writeHead(403); res.end('Forbidden'); return;
+  }
+
+  if (!fileExists) {
     // SPA fallback: 非 API 路由返回 index.html
     if (!pathname.startsWith('/api/')) {
       filePath = path.join(VUE_DIST, 'index.html');

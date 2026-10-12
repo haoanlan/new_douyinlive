@@ -560,7 +560,9 @@
   }
 
   function disposeCharts() {
-    chartEls.forEach((el) => echarts.getInstanceByDom(el)?.dispose())
+    // chartEls 是普通对象（Record），不是数组 —— 原来写 .forEach 会在卸载时抛
+    // TypeError: chartEls.forEach is not a function，echarts 实例全部泄漏。
+    Object.values(chartEls).forEach((el) => echarts.getInstanceByDom(el)?.dispose())
   }
 
   async function loadHosts() {

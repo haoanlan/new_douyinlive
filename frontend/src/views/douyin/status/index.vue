@@ -560,7 +560,7 @@
               平时不可见、转起来才出现，宽度全程不变（不然 el-button 的 :loading
               会临时插一个图标把按钮撑宽，点一下尺寸就跳）。
             -->
-            <el-button @click="save(false)">
+            <el-button :disabled="!form || saving !== ''" @click="save(false)">
               <ArtSvgIcon
                 icon="ri:loader-4-line"
                 class="mr-1"
@@ -568,7 +568,7 @@
               />
               只保存
             </el-button>
-            <el-button type="primary" @click="save(true)">
+            <el-button type="primary" :disabled="!form || saving !== ''" @click="save(true)">
               <ArtSvgIcon
                 icon="ri:loader-4-line"
                 class="mr-1"
@@ -1187,11 +1187,17 @@
   async function openEditor() {
     // 去掉 :loading 后按钮不再自锁，这里防重入
     if (formLoading.value) return
-    editorOpen.value = true
     formLoading.value = true
     saveError.value = ''
     saveWarnings.value = []
     try {
+      /*
+       * 必须先取到配置再打开抽屉。
+       * 原来的顺序是 editorOpen=true → 再请求：请求失败时 draft 仍是 {}，
+       * 而 save() 会用 `draft[...] || ''` 组一个**完整 patch** 写回 config.yaml
+       * —— 用户在空抽屉里点一下「只保存」，预存 Cookie / API Key / 房间专用 Cookie
+       * 会被整个清空（代理退回匿名态）。而且失败提示在 v-if="form" 里面，看不见。
+       */
       const f = await fetchProxyConfigForm()
       form.value = f
       draft.value = { ...(f.values || {}) }
@@ -1199,8 +1205,11 @@
         roomId,
         cookie: String(cookie)
       }))
+      editorOpen.value = true
     } catch (e) {
       saveError.value = apiErrorMessage(e, '读取代理配置失败')
+      // 抽屉没打开，错误必须用 toast 说出来，否则用户以为"点了没反应"
+      ElMessage.error(saveError.value)
     } finally {
       formLoading.value = false
     }
@@ -1333,6 +1342,13 @@
 
   /** 组装 patch：只提交表单里真正有的字段 */
   async function save(restart: boolean) {
+    // 防重入（两个按钮用固定占位图标代替 :loading，不会自锁）+ 配置未加载时禁止保存
+    if (saving.value) return
+    if (!form.value) {
+      saveError.value = '配置尚未加载成功，已阻止保存（避免把现有 Cookie / API Key 覆盖为空）'
+      ElMessage.warning(saveError.value)
+      return
+    }
     saving.value = restart ? 'restart' : 'save'
     saveError.value = ''
     saveWarnings.value = []

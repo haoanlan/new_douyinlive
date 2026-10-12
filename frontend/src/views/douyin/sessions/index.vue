@@ -218,7 +218,7 @@
   import { computed, onActivated, onDeactivated, onMounted, onUnmounted, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { ElMessage, ElMessageBox } from 'element-plus'
-  import { fetchSessions, deleteSession, type Session } from '@/api/douyin'
+  import { fetchSessions, deleteSession, getReportUrl, type Session } from '@/api/douyin'
   import { useUserStore } from '@/store/modules/user'
   import { fmtNum, fmtFull, fmtSessionRange, formatDuration } from '@/utils/format'
   import { apiErrorMessage } from '@/utils/douyin-error'

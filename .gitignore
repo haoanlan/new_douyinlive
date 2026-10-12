@@ -70,3 +70,13 @@ frontend/push-retry.log
 frontend/.husky/
 frontend/scripts/
 
+
+# 运行时数据与过程产物（实测：db/ 995MB、team/ 17.5MB 原样躺在工作区，git add -A 会一起吞进去）
+db/
+db/*.db-wal
+db/*.db-shm
+
+# 审计/调试过程产物（截图、报告、一次性探测脚本）
+team/
+reports/
+scripts/tmp-*

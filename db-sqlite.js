@@ -218,6 +218,37 @@ async function init() {
       gifts INTEGER DEFAULT 0, diamonds INTEGER DEFAULT 0, danmaku INTEGER DEFAULT 0,
       PRIMARY KEY (session_id, time), FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
     )`,
+    /*
+     * 总览页用的按场次汇总表（**不截断**）。
+     *
+     * 为什么不能直接复用 session_gift_ranking / session_danmaku_ranking：
+     * 那两张是"每场 top20 / top30"的榜单，会截断 —— 跨场次求和会漏掉排在后面的用户，
+     * 总览的"送礼榜/弹幕榜"数值就会偏低（顺序可能还对，数字不对）。
+     * 所以另建三张**全量**的按场次汇总：用户礼物、用户弹幕、礼物种类。
+     * 有了它们，总览的 5 个数字和 4 个榜单都能 O(小表) 读出来，
+     * 不必再每次扫 41 万行明细（原来 5.5 秒 + 322MB）。
+     */
+    `CREATE TABLE IF NOT EXISTS session_user_gift_totals (
+      session_id INTEGER NOT NULL, user_sec_uid TEXT, nickname TEXT, avatar_url TEXT,
+      total_diamonds INTEGER DEFAULT 0, gift_count INTEGER DEFAULT 0,
+      PRIMARY KEY (session_id, user_sec_uid, nickname),
+      FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
+    )`,
+    `CREATE INDEX IF NOT EXISTS idx_sugt_user ON session_user_gift_totals(user_sec_uid)`,
+    `CREATE TABLE IF NOT EXISTS session_user_danmaku_totals (
+      session_id INTEGER NOT NULL, user_sec_uid TEXT, nickname TEXT, avatar TEXT,
+      msg_count INTEGER DEFAULT 0,
+      PRIMARY KEY (session_id, user_sec_uid, nickname),
+      FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
+    )`,
+    `CREATE INDEX IF NOT EXISTS idx_sudt_user ON session_user_danmaku_totals(user_sec_uid)`,
+    `CREATE TABLE IF NOT EXISTS session_gift_type_totals (
+      session_id INTEGER NOT NULL, gift_name TEXT NOT NULL,
+      gift_count INTEGER DEFAULT 0, diamonds INTEGER DEFAULT 0,
+      PRIMARY KEY (session_id, gift_name),
+      FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
+    )`,
+    `CREATE INDEX IF NOT EXISTS idx_sgtt_name ON session_gift_type_totals(gift_name)`,
     `CREATE TABLE IF NOT EXISTS dashboard_users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT NOT NULL UNIQUE,
@@ -329,6 +360,32 @@ async function init() {
     if (stillBad.length > 0) {
       console.error(`[db][自检] ${stillBad.length} 个已结束场次的累计值仍为空：${stillBad.map((r) => r.id).join(', ')} —— 按场次统计会少算这些场次`);
     }
+
+    /*
+     * 一次性迁移 + 自愈：给"有明细但汇总表里没有记录"的已结束场次补建。
+     * 判断条件刻意是"有明细却没有汇总"而不是"汇总表为空" ——
+     * 后者只在首次迁移时成立，之后任何一次写入失败（例如我这次改坏过的
+     * buildOverviewTotals 调用）都会留下永久缺口。这里每次启动都补，代价只有一次小查询。
+     * 完全没有礼物也没有弹幕的场次不会是候选（否则每次启动都要重算一遍）。
+     */
+    const missingTotals = d.prepare(`
+      SELECT s.id FROM sessions s
+      WHERE s.end_time IS NOT NULL
+        AND NOT EXISTS (SELECT 1 FROM session_user_gift_totals t WHERE t.session_id = s.id)
+        AND ((SELECT COUNT(*) FROM gifts WHERE session_id = s.id) > 0
+             OR (SELECT COUNT(*) FROM danmaku WHERE session_id = s.id) > 0)
+      ORDER BY s.id
+    `).all();
+    if (missingTotals.length > 0) {
+      const { comboDedupGifts } = require('./lib/gift-utils.js');
+      const t0 = Date.now();
+      const prepGifts = d.prepare('SELECT * FROM gifts WHERE session_id = ? ORDER BY id');
+      const run = d.transaction(() => {
+        for (const { id: sid } of missingTotals) buildOverviewTotals(d, sid, comboDedupGifts(prepGifts.all(sid)));
+      });
+      run();
+      console.log(`[db] 补建总览汇总表：${missingTotals.length} 个场次（${((Date.now() - t0) / 1000).toFixed(1)}s）`);
+    }
   } catch (e) {
     console.error('[db] 回填聚合数据失败:', e.message);
   }
@@ -437,6 +494,8 @@ async function recomputeSessionAggregates(sessionId) {
       .run(agg_gifts, agg_diamonds, dmRow.cnt, agg_users, sessionId);
     // 写入预聚合表
     await buildPrecomputed(d, sessionId, deduped);
+    // 总览页用的全量按场次汇总（不含网络请求，可安全用于启动时批量回填）
+    buildOverviewTotals(d, sessionId, deduped, dmRow.cnt);
     // 自检：有明细却算出 0，说明数据异常，必须显式报出来而不是静默
     if (rawGifts.length > 0 && agg_gifts === 0) {
       console.warn(`[agg][自检] session ${sessionId} 有 ${rawGifts.length} 条礼物明细，但去重后礼物数为 0 —— 请检查连击数据`);
@@ -446,6 +505,64 @@ async function recomputeSessionAggregates(sessionId) {
     console.error(`[agg] session ${sessionId} 聚合计算失败:`, e.message);
     return { ok: false, error: e.message };
   }
+}
+
+/**
+ * 写入"总览页用的按场次全量汇总"三张表。
+ *
+ * 刻意**不包含任何网络请求**（buildPrecomputed 里有补头像的远端调用），
+ * 因为启动时的历史批量回填会跑几百次；这里只用已去重的礼物数组 + 一次弹幕聚合查询。
+ *
+ * @param {object} d better-sqlite3 实例
+ * @param {number} sessionId 场次 id
+ * @param {Array} dedupedGifts 已连击去重的礼物
+ * @param {number} [aggDanmaku] 已知的弹幕总数（不传则现查）
+ */
+function buildOverviewTotals(d, sessionId, dedupedGifts, aggDanmaku) {
+  d.prepare('DELETE FROM session_user_gift_totals WHERE session_id = ?').run(sessionId);
+  d.prepare('DELETE FROM session_user_danmaku_totals WHERE session_id = ?').run(sessionId);
+  d.prepare('DELETE FROM session_gift_type_totals WHERE session_id = ?').run(sessionId);
+
+  // ① 用户礼物总计（全量，不截断）
+  const userMap = {};
+  const giftTypeMap = {};
+  for (const g of dedupedGifts || []) {
+    const uid = g.user_sec_uid || '';
+    const nick = g.nickname || '';
+    const key = uid + '\x00' + nick;
+    const av = g.avatar_url || g.avatar || null;
+    if (!userMap[key]) userMap[key] = { user_sec_uid: uid, nickname: nick, avatar_url: av, total_diamonds: 0, gift_count: 0 };
+    if (nick && !nick.startsWith('神秘人')) {
+      userMap[key].nickname = nick;
+      if (av) userMap[key].avatar_url = av;
+    }
+    userMap[key].total_diamonds += g.total_diamonds || 0;
+    userMap[key].gift_count += g.repeat_count || 1;
+
+    const gk = g.gift_name || '';
+    if (!giftTypeMap[gk]) giftTypeMap[gk] = { gift_count: 0, diamonds: 0 };
+    giftTypeMap[gk].gift_count += g.repeat_count || 1;
+    giftTypeMap[gk].diamonds += g.total_diamonds || 0;
+  }
+  const insU = d.prepare('INSERT INTO session_user_gift_totals (session_id, user_sec_uid, nickname, avatar_url, total_diamonds, gift_count) VALUES (?,?,?,?,?,?)');
+  for (const u of Object.values(userMap)) insU.run(sessionId, u.user_sec_uid, u.nickname, u.avatar_url, u.total_diamonds, u.gift_count);
+
+  const insT = d.prepare('INSERT INTO session_gift_type_totals (session_id, gift_name, gift_count, diamonds) VALUES (?,?,?,?)');
+  for (const [name, v] of Object.entries(giftTypeMap)) if (name) insT.run(sessionId, name, v.gift_count, v.diamonds);
+
+  // ② 用户弹幕总计（全量，不截断；与 session_danmaku_ranking 的区别就是没有 LIMIT）
+  const dmRows = d
+    .prepare(
+      `SELECT COALESCE(user_sec_uid,'') user_sec_uid, COALESCE(nickname,'') nickname,
+              MAX(avatar) avatar, COUNT(*) msg_count
+       FROM danmaku WHERE session_id = ?
+       GROUP BY user_sec_uid, nickname`
+    )
+    .all(sessionId);
+  const insD = d.prepare('INSERT INTO session_user_danmaku_totals (session_id, user_sec_uid, nickname, avatar, msg_count) VALUES (?,?,?,?,?)');
+  for (const r of dmRows) insD.run(sessionId, r.user_sec_uid, r.nickname, r.avatar, r.msg_count);
+
+  return { users: Object.keys(userMap).length, giftTypes: Object.keys(giftTypeMap).length, danmakuUsers: dmRows.length, aggDanmaku };
 }
 
 

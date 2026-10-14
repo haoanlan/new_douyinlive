@@ -218,8 +218,25 @@
             </el-radio-button>
           </el-radio-group>
         </div>
-        <el-table :data="detailRows" size="small" max-height="420" stripe>
-          <el-table-column label="开播时间" min-width="150">
+        <!--
+          窄屏必须套一层横滚容器（.dy-table-scroll）：
+          这张表 8 列合计约 840px，而手机上卡片内宽只有 ~330px。
+          el-table 在 max-height（固定表头）模式下遇到过窄容器会出现
+          "表头 950px / 表体 330px" 的宽度分叉 —— 表头能横移、表体不能，
+          末列「详情」永远够不到（实测 390×844：末列右边界 980px）。
+          外层横滚 + 表格 min-width，让表头表体处于同一张足够宽的表格里。
+          另外加 @row-click：主操作（进详情）不再只依赖末列按钮。
+        -->
+        <div class="dy-table-scroll">
+          <el-table
+            :data="detailRows"
+            size="small"
+            max-height="420"
+            stripe
+            class="c-pointer"
+            @row-click="(row: any) => goDetail(row.sessionId)"
+          >
+            <el-table-column label="开播时间" min-width="150">
             <template #default="{ row }">
               <span class="text-xs">{{ fmtTime(row.startAt) }}</span>
               <el-tag v-if="!row.ended" size="small" type="success" class="ml-1">直播中</el-tag>
@@ -273,7 +290,8 @@
               该时间范围内这个房间还没有场次记录。
             </div>
           </template>
-        </el-table>
+          </el-table>
+        </div>
       </div>
     </template>
 

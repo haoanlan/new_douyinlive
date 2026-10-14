@@ -35,7 +35,15 @@
         <span class="text-xs text-g-500">共 {{ total }} 个账号</span>
       </div>
 
-      <el-table :data="rows" class="mt-4" v-loading="loading" empty-text="没有账号">
+      <!--
+        窄屏套横滚容器：6 列合计约 970px（用户名 160 + 角色 150 + 状态 110 +
+        创建时间 180 + 上次登录 180 + 操作 190），手机卡片内宽只有 ~330px。
+        不加这层时 el-table 的表头与表体宽度分叉（实测 390×844：
+        表头 scrollWidth 970 / 表体 330，横向滚动条 thumb 0×0），
+        右侧「重置密码 / 删除」不可见也不可点。
+      -->
+      <div class="dy-table-scroll dy-table-scroll--wide">
+        <el-table :data="rows" class="mt-4" v-loading="loading" empty-text="没有账号">
         <el-table-column label="用户名" min-width="160">
           <template #default="{ row }">
             <span class="font-medium text-g-900">{{ row.userName }}</span>
@@ -88,7 +96,8 @@
             </el-button>
           </template>
         </el-table-column>
-      </el-table>
+        </el-table>
+      </div>
     </article>
 
     <!-- 新增用户 -->

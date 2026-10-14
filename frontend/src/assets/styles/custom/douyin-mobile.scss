@@ -287,6 +287,39 @@
 }
 
 /* ============================================================
+ * 一·补六、窄屏表格：外层横滚容器
+ *
+ * 问题（实测 390×844）：el-table 在窄容器里，**表头与表体的宽度会分叉** ——
+ *   用户管理：headerWrapper scrollWidth 970 / bodyWrapper 330，横向滚动条 thumb 0×0，
+ *             bodyWrapper.scrollLeft 强制设 200 仍是 0 ⇒ 表体根本不可滚；
+ *             滚轮事件让表头独立横移（headerScrollLeft=300、bodyScrollLeft=0），
+ *             于是表头显示「状态/创建时间」而表体显示「admin/角色」，完全错位。
+ *   趋势明细：8 列合计约 840px，末列「详情」右边界 980px，永远够不到。
+ * 修法：外层给 overflow-x 容器，窄屏下让表格自身保持一个最小可用宽度
+ *       （必须 ≥ 列宽合计，否则 el-table 根节点 overflow:hidden 会把右侧列**裁掉**：
+ *        实测给 840px 而趋势表 8 列自然宽 950px，外层 scrollWidth 只有 840、
+ *        末列落在 950 处 —— 永远滚不到）。
+ *       趋势明细 8 列 ≈950px → 1000px；用户管理 6 列 ≈970px → 1040px。
+ *       表头与表体因此处在同一张足够宽的表格里，不再分叉；横滚交给外层容器。
+ * 桌面（>800px）不受影响：那里容器本来就够宽，min-width 不触发。
+ * ============================================================ */
+@media (max-width: 800px) {
+  .dy-table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  .dy-table-scroll .el-table {
+    min-width: 1000px;
+  }
+
+  .dy-table-scroll--wide .el-table {
+    min-width: 1040px;
+  }
+}
+
+/* ============================================================
  * 二、触控目标尺寸
  *
  * 实测问题（390×844 巡检）：顶栏图标按钮 34×34、头像 26×26、

@@ -475,11 +475,17 @@
     }
   }
 
+  /**
+   * 数据加载时间：供 onActivated 的 30 秒节流判断用（见下面 onActivated 的说明）
+   */
+  let overviewLoadedAt = 0
+
   async function refreshOverview() {
     try {
       const ov = await fetchOverview()
       overview.value = ov
       overviewError.value = ''
+      overviewLoadedAt = Date.now()
       const s = ov?.summary
       if (s) {
         rawSessions.value = s.total_sessions || 0
@@ -535,7 +541,13 @@
     refreshOverview()
     startTimers()
   })
-  onActivated(() => {
+  /*
+   * 切回来时除了刷新实时状态，也要补一次**历史总览**。
+   * 原来只调 refreshStatus()，而总览卡（场次数/钻石/用户/榜单）没有轮询 ——
+   * 切走期间结束的场次回来根本不会出现，要手动点刷新（审计 P2-14）。
+   * 30 秒节流：只在数据确实可能过期时才重新取。
+   */
+  onActivated(async () => {
     // 首次挂载时 mounted 与 activated 都会触发，跳过以免重复请求
     if (!activatedOnce) {
       activatedOnce = true
@@ -543,6 +555,10 @@
     }
     refreshStatus()
     startTimers()
+    if (Date.now() - overviewLoadedAt > 30000) {
+      await refreshOverview()
+      overviewLoadedAt = Date.now()
+    }
   })
   onDeactivated(() => stopTimers())
   onUnmounted(() => stopTimers())

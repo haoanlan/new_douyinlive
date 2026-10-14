@@ -242,6 +242,8 @@
               </template>
               <template v-else-if="activeQuery">
                 · 全量命中 {{ fmtNum(feedSearchTotal) }} 条
+                <!-- 检索失败时原来只把计数置 0，界面读起来像"确实没有"；这里明确区分 -->
+                <span v-if="feedSearchError" class="text-danger">（检索失败，显示的不是搜索结果）</span>
               </template>
             </p>
           </div>
@@ -534,6 +536,8 @@
   const feedTotal = ref(0)
   /** 本次搜索在服务端命中的总数 */
   const feedSearchTotal = ref(0)
+  /** 检索失败标记（用于把"没搜到"和"没搜成"区分开） */
+  const feedSearchError = ref('')
 
   /** 一次取多少条（后端上限也是 2000） */
   const FEED_FETCH_LIMIT = 2000
@@ -580,6 +584,7 @@
     if (!activeQuery.value && !feedSearch.value) return
     feedSearch.value = ''
     activeQuery.value = ''
+    feedSearchError.value = ''
     feedSearchTotal.value = 0
     feedShownCount.value = FEED_PAGE
     await loadDanmakuFeed()
@@ -631,6 +636,13 @@
     peopleDialogVisible.value = true
   }
 
+  /**
+   * 拉取"最新 N 条"动态。
+   *
+   * 注意：调用方必须 await —— 原来这里不 await 且没有 catch，
+   * 一旦弹幕接口失败就是 unhandled rejection，而外层 refresh 的 catch 完全抓不到，
+   * 页面会停在"标题显示命中数、列表是上一次的内容"这种自相矛盾的状态。
+   */
   async function loadDanmakuFeed() {
     /*
      * 只取最新 2000 条。
@@ -699,6 +711,7 @@
       const dmData = await fetchDanmaku(sessionId, FEED_FETCH_LIMIT, q)
       const dmList = dmData.data || dmData.messages || []
       feedSearchTotal.value = dmData.total ?? dmList.length
+      feedSearchError.value = ''
       const gifts = q
         ? (detail.value?.giftDetails || []).filter(
             (g) =>
@@ -708,8 +721,10 @@
         : detail.value?.giftDetails || []
       feedRaw.value = buildFeedItems(dmList, gifts)
     } catch {
-      // 搜索失败保持原列表，避免把"搜不到"伪装成"没有"
+      // 搜索失败保持原列表，避免把"搜不到"伪装成"没有"；同时给界面一个明确标记，
+      // 否则标题会显示"全量命中 0 条"而列表还是旧数据，读起来自相矛盾。
       feedSearchTotal.value = 0
+      feedSearchError.value = '检索失败'
     } finally {
       feedSearching.value = false
     }
@@ -790,27 +805,36 @@
     cloudObserver.observe(el)
   }
 
-  async function refresh() {
-    loading.value = true
+  async function refresh(opts: { silent?: boolean } = {}) {
+    // silent：直播中每 15 秒的轮询走这个分支 —— 不置 loading，
+    // 否则页面会每 15 秒整体变淡一次、期间刷新按钮还是禁用的（用户实测反馈）。
+    if (!opts.silent) loading.value = true
     try {
       detail.value = await fetchSessionDetail(sessionId)
       queryError.value = ''
       renderCloud()
       observeCloudBox()
-      loadDanmakuFeed()
+      /*
+       * 轮询时必须与"当前检索条件"保持一致：
+       * 原来无条件调 loadDanmakuFeed()（最新 2000 条、不带关键字），
+       * 于是用户搜完停在那儿，15 秒后列表被悄悄换掉，而标题还写着「全量命中 N 条」——
+       * 数字与列表对不上（审计 P1-4）。现在有检索词就重新按词取数，否则取最新。
+       */
+      if (activeQuery.value) await searchFeed()
+      else await loadDanmakuFeed()
     } catch (e) {
       // 以前这里只有 finally 没有 catch：场次不存在/接口失败时异常逃逸，
       // 页面停在一片全 0 的假数据上，用户以为"这场真的没有数据"（UI-AUDIT P1-11）
       queryError.value = apiErrorMessage(e, '场次详情加载失败')
     } finally {
-      loading.value = false
+      if (!opts.silent) loading.value = false
     }
   }
 
   onMounted(() => {
     refresh()
     timer = window.setInterval(() => {
-      if (detail.value?.session?.is_live) refresh()
+      if (detail.value?.session?.is_live) refresh({ silent: true })
     }, 15000)
   })
   onUnmounted(() => {

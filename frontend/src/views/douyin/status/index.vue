@@ -1659,8 +1659,20 @@
     refresh()
     if (autoRefresh.value) startTimer()
   })
-  onDeactivated(() => stopTimer())
-  onUnmounted(() => stopTimer())
+  /*
+   * 离开页面时要停**两个**定时器：
+   *   timer   —— 状态轮询（8s）
+   *   qrTimer —— 扫码登录轮询（1.5s）
+   * 原来只停 timer，qrTimer 仅在弹窗的 @closed/cancel 里清；
+   * 而"遮罩挡住了侧边菜单点击"，用浏览器返回键离开是主要可达路径 ——
+   * 结果切走后后台仍每 1.5 秒请求，且一旦检测到已扫码成功会**自动重启代理**（审计 P2-6）。
+   */
+  const stopAllTimers = () => {
+    stopTimer()
+    stopQrPolling()
+  }
+  onDeactivated(stopAllTimers)
+  onUnmounted(stopAllTimers)
 </script>
 
 <style scoped lang="scss">

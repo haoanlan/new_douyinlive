@@ -612,6 +612,9 @@
     }
   }
 
+  /** 数据加载时间（供 onActivated 节流判断用） */
+  let lastLoadedAt = 0
+
   async function refresh() {
     if (!selectedHosts.value.length) {
       series.value = []
@@ -623,6 +626,7 @@
       const data = await fetchHostTrends(selectedHosts.value, range.value)
       series.value = data.series || []
       queryError.value = ''
+      lastLoadedAt = Date.now()
       if (!detailHost.value || !series.value.some((s) => s.hostId === detailHost.value)) {
         detailHost.value = series.value[0]?.hostId ?? null
       }
@@ -674,9 +678,14 @@
     await refresh()
   })
 
-  // keep-alive：切回来时容器宽度可能已经变了（侧边栏折叠、窗口缩放），补一次
-  onActivated(() => {
+  // keep-alive：切回来时容器宽度可能已经变了（侧边栏折叠、窗口缩放），补一次 resize；
+  // 同时**补一次取数** —— 这页没有轮询，原来切走期间结束的场次回来也看不到（审计 P2-14）。
+  // 用 30 秒节流，避免在标签页之间来回点时反复打接口。
+  onActivated(async () => {
     nextTick(() => handleResize())
+    if (Date.now() - lastLoadedAt < 30000) return
+    await loadHosts()
+    await refresh()
   })
 
   onUnmounted(() => {

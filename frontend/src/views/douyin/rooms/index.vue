@@ -519,12 +519,18 @@
    *
    * 轮询失败时不再弹 toast（那是每 10 秒一次的刷屏），改为记录原因、
    * 由页面上的错误条统一展示（P0-3/P0-4）。
+   *
+   * 请求序号 guard：这个函数有三个并发来源（10 秒轮询、visibilitychange、onActivated），
+   * 没有序号时"慢的那个响应最后到达"会把新状态覆盖成旧的（search 页早就用了同样的招）。
    */
+  let refreshSeq = 0
   async function refresh() {
+    const seq = ++refreshSeq
     const isFirst = !rooms.value.length
     if (isFirst) loading.value = true
     try {
       const incoming = await fetchRooms()
+      if (seq !== refreshSeq) return // 已经有更新的请求发出，丢弃这次结果
       const prev = new Map(rooms.value.map((r) => [String(r.room_id), r]))
       const merged: Room[] = incoming.map((n) => {
         const old = prev.get(String(n.room_id))
@@ -535,9 +541,10 @@
       rooms.value = merged
       queryError.value = ''
     } catch (e) {
+      if (seq !== refreshSeq) return
       queryError.value = apiErrorMessage(e, '房间列表加载失败')
     } finally {
-      loading.value = false
+      if (seq === refreshSeq) loading.value = false
     }
   }
 

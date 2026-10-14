@@ -271,12 +271,26 @@ async function init() {
     //   2) 有弹幕但 session_timeline 为空 —— 历史 bug：弹幕 create_time 存的是毫秒，
     //      却被当作秒传给 strftime，算出 NULL，插入违反 NOT NULL 导致整段聚合回滚，
     //      于是所有场次的时间线都是空的。修好后在这里把历史场次补建回来。
+    /*
+     * 回填条件要精确，否则会掩盖问题：
+     *   - `agg_gifts = 0` 不能单独作为条件 —— **没有礼物的场次** agg_gifts 天然是 0，
+     *     会被每次启动都"回填"一遍（实测每次重启都打印"回填 7 个场次"，其中 4 个是这种），
+     *     既浪费又把"真的漏写"混在一起看不出来；
+     *   - 真正需要回填的是：有礼物明细但 agg_gifts 仍为 0、弹幕明细存在而 agg_danmaku 为 0、
+     *     或弹幕存在但时间线为空（历史 bug 的那批）。
+     */
     const pending = d.prepare(`
       SELECT id FROM sessions
       WHERE end_time IS NOT NULL
-        AND (agg_gifts IS NULL OR agg_gifts = 0
-             OR ((SELECT COUNT(*) FROM danmaku WHERE session_id = sessions.id) > 0
-                 AND (SELECT COUNT(*) FROM session_timeline WHERE session_id = sessions.id) = 0))
+        AND (
+          (agg_gifts IS NULL)
+          OR ((SELECT COUNT(*) FROM gifts WHERE session_id = sessions.id) > 0
+              AND COALESCE(agg_gifts, 0) = 0 AND COALESCE(agg_diamonds, 0) = 0)
+          OR ((SELECT COUNT(*) FROM danmaku WHERE session_id = sessions.id) > 0
+              AND COALESCE(agg_danmaku, 0) = 0)
+          OR ((SELECT COUNT(*) FROM danmaku WHERE session_id = sessions.id) > 0
+              AND (SELECT COUNT(*) FROM session_timeline WHERE session_id = sessions.id) = 0)
+        )
     `).all();
     if (pending.length > 0) {
       console.log(`[db] 回填 ${pending.length} 个场次的聚合数据...`);
@@ -296,6 +310,24 @@ async function init() {
         catch (e) { console.error(`[db] 回填 session ${sid} 预聚合失败:`, e.message); }
       }
       console.log(`[db] 聚合数据回填完成`);
+    }
+    /*
+     * 自检：回填之后仍然存在"有明细但没有累计值"的场次就显式告警。
+     * session 293 那类问题的可怕之处是"看起来正常"（stats_* 有值、页面也能打开），
+     * 只有做全量统计时才会少算 —— 必须在启动日志里留下痕迹。
+     */
+    const stillBad = d.prepare(`
+      SELECT s.id FROM sessions s
+      WHERE s.end_time IS NOT NULL
+        AND (
+          ((SELECT COUNT(*) FROM gifts WHERE session_id = s.id) > 0
+           AND COALESCE(s.agg_gifts, 0) = 0 AND COALESCE(s.agg_diamonds, 0) = 0)
+          OR ((SELECT COUNT(*) FROM danmaku WHERE session_id = s.id) > 0
+              AND COALESCE(s.agg_danmaku, 0) = 0)
+        )
+    `).all();
+    if (stillBad.length > 0) {
+      console.error(`[db][自检] ${stillBad.length} 个已结束场次的累计值仍为空：${stillBad.map((r) => r.id).join(', ')} —— 按场次统计会少算这些场次`);
     }
   } catch (e) {
     console.error('[db] 回填聚合数据失败:', e.message);
@@ -374,6 +406,23 @@ async function endSession(sessionId, durationSeconds, filePath) {
     'UPDATE sessions SET end_time = datetime(\'now\',\'localtime\'), duration_seconds = ?, file_path = ?, archived = 1 WHERE id = ?'
   ).run(durationSeconds || 0, filePath || null, sessionId);
   // 场次结束时计算并存储聚合数据
+  await recomputeSessionAggregates(sessionId);
+}
+
+/**
+ * 重算某个场次的聚合数据（agg_* + 预聚合表）。
+ *
+ * 抽成公共函数的原因：**"结束场次"有好几条路径**，原来只有 endSession() 会算 agg_*，
+ * 而 lib/worker/connection.js 在"同房间重新开播"时是直接
+ *   `UPDATE sessions SET end_time = ... WHERE room_id = ? AND end_time IS NULL`
+ * —— 那条路径不会写 agg_*。实测后果：session 293 已结束却 agg_* 全为 0
+ * （stats_gift/stats_danmaku 有值、明细也在），任何"只读 agg_*"的统计都会静默漏掉它。
+ * 现在所有结束路径都调这里，启动时的回填仍作为兜底。
+ *
+ * @returns {Promise<{ok: boolean, aggGifts?: number, aggDanmaku?: number, error?: string}>}
+ */
+async function recomputeSessionAggregates(sessionId) {
+  const d = getDb();
   try {
     const { comboDedupGifts } = require('./lib/gift-utils.js');
     const rawGifts = d.prepare('SELECT * FROM gifts WHERE session_id = ? ORDER BY id').all(sessionId);
@@ -388,8 +437,14 @@ async function endSession(sessionId, durationSeconds, filePath) {
       .run(agg_gifts, agg_diamonds, dmRow.cnt, agg_users, sessionId);
     // 写入预聚合表
     await buildPrecomputed(d, sessionId, deduped);
+    // 自检：有明细却算出 0，说明数据异常，必须显式报出来而不是静默
+    if (rawGifts.length > 0 && agg_gifts === 0) {
+      console.warn(`[agg][自检] session ${sessionId} 有 ${rawGifts.length} 条礼物明细，但去重后礼物数为 0 —— 请检查连击数据`);
+    }
+    return { ok: true, aggGifts: agg_gifts, aggDanmaku: dmRow.cnt };
   } catch (e) {
-    console.error(`[endSession] 聚合计算失败:`, e.message);
+    console.error(`[agg] session ${sessionId} 聚合计算失败:`, e.message);
+    return { ok: false, error: e.message };
   }
 }
 
@@ -791,7 +846,7 @@ async function close() {
 
 module.exports = {
   init, getPool, getDb,
-  upsertStreamer, createSession, getCurrentSession, endSession, updateSessionStats,
+  upsertStreamer, createSession, getCurrentSession, endSession, recomputeSessionAggregates, updateSessionStats,
   insertDanmaku, insertGifts, insertMembers,
   getGiftRanking, getDanmaku, getWordCloud, getMemberRanking,
   getStreamers, getSessions, getSession, close,

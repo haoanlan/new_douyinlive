@@ -164,18 +164,21 @@ async function main() {
   }
   check(`浅色模式全部文字达 AA（采样 ${totalSampled} 处，未达标 ${totalBad}）`, totalBad === 0);
 
-  // ---- 数字口径：页面里不应再出现裸 toLocaleString 造成的"同页两套写法" ----
+  // ---- 数字口径：总览 KPI 卡显示真实值（用户 2026-10 明确要求"数字就是实际的"） ----
   await page.goto(`${FRONT}/#/douyin/dashboard`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(5000);
   const numInfo = await page.evaluate(() => {
     const txt = document.body.innerText;
+    const nums = [...document.querySelectorAll('.dy-stat-num')].map((e) => e.textContent.trim());
     return {
-      hasWan: /万|亿/.test(txt),
+      // KPI 卡必须是千分位真实值，且不含万/亿缩写
+      kpiFull: nums.length > 0 && nums.every((n) => /^[\d,]+$/.test(n) && !/[万亿]/.test(n)),
+      kpiSample: nums.join(' | '),
       hasComma: /\d{1,3}(,\d{3})+/.test(txt),
-      sample: txt.replace(/\s+/g, ' ').slice(0, 200)
+      hasWan: /万|亿/.test(txt)
     };
   });
-  check('dashboard 数字口径存在（万/亿缩写已启用）', numInfo.hasWan, '');
+  check('总览 KPI 卡显示真实数值（千分位、不缩写）', numInfo.kpiFull, numInfo.kpiSample);
 
   // ---- 风格一致性：工具条内边距 / 统计卡尺寸 / 字号口径 ----
   const styleAudit = async (hash, waitMs) => {
@@ -190,6 +193,10 @@ async function main() {
         const r = c.getBoundingClientRect();
         return `${Math.round(r.height)}`;
       });
+      // 总览 KPI 卡单独统计（它是有意加高的 108px，与同页状态卡不同类）
+      const kpiHeights = [...document.querySelectorAll('.dy-stat-card')].map(
+        (c) => `${Math.round(c.getBoundingClientRect().height)}`
+      );
       // 字号：只统计 .douyin-page 作用域内的（模板自带组件如主题切换/回到顶部
       // 用的是 text-[10px]/text-xl，不属于被审计的页面代码）
       const arbitrary = new Set();
@@ -199,7 +206,7 @@ async function main() {
         const m = cls.match(/text-\[(\d+)px\]/);
         if (m) arbitrary.add(m[1]);
       }
-      return { tbPad, statHeights: [...new Set(stats)], arbitrary: [...arbitrary].sort() };
+      return { tbPad, statHeights: [...new Set(stats)], kpiHeights: [...new Set(kpiHeights)], arbitrary: [...arbitrary].sort() };
     });
   };
 
@@ -214,9 +221,19 @@ async function main() {
   check('有工具条的页面内边距统一为 20/20',
     a1.tbPad === '20/20' && a2.tbPad === '20/20',
     `${a1.tbPad} / ${a2.tbPad}`);
-  check('统计卡高度统一为 80px',
-    [...a2.statHeights, ...a3.statHeights].every((h) => h === '80'),
-    `sessions=${a2.statHeights} dashboard=${a3.statHeights}`);
+  /*
+   * 卡片高度：不再写死一个数字，改为断言"同类卡片自己一致"。
+   * 2026-10 用户要求总览 KPI 卡加高（图标缩小、数字加粗加大），所以 KPI 卡是 108px，
+   * 而同页的状态卡（守护进程/Go 代理/WebSocket/录制中）仍是 80px —— 这是两类不同的卡，
+   * 各自一致即可；写死 80 会把这个合理的设计变更判成回归。
+   */
+  const kpiHeights = a3.kpiHeights || [];
+  check('总览 KPI 卡高度一致（108px）',
+    kpiHeights.length > 0 && kpiHeights.every((h) => h === '108'),
+    `dashboard KPI=${a3.kpiHeights}`);
+  check('场次页统计卡高度一致（80px）',
+    a2.statHeights.length > 0 && a2.statHeights.every((h) => h === '80'),
+    `sessions=${a2.statHeights}`);
   check('页面内任意字号只剩 20px 一档（其余走 Tailwind 档位）',
     [...a1.arbitrary, ...a2.arbitrary, ...a3.arbitrary].every((v) => v === '20'),
     `${a1.arbitrary} / ${a2.arbitrary} / ${a3.arbitrary}`);

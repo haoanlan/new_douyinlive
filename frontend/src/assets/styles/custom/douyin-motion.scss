@@ -819,7 +819,8 @@
  * ========================================================================== */
 .dy-stat-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  /* minmax 200 → 220px：数字改成真实值后（例如 188,718,166）需要更宽才不换行 */
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 20px;
   margin-bottom: 20px;
 }
@@ -831,15 +832,39 @@
   }
 }
 
-/* 单张统计卡（总览页）：80px 高 + 20px 内边距 */
+/*
+ * 单张统计卡（目前只有总览页在用；放在全局是为了和 .dy-stat-row 一起维护）：
+ * 高度 80 → 108px：数字加大加粗后 80px 会显得"数字贴着边框"，
+ * 抬高给数字留出呼吸空间（用户反馈：图标缩小、卡片变高、数字加粗加大）。
+ */
 .dy-stat-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  height: 80px;
+  height: 108px;
   padding: 0 20px;
   min-width: 0;
+}
+
+/*
+ * 真实数值（千分位）在窄屏降到 20px：
+ * 26px 的 "188,718,166" 约 160px 宽，手机两列布局每张卡只有 ~150px，会溢出。
+ */
+@media (max-width: 768px) {
+  .douyin-page .dy-stat-card .dy-stat-num {
+    font-size: 20px !important;
+  }
+
+  /*
+   * 窄屏隐藏图标：实测 390px 两列布局下，卡片内宽 174px，
+   * "188,718,166" 的 20px 数字占 ~114px + 图标 28px + 间距 24px = 166px，
+   * 数字末尾和图标几乎贴在一起（截图可见）。标签文字已经说明了这是哪张卡，
+   * 图标在这里信息量为零，直接让位给数字。
+   */
+  .douyin-page .dy-stat-card .dy-stat-icon {
+    display: none !important;
+  }
 }
 
 /* ==========================================================================

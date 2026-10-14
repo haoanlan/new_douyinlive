@@ -12,15 +12,21 @@
       <div v-for="card in cards" :key="card.des" class="art-card dy-stat-card">
         <div class="min-w-0">
           <div class="text-xs text-g-500">{{ card.des }}</div>
-          <div class="mt-1 flex items-baseline gap-1">
-            <span class="text-[20px] font-medium text-g-900 leading-none whitespace-nowrap">{{
-              card.num
-            }}</span>
+          <!--
+            数字：真实值 + 加粗加大（20px medium → 26px bold）。
+            tabular-nums 让千分位数字等宽对齐，五张卡扫下来不会"数字位置忽左忽右"。
+            移动端在全局样式里降到 20px（26px 的 11 位数会撑破两列布局）。
+          -->
+          <div class="mt-1.5 flex items-baseline gap-1.5">
+            <span class="dy-stat-num text-3xl font-bold text-g-900 leading-none tabular-nums">
+              {{ card.num }}
+            </span>
             <span class="text-xs text-g-500 shrink-0">{{ card.unit }}</span>
           </div>
         </div>
-        <div class="size-9 rounded-lg flex-cc bg-theme/10 shrink-0">
-          <ArtSvgIcon :icon="card.icon" class="text-base text-theme" />
+        <!-- 图标缩小：36px 容器 → 28px，图标 text-base → text-xs（视觉重心让给数字） -->
+        <div class="dy-stat-icon size-7 rounded-md flex-cc bg-theme/10 shrink-0">
+          <ArtSvgIcon :icon="card.icon" class="text-xs text-theme" />
         </div>
       </div>
     </div>
@@ -528,7 +534,12 @@
     const s = overview.value?.summary
     return PLACEHOLDER_CARDS.map((p, i) => ({
       ...p,
-      num: s ? fmtNum([animSessions, animDiamonds, animDanmaku, animUsers, animLikes][i].value) : '--'
+      /*
+       * 显示**真实数值**（千分位，不做万/亿缩写）。
+       * 这五个数字是总览页的核心，原来 "1.89亿" / "46.54万" 这种缩写等于把精度藏起来，
+       * 想核对具体量级还得去别处翻。缩写形式在别处（榜单卡右侧）仍然保留。
+       */
+      num: s ? fmtFull([animSessions, animDiamonds, animDanmaku, animUsers, animLikes][i].value) : '--'
     }))
   })
 

@@ -124,7 +124,7 @@
                 }}</el-avatar>
                 <span class="flex-1 min-w-0 truncate text-sm text-g-800">{{ u.nickname }}</span>
                 <span class="text-sm font-bold text-theme shrink-0">{{
-                  fmtNum(u.total_diamonds)
+                  fmtFull(u.total_diamonds)
                 }}</span>
               </div>
               <el-empty v-if="!detail?.gifts?.length" description="暂无礼物" :image-size="60" />
@@ -159,7 +159,7 @@
                 }}</el-avatar>
                 <span class="flex-1 min-w-0 truncate text-sm text-g-800">{{ a.anchor_name }}</span>
                 <span class="text-sm font-bold text-theme shrink-0">{{
-                  fmtNum(a.total_diamonds)
+                  fmtFull(a.total_diamonds)
                 }}</span>
               </div>
               <el-empty
@@ -407,7 +407,7 @@
               </div>
             </div>
             <div class="text-right shrink-0">
-              <div class="text-sm font-bold text-theme">{{ fmtNum(g.total_diamonds) }}</div>
+              <div class="text-sm font-bold text-theme">{{ fmtFull(g.total_diamonds) }}</div>
               <div class="text-xs text-g-500">{{ g.count }} 个</div>
             </div>
           </div>
@@ -459,7 +459,7 @@
             }}</el-avatar>
             <span class="flex-1 min-w-0 truncate text-sm text-g-800">{{ p.nickname }}</span>
             <span class="text-sm font-bold text-theme shrink-0">{{
-              fmtNum(p.total_diamonds)
+              fmtFull(p.total_diamonds)
             }}</span>
           </div>
           <el-empty v-if="!peopleDialogList.length" description="暂无数据" :image-size="60" />
@@ -482,7 +482,7 @@
   } from '@/api/douyin'
   import { renderWordCloud } from '@/utils/wordcloud'
   import { replaceDouyinEmoji, esc } from '@/utils/douyin-emoji'
-  import { fmtTime, formatDuration, fmtNum, fmtTitle, fmtSessionRange, rankClass } from '@/utils/format'
+  import { fmtTime, formatDuration, fmtNum, fmtFull, fmtTitle, fmtSessionRange, rankClass } from '@/utils/format'
   import { apiErrorMessage } from '@/utils/douyin-error'
 
   interface FeedItem {
@@ -875,7 +875,7 @@
   .dy-detail-row:focus-visible {
     outline: none;
     box-shadow:
-      0 0 0 2px #fff,
+      0 0 0 2px var(--dy-focus-ring),
       0 0 0 4px var(--theme-color);
   }
 

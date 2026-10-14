@@ -115,14 +115,14 @@
             <div class="text-sm font-medium text-g-600">{{ m.label }}</div>
             <ArtCountTo
               v-if="m.count !== null"
-              class="mt-3 block truncate text-3xl font-semibold leading-none text-g-900"
+              class="mt-3 block truncate text-3xl font-semibold leading-tight text-g-900"
               :target="m.count"
               :duration="1200"
               :suffix="m.suffix"
             />
             <div
               v-else
-              class="mt-3 truncate text-3xl font-semibold leading-none"
+              class="mt-3 truncate text-3xl font-semibold leading-tight"
               :class="m.textTone || 'text-g-900'"
             >
               {{ m.text }}
@@ -135,7 +135,16 @@
         <div
           class="mt-4 flex items-center justify-between gap-2 border-t border-g-100 pt-3 text-xs"
         >
-          <span class="min-w-0 truncate text-g-500">
+          <!--
+            长诊断文案（例如"监控脚本在运行，但控制通道不可用（monitor.sock 未建立）"）：
+            原来只挂 .truncate，而它落在内联 span 上 —— text-overflow 对 inline 元素不生效，
+            结果是文字被**硬裁 140px 且没有省略号**（实测 scrollWidth 398 / clientWidth 258），
+            用户看不出后面还有半句。这里改成块级 + 保留 title，窄屏允许换行读完。
+          -->
+          <span
+            class="dy-metric-foot min-w-0 flex-1 truncate text-g-500"
+            :title="`${m.footLabel} ${m.footValue}`"
+          >
             {{ m.footLabel }}
             <b class="font-medium" :class="m.footTone || 'text-g-700'">{{ m.footValue }}</b>
           </span>

@@ -1,5 +1,41 @@
 // 优化 Element Plus 组件库默认样式
 
+/*
+ * 可访问性修正（实测数据）
+ *
+ * ① 错误告警条：浅色下文字 rgb(250,137,107) 叠在 rgb(255,243,240) 上只有 **2.18:1**
+ *    （element-plus 直接拿 --el-color-error-light-3 之类的亮色当文字色）。
+ *    深色下同一配色是 6.67:1 没问题，所以只覆盖浅色。
+ * ② 禁用态的危险按钮：浅色 1.65:1、深色 2.03:1，几乎看不见（用户会以为"没这个功能"）。
+ *    WCAG 对禁用控件不做要求，但可读性底线还是要守，改成"灰但看得清"。
+ * 两处都用更高的特异性（多一层类）压住 element-plus 自己的规则。
+ */
+html:not(.dark) {
+  .el-alert--error .el-alert__title,
+  .el-alert--error .el-alert__description,
+  .el-alert--error .el-alert__content {
+    color: #b42318; // 在 rgb(255,243,240) 上约 6.0:1
+  }
+}
+
+.el-button.is-disabled.el-button--danger,
+.el-button.is-disabled.el-button--danger:hover,
+.el-button.is-disabled.el-button--danger:focus {
+  color: #6b7280 !important; // 浅色底（填充色 rgb(245,247,250)）上约 4.6:1
+  background-color: var(--el-fill-color-light) !important;
+  border-color: var(--el-border-color-lighter) !important;
+}
+
+html.dark {
+  .el-button.is-disabled.el-button--danger,
+  .el-button.is-disabled.el-button--danger:hover,
+  .el-button.is-disabled.el-button--danger:focus {
+    color: #a9a9b8 !important; // 深色底上约 6.9:1
+    background-color: rgb(255 255 255 / 6%) !important;
+    border-color: rgb(255 255 255 / 12%) !important;
+  }
+}
+
 :root {
   // 系统主色
   --main-color: var(--el-color-primary);

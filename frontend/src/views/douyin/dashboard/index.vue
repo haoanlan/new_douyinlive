@@ -193,7 +193,7 @@
                 <div class="text-xs text-g-500">{{ fmtTime(p.start_time) }}</div>
               </div>
               <span class="text-sm font-bold text-theme shrink-0" :title="fmtTitle(p.online_peak)"
-                >{{ fmtNum(p.online_peak) }}人</span
+                >{{ fmtFull(p.online_peak) }}人</span
               >
             </div>
           </TransitionGroup>
@@ -235,7 +235,7 @@
               />
               <ArtSvgIcon v-else icon="ri:gift-2-line" class="text-base shrink-0 text-g-500" />
               <span class="flex-1 min-w-0 truncate text-sm text-g-800">{{ g.name }}</span>
-              <span class="text-sm font-bold text-theme shrink-0">{{ fmtNum(g.diamonds) }}钻</span>
+              <span class="text-sm font-bold text-theme shrink-0">{{ fmtFull(g.diamonds) }}钻</span>
             </div>
           </TransitionGroup>
           <el-empty
@@ -275,7 +275,7 @@
               >
               <el-avatar :size="32" :src="u.avatar" class="shrink-0">{{ u.nickname?.[0] }}</el-avatar>
               <span class="flex-1 min-w-0 text-sm truncate">{{ u.nickname }}</span>
-              <span class="text-sm font-bold text-theme shrink-0">{{ fmtNum(u.diamonds) }}钻</span>
+              <span class="text-sm font-bold text-theme shrink-0">{{ fmtFull(u.diamonds) }}钻</span>
             </div>
             <el-empty v-if="!overview?.topUsers?.length" description="暂无数据" :image-size="60" />
           </TransitionGroup>
@@ -304,7 +304,7 @@
               <el-avatar :size="32" :src="d.avatar" class="shrink-0">{{ d.nickname?.[0] }}</el-avatar>
               <span class="flex-1 min-w-0 text-sm truncate">{{ d.nickname }}</span>
               <span class="text-sm font-bold text-g-800 shrink-0" :title="fmtTitle(d.count)"
-                >{{ fmtNum(d.count) }}条</span
+                >{{ fmtFull(d.count) }}条</span
               >
             </div>
             <el-empty
@@ -386,7 +386,7 @@
   import { useRouter } from 'vue-router'
   import { useTransition } from '@vueuse/core'
   import { fetchOverview, fetchStatus, type OverviewData, type DaemonStatus } from '@/api/douyin'
-  import { fmtNum, fmtTitle, fmtTime, rankClass } from '@/utils/format'
+  import { fmtNum, fmtFull, fmtTitle, fmtTime, rankClass } from '@/utils/format'
   import { apiErrorMessage } from '@/utils/douyin-error'
 
   defineOptions({ name: 'DouyinDashboard' })

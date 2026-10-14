@@ -47,11 +47,24 @@
   transform: scale(var(--dy-press-scale));
 }
 
+/*
+ * 焦点环内圈颜色。
+ * 原来四处都写死 #fff —— 浅色卡片上没问题，深色卡片上就是一个发光的白点，
+ * 与其余深色边框语言不一致（审计 P2-12）。抽成变量，深色下换成很淡的白。
+ */
+:root {
+  --dy-focus-ring: #fff;
+}
+
+.dark {
+  --dy-focus-ring: rgb(255 255 255 / 26%);
+}
+
 /* 键盘可达：只有键盘聚焦才显示焦点环（鼠标点击不显示，避免"脏"） */
 .dy-pressable:focus-visible {
   outline: none;
   box-shadow:
-    0 0 0 2px #fff,
+    0 0 0 2px var(--dy-focus-ring),
     0 0 0 4px var(--theme-color);
 }
 
@@ -519,7 +532,9 @@
 
 /*
  * 搜索框口径与「房间管理」工具条里的搜索框一致：
- * 圆角 10px、浅灰底、**无描边** —— 靠底色与卡片的色差区分，而不是 1px 描边。
+ * 浅灰底、**无描边** —— 靠底色与卡片的色差区分，而不是 1px 描边。
+ * 圆角跟随全局 element-plus 默认 6px（见 assets/styles/custom/douyin-toolbar.scss 的说明）。
+ * 原来这里和房间管理都写死 10px，导致同类控件两种圆角（审计 P2-9），已统一。
  *
  * 为什么写在这里而不是页面的 <style> 里：
  *   详情页的 <style> 是全局的（没有 scoped），写 :deep() 不会被 Vue 转换，
@@ -527,7 +542,6 @@
  *   而全局块里不能写裸的 `.el-input__wrapper`（会泄漏到全站），所以用类名限定。
  */
 .dy-feed-search-input .el-input__wrapper {
-  border-radius: 10px;
   background: var(--art-gray-100);
   box-shadow: none;
   transition: box-shadow var(--dy-dur-fast) ease;
@@ -539,11 +553,6 @@
 
 .dy-feed-search-input .el-input__wrapper.is-focus {
   box-shadow: 0 0 0 1px var(--theme-color) inset;
-}
-
-/* 按钮圆角与输入框一致（模板默认 6px，和 10px 的输入框并排会不齐） */
-.dy-feed-search .el-button {
-  border-radius: 10px;
 }
 
 /* ==========================================================================

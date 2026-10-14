@@ -501,9 +501,13 @@
 </script>
 
 <style scoped>
-  /* 工具条控件圆角与卡片统一 */
+  /*
+   * 工具条输入框：只保留"灰底 + 无描边 + 聚焦描边"这套观感。
+   * 原来这里把输入框/按钮/日期选择器都改成 10px，而其它页是 element-plus 默认 6px ——
+   * 同类控件两种圆角（审计 P2-9）。全局口径见 assets/styles/custom/douyin-toolbar.scss
+   * （明确"回到官方默认 6px"），所以这里删掉圆角覆盖，跟随全局。
+   */
   :deep(.session-toolbar .el-input__wrapper) {
-    border-radius: 10px;
     background: var(--art-gray-100);
     box-shadow: none;
     transition: box-shadow var(--dy-dur-fast) ease;
@@ -515,11 +519,6 @@
 
   :deep(.session-toolbar .el-input__wrapper.is-focus) {
     box-shadow: 0 0 0 1px var(--theme-color) inset;
-  }
-
-  :deep(.session-toolbar .el-button),
-  :deep(.session-toolbar .el-date-editor) {
-    border-radius: 10px;
   }
 
   /*
@@ -545,7 +544,7 @@
   .session-row:focus-visible {
     outline: none;
     box-shadow:
-      0 0 0 2px #fff,
+      0 0 0 2px var(--dy-focus-ring),
       0 0 0 4px var(--theme-color);
   }
 </style>

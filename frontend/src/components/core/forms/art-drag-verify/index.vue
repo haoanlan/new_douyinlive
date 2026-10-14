@@ -87,16 +87,22 @@
     height: 40,
     text: '按住滑块拖动',
     successText: 'success',
-    background: '#eee',
+    /*
+     * 轨道与滑块按钮的默认色改成主题变量。
+     * 原来写死 '#eee' / '#fff'，深色主题下整条滑块是一块亮白条。
+     * 用 art-* 变量而不是 --el-fill-color-light：后者在登录页这个上下文里
+     * 实测仍是亮色（rgb(241,241,244)），art-* 是项目自己的主题变量，跟着 html.dark 走。
+     */
+    background: 'var(--art-gray-100, #eee)',
     progressBarBg: '#1385FF',
     completedBg: '#57D187',
     circle: false,
     radius: 'calc(var(--custom-radius) / 3 + 2px)',
     handlerIcon: 'solar:double-alt-arrow-right-linear',
     successIcon: 'ri:check-fill',
-    handlerBg: '#fff',
+    handlerBg: 'var(--default-box-color, #fff)',
     textSize: '13px',
-    textColor: '#333'
+    textColor: 'var(--art-gray-700, #333)'
   })
 
   // 组件状态接口定义
@@ -374,6 +380,11 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      /*
+       * 左右留出滑块按钮的宽度：按钮是 absolute 覆盖在文字之上的，
+       * 文案稍长（例如"按住滑块拖动"）首字就会被按钮压住，看起来像缺字。
+       */
+      padding: 0 46px;
       color: transparent;
       user-select: none;
       background: linear-gradient(

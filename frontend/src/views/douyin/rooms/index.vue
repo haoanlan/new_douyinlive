@@ -829,7 +829,7 @@
     /* !important 不能省：模板在 border-mode 下给 .art-card 写死了
        box-shadow: none !important，不加会被整个压掉（实测焦点环为 none）。 */
     box-shadow:
-      0 0 0 2px #fff,
+      0 0 0 2px var(--dy-focus-ring),
       0 0 0 4px var(--theme-color) !important;
   }
 
@@ -844,9 +844,15 @@
     }
   }
 
-  /* 工具条控件圆角与卡片统一（卡片 16px，控件默认仅 6px） */
+  /*
+   * 工具条输入框：只保留"灰底 + 无描边 + 聚焦描边"这套观感。
+   *
+   * 原来这里还写了 `border-radius: 10px` 并把按钮也改成 10px，
+   * 结果是房间管理的按钮圆角 10px、状态监控/信息查询/场次列表都是 element-plus 默认 6px ——
+   * 同类主操作两种圆角（审计 P2-9）。全局口径见 assets/styles/custom/douyin-toolbar.scss，
+   * 那里明确是"回到官方默认 6px"，所以这里删掉覆盖，跟随全局。
+   */
   :deep(.room-toolbar .el-input__wrapper) {
-    border-radius: 10px;
     background: var(--art-gray-100);
     box-shadow: none;
     transition: box-shadow var(--dy-dur-fast) ease;
@@ -858,9 +864,5 @@
 
   :deep(.room-toolbar .el-input__wrapper.is-focus) {
     box-shadow: 0 0 0 1px var(--theme-color) inset;
-  }
-
-  :deep(.room-toolbar .el-button) {
-    border-radius: 10px;
   }
 </style>

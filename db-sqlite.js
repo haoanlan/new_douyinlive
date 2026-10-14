@@ -305,12 +305,13 @@ async function init() {
   try {
     const userCount = d.prepare('SELECT COUNT(*) c FROM dashboard_users').get().c;
     if (userCount === 0) {
-      const crypto = require('crypto');
-      const hash = (s) => crypto.createHash('sha256').update(s).digest('hex');
+      // 种子口令用 scrypt+盐（lib/password.js）；旧库里的无盐 sha256 仍能登录，
+      // 成功登录一次后由 lib/routes/auth.js 自动升级。
+      const passwordLib = require('./lib/password');
       const ins = d.prepare('INSERT INTO dashboard_users (username, password, role, enabled) VALUES (?, ?, ?, 1)');
-      ins.run('admin', hash('123456'), 'R_SUPER');
-      ins.run('guest', hash('123456'), 'R_GUEST');
-      console.log('[db] 已创建默认账号: admin / guest (密码 123456)');
+      ins.run('admin', passwordLib.hashPassword('123456'), 'R_SUPER');
+      ins.run('guest', passwordLib.hashPassword('123456'), 'R_GUEST');
+      console.log('[db] 已创建默认账号: admin / guest (密码 123456 —— 请尽快在「用户管理」里改掉)');
     }
   } catch (e) {
     console.error('[db] 初始化账号失败:', e.message);

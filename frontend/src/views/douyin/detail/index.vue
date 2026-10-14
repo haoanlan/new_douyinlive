@@ -73,8 +73,16 @@
         <div class="art-card flex items-center justify-between h-20 px-5 mb-5">
           <div class="min-w-0">
             <div class="text-xs text-g-500">{{ stat.label }}</div>
+            <!--
+              数据没到时不显示 0 —— 那会让"还没加载"看起来像"这场直播真的是 0"（审计 P1-11）。
+              用与数值同宽的骨架条占位，卡片高度不变、不会跳。
+            -->
+            <div v-if="!detail" class="mt-1.5 h-5 w-16">
+              <el-skeleton-item variant="text" style="width: 100%; height: 100%" />
+            </div>
             <!-- 卡片会 truncate 数值，所以补 title 显示完整值（评审 P2 点过这个问题） -->
             <div
+              v-else
               class="text-[20px] font-medium text-g-900 mt-1 leading-none truncate"
               :title="stat.title || stat.value"
             >
@@ -127,7 +135,20 @@
                   fmtFull(u.total_diamonds)
                 }}</span>
               </div>
-              <el-empty v-if="!detail?.gifts?.length" description="暂无礼物" :image-size="60" />
+              <!-- 数据没到时先说"在加载"，而不是"暂无礼物"（后者会被读成这场直播真的没礼物） -->
+              <div v-if="!detail" class="flex flex-col gap-2.5">
+                <div v-for="i in 5" :key="i" class="flex items-center gap-3">
+                  <el-skeleton-item variant="text" style="width: 24px; height: 24px" />
+                  <el-skeleton-item variant="circle" style="width: 32px; height: 32px" />
+                  <el-skeleton-item variant="text" style="flex: 1" />
+                  <el-skeleton-item variant="text" style="width: 64px" />
+                </div>
+              </div>
+              <el-empty
+                v-else-if="!detail?.gifts?.length"
+                description="暂无礼物"
+                :image-size="60"
+              />
             </div>
           </div>
           <div class="art-card p-5 flex flex-col">
@@ -162,8 +183,16 @@
                   fmtFull(a.total_diamonds)
                 }}</span>
               </div>
+              <div v-if="!detail" class="flex flex-col gap-2.5">
+                <div v-for="i in 5" :key="i" class="flex items-center gap-3">
+                  <el-skeleton-item variant="text" style="width: 24px; height: 24px" />
+                  <el-skeleton-item variant="circle" style="width: 32px; height: 32px" />
+                  <el-skeleton-item variant="text" style="flex: 1" />
+                  <el-skeleton-item variant="text" style="width: 64px" />
+                </div>
+              </div>
               <el-empty
-                v-if="!detail?.anchorRanking?.length"
+                v-else-if="!detail?.anchorRanking?.length"
                 description="暂无主播数据"
                 :image-size="60"
               />
@@ -198,8 +227,16 @@
                 <span class="flex-1 min-w-0 truncate text-sm text-g-800">{{ d.nickname }}</span>
                 <span class="text-sm font-bold text-g-800 shrink-0">{{ d.msg_count }}条</span>
               </div>
+              <div v-if="!detail" class="flex flex-col gap-2.5">
+                <div v-for="i in 5" :key="i" class="flex items-center gap-3">
+                  <el-skeleton-item variant="text" style="width: 24px; height: 24px" />
+                  <el-skeleton-item variant="circle" style="width: 32px; height: 32px" />
+                  <el-skeleton-item variant="text" style="flex: 1" />
+                  <el-skeleton-item variant="text" style="width: 56px" />
+                </div>
+              </div>
               <el-empty
-                v-if="!detail?.danmakuRanking?.length"
+                v-else-if="!detail?.danmakuRanking?.length"
                 description="暂无弹幕"
                 :image-size="60"
               />

@@ -188,10 +188,23 @@
     const node = el as HTMLElement
     reattach(node)
     if (!actualTransition.value || reduceMotion()) return done()
+    /*
+     * 进场**不做淡入**（原来是从 opacity:0 开始）。
+     *
+     * 用户两次反馈「进入场次详情还是透明白色遮罩」，实测（80ms 采样 .art-page-view）：
+     *   切换瞬间同时存在两个 art-page-view，旧页 opacity 1.00 → 0.72 → 0.12、
+     *   新页 0.00 → 0.19 → 0.72，随后页面根节点 opacity 一度是 0.118 ——
+     *   而此刻屏幕上**还是上一页的内容**（总览），也就是说画面先褪成近白、新页才出现。
+     *   白底大卡片的页面上，这段"褪成白"就是用户看到的透明白色遮罩。
+     * 现在两段动画都只做位移：旧页抬走 4px、新页从 8px 就位，opacity 全程为 1，中间不会出现白屏。
+     *
+     * 注意：CSS 里 router-transition.scss 的 .dy-fade-lift 关键帧**在这条路径上并不生效**
+     *   （过渡由这里的 WAAPI 驱动、元素上不会挂过渡类名），改那边没用。
+     */
     const anim = node.animate(
       [
-        { opacity: 0, transform: `translate3d(0, ${PAGE_IN_SHIFT}px, 0)` },
-        { opacity: 1, transform: 'none' }
+        { transform: `translate3d(0, ${PAGE_IN_SHIFT}px, 0)` },
+        { transform: 'none' }
       ],
       { duration: PAGE_IN_MS, easing: PAGE_IN_EASE, fill: 'both' }
     )
@@ -222,10 +235,11 @@
       reattach(node)
       return done()
     }
+    // 退场同样只做位移（理由见 onPageEnter）：旧页淡出会让画面先变成白的
     const anim = node.animate(
       [
-        { opacity: 1, transform: 'none' },
-        { opacity: 0, transform: 'translate3d(0, -4px, 0)' }
+        { transform: 'none' },
+        { transform: 'translate3d(0, -4px, 0)' }
       ],
       { duration: PAGE_OUT_MS, easing: PAGE_OUT_EASE, fill: 'both' }
     )

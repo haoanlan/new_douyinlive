@@ -419,9 +419,14 @@ export interface DaemonStatus {
 
 // ===================== API 函数 =====================
 
-export function fetchSummary() {
-  return request.get<Summary>({ url: '/api/summary' })
-}
+/*
+ * 已删除 4 个**零调用**的封装（全项目 grep 只有定义处，无任何 import）：
+ *   fetchSummary()      → /api/summary      （总览页用的是 /api/overview）
+ *   fetchAllSessions()  → /api/sessions     （场次列表用的是 /api/hosts/:id/sessions）
+ *   searchUser()        → /api/users/search （信息查询走 /api/anonymous-lookup）
+ *   fetchTrends()       → /api/trends       （趋势页走 /api/hosts/trends；本已标 @deprecated）
+ * 后端路由本身保留（仍可由脚本或手工调用），只是前端不再维护无人使用的封装。
+ */
 
 /**
  * 房间列表。
@@ -507,14 +512,6 @@ export function fetchSessions(hostId: string) {
   })
 }
 
-/**
- * 全部场次（用于信息查询页的「场次」筛选：没选直播间时列出所有场次）。
- * 只取最近 300 场 —— 后端 /api/sessions 支持 limit，不传会把全部场次都拉回来。
- */
-export function fetchAllSessions() {
-  return request.get<Session[]>({ url: '/api/sessions?limit=300', showErrorMessage: false })
-}
-
 export function deleteSession(sessionId: string) {
   return request.post<{ ok: boolean }>({ url: `/api/sessions/${sessionId}/delete` })
 }
@@ -592,17 +589,6 @@ export interface AnonymousLookupResponse {
 
 export function fetchUser(secUid: string) {
   return request.get<UserProfile>({ url: `/api/users/${secUid}` })
-}
-
-export function searchUser(query: string) {
-  return request.get<UserProfile[]>({
-    url: `/api/users/search?q=${encodeURIComponent(query)}`
-  })
-}
-
-/** @deprecated 用 fetchHostTrends 取代（见该函数说明） */
-export function fetchTrends(range = '7d', group = 'day') {
-  return request.get<Trends>({ url: `/api/trends?range=${range}&group=${group}` })
 }
 
 /**

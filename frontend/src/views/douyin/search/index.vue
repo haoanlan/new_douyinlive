@@ -887,18 +887,6 @@
    * 于是整条弹幕是 [比心] 时会被整段删掉，卡片上那行变成空白（用户反馈）。
    * 表情代码是内容的一部分，不能当噪音剥掉。
    */
-  function actionLabel(type?: string): string {
-    if (type === 'gift') return '礼物'
-    if (type === 'danmaku') return '弹幕'
-    if (type === 'member') return '进场'
-    return '行为'
-  }
-
-  function actionClass(type?: string): string {
-    if (type === 'gift') return 'bg-amber-50 text-amber-600'
-    if (type === 'danmaku') return 'bg-blue-50 text-blue-500'
-    return 'bg-emerald-50 text-emerald-600'
-  }
 </script>
 
 <style scoped lang="scss">

@@ -332,31 +332,12 @@
   --dy-tag-gift: #a8bcff;
 }
 
-.mon-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 10px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.mon-chip--ok {
-  background: rgb(5 150 105 / 12%);
-  color: var(--dy-tag-ok);
-}
-
-.mon-chip--danger {
-  background: rgb(220 38 38 / 10%);
-  color: var(--dy-tag-danger);
-}
-
-.mon-chip--unknown {
-  background: var(--art-gray-100);
-  color: var(--dy-tag-unknown);
-}
+/*
+ * 已删除 .mon-chip / --ok / --danger / --unknown 四条规则：
+ * 全项目模板零引用（只有 docs 与 scripts/ui-audit-dark.js 还在按它取色，
+ * 而后者因此取到 null，连带修了脚本里的选择器）。状态标签已统一走 .dy-tone-*。
+ * 注意：样式文件注释里不要写带 "星号加斜杠" 的 glob（会提前闭合注释）。
+ */
 
 /* ==========================================================================
  * 场次详情页：底部模块的行式布局

@@ -359,7 +359,9 @@
   import { computed, onActivated, onDeactivated, onMounted, onUnmounted, ref } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { ElMessage, ElMessageBox } from 'element-plus'
-  import { isHttpError } from '@/utils/http/error'
+  // 统一的错误文案提取（utils/douyin-error.ts 就是从本页这段逻辑抽出去的公共实现，
+  // 之前本页留了旧副本 → 同一后端错误在这里和其它页文案不同，且解不了 Blob 错误体）
+  import { apiErrorMessage } from '@/utils/douyin-error'
   import {
     fetchRooms,
     addRoom,
@@ -473,40 +475,6 @@
 
   function avatarLetter(row: Room) {
     return (row.name || row.room_id)?.[0] || ''
-  }
-
-  function escapeHtml(s: string) {
-    return String(s ?? '').replace(/[&<>"']/g, (c) =>
-      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string
-    )
-  }
-
-  /**
-   * 取出后端返回的真实失败原因。
-   * 请求层按 HTTP 状态码只会给出「请求失败：HTTP 409」这类通用文案，而后端 body 里
-   * 有真正的原因（如「房间 X 已在监控」「监控 worker 未运行」），对用户有用得多。
-   * 房间管理的写操作已在 API 层关掉自动提示，统一由这里展示。
-   */
-  function apiErrorMessage(e: unknown, fallback: string) {
-    // 模板自带的 @/utils/http 抛的是 HttpError，后端 body 在 .data 里
-    if (isHttpError(e)) {
-      const data = e.data as { error?: string; message?: string } | undefined
-      return data?.error || data?.message || e.message || fallback
-    }
-    // 抖音接口走的是 api/douyin-http，抛的是 axios 原始错误
-    // （该客户端的拦截器已把后端的 error 字段挂到 backendMessage）
-    const ax = e as {
-      backendMessage?: string
-      response?: { data?: { error?: string; message?: string } }
-      message?: string
-    }
-    return (
-      ax?.backendMessage ||
-      ax?.response?.data?.error ||
-      ax?.response?.data?.message ||
-      ax?.message ||
-      fallback
-    )
   }
 
   function goSessions(row: Room) {

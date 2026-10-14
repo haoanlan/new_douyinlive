@@ -280,7 +280,7 @@ async function main() {
   await gotoHash(page, 'douyin/status');
   out.dark = await page.evaluate(`(() => {
     ${CONTRAST_FN}
-    const sel = ['.dy-toolbar-title','.text-g-500','.text-g-600','.el-tag','.mon-chip','.el-progress-bar__outer','.dy-stat-card','.art-card-header h4','[class*="bg-amber-100"]','[class*="bg-blue-50"]'];
+    const sel = ['.dy-toolbar-title','.text-g-500','.text-g-600','.el-tag','.dy-tone-ok','.el-progress-bar__outer','.dy-stat-card','.art-card-header h4','[class*="bg-amber-100"]','[class*="bg-blue-50"]'];
     const rows = [];
     for (const s of sel) {
       const el = document.querySelector('.douyin-page ' + s);

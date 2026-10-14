@@ -1,6 +1,5 @@
 import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import path from 'path'
 import { fileURLToPath } from 'url'
 import vueDevTools from 'vite-plugin-vue-devtools'
 import viteCompression from 'vite-plugin-compression'
@@ -34,15 +33,13 @@ export default ({ mode }: { mode: string }) => {
       },
       host: true
     },
-    // 路径别名
+    // 路径别名（只保留真正在用的；@icons / @stores 全项目 0 次引用，已删）
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),
         '@views': resolvePath('src/views'),
         '@imgs': resolvePath('src/assets/images'),
-        '@icons': resolvePath('src/assets/icons'),
         '@utils': resolvePath('src/utils'),
-        '@stores': resolvePath('src/store'),
         '@styles': resolvePath('src/assets/styles')
       }
     },
@@ -151,6 +148,10 @@ export default ({ mode }: { mode: string }) => {
   })
 }
 
+/**
+ * package.json 是 `"type": "module"`，纯 ESM 下没有 `__dirname`（会 ReferenceError）。
+ * 当前没炸只是因为调用点碰巧都在 fileURLToPath 之后 —— 属于定时炸弹，这里改用 import.meta.url。
+ */
 function resolvePath(paths: string) {
-  return path.resolve(__dirname, paths)
+  return fileURLToPath(new URL(paths, import.meta.url))
 }

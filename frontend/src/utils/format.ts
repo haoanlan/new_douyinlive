@@ -1,15 +1,10 @@
 /**
  * 共享工具函数 — 提取自 HomeView / DetailView / SessionsView
  * 纯函数，无副作用，不影响 UI
+ *
+ * 已删除本文件里的 `esc()`：它与 utils/douyin-emoji.ts 的同名函数重复，
+ * 实际被调用的只有后者（detail 页从 douyin-emoji 导入），本文件那个 0 调用者。
  */
-
-/** HTML 转义 */
-export function esc(s: string | null | undefined): string {
-  if (!s) return ''
-  const d = document.createElement('div')
-  d.textContent = s
-  return d.innerHTML
-}
 
 /** 格式化完整时间 (年/月/日 时:分) */
 export function fmtTime(ts: any): string {

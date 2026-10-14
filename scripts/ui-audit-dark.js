@@ -250,7 +250,8 @@ async function main() {
   const hard = await page.evaluate(`(() => {
     ${CONTRAST}
     const track = document.querySelector('.douyin-page .el-progress-bar__outer');
-    const chip = document.querySelector('.douyin-page .mon-chip');
+    // .mon-chip 已从样式里删除（模板零引用），这里改取现在真正在用的状态标签
+    const chip = document.querySelector('.douyin-page .dy-tone-ok, .douyin-page .dy-tone-warn, .douyin-page .dy-tone-bad');
     const kv = document.querySelector('.douyin-page .mon-kv__label');
     const info = {};
     if (track) info.progressTrack = { bg: getComputedStyle(track).backgroundColor, cardBg: getComputedStyle(track.closest('.art-card') || document.body).backgroundColor };

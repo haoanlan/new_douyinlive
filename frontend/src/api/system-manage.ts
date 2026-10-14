@@ -9,13 +9,11 @@ export function fetchGetUserList(params: Api.SystemManage.UserSearchParams) {
   })
 }
 
-// 获取角色列表
-export function fetchGetRoleList(params: Api.SystemManage.RoleSearchParams) {
-  return request.get<Api.SystemManage.RoleList>({
-    url: '/api/role/list',
-    params
-  })
-}
+/*
+ * fetchGetRoleList 已删除：它调用的 /api/role/list 后端并不存在，且全项目无人调用。
+ * fetchGetMenuList 保留 —— 只在后端菜单模式（VITE_ACCESS_MODE=backend）下会用到，
+ * 本项目两个 env 都是 frontend，属于待用而非死代码。
+ */
 
 // 获取菜单列表
 export function fetchGetMenuList() {

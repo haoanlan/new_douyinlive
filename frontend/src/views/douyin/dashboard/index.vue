@@ -386,7 +386,7 @@
   import { useRouter } from 'vue-router'
   import { useTransition } from '@vueuse/core'
   import { fetchOverview, fetchStatus, type OverviewData, type DaemonStatus } from '@/api/douyin'
-  import { fmtNum, fmtFull, fmtTitle, fmtTime, rankClass } from '@/utils/format'
+  import { fmtNum, fmtTitle, fmtTime, rankClass } from '@/utils/format'
   import { apiErrorMessage } from '@/utils/douyin-error'
 
   defineOptions({ name: 'DouyinDashboard' })

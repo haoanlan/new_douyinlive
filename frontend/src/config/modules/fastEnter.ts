@@ -58,12 +58,17 @@ const fastEnterConfig: FastEnterConfig = {
       order: 5,
       routeName: 'DouyinStatus'
     },
+    /*
+     * 下面三项原本是 art-design-pro 模板的推广入口（官方文档 / QQ 技术支持群 / 哔哩哔哩），
+     * 属于模板品牌痕迹，与"抖音直播监控"无关 —— 按用户此前关掉顶栏模板功能的口径一并停用。
+     * 需要时把 enabled 改回 true 即可。
+     */
     {
       name: '官方文档',
       description: '使用指南与开发文档',
       icon: 'ri:bill-line',
       iconColor: '#ffb100',
-      enabled: true,
+      enabled: false,
       order: 6,
       link: WEB_LINKS.DOCS
     },
@@ -72,7 +77,7 @@ const fastEnterConfig: FastEnterConfig = {
       description: '技术支持与问题反馈',
       icon: 'ri:user-location-line',
       iconColor: '#ff6b6b',
-      enabled: true,
+      enabled: false,
       order: 7,
       link: WEB_LINKS.COMMUNITY
     },
@@ -81,7 +86,7 @@ const fastEnterConfig: FastEnterConfig = {
       description: '技术分享与交流',
       icon: 'ri:bilibili-line',
       iconColor: '#FB7299',
-      enabled: true,
+      enabled: false,
       order: 8,
       link: WEB_LINKS.BILIBILI
     }

@@ -173,6 +173,11 @@ export interface DanmakuItem {
 export interface DanmakuFull {
   data?: DanmakuItem[]
   messages?: DanmakuItem[]
+  /** 匹配总数与分页信息：后端 lib/routes/sessions.js 返回 { data, total, page, limit, maxLimit } */
+  total?: number
+  page?: number
+  limit?: number
+  maxLimit?: number
 }
 
 // ===================== Streamers =====================
@@ -256,12 +261,19 @@ export interface UserProfile {
     start_time: string
     end_time: string | null
     streamer_name?: string
+    /** 主播头像：后端 lib/routes/users.js:668 用 `st.avatar as streamer_avatar` 返回 */
+    streamer_avatar?: string | null
     session_diamonds?: number
   }[]
   /** 各小时送礼次数 */
   hourStats?: { hour: string; count: number }[]
-  /** 礼物明细（按钻石降序） */
-  giftBreakdown?: { gift_name: string; total_diamonds: number; count: number }[]
+  /** 礼物明细（按钻石降序）。icon_url 后端确实返回（users.js:704），之前类型漏了 → 页面读它报 TS2339 */
+  giftBreakdown?: {
+    gift_name: string
+    total_diamonds: number
+    count: number
+    icon_url?: string | null
+  }[]
   /** 常送主播（按钻石降序 top5） */
   topStreamers?: { name: string; diamonds: number; count: number }[]
   /** 常用礼物（按次数降序 top5，含图标） */
@@ -346,7 +358,13 @@ export interface HostTrendSeries {
   hostId: number
   roomId: string
   name: string
-  avatar: string | null
+  /**
+   * 主播头像。后端 `/api/hosts/trends`（lib/routes/sessions.js）返回的是 **`avatar`** 字段，
+   * 趋势页原来读 `h.avatar_url ?? null` —— 字段名不对，头像永远为空（审计 P1-15）。
+   * 这里保留 avatar_url 作为可选兼容字段，但页面应读 avatar。
+   */
+  avatar?: string | null
+  avatar_url?: string | null
   points: HostTrendPoint[]
   summary: HostTrendSummary
   /** 上一个等长周期的汇总，用于判断"涨了还是跌了"；无确定范围时为 null */

@@ -59,7 +59,9 @@ export const router = createRouter({
     if (savedPosition) return savedPosition
     if (to.path === from.path) return false
 
-    const remembered = scrollMemory.get(to.fullPath)
+    // scrollMemory 是 Map，取不到就是 undefined —— 原来直接拿去和 0 比较、
+    // 又赋给 scrollTop（声明为 number），vue-tsc 报 TS18048/TS2322。
+    const remembered = scrollMemory.get(to.fullPath) ?? 0
     if (isBackToPreviousPage(to.fullPath) && remembered > 0) {
       const container = document.getElementById('app-main')
       if (container) container.scrollTop = remembered

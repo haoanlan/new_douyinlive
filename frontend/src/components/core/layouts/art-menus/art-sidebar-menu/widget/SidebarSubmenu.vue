@@ -26,7 +26,7 @@
 
     <ElMenuItem
       v-else
-      :index="isExternalLink(item) ? undefined : item.path || item.meta.title"
+      :index="menuIndex(item)"
       :level-item="level + 1"
       @click="goPage(item)"
     >
@@ -121,6 +121,16 @@
   const closeMenu = (): void => {
     emit('close')
   }
+
+  /**
+   * 菜单项的 index。
+   *
+   * ElMenuItem 的 index 是**必填 string**，原来对"外链"传 `undefined`（TS2322），
+   * Element 侧拿到 undefined 也可能出现重复 key。这里统一给一个稳定字符串：
+   * 优先用 path，退回标题；两者都没有时用 href。
+   */
+  const menuIndex = (item: AppRouteRecord): string =>
+    String(item.path || item.meta?.title || item.meta?.link || '')
 
   /**
    * 判断菜单项本身是否可以作为可点击页面保留在菜单中

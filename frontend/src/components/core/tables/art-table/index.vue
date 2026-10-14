@@ -73,7 +73,7 @@
 
 <script setup lang="ts">
   import { ref, computed, nextTick, watchEffect, getCurrentInstance, useAttrs } from 'vue'
-  import type { ElTable, TableProps } from 'element-plus'
+  import type { TableProps, TableInstance } from 'element-plus'
   import { storeToRefs } from 'pinia'
   import { ColumnOption } from '@/types'
   import { useTableStore } from '@/store/modules/table'
@@ -84,7 +84,9 @@
   defineOptions({ name: 'ArtTable' })
 
   const { width } = useWindowSize()
-  const elTableRef = ref<InstanceType<typeof ElTable> | null>(null)
+  // ElTable 在 element-plus 里是**泛型组件**，`InstanceType<typeof ElTable>` 会报 TS2344；
+  // 官方给出的实例类型是 TableInstance（含 clearSelection/toggleRowSelection 等方法）。
+  const elTableRef = ref<TableInstance | null>(null)
   const paginationRef = ref<HTMLElement>()
   const tableHeaderRef = ref<HTMLElement>()
   const tableStore = useTableStore()

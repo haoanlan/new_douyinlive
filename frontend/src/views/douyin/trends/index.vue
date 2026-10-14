@@ -116,7 +116,7 @@
       <div class="dy-trend-kpis mb-5">
         <div v-for="s in series" :key="s.hostId" class="art-card p-4">
           <div class="flex items-center gap-2.5 mb-3">
-            <el-avatar :size="32" :src="s.avatar" class="shrink-0">{{ s.name?.[0] }}</el-avatar>
+            <el-avatar :size="32" :src="s.avatar || undefined" class="shrink-0">{{ s.name?.[0] }}</el-avatar>
             <div class="min-w-0 flex-1">
               <div class="text-sm font-medium text-g-900 truncate" :title="s.name">
                 {{ s.name }}
@@ -213,7 +213,7 @@
             </div>
           </div>
           <el-radio-group v-model="detailHost" size="small">
-            <el-radio-button v-for="s in series" :key="s.hostId" :value="s.hostId">
+            <el-radio-button v-for="s in series" :key="s.hostId" :value="s.hostId ?? ''">
               {{ s.name }}
             </el-radio-button>
           </el-radio-group>
@@ -334,7 +334,13 @@
   /** X 轴粒度：场次（默认）/ 日 / 周 / 月 */
   const xMode = ref<'session' | 'day' | 'week' | 'month'>('session')
   /** 明细表当前显示哪个房间 */
-  const detailHost = ref<number | null>(null)
+  /**
+   * 明细表当前选中的主播。
+   * 用 `number | ''` 而不是 `number | null`：el-radio-group 的 v-model 类型里没有 null
+   * （element-plus 声明为 string | number | boolean | undefined），原来是 TS2322。
+   * 空串表示"还没选"，读取处用 falsy 判断即可（见下面两处）。
+   */
+  const detailHost = ref<number | ''>('')
 
   const hasData = computed(() => series.value.some((s) => s.points.length > 0))
 
@@ -598,7 +604,8 @@
         .map((h) => ({
           hostId: Number(h.id),
           name: h.name,
-          avatar: h.avatar_url ?? null,
+          // 后端返回的是 avatar（不是 avatar_url）—— 读错字段会让这排头像永远空白（审计 P1-15）
+        avatar: h.avatar ?? h.avatar_url ?? null,
           sessionCount: h.session_count ?? 0
         }))
         .filter((h) => Number.isFinite(h.hostId))
@@ -628,7 +635,7 @@
       queryError.value = ''
       lastLoadedAt = Date.now()
       if (!detailHost.value || !series.value.some((s) => s.hostId === detailHost.value)) {
-        detailHost.value = series.value[0]?.hostId ?? null
+        detailHost.value = series.value[0]?.hostId ?? ''
       }
       await redraw()
     } catch (e) {

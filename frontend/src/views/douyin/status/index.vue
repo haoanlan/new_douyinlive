@@ -159,7 +159,7 @@
                 ? (issuesOpen = true)
                 : m.action.kind === 'editor'
                   ? openEditor()
-                  : actWithConfirm(m.action.act)
+                  : actWithConfirm(m.action.act as ServiceAction)
             "
           >
             <ArtSvgIcon
@@ -643,7 +643,7 @@
       </div>
       <template #footer>
         <el-button @click="dialogVisible = false">关闭</el-button>
-        <el-button type="primary" @click="refresh">刷新状态</el-button>
+        <el-button type="primary" @click="() => refresh()">刷新状态</el-button>
       </template>
     </el-dialog>
     <!-- 扫码登录 -->

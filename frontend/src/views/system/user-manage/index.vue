@@ -56,7 +56,7 @@
               :model-value="row.userRoles?.[0]"
               size="small"
               class="!w-[120px]"
-              @change="(v: string) => onRoleChange(row, v)"
+              @change="(v: string) => onRoleChange(asUserRow(row), v)"
             >
               <el-option label="管理员" value="R_SUPER" />
               <el-option label="普通用户" value="R_GUEST" />
@@ -68,7 +68,7 @@
             <el-switch
               :model-value="row.status === '1'"
               :disabled="row.id === myId"
-              @change="(v: boolean) => onToggle(row, v)"
+              @change="(v: string | number | boolean) => onToggle(asUserRow(row), Boolean(v))"
             />
           </template>
         </el-table-column>
@@ -84,13 +84,13 @@
         </el-table-column>
         <el-table-column label="操作" width="190" align="right">
           <template #default="{ row }">
-            <el-button size="small" plain @click="openReset(row)">重置密码</el-button>
+            <el-button size="small" plain @click="openReset(asUserRow(row))">重置密码</el-button>
             <el-button
               size="small"
               plain
               type="danger"
               :disabled="row.id === myId"
-              @click="onDelete(row)"
+              @click="onDelete(asUserRow(row))"
             >
               删除
             </el-button>
@@ -158,6 +158,13 @@
   const myId = computed(() => Number(userStore.getUserInfo?.userId) || -1)
 
   const rows = ref<UserListResult['records']>([])
+  /**
+   * el-table 的插槽 row 是 element-plus 的 `DefaultRow`（宽松的 Record），
+   * 直接传给按 `UserListResult['records'][number]` 声明的处理函数会报 TS2345（4 处）。
+   * 这里在模板里显式收窄一次，既消掉类型错误，也保留处理函数内部的字段提示。
+   */
+  type UserRow = UserListResult['records'][number]
+  const asUserRow = (r: unknown) => r as UserRow
   const total = ref(0)
   const keyword = ref('')
   const loading = ref(false)

@@ -26,7 +26,7 @@ douyinRequest.interceptors.request.use((config) => {
 douyinRequest.interceptors.response.use(
   (response) => response.data,
   (error) => {
-    const cfg = (error.config || {}) as { showErrorMessage?: boolean }
+    const cfg = (error.config || {}) as DouyinRequestConfig
     const status = error.response?.status
     // 后端 web-dashboard.js 的失败响应体里带着真正的原因
     // （例如 {"ok":false,"error":"房间 65209552987 已在监控"}）。
@@ -58,18 +58,31 @@ douyinRequest.interceptors.response.use(
   }
 )
 
+/**
+ * 业务层用的请求配置：在 axios 配置上补一个自定义项。
+ *
+ * 为什么必须显式声明：`showErrorMessage` 不在 `AxiosRequestConfig` 上，
+ * 业务层 16 处 `request.get({ url, showErrorMessage: false })` 因此全部报
+ * TS2353（'showErrorMessage' does not exist in type 'AxiosRequestConfig'），
+ * `pnpm build` 第一步 vue-tsc 就挂在这里；而拦截器那边之前只能靠 `as` 断言硬转，
+ * 等于这个"关掉自动错误提示"的开关在类型层根本不存在。
+ */
+export interface DouyinRequestConfig extends AxiosRequestConfig {
+  showErrorMessage?: boolean
+}
+
 /** 响应拦截器已解包 data；axios 的 get/post 别名第一个参数是 url 字符串，
  *  这里包装为 config 对象形式，兼容业务层 `request.get({ url, ... })` 调用。 */
-function toConfig(config: AxiosRequestConfig | string): AxiosRequestConfig {
+function toConfig(config: DouyinRequestConfig | string): DouyinRequestConfig {
   if (typeof config === 'string') return { url: config }
   return config
 }
 
 export interface DouyinRequest {
-  get<T = any>(config: AxiosRequestConfig | string): Promise<T>
-  post<T = any>(config: AxiosRequestConfig | string): Promise<T>
-  put<T = any>(config: AxiosRequestConfig | string): Promise<T>
-  del<T = any>(config: AxiosRequestConfig | string): Promise<T>
+  get<T = any>(config: DouyinRequestConfig | string): Promise<T>
+  post<T = any>(config: DouyinRequestConfig | string): Promise<T>
+  put<T = any>(config: DouyinRequestConfig | string): Promise<T>
+  del<T = any>(config: DouyinRequestConfig | string): Promise<T>
 }
 
 /**
@@ -78,12 +91,12 @@ export interface DouyinRequest {
  * 导致「关掉自动错误提示」这类配置静默失效。
  */
 export default {
-  get: (config: AxiosRequestConfig | string) =>
+  get: (config: DouyinRequestConfig | string) =>
     douyinRequest.request({ ...toConfig(config), method: 'GET' }),
-  post: (config: AxiosRequestConfig | string) =>
+  post: (config: DouyinRequestConfig | string) =>
     douyinRequest.request({ ...toConfig(config), method: 'POST' }),
-  put: (config: AxiosRequestConfig | string) =>
+  put: (config: DouyinRequestConfig | string) =>
     douyinRequest.request({ ...toConfig(config), method: 'PUT' }),
-  del: (config: AxiosRequestConfig | string) =>
+  del: (config: DouyinRequestConfig | string) =>
     douyinRequest.request({ ...toConfig(config), method: 'DELETE' })
 } as unknown as DouyinRequest

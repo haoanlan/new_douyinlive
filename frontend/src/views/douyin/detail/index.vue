@@ -55,7 +55,7 @@
         >
           <ArtSvgIcon icon="ri:arrow-left-line" class="mr-1" />场次列表
         </el-button>
-        <el-button :disabled="loading" @click="refresh">
+        <el-button :disabled="loading" @click="() => refresh()">
           <!-- 同状态监控页：不用 el-button 的 :loading（会在图标前再插一个转圈把按钮撑宽），
                改成图标原地旋转，宽度恒定 -->
           <ArtSvgIcon

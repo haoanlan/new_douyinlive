@@ -48,8 +48,11 @@ const axiosInstance = axios.create({
   validateStatus: (status) => status >= 200 && status < 300,
   transformResponse: [
     (data, headers) => {
-      const contentType = headers['content-type']
-      if (contentType?.includes('application/json')) {
+      // headers['content-type'] 在 axios 类型里是 string | number | boolean | string[] | AxiosHeaders，
+      // 直接 .includes() 会报 TS2339；这里先收敛成字符串再判断。
+      const rawType = headers?.['content-type']
+      const contentType = typeof rawType === 'string' ? rawType : String(rawType ?? '')
+      if (contentType.includes('application/json')) {
         try {
           return JSON.parse(data)
         } catch {

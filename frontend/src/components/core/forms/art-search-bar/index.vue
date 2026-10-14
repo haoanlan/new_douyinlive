@@ -251,7 +251,11 @@
 
   const emit = defineEmits<SearchBarEmits>()
 
-  const modelValue = defineModel<Record<string, any>>({ default: {} })
+  /*
+   * 同 art-form：对象型 model 的默认值必须是工厂函数，
+   * 否则空对象被所有实例共享，且 vue-tsc 推断不出类型（一串 TS2322/TS2769/TS7053）。
+   */
+  const modelValue = defineModel<Record<string, any>>({ default: () => ({}) })
   const initialModelValue = ref<Record<string, any>>({})
 
   // 保存组件初始化时的表单快照，用于 reset 时恢复默认筛选条件。

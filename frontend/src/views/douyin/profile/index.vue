@@ -148,7 +148,7 @@
                 @keydown.enter.prevent="goDetail(s.id)"
                 @keydown.space.prevent="goDetail(s.id)"
               >
-                <el-avatar :size="32" :src="s.streamer_avatar" class="shrink-0">{{
+                <el-avatar :size="32" :src="s.streamer_avatar || undefined" class="shrink-0">{{
                   s.streamer_name?.[0] || '场'
                 }}</el-avatar>
                 <div class="flex-1 min-w-0">

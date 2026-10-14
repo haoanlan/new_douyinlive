@@ -235,7 +235,13 @@
 
   const emit = defineEmits<FormEmits>()
 
-  const modelValue = defineModel<Record<string, any>>({ default: {} })
+  /*
+   * 默认值必须是**工厂函数**：写成 `default: {}` 时这个空对象会被所有实例共享
+   * （改一个表单会影响另一个），而且 vue-tsc 会把模型类型推断不出具体类型，
+   * 连带报一串「Type 'T' is not assignable to Record<string, any>」与
+   * 「expression of type 'string' can't be used to index」。
+   */
+  const modelValue = defineModel<Record<string, any>>({ default: () => ({}) })
   const initialModelValue = ref<Record<string, any>>({})
 
   // 保存组件初始化时的表单快照，用于 reset 时恢复默认值。

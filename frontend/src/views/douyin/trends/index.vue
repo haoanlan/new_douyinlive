@@ -88,16 +88,30 @@
 
     <!--
       首次加载先占住位置，再出内容（UI-AUDIT P0-3）。
-      原来 onMounted 里自动选中房间后：引导卡（!selectedHosts.length）不成立、
-      内容卡（hasData）也不成立，空态分支又被 !loading 挡住 —— 中间有一整段
-      完全空白，数据回来时高度一次性 +896px。
+      原来这里的占位块是 `v-loading`（白板 + 转圈）—— 现在换成**图表形状的骨架**：
+      左侧纵轴刻度位、底部横轴、几根高低不同的柱子。数据回来时视觉上是"柱子长出来"，
+      而不是"白板揭开"（与总览/信息查询页同一套做法）。
+      高度按真实图表的 420px 占位，避免数据到达时高度一次性 +896px。
     -->
-    <div
-      v-if="loading && !hasData"
-      v-loading="true"
-      element-loading-text="加载中…"
-      class="art-card min-h-[420px]"
-    ></div>
+    <div v-if="loading && !hasData" class="art-card p-5 min-h-[420px]">
+      <div class="flex gap-4 h-[300px] mt-4">
+        <div class="flex flex-col justify-between py-1 shrink-0">
+          <el-skeleton-item v-for="i in 5" :key="i" variant="text" style="width: 42px" />
+        </div>
+        <div class="flex-1 flex items-end gap-3 min-w-0">
+          <el-skeleton-item
+            v-for="(h, i) in [42, 68, 55, 82, 61, 74, 48]"
+            :key="i"
+            variant="rect"
+            :style="`flex:1; height:${h}%`"
+          />
+        </div>
+      </div>
+      <div class="flex items-center justify-between mt-4">
+        <el-skeleton-item variant="text" style="width: 120px" />
+        <el-skeleton-item variant="text" style="width: 88px" />
+      </div>
+    </div>
 
     <!-- 没选房间：明确提示，而不是给一片空白 -->
     <div v-else-if="!selectedHosts.length" class="art-card p-10">

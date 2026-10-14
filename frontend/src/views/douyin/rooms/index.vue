@@ -53,7 +53,33 @@
       </div>
     </div>
 
-    <div v-loading="loading">
+    <!--
+      首屏骨架：与真实卡片同形（3 列、48px 头像、右侧状态标签），不再是"转圈 + 一片空白"。
+      只在**首次加载**（还没有任何数据）时显示：这页每 10 秒轮询一次，
+      轮询时套骨架会一直闪（所以有数据时改成轻微变淡，见下面的 opacity）。
+    -->
+    <div
+      v-if="loading && !rooms.length"
+      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
+    >
+      <div v-for="i in 6" :key="i" class="art-card px-5 py-4">
+        <div class="flex items-center gap-3.5">
+          <el-skeleton-item variant="circle" style="width: 48px; height: 48px" />
+          <div class="flex-1 min-w-0">
+            <el-skeleton-item variant="h3" style="width: 62%" />
+            <el-skeleton-item variant="text" style="width: 42%; margin-top: 9px" />
+          </div>
+          <el-skeleton-item variant="text" style="width: 46px; height: 22px" />
+        </div>
+      </div>
+    </div>
+
+    <!-- 有内容时的刷新：轻微变淡而不是盖一层白板（与本项目其它页一致） -->
+    <div
+      v-else
+      :class="loading ? 'opacity-60' : ''"
+      style="transition: opacity 200ms cubic-bezier(0.23, 1, 0.32, 1)"
+    >
       <!-- 轮询/加载失败：明确说明，且不再每 10 秒弹一次 toast（P0-3/P0-4） -->
       <el-alert
         v-if="queryError"

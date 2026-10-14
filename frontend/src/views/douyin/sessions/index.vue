@@ -102,7 +102,28 @@
 
     <!-- 场次列表 -->
     <div class="art-card p-5 mb-5">
-      <div v-loading="loading" class="flex flex-col gap-2.5">
+      <!--
+        首屏骨架：与真实行同形（36px 头像 + 标题 + 次行 + 右侧数值），只在首次加载时出现。
+        原来这里是 v-loading 全屏遮罩 —— 卡片里一片白板转圈，数据回来后整块高度一次性撑开。
+      -->
+      <div v-if="loading && !sessions.length" class="flex flex-col gap-2.5">
+        <div v-for="i in 6" :key="i" class="rounded-xl bg-g-100/50 px-4 py-3">
+          <div class="flex items-center gap-3">
+            <el-skeleton-item variant="circle" style="width: 36px; height: 36px" />
+            <div class="flex-1 min-w-0">
+              <el-skeleton-item variant="h3" style="width: 46%" />
+              <el-skeleton-item variant="text" style="width: 30%; margin-top: 8px" />
+            </div>
+            <el-skeleton-item variant="text" style="width: 72px" />
+          </div>
+        </div>
+      </div>
+
+      <div
+        v-else
+        :class="loading ? 'opacity-60' : ''"
+        style="transition: opacity 200ms cubic-bezier(0.23, 1, 0.32, 1)"
+      >
         <TransitionGroup name="dy-list" tag="div" class="flex flex-col gap-2.5" appear>
           <div
             v-for="row in pageSessions"

@@ -26,36 +26,61 @@
     </div>
 
     <!--
-      P0-3：状态取不到时必须显式说明。
-      否则后端一挂，下面四张卡照旧显示绿色「运行中 / 正常」，
-      使用者会以为一切正常——这是监控工具最危险的失败模式。
+      连接异常：**合并成一条**。
+      原来这里是两条 el-alert 上下堆叠（"监控状态获取失败" + "历史总览数据加载失败"）——
+      同一个根因（后端不可达）写两遍，红条占掉近半屏；正文还直接把
+      "Request failed with status code 500" 端给用户，既不解释也不给时间感。
+      现在：两个都失败就合成一条，正文里说清
+        · 分别是什么错（已翻译成人话）
+        · 数据停在多久以前、最后成功是什么时候
+        · 一个「重试」把两边一起重取
+      只有一个失败时仍然单独显示，保持精确（便于判断是哪个子系统的问题）。
     -->
     <el-alert
-      v-if="statusError"
-      type="error"
+      v-if="connAlert"
+      :type="connAlert.type"
       :closable="false"
       show-icon
       class="mb-5"
-      title="监控状态获取失败，下面显示的可能不是当前真实状态"
+      :title="connAlert.title"
     >
-      <div class="flex items-center gap-3 flex-wrap">
-        <span class="text-xs break-all">{{ statusError }}</span>
-        <span v-if="staleSeconds > 0" class="text-xs">
-          · 数据已过期 {{ staleSeconds }} 秒
-        </span>
-        <el-button size="small" type="primary" plain @click="refreshStatus">重试</el-button>
+      <div class="flex items-start gap-3 flex-wrap">
+        <div class="text-xs leading-relaxed min-w-0">
+          <div v-for="(line, i) in connAlert.lines" :key="i" class="break-all">{{ line }}</div>
+        </div>
+        <el-button size="small" type="primary" plain @click="retryAll">重试</el-button>
       </div>
     </el-alert>
 
-    <!-- 状态是好的但已经很久没刷新成功：提示数据新鲜度 -->
+    <!-- 状态正常但久未刷新成功：提示新鲜度（用相对时间，不再报"N 秒"） -->
     <el-alert
       v-else-if="lastStatusAt && staleSeconds > 30"
       type="warning"
       :closable="false"
       show-icon
       class="mb-5"
-      :title="`状态数据已 ${staleSeconds} 秒未更新，自动刷新可能已停止`"
+      :title="`状态数据 ${fmtAgo(lastStatusAt)}更新过，自动刷新可能已停止`"
     />
+
+    <!--
+      数据陈旧时，在**卡片行本身**打标记。
+      只在上方弹一条错误是不够的：卡片里的数字长得和实时数据一模一样，
+      用户往下扫一眼就会当成当前值（截图里就是这个场景）。
+    -->
+    <div v-if="overviewStale" class="dy-stale-bar mb-3">
+      <ArtSvgIcon icon="ri:time-line" class="text-sm shrink-0" />
+      <span class="min-w-0">
+        <template v-if="lastOverviewAt">
+          历史总览停留在
+          <b>{{ fmtAgo(lastOverviewAt) }}</b>
+          （{{ fmtTime(lastOverviewAt) }}），下面卡片里的数字不是最新的
+        </template>
+        <template v-else> 历史总览尚未成功加载过，下面卡片里的数字可能为空或过时 </template>
+      </span>
+      <el-button link type="primary" size="small" class="shrink-0" @click="refreshOverview">
+        立即刷新
+      </el-button>
+    </div>
 
     <!--
       监控状态 —— 立即显示，无阻塞。
@@ -146,20 +171,10 @@
       </div>
     </div>
 
-    <!-- 历史总览取不到时说明原因，避免下面各块的「暂无数据」被读成"真的没数据" -->
-    <el-alert
-      v-if="overviewError"
-      type="error"
-      :closable="false"
-      show-icon
-      class="mb-5"
-      title="历史总览数据加载失败"
-    >
-      <div class="flex items-center gap-3 flex-wrap">
-        <span class="text-xs break-all">{{ overviewError }}</span>
-        <el-button size="small" type="primary" plain @click="refreshOverview">重试</el-button>
-      </div>
-    </el-alert>
+    <!--
+      历史总览取不到时的说明已合并到上方的 connAlert（原来这里是第二条红条）。
+      单独失败时 connAlert 会只显示这一条，仍然看得见原因；不再重复堆两条。
+    -->
 
     <!-- 在线峰值 + 热门礼物 -->
     <el-row :gutter="20">
@@ -199,8 +214,8 @@
           </TransitionGroup>
           <!-- 空态是"状态占位"，不是列表项：移出 TransitionGroup，否则它也会做一次进出动画 -->
           <el-empty
-            v-if="overview && !overview?.peakSessions?.length"
-            description="暂无数据"
+            v-if="loadFailed || (overview && !overview?.peakSessions?.length)"
+            :description="loadFailed ? EMPTY_LOAD_FAILED : '暂无数据'"
             :image-size="60"
           />
         </div>
@@ -239,8 +254,8 @@
             </div>
           </TransitionGroup>
           <el-empty
-            v-if="overview && !overview?.topGifts?.length"
-            description="暂无数据"
+            v-if="loadFailed || (overview && !overview?.topGifts?.length)"
+            :description="loadFailed ? EMPTY_LOAD_FAILED : '暂无数据'"
             :image-size="60"
           />
         </div>
@@ -277,7 +292,7 @@
               <span class="flex-1 min-w-0 text-sm truncate">{{ u.nickname }}</span>
               <span class="text-sm font-bold text-theme shrink-0">{{ fmtFull(u.diamonds) }}钻</span>
             </div>
-            <el-empty v-if="!overview?.topUsers?.length" description="暂无数据" :image-size="60" />
+            <el-empty v-if="loadFailed || !overview?.topUsers?.length" :description="loadFailed ? EMPTY_LOAD_FAILED : '暂无数据'" :image-size="60" />
           </TransitionGroup>
         </div>
       </el-col>
@@ -308,8 +323,8 @@
               >
             </div>
             <el-empty
-              v-if="!overview?.topDanmaku?.length"
-              description="暂无数据"
+              v-if="loadFailed || !overview?.topDanmaku?.length"
+              :description="loadFailed ? EMPTY_LOAD_FAILED : '暂无数据'"
               :image-size="60"
             />
           </TransitionGroup>
@@ -372,8 +387,8 @@
           </div>
         </div>
         <el-empty
-          v-if="!overview?.recentSessions?.length"
-          description="暂无场次"
+          v-if="loadFailed || !overview?.recentSessions?.length"
+          :description="loadFailed ? EMPTY_LOAD_FAILED : '暂无场次'"
           :image-size="60"
         />
       </TransitionGroup>
@@ -386,8 +401,8 @@
   import { useRouter } from 'vue-router'
   import { useTransition } from '@vueuse/core'
   import { fetchOverview, fetchStatus, type OverviewData, type DaemonStatus } from '@/api/douyin'
-  import { fmtNum, fmtFull, fmtTitle, fmtTime, rankClass } from '@/utils/format'
-  import { apiErrorMessage } from '@/utils/douyin-error'
+  import { fmtNum, fmtFull, fmtTitle, fmtTime, fmtAgo, rankClass } from '@/utils/format'
+  import { humanizeRequestError } from '@/utils/douyin-error'
 
   defineOptions({ name: 'DouyinDashboard' })
 
@@ -415,8 +430,62 @@
   const statusError = ref('')
   const overviewError = ref('')
   const lastStatusAt = ref<number | null>(null)
+  /** 历史总览最后一次成功的时间（用于给卡片行打"陈旧"标记） */
+  const lastOverviewAt = ref<number | null>(null)
   /** 已过多久没成功刷新过状态（秒），用于提示数据是否过期 */
   const staleSeconds = ref(0)
+  /** 历史总览已过多久没更新（秒） */
+  const overviewStaleSeconds = ref(0)
+
+  /**
+   * 卡片里的数字是否已经不是最新的。
+   * 失败、或超过 90 秒没成功刷新，都算陈旧（状态轮询是 10 秒一次，
+   * 90 秒 ≈ 连丢 9 次，已经可以确定不是偶发抖动）。
+   */
+  const overviewStale = computed(
+    () => Boolean(overviewError.value) || (overviewStaleSeconds.value > 90 && lastOverviewAt.value !== null)
+  )
+
+  /**
+   * 合并后的连接异常提示。
+   * 两个都失败 → 一条，标题说明"整体不可达"，正文分别列出原因与数据停在哪；
+   * 只有一个失败 → 仍然单独显示，便于判断是哪个子系统的问题。
+   */
+  const connAlert = computed<{ type: 'error' | 'warning'; title: string; lines: string[] } | null>(() => {
+    const both = Boolean(statusError.value && overviewError.value)
+    if (both) {
+      const lines = [`监控状态：${statusError.value}`, `历史总览：${overviewError.value}`]
+      if (lastOverviewAt.value) {
+        lines.push(`页面上的数据是 ${fmtAgo(lastOverviewAt.value)}（${fmtTime(lastOverviewAt.value)}）的，可能已经不准`)
+      } else {
+        lines.push('尚未成功获取过数据')
+      }
+      return { type: 'error', title: '无法连接后端服务 —— 页面显示的是旧数据', lines }
+    }
+    if (statusError.value) {
+      const lines = [statusError.value]
+      if (lastStatusAt.value) lines.push(`状态数据停留在 ${fmtAgo(lastStatusAt.value)}`)
+      lines.push('下面四张状态卡显示的可能不是当前真实情况')
+      return { type: 'error', title: '监控状态获取失败', lines }
+    }
+    if (overviewError.value) {
+      return { type: 'error', title: '历史总览数据加载失败', lines: [overviewError.value] }
+    }
+    return null
+  })
+
+  /**
+   * "取数失败且从来没有成功过" —— 此时各榜单卡要显示"数据未加载"而不是"暂无数据"。
+   * 这两句话对使用者的含义完全不同：后者会被读成"这个直播间真的没有数据"（审计 P1-11 的老问题）。
+   */
+  const loadFailed = computed(() => Boolean(overviewError.value) && !overview.value)
+  const EMPTY_LOAD_FAILED = '数据未加载 —— 上方已说明原因，可点「重试」'
+
+  /** 一个按钮把两边一起重取（原来是两条提示各带一个重试按钮） */
+  function retryAll() {
+    refreshStatus()
+    refreshOverview()
+  }
 
   const daemonRunning = computed(() => Boolean(daemon.value?.data?.running))
   /** Go 代理的真实状态（后端随 /api/status 给的轻量探活，不再拿守护进程顶替） */
@@ -471,7 +540,8 @@
       staleSeconds.value = 0
     } catch (e) {
       // 保留上次数据，但必须明确告知"这份数据已经不可信了"
-      statusError.value = apiErrorMessage(e, '监控状态获取失败')
+      // 文案走 humanizeRequestError：不再把 "Request failed with status code 500" 直接端给用户
+      statusError.value = humanizeRequestError(e, '监控状态获取失败')
     }
   }
 
@@ -486,6 +556,8 @@
       overview.value = ov
       overviewError.value = ''
       overviewLoadedAt = Date.now()
+      lastOverviewAt.value = Date.now()
+      overviewStaleSeconds.value = 0
       const s = ov?.summary
       if (s) {
         rawSessions.value = s.total_sessions || 0
@@ -495,15 +567,17 @@
         rawLikes.value = s.total_likes || 0
       }
     } catch (e) {
-      overviewError.value = apiErrorMessage(e, '总览数据加载失败')
+      overviewError.value = humanizeRequestError(e, '总览数据加载失败')
     }
   }
 
   /** 每秒更新"数据已过期多久"，让使用者一眼看出这份状态是不是旧的 */
   let staleTimer: number | undefined
   function tickStale() {
-    staleSeconds.value = lastStatusAt.value
-      ? Math.floor((Date.now() - lastStatusAt.value) / 1000)
+    const now = Date.now()
+    staleSeconds.value = lastStatusAt.value ? Math.floor((now - lastStatusAt.value) / 1000) : 0
+    overviewStaleSeconds.value = lastOverviewAt.value
+      ? Math.floor((now - lastOverviewAt.value) / 1000)
       : 0
   }
 
@@ -590,5 +664,29 @@
   .recent-row:focus-visible {
     outline: 2px solid var(--theme-color);
     outline-offset: 2px;
+  }
+
+  /*
+   * 数据陈旧提示条（历史总览停在多久以前）。
+   * 刻意用"琥珀底 + 左边框"而不是红色：后端重启/网络抖一下很常见，
+   * 红色留给"真的取不到"的 el-alert；这条只表达"数字不是最新的"。
+   * 深浅色都靠主题变量，跟着 html.dark 走。
+   */
+  .dy-stale-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+    border: 1px solid rgb(245 158 11 / 35%);
+    border-left: 3px solid rgb(245 158 11 / 80%);
+    border-radius: 8px;
+    background: rgb(245 158 11 / 10%);
+    color: var(--art-gray-800, #333);
+    font-size: 12.5px;
+    line-height: 1.45;
+  }
+
+  .dy-stale-bar b {
+    font-weight: 600;
   }
 </style>

@@ -40,16 +40,9 @@ $fade-easing: transition-config('fade-easing');
 // 时长与方向：
 //   进场 180ms ease-out（先快后慢，缓缓就位）；退场 100ms ease-in（干脆离场，别拖）；
 //   旧页向上 -4px 走、新页从下 +8px 进 —— 一段连续的纵向运动。
-//
-// 进/退场都不再动 opacity（用户两次反馈「进入场次详情还是透明白色遮罩」）：
-//   实测（采样页面根节点）：点进详情页后的头 250ms，根节点 opacity 是 **0.118**，
-//   而此刻显示的**还是上一页（总览）的内容** —— 即旧页淡出到几乎全白、
-//   新页的分包/数据还没就绪，中间那段"白"就是用户看到的透明白色遮罩。
-//   现在进退场都只做位移（8px / -4px），opacity 全程为 1：
-//   旧页抬走、新页就位，中间不会出现白屏。
 @keyframes dy-page-in {
   from {
-    opacity: 1;
+    opacity: 0;
     transform: translate3d(0, 8px, 0);
   }
   to {
@@ -64,7 +57,7 @@ $fade-easing: transition-config('fade-easing');
     transform: none;
   }
   to {
-    opacity: 1;
+    opacity: 0;
     transform: translate3d(0, -4px, 0);
   }
 }

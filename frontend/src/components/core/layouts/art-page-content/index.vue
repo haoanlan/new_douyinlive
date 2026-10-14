@@ -189,17 +189,10 @@
     reattach(node)
     if (!actualTransition.value || reduceMotion()) return done()
     /*
-     * 进场**不做淡入**（原来是从 opacity:0 开始）。
-     *
-     * 用户两次反馈「进入场次详情还是透明白色遮罩」，实测（80ms 采样 .art-page-view）：
-     *   切换瞬间同时存在两个 art-page-view，旧页 opacity 1.00 → 0.72 → 0.12、
-     *   新页 0.00 → 0.19 → 0.72，随后页面根节点 opacity 一度是 0.118 ——
-     *   而此刻屏幕上**还是上一页的内容**（总览），也就是说画面先褪成近白、新页才出现。
-     *   白底大卡片的页面上，这段"褪成白"就是用户看到的透明白色遮罩。
-     * 现在两段动画都只做位移：旧页抬走 4px、新页从 8px 就位，opacity 全程为 1，中间不会出现白屏。
-     *
-     * 注意：CSS 里 router-transition.scss 的 .dy-fade-lift 关键帧**在这条路径上并不生效**
-     *   （过渡由这里的 WAAPI 驱动、元素上不会挂过渡类名），改那边没用。
+     * 进场只做位移、不动 opacity（理由见下面 onPageLeave 的三种做法对比）：
+     *   从 opacity: 0 淡入时，白底页面上就是"一层透明白纱"。
+     * 注意：过渡由这里的 WAAPI 驱动，元素上**不会挂过渡类名**，
+     * 所以改 CSS（router-transition.scss 的 .dy-fade-lift）在这一路径上没有效果 —— 别去改那边。
      */
     const anim = node.animate(
       [
@@ -228,28 +221,26 @@
     )
   }
 
+  /**
+   * 退场：**瞬时完成，不做动画**。
+   *
+   * 这里是「透明白色遮罩」与「两页交叠」两个问题的唯一解。
+   * 试过三种做法，前两种都不行（都有实测依据）：
+   *   ① 旧页淡出 + 新页淡入（原来的做法）
+   *      → 实测切换瞬间根节点 opacity 到过 0.118，而屏幕上还是上一页的内容，
+   *        白底页面上就是"一层透明白纱"（用户两次反馈）。
+   *   ② 两边都不动 opacity、只位移（我上一版）
+   *      → 两个 art-page-view 同时可见且都不透明，看起来是"两页糊在一起"（用户："越改越不对"）。
+   *   ③ 现在：旧页立即移除（无动画），新页只做 8px 位移、opacity 全程为 1
+   *      → 既不会出现半透明，也不会有两页同时在屏上。
+   *
+   * 进场的位移仍然保留（见 onPageEnter），所以切换仍有"就位感"，只是不再有淡入淡出。
+   */
   const onPageLeave = (el: Element, done: () => void) => {
     const node = el as HTMLElement
     detachForLeave(node)
-    if (!actualTransition.value || reduceMotion()) {
-      reattach(node)
-      return done()
-    }
-    // 退场同样只做位移（理由见 onPageEnter）：旧页淡出会让画面先变成白的
-    const anim = node.animate(
-      [
-        { transform: 'none' },
-        { transform: 'translate3d(0, -4px, 0)' }
-      ],
-      { duration: PAGE_OUT_MS, easing: PAGE_OUT_EASE, fill: 'both' }
-    )
-    const finish = () => {
-      // 同 onPageEnter：播完取消动画效果，别把 transform 留在页面上
-      anim.cancel()
-      reattach(node)
-      done()
-    }
-    anim.finished.then(finish, finish)
+    reattach(node)
+    done()
   }
 
   const onPageLeaveCancelled = (el: Element) => {

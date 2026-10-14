@@ -118,31 +118,74 @@
       </div>
     </div>
 
-    <!-- 首次进入的引导 -->
-    <div v-if="!searched" class="art-card p-5">
+    <!--
+      首次进入的引导。
+      原来这里只有一张矮卡片，下面留一大片空白（用户截图反馈）：
+      页面看起来像"没加载完"。现在改成**占满可视区**的双栏引导 ——
+      左栏快速开始（关键词 + 注意事项），右栏三步说明，底部一行真实的可查范围。
+      内容全部来自真实数据/真实流程，不放装饰性插画。
+    -->
+    <div v-if="!searched" class="art-card dy-search-guide p-5">
       <div class="art-card-header">
         <div class="title">
           <h4>开始查询</h4>
           <p>支持昵称模糊匹配，数据来自本库的弹幕、礼物与进场记录</p>
         </div>
       </div>
-      <div class="mt-4 flex flex-col gap-3">
-        <div class="flex items-center gap-2 flex-wrap">
-          <span class="text-sm text-g-500">试试这些关键词：</span>
-          <button
-            v-for="kw in hotKeywords"
-            :key="kw"
-            class="dy-pressable px-3 h-7 rounded-lg text-xs text-g-700 bg-g-100/70 hover:bg-theme/10 hover:text-theme"
-            @click="quickSearch(kw)"
-          >
-            {{ kw }}
-          </button>
+
+      <div class="dy-search-guide__body">
+        <div class="dy-search-guide__col">
+          <div class="dy-search-guide__label">试试这些关键词</div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <button
+              v-for="kw in hotKeywords"
+              :key="kw"
+              class="dy-pressable px-3 h-8 rounded-lg text-xs text-g-700 bg-g-100/70 hover:bg-theme/10 hover:text-theme transition-colors"
+              :title="kw"
+              @click="quickSearch(kw)"
+            >
+              <!-- 显示截断（有的主播名带一长串 emoji，整条会把按钮行挤成两行），
+                   点击仍用完整名字查询 -->
+              {{ kw.length > 10 ? kw.slice(0, 10) + '…' : kw }}
+            </button>
+          </div>
+          <div class="mt-4 flex items-start gap-2 text-xs text-g-500 leading-relaxed">
+            <ArtSvgIcon icon="ri:information-line" class="text-g-400 mt-0.5 shrink-0" />
+            <span>
+              查询会调用抖音接口补全用户资料，人数较多时会分批请求，请稍候；
+              结果太多时可在右上角先选一个直播间缩小范围
+            </span>
+          </div>
         </div>
-        <div class="flex items-center gap-2 text-xs text-g-500">
-          <ArtSvgIcon icon="ri:information-line" class="text-g-400" />
-          查询会调用抖音接口补全用户资料，人数较多时会分批请求，请稍候；
-          结果太多时可在右上角先选一个直播间缩小范围
+
+        <div class="dy-search-guide__col">
+          <div class="dy-search-guide__label">怎么用</div>
+          <ol class="dy-search-guide__steps">
+            <li>
+              <b>1</b>
+              <span>
+                <template v-if="scopeOptions.length">
+                  先选一个直播间（可选）——当前有 {{ scopeOptions.length }} 个可选，选完再查命中更快
+                </template>
+                <template v-else>先选一个直播间（可选），命中更少、补全更快</template>
+              </span>
+            </li>
+            <li>
+              <b>2</b>
+              <span>输入昵称关键词，支持模糊匹配；也可以直接点左边的示例</span>
+            </li>
+            <li>
+              <b>3</b>
+              <span>在结果里点头像或昵称进入用户画像，看他的弹幕、礼物与场次</span>
+            </li>
+          </ol>
         </div>
+      </div>
+
+      <!-- 真实可查范围（来自已加载的主播/场次数据，不是写死的文案） -->
+      <div v-if="scopeOptions.length" class="dy-search-guide__foot">
+        <span class="w-px h-3 bg-g-300 shrink-0" />
+        <span>可查范围：{{ scopeOptions.length }} 个直播间 · {{ scopeSessionTotal }} 场直播</span>
       </div>
     </div>
 
@@ -594,7 +637,25 @@
     loadSessionOptions()
   })
 
-  const hotKeywords = ['无限', '苏江', '林语巷', '神秘人']
+  /**
+   * 示例关键词：从**真实的主播名**里取（按场次数排序后的前 4 个）+「神秘人」。
+   *
+   * 原来是写死的 ['无限','苏江','林语巷','神秘人'] —— 直播间一换这几个词就搜不到东西了，
+   * 用户点了会得到空结果（比没有示例更糟：看起来像查询坏了）。
+   * 「神秘人」保留：这是匿名用户的昵称前缀，库里一定有。
+   */
+  const hotKeywords = computed(() => {
+    const names = scopeOptions.value
+      .map((s) => (s.name || '').trim())
+      .filter((n) => n && !n.includes('神秘人'))
+      .slice(0, 4)
+    return [...names, '神秘人']
+  })
+
+  /** 可查范围里的场次总数（真实数据，来自已加载的主播列表） */
+  const scopeSessionTotal = computed(() =>
+    scopeOptions.value.reduce((sum, s) => sum + (s.session_count ?? 0), 0)
+  )
 
   const users = computed(() => results.value || [])
 
@@ -892,4 +953,110 @@
 <style scoped lang="scss">
   /* 工具条控件圆角/间距与卡片统一（与状态监控页同一套） */
   @use '@styles/custom/douyin-toolbar.scss';
+
+  /*
+   * 首次进入的引导：占满可视区，别让页面看起来"没加载完"。
+   *
+   * 高度用 clamp 而不是写死：不同窗口高度下都要正好填到视口底部附近的留白，
+   * 又不能在小窗口里撑出滚动条（那还不如原来矮卡片）。
+   * 上限 620px 是按 1440×900 实测的可用高度（视口 900 − 顶栏/标签栏/工具条/间距 ≈ 620）。
+   */
+  /*
+   * 注意选择器写成 `.art-card.dy-search-guide`（两个类）：
+   * 库里的 `.art-card` 也是单类权重，**.art-card 的样式在这个 scoped 块之后注入**，
+   * 单写 `.dy-search-guide` 会被它的 display/justify-content 盖掉（实测 justify-content 无效）。
+   */
+  .art-card.dy-search-guide {
+    display: flex;
+    flex-direction: column;
+    /* 标题+正文整体垂直居中，底部范围行用 margin-top:auto 顶到卡片底 */
+    justify-content: center;
+    min-height: clamp(380px, calc(100vh - 300px), 620px);
+  }
+
+  .dy-search-guide__body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    padding: 20px 0 28px;
+  }
+
+  .dy-search-guide__col {
+    min-width: 0;
+  }
+
+  .dy-search-guide__label {
+    font-size: 12px;
+    font-weight: 600;
+    /* 用 gray-700 而不是 gray-500：实测 gray-500 在白底上只有 2.68:1（AA 要 4.5） */
+    color: var(--art-gray-700);
+    margin-bottom: 12px;
+  }
+
+  /* 三步说明：数字徽标 + 文本，行距放开一点，读起来不挤 */
+  .dy-search-guide__steps {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .dy-search-guide__steps li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 13px;
+    line-height: 1.65;
+    color: var(--art-gray-700);
+  }
+
+  .dy-search-guide__steps b {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    margin-top: 1px;
+    border-radius: 6px;
+    /*
+     * 中性灰阶而不是品牌色白字：实测"白字 + 品牌色"只有 3.29:1（11px 属小字，AA 要 4.5），
+     * 加透明度后更差。gray-200/gray-800 是主题变量，深浅色都会自动反转。
+     */
+    background: var(--art-gray-200);
+    color: var(--art-gray-800);
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .dy-search-guide__foot {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    /*
+     * 这里**不能**用 margin-top: auto 顶到底部：
+     * flexbox 里 auto margin 会先于 justify-content 吃掉全部自由空间（实测吃掉 290px），
+     * 结果是标题和正文被顶到卡片顶部、居中失效。让它跟着一起居中即可。
+     */
+    padding-top: 14px;
+    border-top: 1px solid var(--art-card-border);
+    font-size: 12px;
+    /* 同上：gray-500 在白底上只有 2.68:1，AA 不达标 */
+    color: var(--art-gray-700);
+  }
+
+  /* 窄屏：两栏堆叠（一栏 300px 都不到时再分栏就没法读了） */
+  @media (max-width: 900px) {
+    .dy-search-guide {
+      min-height: 0;
+    }
+
+    .dy-search-guide__body {
+      grid-template-columns: 1fr;
+      gap: 20px;
+      align-content: start;
+    }
+  }
 </style>

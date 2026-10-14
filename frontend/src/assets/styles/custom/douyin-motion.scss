@@ -836,11 +836,12 @@
  * 单张统计卡（目前只有总览页在用；放在全局是为了和 .dy-stat-row 一起维护）：
  * 高度 80 → 108px：数字加大加粗后 80px 会显得"数字贴着边框"，
  * 抬高给数字留出呼吸空间（用户反馈：图标缩小、卡片变高、数字加粗加大）。
+ * position: relative 是给右上角的图标做定位锚点。
  */
 .dy-stat-card {
+  position: relative;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
   height: 108px;
   padding: 0 20px;
@@ -848,22 +849,22 @@
 }
 
 /*
+ * 数字字号随长度退档的逻辑写在组件里（numSizeClass，用 Tailwind 响应式类），
+ * 这里**不要**再写 !important 的 font-size —— 那会把退档规则整个盖掉。
+ */
+
+/*
  * 真实数值（千分位）在窄屏降到 20px：
  * 26px 的 "188,718,166" 约 160px 宽，手机两列布局每张卡只有 ~150px，会溢出。
  */
 @media (max-width: 768px) {
-  .douyin-page .dy-stat-card .dy-stat-num {
-    font-size: 20px !important;
-  }
-
   /*
-   * 窄屏隐藏图标：实测 390px 两列布局下，卡片内宽 174px，
-   * "188,718,166" 的 20px 数字占 ~114px + 图标 28px + 间距 24px = 166px，
-   * 数字末尾和图标几乎贴在一起（截图可见）。标签文字已经说明了这是哪张卡，
-   * 图标在这里信息量为零，直接让位给数字。
+   * 窄屏数字字号由组件的响应式档位负责（text-2xl 等），这里不再覆盖。
+   * 图标也**不再隐藏**：它已经移到右上角，不占数字的横向空间了
+   * （上一版居中排列时，390px 下数字和图标会贴在一起，才需要隐藏）。
    */
-  .douyin-page .dy-stat-card .dy-stat-icon {
-    display: none !important;
+  .douyin-page .dy-stat-card {
+    padding: 0 16px;
   }
 }
 

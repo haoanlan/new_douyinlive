@@ -11,21 +11,28 @@
     <div class="dy-stat-row">
       <div v-for="card in cards" :key="card.des" class="art-card dy-stat-card">
         <div class="min-w-0">
-          <div class="text-xs text-g-500">{{ card.des }}</div>
+          <!-- pr-10 只留给**标签行**：图标在右上角，占的是这一行的高度；
+               数字在下一行，横向空间应该全部给它（否则 390px 下 11 位数字会溢出）。 -->
+          <div class="pr-10 text-xs text-g-500">{{ card.des }}</div>
           <!--
-            数字：真实值 + 加粗加大（20px medium → 26px bold）。
-            tabular-nums 让千分位数字等宽对齐，五张卡扫下来不会"数字位置忽左忽右"。
-            移动端在全局样式里降到 20px（26px 的 11 位数会撑破两列布局）。
+            标签 → 数字 → 单位 的间距都放大了（mt-1.5→mt-3、gap-1.5→gap-2）：
+            原来三行挤在一起，"198 场"读起来像一坨。
+            数字字号按**长度自适应**（见 numSizeClass）：真实数值会越来越长
+            （188,718,167 已经是 11 位），字号跟着档位退，而不是换行或被裁掉。
+            whitespace-nowrap 保证千分位数字永远不会从逗号处断成两行。
           -->
-          <div class="mt-1.5 flex items-baseline gap-1.5">
-            <span class="dy-stat-num text-3xl font-bold text-g-900 leading-none tabular-nums">
+          <div class="mt-3 flex items-baseline gap-2">
+            <span
+              class="dy-stat-num font-bold text-g-900 leading-none tabular-nums whitespace-nowrap"
+              :class="numSizeClass(card.num)"
+            >
               {{ card.num }}
             </span>
             <span class="text-xs text-g-500 shrink-0">{{ card.unit }}</span>
           </div>
         </div>
-        <!-- 图标缩小：36px 容器 → 28px，图标 text-base → text-xs（视觉重心让给数字） -->
-        <div class="dy-stat-icon size-7 rounded-md flex-cc bg-theme/10 shrink-0">
+        <!-- 图标缩小并移到右上角：不再和数字抢横向空间（视觉重心也回到数字上） -->
+        <div class="dy-stat-icon absolute right-3.5 top-3.5 size-7 rounded-md flex-cc bg-theme/10">
           <ArtSvgIcon :icon="card.icon" class="text-xs text-theme" />
         </div>
       </div>
@@ -529,6 +536,30 @@
     { des: '活跃用户', icon: 'ri:user-3-line', unit: '人' },
     { des: '总点赞', icon: 'ri:thumb-up-line', unit: '次' }
   ]
+
+  /**
+   * 数字字号按**长度**自适应（真实数值会一直变长）。
+   *
+   * 为什么需要：KPI 卡显示的是实际值，"188,718,167" 已经 11 个字符。
+   * 实测（1440 / 390 两档，用 mock 放大数值跑出来的）：
+   *   · 桌面 275px 卡：11 位 30px 还有 43px 余量，1000 倍（15 位）也放得下
+   *   · 手机 174px 卡：固定字号时 11 位就已经 −16px（溢出），必须逐档退
+   * 所以每个档位都给移动端和 md 起各一个字号，宁可小一号也不换行/截断 ——
+   * 数字必须完整可读。
+   *
+   * 类名必须是**字面量**（Tailwind 靠扫源码生成样式），不要改成运行时拼字符串。
+   */
+  function numSizeClass(num: string) {
+    const len = (num || '').length
+    // 桌面档留足：当前最大数据 11 位（188,718,167）在 275px 卡里 30px 仍有 43px 余量，
+    // 所以 ≤11 位都保持最大字号；再长才逐档退（实测 1000 倍即 15 位也放得下）。
+    if (len <= 7) return 'text-2xl md:text-3xl'
+    if (len <= 9) return 'text-xl md:text-3xl'
+    if (len <= 11) return 'text-lg md:text-3xl'
+    if (len <= 13) return 'text-base md:text-2xl'
+    if (len <= 15) return 'text-sm md:text-xl'
+    return 'text-xs md:text-lg'
+  }
 
   const cards = computed(() => {
     const s = overview.value?.summary

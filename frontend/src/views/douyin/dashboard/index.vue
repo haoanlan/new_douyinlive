@@ -24,7 +24,7 @@
           <div class="mt-3 flex items-baseline gap-2">
             <span
               class="dy-stat-num font-bold text-g-900 leading-none tabular-nums whitespace-nowrap"
-              :class="numSizeClass(card.num)"
+              :class="card.sizeClass"
             >
               {{ card.num }}
             </span>
@@ -523,11 +523,23 @@
   const rawUsers = ref(0)
   const rawLikes = ref(0)
 
-  const animSessions = useTransition(rawSessions, { duration: 800 })
-  const animDiamonds = useTransition(rawDiamonds, { duration: 800 })
-  const animDanmaku = useTransition(rawDanmaku, { duration: 800 })
-  const animUsers = useTransition(rawUsers, { duration: 800 })
-  const animLikes = useTransition(rawLikes, { duration: 800 })
+  /**
+   * 数字滚动动画的缓动。
+   *
+   * 为什么必须自己传：@vueuse 的 useTransition 默认用**恒等函数**，而它算进度是
+   *   `alpha = ease((now - startedAt) / duration)`
+   * —— **alpha 没有被钳到 1**（源码里判断"是否继续"用的是上一帧的 now，
+   * 下一帧完全可以越过 endAt）。只要有一帧被拖慢（页面刚加载时很常见），
+   * alpha 就 > 1，数值会冲过目标再回落 —— 用户看到的"数字超过实际值又变回来"。
+   * 这里用夹住的 ease-out：单调、且永远不超过目标值。
+   */
+  const EASE_OUT_CLAMPED = (t: number) => 1 - Math.pow(1 - Math.min(1, Math.max(0, t)), 3)
+
+  const animSessions = useTransition(rawSessions, { duration: 800, transition: EASE_OUT_CLAMPED })
+  const animDiamonds = useTransition(rawDiamonds, { duration: 800, transition: EASE_OUT_CLAMPED })
+  const animDanmaku = useTransition(rawDanmaku, { duration: 800, transition: EASE_OUT_CLAMPED })
+  const animUsers = useTransition(rawUsers, { duration: 800, transition: EASE_OUT_CLAMPED })
+  const animLikes = useTransition(rawLikes, { duration: 800, transition: EASE_OUT_CLAMPED })
 
   const PLACEHOLDER_CARDS = [
     { des: '直播场次', icon: 'ri:live-line', unit: '场' },
@@ -563,15 +575,27 @@
 
   const cards = computed(() => {
     const s = overview.value?.summary
-    return PLACEHOLDER_CARDS.map((p, i) => ({
-      ...p,
-      /*
-       * 显示**真实数值**（千分位，不做万/亿缩写）。
-       * 这五个数字是总览页的核心，原来 "1.89亿" / "46.54万" 这种缩写等于把精度藏起来，
-       * 想核对具体量级还得去别处翻。缩写形式在别处（榜单卡右侧）仍然保留。
-       */
-      num: s ? fmtFull([animSessions, animDiamonds, animDanmaku, animUsers, animLikes][i].value) : '--'
-    }))
+    const RAW = [rawSessions, rawDiamonds, rawDanmaku, rawUsers, rawLikes]
+    const ANIM = [animSessions, animDiamonds, animDanmaku, animUsers, animLikes]
+    return PLACEHOLDER_CARDS.map((p, i) => {
+      const targetStr = s ? fmtFull(RAW[i].value) : ''
+      return {
+        ...p,
+        /*
+         * 显示**真实数值**（千分位，不做万/亿缩写）。
+         * 这五个数字是总览页的核心，原来 "1.89亿" / "46.54万" 这种缩写等于把精度藏起来，
+         * 想核对具体量级还得去别处翻。缩写形式在别处（榜单卡右侧）仍然保留。
+         *
+         * Math.round：动画中的值是浮点，直接格式化会闪出小数点后的数字。
+         */
+        num: s ? fmtFull(Math.round(ANIM[i].value)) : '--',
+        /*
+         * 字号档位跟着**目标值**的位数走，而不是动画中的当前值 ——
+         * 否则数字每长一位就换一次字号，滚动的 0.8 秒里字号跳来跳去（实测移动端跳了 3 次）。
+         */
+        sizeClass: targetStr ? numSizeClass(targetStr) : 'text-2xl md:text-3xl'
+      }
+    })
   })
 
   async function refreshStatus() {

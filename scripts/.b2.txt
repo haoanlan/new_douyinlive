@@ -1,0 +1,39 @@
+﻿fix(reliability): 采集链路三处静默失效 —— PID 残留不自愈 / 停不掉代理 / 换机丢数据
+
+自查第 ② 批（采集可靠性）。三处都是"出事时看不出来"的类型，全部先复现再修。
+
+① PID 残留导致 worker 拒绝启动、采集静默停止（本轮现场复现）
+   嵌入模式的 worker 把**宿主 dashboard 的 PID** 写进 monitor.pid，启动时只用
+   process.kill(pid, 0) 判断"是否已有 worker 在跑"。PID 被系统复用、或上次宿主异常退出时，
+   新起的 dashboard 会误判成"已有守护进程"→ 拒绝启动 worker → /api/status 一直 503、
+   采集静默停止，直到有人手动点「重启」（本次实测就是这个状态：pidStale=true、worker 未运行）。
+   改为 **PID 文件带心跳**：writePid 写 JSON（pid/startedAt/heartbeatAt），worker 每 5 秒
+   touchPid()，启动时只有"进程活着 **且** 心跳新鲜（<45s）"才算真的有人在写库，
+   否则记为残留并接管。兼容旧的裸数字格式（无心跳时保守按"活着即占用"，避免双写）。
+   实测：伪造 monitor.pid = {pid: 活着的 Vite 进程, 心跳 3 分钟前} → 新 dashboard 日志
+   "[daemon] 清理残留 PID 文件…接管 worker"，/api/status 200、6 个房间正常连上。
+
+② 「停止监控」杀不掉 Go 代理
+   proxy-process.js 把子进程存成 {pid, killed:false} 对象字面量（没有 kill 方法），
+   killBinaryProcess 调 .kill('SIGTERM') 抛 TypeError 被空 catch 吞掉 → 代理一直在跑、
+   继续消耗上游配额；watchTimer 还会在 15 秒后把它再拉起来（与用户意图相反）。
+   修：startProxy 返回真实 ChildProcess 句柄并保存；killBinaryProcess 优先用句柄、否则按 PID
+   结束；同时清理 watchTimer 与自动重启的 setTimeout，并置 stopping 阻止自动重启。
+   实测：stop → 1088 **关闭**（修复前仍开着）；start → 1088 恢复、/api/status 200 ✓。
+
+③ 建库不完整：换机/重建库后礼物与场次写不进去
+   init() 建表清单里**没有** gift_icons（现网那张表是历史手工建的），streamers 也缺 sec_uid 列，
+   而 insertGifts / upsertStreamer 都在用 → 新库上直接抛 
+o such table/column，
+   调用方 catch 只打一行日志，数据静默丢失。修：补 CREATE TABLE gift_icons（DDL 与现网一致）
+   + ALTER streamers ADD sec_uid，并加启动自检把缺表缺列升级为显式告警。
+   实测：用 DB_SQLITE_PATH 指向全新库跑 init() → gift_icons ✓、streamers.sec_uid ✓、
+   写入礼物图标与主播(含 sec_uid) ✓（临时库已删）。
+
+④ 顺带：db.init() 每次启动跑两遍
+   仪表盘先 db.init()（web-dashboard.js:318），startDaemon 内部又调一次（lifecycle.js:157），
+   于是建表 + **聚合回填**各跑两遍（实测日志里"回填 7 个场次的聚合数据"出现两次）。
+   加 initDone 标记，二次调用直接返回。实测：重启后回填只出现一次。
+
+验证：桌面回归 9/9；移动端巡检 20/20；模块编译 205/205；import 检查 210 文件全通过。
+服务当前状态：9871 ✓、5173 ✓、1088 ✓（代理 healthy）、worker 6 房间已连接。

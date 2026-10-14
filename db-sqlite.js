@@ -10,6 +10,8 @@ const fs = require('fs');
 const DB_PATH = process.env.DB_SQLITE_PATH || path.join(__dirname, 'db', 'douyin.db');
 
 let db = null;
+/** init() 是否已执行过（见 init() 里的说明：避免建表与聚合回填跑两遍） */
+let initDone = false;
 
 /** 获取数据库实例 */
 function getDb() {
@@ -65,6 +67,14 @@ function getPool() {
 
 /** 初始化建表 */
 async function init() {
+  /*
+   * 只跑一次。
+   * 仪表盘启动时的顺序是 db.init()（web-dashboard.js:318）→ 再 startDaemon()，
+   * 而 startDaemon 内部又调了一次 db.init()（lib/worker/lifecycle.js:157），
+   * 于是建表 + **聚合回填**各跑两遍（实测启动日志里"[db] 回填 N 个场次的聚合数据"出现两次，
+   * 每遍都要扫场次做聚合，纯属浪费）。
+   */
+  if (initDone) return;
   const d = getDb();
   const sqls = [
     `CREATE TABLE IF NOT EXISTS streamers (
@@ -72,7 +82,21 @@ async function init() {
       name TEXT NOT NULL UNIQUE,
       room_id TEXT DEFAULT NULL,
       avatar TEXT DEFAULT NULL,
-      created_at TEXT DEFAULT (datetime('now','localtime'))
+      created_at TEXT DEFAULT (datetime('now','localtime')),
+      sec_uid TEXT DEFAULT ""
+    )`,
+
+    /*
+     * gift_icons：礼物名 → 图标 URL 的本地缓存（insertGifts 会读它补图标，缺表就写不进礼物）。
+     * 以前 init() 里**没有**这条 CREATE TABLE —— 现网库里的这张表是历史手工建的，
+     * 于是"删库/换机重建"后 insertGifts 直接抛 `no such table: gift_icons`，
+     * 礼物数据静默丢失。这里补上，DDL 与现网一致。
+     */
+    `CREATE TABLE IF NOT EXISTS gift_icons (
+      gift_id INTEGER PRIMARY KEY,
+      name TEXT NOT NULL,
+      icon_url TEXT,
+      diamond_count INTEGER DEFAULT 0
     )`,
 
     `CREATE TABLE IF NOT EXISTS sessions (
@@ -210,10 +234,33 @@ async function init() {
   }
   // 旧库补列（个人中心要显示"上次登录"）
   try { d.exec(`ALTER TABLE dashboard_users ADD COLUMN last_login_time TEXT DEFAULT NULL`); } catch (e) { /* 已存在 */ }
+  // 旧库补列：streamers.sec_uid（upsertStreamer 会写入它，缺列会让场次/主播写入失败）
+  try { d.exec(`ALTER TABLE streamers ADD COLUMN sec_uid TEXT DEFAULT ""`); } catch (e) { /* 已存在 */ }
   // 添加 agg 聚合字段（兼容旧库）
   const aggCols = ['agg_gifts', 'agg_diamonds', 'agg_danmaku', 'agg_users'];
   for (const col of aggCols) {
     try { d.exec(`ALTER TABLE sessions ADD COLUMN ${col} INTEGER DEFAULT NULL`); } catch (e) { /* 已存在 */ }
+  }
+
+  /*
+   * 启动自检：把"缺表/缺列"从静默失败升级为显式告警。
+   * 这两处曾经只在现网库里存在（历史 ALTER 的产物），init() 建不出它们，
+   * 换机/重建库后 insertGifts 与 upsertStreamer 会抛错，而调用方的 catch 只打一行日志，
+   * 结果是礼物与场次数据静默丢失、界面上看不出来。
+   */
+  try {
+    const required = [
+      { table: 'gift_icons', sql: `SELECT 1 FROM gift_icons LIMIT 1` },
+      { table: 'gift_icons', sql: `SELECT icon_url FROM gift_icons LIMIT 1` },
+      { table: 'streamers', sql: `SELECT sec_uid FROM streamers LIMIT 1` }
+    ];
+    for (const chk of required) {
+      try { d.prepare(chk.sql).get(); } catch (e) {
+        console.error(`[db][自检失败] ${chk.table} 结构不完整（${e.message}）—— 礼物图标或主播写入会失败，请检查建表逻辑`);
+      }
+    }
+  } catch (e) {
+    console.error('[db][自检异常]', e.message);
   }
   console.log('[db] SQLite 表结构初始化完成');
   // 回填已结束场次的聚合数据
@@ -268,6 +315,9 @@ async function init() {
   } catch (e) {
     console.error('[db] 初始化账号失败:', e.message);
   }
+
+  // 到这里建表/补列/回填/种子都完成了，后续再调 init() 直接返回
+  initDone = true;
 }
 
 /** 获取/创建主播 */

@@ -105,17 +105,30 @@ function sendError(res, msg, status = 500) {
   sendJSON(res, { error: msg }, status);
 }
 
-function sendCSV(res, filename, rows, headers) {
+/**
+ * 输出 CSV。
+ *
+ * 原来是一路 `res.write(...)` 不管返回值：res.write 返回 false 表示内核缓冲已满，
+ * 继续写会把整份数据堆在内存里（实测 46 万行弹幕会出现数百 MB 峰值）。
+ * 现在逐行等待 'drain'，尊重 socket 背压；行数上限由调用方控制（见 lib/routes/misc.js）。
+ */
+async function sendCSV(res, filename, rows, headers, extraHeaders = {}) {
   res.writeHead(200, {
     'Content-Type': 'text/csv; charset=utf-8',
     'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`,
-    'Access-Control-Allow-Origin': '*'
+    'Access-Control-Allow-Origin': '*',
+    ...extraHeaders
   });
+  const write = (chunk) =>
+    new Promise((resolve) => {
+      if (res.write(chunk)) return resolve();
+      res.once('drain', resolve);
+    });
   // BOM for Excel
-  res.write('\uFEFF');
-  res.write(headers.join(',') + '\n');
+  await write('\uFEFF');
+  await write(headers.join(',') + '\n');
   for (const row of rows) {
-    res.write(row.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',') + '\n');
+    await write(row.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',') + '\n');
   }
   res.end();
 }

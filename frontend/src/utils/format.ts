@@ -6,16 +6,17 @@
  * 实际被调用的只有后者（detail 页从 douyin-emoji 导入），本文件那个 0 调用者。
  */
 
-/** 格式化完整时间 (年/月/日 时:分) */
-export function fmtTime(ts: any): string {
-  if (!ts) return '-'
-  let d: Date
-  if (typeof ts === 'number' || (typeof ts === 'string' && /^\d+$/.test(ts.trim()))) {
-    const n = Number(ts)
-    d = new Date(n > 1e12 ? n : n * 1000)
-  } else {
-    d = new Date(ts)
-  }
+/**
+ * 到分钟：YYYY/MM/DD HH:mm（年/月/日 时:分）
+ *
+ * 解析统一走下面的 toDate()（原来这里自己写了一套判断，正则只认 `/^\d+$/`，
+ * 于是库里的 `"1781342931.0"`（带小数的时间戳字符串）走 `new Date(...)` → Invalid Date，
+ * 房间列表显示成"最近 Invalid Date" —— 移动端巡检截图里抓到的）。
+ * 解析不出来时返回兜底值（默认 '-'），**绝不把 "Invalid Date" 端给用户**。
+ */
+export function fmtTime(ts: any, fallback = '-'): string {
+  const d = toDate(ts)
+  if (!d) return fallback
   return d.toLocaleString('zh-CN', {
     year: 'numeric',
     month: '2-digit',

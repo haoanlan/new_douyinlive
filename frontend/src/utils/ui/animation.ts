@@ -47,12 +47,6 @@ export const themeAnimation = (e: any) => {
   document.documentElement.style.setProperty('--y', y + 'px')
   document.documentElement.style.setProperty('--r', endRadius + 'px')
 
-  /*
-   * View Transition 在窄屏也照用 —— 但**揭示方式由 CSS 按屏宽切换**（见 theme-animation.scss）：
-   *   宽屏：clip-path 圆形扩散（视觉最漂亮，桌面有余量做逐帧重绘）；
-   *   窄屏：透明度交叉淡入（合成层动画，几乎零成本，手机上不抖）。
-   * 所以这里不需要判断屏宽，动画形式的决定权在样式里。
-   */
   if (typeof document.startViewTransition === 'function') {
     document.startViewTransition(() => toggleTheme())
   } else {

@@ -3,6 +3,12 @@
   <div class="douyin-page dy-stagger p-4">
     <!-- 顶部工具条 -->
     <div class="art-card dy-toolbar mb-5 flex items-center justify-between gap-4 flex-wrap">
+      <!--
+        左侧标题块保持原来的 flex（basis auto）。
+        注意**不能**改成 flex-1/basis-0：那样在 1024 附近左侧块会被挤到接近 0 宽，
+        统计行折成一竖条，反而更糟。真正的解法是把统计行压短（见下面去掉「列出前 N 个」），
+        让它任何状态下都只占一行 —— 工具的抖动来自"这一行从 1 行变 2 行"。
+      -->
       <div class="flex items-center gap-3 min-w-0">
         <div class="size-9 rounded-lg flex-cc bg-theme/10 shrink-0">
           <ArtSvgIcon icon="ri:user-search-line" class="text-base text-theme" />
@@ -14,49 +20,7 @@
             原来结果区上方还单独有一行「共 N 个匹配用户 · 显示前 K」，和这里同一个数
             出现两次（用户反馈），已合并到这一行。
           -->
-          <!--
-            dy-result-stats：窄屏允许换行。
-            原来写死 flex-nowrap + overflow-hidden，而它所在的 .min-w-0 容器在
-            360px 手机上只有 240px，这行内容需要 283px —— 实测第三项
-            「0 累计钻石」被直接裁掉（移动端自检 B 类：真裁切）。
-            桌面宽度够，仍是一行。
-          -->
-          <div
-            class="dy-result-stats flex items-center gap-2.5 mt-1.5 text-xs text-g-500 flex-nowrap min-w-0 overflow-hidden"
-          >
-            <!-- 加载中/失败时不显示（也不残留）上一轮的统计数字 -->
-            <span v-if="loading">查询中…</span>
-            <span v-else-if="queryError" class="text-danger">查询失败</span>
-            <template v-else>
-              <span class="flex items-baseline gap-1 shrink-0">
-                <b class="dy-count text-g-900">{{ searched ? resultTotal : 0 }}</b>个匹配用户
-              </span>
-              <span v-if="truncated" class="shrink-0 text-g-500">
-                · 列出前 {{ returnedCount }} 个
-              </span>
-              <span class="w-px h-3 bg-g-300 shrink-0" />
-              <span class="flex items-baseline gap-1 shrink-0">
-                <b class="dy-count text-g-900">{{ totalSessions }}</b>个参与场次
-              </span>
-              <span class="w-px h-3 bg-g-300 shrink-0" />
-              <span class="flex items-baseline gap-1 shrink-0">
-                <b class="dy-count text-theme">{{ fmtNum(totalDiamonds) }}</b>累计钻石
-              </span>
-              <!-- 口径说明 + 明细都收进这一个 ⓘ（原来口径挂在 title 上、明细在结果区另一个 ⓘ） -->
-              <el-tooltip placement="top" :show-after="100">
-                <span
-                  class="inline-flex items-center justify-center size-5 shrink-0 rounded-full c-p hover:bg-g-100/70"
-                  role="img"
-                  aria-label="查询结果说明"
-                >
-                  <ArtSvgIcon icon="ri:information-line" class="text-sm text-g-400" />
-                </span>
-                <template #content>
-                  <div class="max-w-[320px] leading-relaxed">{{ toolbarTip }}</div>
-                </template>
-              </el-tooltip>
-            </template>
-          </div>
+          <!-- 结果汇总行见工具条末尾的 .dy-result-stats（独占一整行，见那里的注释） -->
         </div>
       </div>
 
@@ -129,6 +93,56 @@
           <ArtSvgIcon v-if="!loading" icon="ri:search-line" class="mr-1" />
           查询
         </el-button>
+      </div>
+
+      <!--
+        结果汇总行：**独占一整行**（basis-full），不参与上面那一行的宽度竞争。
+        用户反馈"匹配用户等信息会变动导致排版难看、模块大小抖动"。
+        实测根因：这一行会随结果变长（275 → 451px），把右侧控件组（704px）
+        挤到第二行 —— 工具条高度 88 → 140px、控件组从 y=146 掉到 y=201。
+        试过把它压短（去掉与 ⓘ 重复的「列出前 N 个」）让 1440 放得下：只差 12px，
+        这种"差一点"的布局会随数据长度反复摇摆，不能算修好。
+        独占一行后：这一行永远只占一行，控件组永远在第一行，任何屏宽/任何数据都不再抖。
+        min-h-5（20px）固定一行高：加载态的「查询中…」只有 16px，不固定会让工具条差 4px。
+        另外数字用等宽数位（.dy-count），计数更新时宽度也不变。
+      -->
+      <div
+        class="dy-result-stats flex basis-full min-h-5 items-center gap-2.5 mt-3 text-xs text-g-500 flex-wrap min-w-0"
+      >
+        <!-- 加载中/失败时不显示（也不残留）上一轮的统计数字 -->
+        <span v-if="loading">查询中…</span>
+        <span v-else-if="queryError" class="text-danger">查询失败</span>
+        <template v-else>
+          <span class="flex items-baseline gap-1 shrink-0">
+            <b class="dy-count text-g-900">{{ searched ? resultTotal : 0 }}</b>个匹配用户
+          </span>
+          <!--
+            这里原来还有一段「· 列出前 N 个」，已去掉：
+              1) 与 ⓘ 里的说明重复（toolbarTip 已写明"参与场次/累计钻石只统计本次列出的 N 人"）；
+              2) 它把这一行从 275px 拉到 451px，是抖动的直接来源。
+          -->
+          <span class="w-px h-3 bg-g-300 shrink-0" />
+          <span class="flex items-baseline gap-1 shrink-0">
+            <b class="dy-count text-g-900">{{ totalSessions }}</b>个参与场次
+          </span>
+          <span class="w-px h-3 bg-g-300 shrink-0" />
+          <span class="flex items-baseline gap-1 shrink-0">
+            <b class="dy-count text-theme">{{ fmtNum(totalDiamonds) }}</b>累计钻石
+          </span>
+          <!-- 口径说明 + 明细都收进这一个 ⓘ（原来口径挂在 title 上、明细在结果区另一个 ⓘ） -->
+          <el-tooltip placement="top" :show-after="100">
+            <span
+              class="inline-flex items-center justify-center size-5 shrink-0 rounded-full c-p hover:bg-g-100/70"
+              role="img"
+              aria-label="查询结果说明"
+            >
+              <ArtSvgIcon icon="ri:information-line" class="text-sm text-g-400" />
+            </span>
+            <template #content>
+              <div class="max-w-[320px] leading-relaxed">{{ toolbarTip }}</div>
+            </template>
+          </el-tooltip>
+        </template>
       </div>
     </div>
 
@@ -972,6 +986,14 @@
    * 库里的 `.art-card` 也是单类权重，**.art-card 的样式在这个 scoped 块之后注入**，
    * 单写 `.dy-search-guide` 会被它的 display/justify-content 盖掉（实测 justify-content 无效）。
    */
+  /*
+   * 统计数字用**等宽数位**：数字从 0 → 1,234 → 855.44万 变化时，
+   * 每个数字占宽一致，更新/计数时不会左右抖。
+   */
+  .dy-count {
+    font-variant-numeric: tabular-nums;
+  }
+
   /*
    * 占满内容区的空态卡：「开始查询」引导 与「没有匹配」空结果 共用。
    * 用户反馈空结果那张卡片只有一小条、没占满屏，和引导态观感不一致。

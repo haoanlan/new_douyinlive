@@ -99,10 +99,17 @@
             :value="s.id"
           />
         </el-select>
+        <!--
+          宽度 240px：placeholder「输入昵称关键词，回车查询」实测需要 234px 的**输入区**宽度
+          （文本 168 + 放大镜前缀 22 + 清除后缀 22 + 内外边距 22），
+          而 el-input 的装饰会吃掉 66px，所以外层至少要 234px。
+          原来写 200px（输入区只剩 134px）→ 文案在「回车」处被截断（用户反馈）。
+          窄屏不受影响：≤800px 时 douyin-mobile.scss 会把工具条控件统一拉成整行 100%。
+        -->
         <el-input
           v-model="query"
           placeholder="输入昵称关键词，回车查询"
-          style="width: 200px"
+          style="width: 240px"
           clearable
           @keyup.enter="onQueryEnter"
           @clear="onQueryClear"

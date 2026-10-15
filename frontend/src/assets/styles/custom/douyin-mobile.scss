@@ -547,11 +547,31 @@
   }
 
   .douyin-page .el-pagination button {
+    /*
+     * 箭头必须用 flex 居中：
+     * Element 原本靠 line-height 让 ‹ › 在按钮里居中，我把它改成固定
+     * width/height + padding 之后行高对不上，箭头就偏到左上角（用户真机截图指出
+     * "箭头在框内不居中"）。这里直接用 flex 居中，和字号/行高彻底解耦。
+     */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     min-width: 32px !important;
     width: 32px !important;
     height: 32px !important;
-    padding: 0 4px !important;
+    padding: 0 !important;
     margin: 0 !important;
+    line-height: 1 !important;
+  }
+
+  /* 箭头图标本身也居中（Element 给的是 <i class="el-icon"><svg/></i>） */
+  .douyin-page .el-pagination button .el-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    font-size: 12px;
+    line-height: 1;
   }
 
   .douyin-page .el-pagination__jump {

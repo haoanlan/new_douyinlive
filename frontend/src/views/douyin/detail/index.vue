@@ -720,11 +720,23 @@
 
   async function openGiftDetail(gift: GiftRankItem) {
     giftDialogUser.value = gift.nickname
+    /*
+     * 按 **user_sec_uid** 筛，不要按昵称筛。
+     *
+     * 实测场次 301：同一个 sec_uid 的明细带着两个昵称（"dou7906155" 送 闪烁星河、
+     * "淩乱ぺ" 送 星光闪耀）—— 榜单按 sec_uid 聚合把两笔钻石都算上了，
+     * 而弹窗按昵称筛，于是 闪烁星河 整行消失（用户："弹窗只有星光闪耀，但钻石数计算上了"）。
+     * sec_uid 是稳定标识，昵称只是显示名，随时可能变。
+     */
+    const sameUser = (g: { user_sec_uid?: string; nickname?: string }) =>
+      gift.user_sec_uid
+        ? g.user_sec_uid === gift.user_sec_uid
+        : g.nickname === gift.nickname
     // 先用"最近若干条"里的即时结果把弹窗打开（有内容可看），再拉全量补齐
-    giftDialogList.value = (detail.value?.giftFeed || []).filter((g) => g.nickname === gift.nickname)
+    giftDialogList.value = (detail.value?.giftFeed || []).filter(sameUser)
     giftDialogVisible.value = true
     await ensureGiftDetails()
-    giftDialogList.value = (giftDetailsFull.value || []).filter((g) => g.nickname === gift.nickname)
+    giftDialogList.value = (giftDetailsFull.value || []).filter(sameUser)
   }
 
   async function openAnchorPeopleList(anchor: AnchorRankItem) {

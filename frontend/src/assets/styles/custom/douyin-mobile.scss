@@ -424,6 +424,57 @@
   /* 筛选框这类"卡片内的单行输入"本身没有高度约束，跟着 40 走即可 */
 
   /*
+   * 配置抽屉：段落头不再挤成"竖排"
+   *
+   * .pc-section__head 里有 5 个元素（图标 / 标题 Cookie / 状态标签 / 取值优先级提示），
+   * 390px 下实测被压成："Cookie 登录\n态" + 提示文字换成三行。
+   * 窄屏改成：图标+标题+标签占一行，取值提示整行放下面。
+   */
+  .dy-proxy-drawer .pc-section__head {
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+
+  .dy-proxy-drawer .pc-tag {
+    /* 「登录态」这类两字标签不许拆行 */
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .dy-proxy-drawer .pc-section__hint {
+    /* 取值优先级（临时 > 房间专用 > 默认 > 自动获取）整行放，别挤在标签旁边 */
+    flex: 1 1 100%;
+    margin-left: 0;
+  }
+
+  /*
+   * 总览 KPI 卡的"数字大小"在移动端统一。
+   *
+   * 桌面是按**数字长度**退档的（11 位数字自动降到 18px，避免溢出），
+   * 但移动端每行只有 2 张卡、宽度一致，长短数字并排时 24px/18px 混着看着就是"大小不一"
+   * （用户反馈："总览页顶部模块数字大小间隔没统一"）。
+   * 这里在窄屏统一成 20px：实测 11 位数字（188,752,162）在 174px 卡内
+   * 20px 约 115px + 单位 + 间距 ≈ 135px，仍放得下。
+   * 桌面仍然保留退档规则（宽屏卡片更宽，长数字用大字更好看）。
+   */
+  .douyin-page .dy-stat-num {
+    font-size: 20px !important;
+  }
+
+  /*
+   * 卡片的固定高度在窄屏放开。
+   *
+   * 例如总览的「在线峰值场次」卡写死了 h-105（105×4 = 420px），
+   * 桌面与「热门礼物」并排时两边等高是合理的；但窄屏两张卡是**上下堆叠**的，
+   * 固定高度就变成纯留白 —— 实测卡高 420px、列表内容仅 207px，空了 153px。
+   */
+  .douyin-page .art-card.h-105,
+  .douyin-page .art-card[class*='h-[3'],
+  .douyin-page .art-card[class*='h-[4'] {
+    height: auto;
+  }
+
+  /*
    * 分页按钮：Element 默认 28×28，手指偏小 → 32×32
    */
   .douyin-page .el-pagination button {

@@ -39,61 +39,10 @@
     </div>
 
     <!--
-      连接异常：**合并成一条**。
-      原来这里是两条 el-alert 上下堆叠（"监控状态获取失败" + "历史总览数据加载失败"）——
-      同一个根因（后端不可达）写两遍，红条占掉近半屏；正文还直接把
-      "Request failed with status code 500" 端给用户，既不解释也不给时间感。
-      现在：两个都失败就合成一条，正文里说清
-        · 分别是什么错（已翻译成人话）
-        · 数据停在多久以前、最后成功是什么时候
-        · 一个「重试」把两边一起重取
-      只有一个失败时仍然单独显示，保持精确（便于判断是哪个子系统的问题）。
+      连接异常 / 数据过时：已按用户要求改为**弹窗提示**（ElNotification，见 script 里的
+      notifyOnce + 三个 watch）。原来这里是两条 el-alert 加一条 .dy-stale-bar 常驻横幅，
+      占版面且刷新后仍留着。弹窗不占文档流，所以这里不再有任何内联提示块。
     -->
-    <el-alert
-      v-if="connAlert"
-      :type="connAlert.type"
-      :closable="false"
-      show-icon
-      class="mb-5"
-      :title="connAlert.title"
-    >
-      <div class="flex items-start gap-3 flex-wrap">
-        <div class="text-xs leading-relaxed min-w-0">
-          <div v-for="(line, i) in connAlert.lines" :key="i" class="break-all">{{ line }}</div>
-        </div>
-        <el-button size="small" type="primary" plain @click="retryAll">重试</el-button>
-      </div>
-    </el-alert>
-
-    <!-- 状态正常但久未刷新成功：提示新鲜度（用相对时间，不再报"N 秒"） -->
-    <el-alert
-      v-else-if="lastStatusAt && staleSeconds > 30"
-      type="warning"
-      :closable="false"
-      show-icon
-      class="mb-5"
-      :title="`状态数据 ${fmtAgo(lastStatusAt)}更新过，自动刷新可能已停止`"
-    />
-
-    <!--
-      数据陈旧时，在**卡片行本身**打标记。
-      只在上方弹一条错误是不够的：卡片里的数字长得和实时数据一模一样，
-      用户往下扫一眼就会当成当前值（截图里就是这个场景）。
-    -->
-    <div v-if="overviewStale" class="dy-stale-bar mb-3">
-      <ArtSvgIcon icon="ri:time-line" class="text-sm shrink-0" />
-      <span class="min-w-0">
-        <template v-if="lastOverviewAt">
-          历史总览停留在
-          <b>{{ fmtAgo(lastOverviewAt) }}</b>
-          （{{ fmtTime(lastOverviewAt) }}），下面卡片里的数字不是最新的
-        </template>
-        <template v-else> 历史总览尚未成功加载过，下面卡片里的数字可能为空或过时 </template>
-      </span>
-      <el-button link type="primary" size="small" class="shrink-0" @click="refreshOverview">
-        立即刷新
-      </el-button>
-    </div>
 
     <!--
       监控状态 —— 立即显示，无阻塞。
@@ -415,9 +364,10 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onActivated, onDeactivated, onMounted, onUnmounted, ref, watch } from 'vue'
+  import { computed, h, onActivated, onDeactivated, onMounted, onUnmounted, ref, watch } from 'vue'
   import { useRouter } from 'vue-router'
   import { useTransition } from '@vueuse/core'
+  import { ElButton, ElNotification, type NotificationParams } from 'element-plus'
   import { fetchOverview, fetchStatus, type OverviewData, type DaemonStatus } from '@/api/douyin'
   import { fmtNum, fmtFull, fmtTitle, fmtTime, fmtAgo, rankClass } from '@/utils/format'
   import { humanizeRequestError } from '@/utils/douyin-error'
@@ -504,6 +454,118 @@
     refreshStatus()
     refreshOverview()
   }
+
+  /**
+   * 把「连接异常 / 数据过时」从内联横幅改成**弹窗提示**（用户要求）。
+   *
+   * 改造前的三种表现：
+   *   · 两条 el-alert 叠在页面顶部（500 与历史总览失败各一条，后来合并成一条）
+   *   · 一条常驻的 .dy-stale-bar 横在卡片上方
+   * 它们都占版面，且刷新后仍留在那里。现在统一走模板既有的 ElNotification。
+   *
+   * 关键：**只在"问题内容变化"时弹一次**。staleSeconds 每秒都在变，
+   * 直接 watch 它会每秒弹一条。
+   */
+  const notifiedKeys = new Set<string>()
+  /** 同族弹窗只留最新一条（backend 不可达时 connAlert 会先"只状态失败"再"两个都失败"，那是同一件事） */
+  const openNotices = new Map<string, { close: () => void }>()
+
+  function notifyOnce(family: string, key: string, params: NotificationParams) {
+    if (!key || notifiedKeys.has(key)) return
+    notifiedKeys.add(key)
+    openNotices.get(family)?.close()
+    const handle = ElNotification(params) as unknown as { close: () => void }
+    openNotices.set(family, handle)
+    // 关闭后允许同样的内容再次弹出（例如重试又失败）
+    const timer = setInterval(() => {
+      if (!document.querySelector('.el-notification')) {
+        notifiedKeys.delete(key)
+        clearInterval(timer)
+      }
+    }, 2000)
+    setTimeout(() => clearInterval(timer), 120000)
+  }
+
+  /**
+   * 同一个根因只弹一条。
+   *
+   * 后端整体不可达时，connAlert 已经把「状态获取失败 + 历史总览失败」合并说明过了，
+   * 下面两个 watch 会再各弹一条 —— 实测一次 500 弹了 3 条（用户只会觉得吵）。
+   * 所以：状态失败时不再弹"状态数据已停止更新"；总览失败时不再弹"总览不是最新"。
+   */
+  function suppressByRootCause(): boolean {
+    return Boolean(statusError.value || overviewError.value)
+  }
+
+  /** 连接异常/加载失败 → 弹窗（带「重试」按钮） */
+  watch(
+    () => connAlert.value,
+    (v) => {
+      if (!v) return
+      notifyOnce('conn', `conn:${v.title}:${v.lines.join('|')}`, {
+        title: v.title,
+        type: v.type === 'error' ? 'error' : 'warning',
+        duration: 0,
+        position: 'bottom-right',
+        message: () =>
+          h('div', { class: 'flex flex-col gap-2' }, [
+            ...v.lines.map((line) => h('div', { class: 'text-xs leading-relaxed break-all' }, line)),
+            h(
+              ElButton,
+              { size: 'small', type: 'primary', plain: true, onClick: () => retryAll() },
+              () => '重试'
+            )
+          ])
+      })
+    },
+    { immediate: true }
+  )
+
+  /** 状态数据久未刷新 → 弹窗（连接异常时已由 connAlert 说明，避免重复） */
+  watch(
+    () => (lastStatusAt.value && staleSeconds.value > 30 ? lastStatusAt.value : null),
+    (v) => {
+      if (!v || statusError.value) return
+      notifyOnce('stale', `stale:${v}`, {
+        title: '状态数据已停止更新',
+        type: 'warning',
+        duration: 0,
+        position: 'bottom-right',
+        message: `状态数据 ${fmtAgo(v)}更新过，自动刷新可能已停止`
+      })
+    },
+    { immediate: true }
+  )
+
+  /** 历史总览陈旧 → 弹窗（带「立即刷新」按钮；总览失败时由 connAlert 说明） */
+  watch(
+    () => (overviewStale.value ? (lastOverviewAt.value ?? 0) : null),
+    (v) => {
+      if (v === null || overviewError.value) return
+      notifyOnce('overview', `overview-stale:${v}:${overviewError.value}`, {
+        title: '历史总览数据不是最新的',
+        type: 'warning',
+        duration: 0,
+        position: 'bottom-right',
+        message: () =>
+          h('div', { class: 'flex flex-col gap-2' }, [
+            h(
+              'div',
+              { class: 'text-xs leading-relaxed break-all' },
+              v
+                ? `历史总览停留在 ${fmtAgo(v)}（${fmtTime(v)}），下面卡片里的数字不是最新的`
+                : '历史总览尚未成功加载过，下面卡片里的数字可能为空或过时'
+            ),
+            h(
+              ElButton,
+              { size: 'small', type: 'primary', plain: true, onClick: () => refreshOverview() },
+              () => '立即刷新'
+            )
+          ])
+      })
+    },
+    { immediate: true }
+  )
 
   const daemonRunning = computed(() => Boolean(daemon.value?.data?.running))
   /** Go 代理的真实状态（后端随 /api/status 给的轻量探活，不再拿守护进程顶替） */
@@ -737,27 +799,5 @@
     outline-offset: 2px;
   }
 
-  /*
-   * 数据陈旧提示条（历史总览停在多久以前）。
-   * 刻意用"琥珀底 + 左边框"而不是红色：后端重启/网络抖一下很常见，
-   * 红色留给"真的取不到"的 el-alert；这条只表达"数字不是最新的"。
-   * 深浅色都靠主题变量，跟着 html.dark 走。
-   */
-  .dy-stale-bar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 7px 12px;
-    border: 1px solid rgb(245 158 11 / 35%);
-    border-left: 3px solid rgb(245 158 11 / 80%);
-    border-radius: 8px;
-    background: rgb(245 158 11 / 10%);
-    color: var(--art-gray-800, #333);
-    font-size: 12.5px;
-    line-height: 1.45;
-  }
-
-  .dy-stale-bar b {
-    font-weight: 600;
-  }
+  /* 数据陈旧提示条（.dy-stale-bar）已随内联横幅一起移除，改走 ElNotification 弹窗 */
 </style>

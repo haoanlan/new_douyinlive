@@ -813,37 +813,15 @@
  *   - 轨道透明：融进卡片底色，不再出现一条色带
  *   - Firefox 同样处理（scrollbar-width / scrollbar-color）
  * ========================================================================== */
+/*
+ * 滚动条**不再在这里定义**：全站统一在 core/reset.scss 里一套
+ * （原来这里有两处 .dy-scroll 覆盖，其中一处没写 !important 导致输给 reset，
+ *  另一处又只覆盖了 Firefox 的属性 —— Chrome 与 Firefox 看到的是两套滚动条）。
+ * 这里只保留 .dy-scroll 的**布局**语义。
+ */
 .dy-scroll {
   overflow-y: auto;
   min-height: 0;
-  /* Firefox */
-  scrollbar-width: thin;
-  scrollbar-color: var(--art-gray-400) transparent;
-}
-
-.dy-scroll::-webkit-scrollbar {
-  width: 6px !important;
-  height: 6px !important;
-}
-
-.dy-scroll::-webkit-scrollbar-track {
-  background: transparent !important;
-}
-
-.dy-scroll::-webkit-scrollbar-thumb {
-  border-radius: 9999px;
-  background-color: var(--art-gray-400) !important;
-  /* 用透明边框把滑块"收窄"，看起来更细，且不贴边 */
-  border: 1px solid transparent;
-  background-clip: content-box !important;
-}
-
-.dy-scroll::-webkit-scrollbar-thumb:hover {
-  background-color: var(--art-gray-500) !important;
-}
-
-.dy-scroll::-webkit-scrollbar-corner {
-  background: transparent;
 }
 
 
@@ -969,45 +947,23 @@
 }
 
 /* ==========================================================================
- * 下拉浮层的滚动条美化
+ * Element 的 el-scrollbar：在抖音页里改用原生滚动条
  *
- * Element Plus 默认滚动条（.el-scrollbar__bar）在浅色下几乎看不见、深色下发白，
- * 场次下拉最多 300 项，滚动条太丑会很明显。这里只作用于挂了
- * popper-class="dy-select-popper" 的下拉（抖音页的直播间/场次选择），不影响模板其它页面。
+ * Element 的 el-scrollbar 会把容器设成 `scrollbar-width: none`（隐藏原生），
+ * 再自己画一条 .el-scrollbar__bar —— 于是同一个页面里会出现两种观感的滚动条
+ * （实测趋势分析的明细表就是这样，是全站唯一一处"样式种类 2"）。
+ * 这里在抖音页范围内隐藏它自绘的那条、放回原生滚动条，与其它容器完全一致。
+ *
+ * 只作用于 .douyin-page：布局侧栏的菜单滚动条是**故意隐藏**的（scrollbar-width: none），
+ * 不做全局覆盖，避免把侧栏改出滚动条。
  * ========================================================================== */
-.dy-select-popper .el-select-dropdown__wrap {
-  scrollbar-width: thin;
-  scrollbar-color: rgb(0 0 0 / 18%) transparent;
-}
-
-.dy-select-popper .el-select-dropdown__wrap::-webkit-scrollbar {
-  width: 6px;
-}
-
-.dy-select-popper .el-select-dropdown__wrap::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.dy-select-popper .el-select-dropdown__wrap::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  background: rgb(0 0 0 / 18%);
-}
-
-.dy-select-popper .el-select-dropdown__wrap::-webkit-scrollbar-thumb:hover {
-  background: rgb(0 0 0 / 30%);
-}
-
-/* Element Plus 自己那套滚动条（同一下拉里两套会重叠，隐藏它） */
-.dy-select-popper .el-scrollbar__bar {
+.douyin-page .el-scrollbar__bar {
   display: none;
 }
 
-html.dark .dy-select-popper .el-select-dropdown__wrap {
-  scrollbar-color: rgb(255 255 255 / 22%) transparent;
-}
-
-html.dark .dy-select-popper .el-select-dropdown__wrap::-webkit-scrollbar-thumb {
-  background: rgb(255 255 255 / 22%);
+.douyin-page .el-scrollbar__wrap {
+  scrollbar-width: thin;
+  scrollbar-color: var(--dy-scrollbar-thumb) transparent;
 }
 
 html.dark .dy-select-popper .el-select-dropdown__wrap::-webkit-scrollbar-thumb:hover {
@@ -1049,42 +1005,13 @@ html.dark .dy-select-popper .el-select-dropdown__wrap::-webkit-scrollbar-thumb:h
  * 卡内滚动区（固定高度 + 细滚动条）
  *
  * 画像页的「活跃场次」「馈赠明细」可能上百条，全铺出来卡片会非常长；
- * 用户要求固定高度、内部滑动。这里统一一套细滚动条（浅/深色）。
+ * 用户要求固定高度、内部滑动。
+ *
+ * 滚动条样式**已全部收归 core/reset.scss**（全站一套，含浅色/深色与 Firefox）。
+ * 这里原来还留了第二份 .dy-scroll 滚动条定义：它的 -webkit 规则因为没写 !important
+ * 输给了 reset（宽度仍是 8px、滑块仍是 #cccccc），却唯独把 Firefox 的两条属性改成了
+ * 硬编码黑 —— 净效果是 Chrome 与 Firefox 显示两套不同的滚动条，所以整段删掉。
  * ========================================================================== */
-.dy-scroll {
-  scrollbar-width: thin;
-  scrollbar-color: rgb(0 0 0 / 18%) transparent;
-}
-
-.dy-scroll::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-.dy-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.dy-scroll::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  background: rgb(0 0 0 / 18%);
-}
-
-.dy-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgb(0 0 0 / 30%);
-}
-
-html.dark .dy-scroll {
-  scrollbar-color: rgb(255 255 255 / 22%) transparent;
-}
-
-html.dark .dy-scroll::-webkit-scrollbar-thumb {
-  background: rgb(255 255 255 / 22%);
-}
-
-html.dark .dy-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgb(255 255 255 / 34%);
-}
 
 /* 只在抖音监控页生效，避免影响模板其它页面 */
 .douyin-page {

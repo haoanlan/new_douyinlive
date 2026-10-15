@@ -311,7 +311,7 @@
   .dy-table-scroll {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
+    /* scrollbar-width 由 core/reset.scss 的全局规则提供，这里不再重复写 */
   }
 
   .dy-table-scroll .el-table {

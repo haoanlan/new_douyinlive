@@ -1,41 +1,69 @@
 @charset "UTF-8";
 
-/*滚动条*/
-/*滚动条整体部分,必须要设置*/
+/* ==========================================================================
+ * 滚动条：**全站唯一一套定义**
+ *
+ * 统一前实测有三套在互相覆盖（用 getComputedStyle 逐个容器量过）：
+ *   1) 这里（reset.scss）：8px !important + 滑块 #cccccc !important + 轨道 --art-gray-200（不透明）
+ *      —— 因为带 !important，它实际上**总是赢**，卡片里就是一条突兀的深灰带
+ *   2) douyin-motion.scss 的 .dy-scroll 第一处：6px !important + 主题色滑块 + 透明轨道
+ *   3) 同文件第二处 .dy-scroll：6px（**没写 !important**）→ 宽度输给第 1 套，滑块也输，
+ *      但它把 Firefox 的 scrollbar-color 写成了硬编码 rgb(0 0 0 / 18%)
+ *      → 结果 **Chrome 与 Firefox 长得不一样**（同一页两个浏览器两套滚动条）
+ *
+ * 现在统一成一套：细、轨道透明、滑块低对比、悬停加深；浅色/深色 + Firefox 全覆盖。
+ * 不再需要各页面自己覆盖滚动条 —— 页面里只保留 overflow 之类的**布局**声明。
+ * ========================================================================== */
+
+:root {
+  --dy-scrollbar-size: 8px;
+  /* 滑块：浅色下用低对比黑、深色下用低对比白，都只在悬停时明显 */
+  --dy-scrollbar-thumb: rgb(0 0 0 / 18%);
+  --dy-scrollbar-thumb-hover: rgb(0 0 0 / 30%);
+}
+
+html.dark {
+  --dy-scrollbar-thumb: rgb(255 255 255 / 22%);
+  --dy-scrollbar-thumb-hover: rgb(255 255 255 / 34%);
+}
+
+/* Firefox（两个属性都要给，缺一个就是"Firefox 不生效"） */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--dy-scrollbar-thumb) transparent;
+}
+
+/* 滚动条整体部分,必须要设置 */
 ::-webkit-scrollbar {
-  width: 8px !important;
-  height: 0 !important;
+  width: var(--dy-scrollbar-size) !important;
+  height: var(--dy-scrollbar-size) !important;
 }
 
-/*滚动条的轨道*/
+/* 滚动条的轨道：透明，融进容器底色，避免出现一条色带 */
 ::-webkit-scrollbar-track {
-  background-color: var(--art-gray-200);
+  background-color: transparent;
 }
 
-/*滚动条的滑块按钮*/
+/* 滚动条的滑块 */
 ::-webkit-scrollbar-thumb {
-  border-radius: 5px;
-  background-color: #cccccc !important;
-  transition: all 0.2s;
-  -webkit-transition: all 0.2s;
+  border-radius: 9999px;
+  background-color: var(--dy-scrollbar-thumb) !important;
+  /* 透明边框把滑块"收窄"，看起来更细，也不贴边 */
+  border: 1px solid transparent;
+  background-clip: content-box !important;
+  transition: background-color 0.2s;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: #b0abab !important;
+  background-color: var(--dy-scrollbar-thumb-hover) !important;
 }
 
-/*滚动条的上下两端的按钮*/
+/* 滚动条的上下两端的按钮 */
 ::-webkit-scrollbar-button {
-  height: 0px;
+  height: 0;
   width: 0;
 }
 
-.dark {
-  ::-webkit-scrollbar-track {
-    background-color: var(--default-bg-color);
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background-color: var(--art-gray-300) !important;
-  }
+::-webkit-scrollbar-corner {
+  background: transparent;
 }

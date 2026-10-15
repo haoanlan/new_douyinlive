@@ -17,6 +17,20 @@
       html.dark {
         background-color: #070707;
       }
+
+      /*
+       * --custom-radius 的兜底值。
+       *
+       * 这个变量**只由 JS 写入**（useTheme.ts / store/modules/setting.ts 里 setProperty），
+       * 而所有卡片圆角都写成 `calc(var(--custom-radius) / …)`：
+       * 变量不存在时，calc() 里的 var() 无效 → **整条 border-radius 声明失效** →
+       * 页面首帧先把卡片画成直角、JS 跑完才跳成圆角（用户实测"刚加载时直角变圆角"）。
+       * 这里在最早的时机（HTML 内联样式，先于任何 JS 和外部 CSS）给出与默认设置一致的兜底，
+       * 之后 JS 仍会按用户在设置里选的值覆盖。
+       */
+      :root {
+        --custom-radius: 0.75rem;
+      }
     </style>
 
     <script>

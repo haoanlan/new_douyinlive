@@ -39,6 +39,14 @@ html.dark {
 :root {
   // 系统主色
   --main-color: var(--el-color-primary);
+
+  /*
+   * 圆角基准的 CSS 兜底（与 config/setting.ts 的默认 customRadius: '0.75' 一致）。
+   * 这个变量由 JS 写入（见 index.html 里的说明）：没有兜底时，
+   * calc(var(--custom-radius) / …) 在 JS 执行前整条失效 → 卡片先直角后圆角。
+   * index.html 的内联样式里也放了一份（更早的时机），这里再兜一层，避免样式表被单独引用时漏掉。
+   */
+  --custom-radius: 0.75rem;
   --el-color-white: white !important;
   --el-color-black: white !important;
   // 输入框边框颜色

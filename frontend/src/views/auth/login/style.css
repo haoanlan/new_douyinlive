@@ -38,13 +38,22 @@
     height: auto;
     min-height: 100%;
     margin: 0;
-    padding-top: 16px;
+    /*
+     * 72px = 让开顶部品牌行。AuthTopBar 是 absolute top-4.5（18px）+ logo 46px ≈ 64px，
+     * 它不占文档流 —— 表单从 0 开始时标题会压在品牌行上（用户真机截图）。
+     */
+    padding-top: 72px;
     overflow: visible;
   }
 
   .auth-right-wrap .form {
     height: auto;
     padding: 0 0 32px;
+  }
+
+  /* 窄屏不再需要标题自己的 40px 上边距（让位工作已由上面的 padding-top 完成） */
+  .auth-right-wrap .title {
+    padding-top: 0;
   }
 }
 

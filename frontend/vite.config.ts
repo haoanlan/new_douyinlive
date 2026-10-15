@@ -18,9 +18,25 @@ export default ({ mode }: { mode: string }) => {
   console.log(`🚀 API_URL = ${VITE_API_URL}`)
   console.log(`🚀 VERSION = ${VITE_VERSION}`)
 
+  /*
+   * 兜底：VITE_VERSION 没配时用 '0.0.0'。
+   *
+   * 这里踩过坑：`JSON.stringify(undefined)` 返回的**不是字符串**而是 undefined 本身，
+   * Vite 于是把 __APP_VERSION__ 替换成字面值 `undefined` —— 编译能过，但运行时
+   * StorageConfig.CURRENT_VERSION === undefined，upgrade.ts 的 normalizeVersion()
+   * 一调用 .replace() 就抛：
+   *   TypeError: Cannot read properties of undefined (reading 'replace')
+   * 必须在打包期就保证它一定是字符串。
+   */
+  if (!VITE_VERSION) {
+    console.warn(
+      '⚠️ 未配置 VITE_VERSION，__APP_VERSION__ 回退为 0.0.0（见 .env.development / .env.production）'
+    )
+  }
+
   return defineConfig({
     define: {
-      __APP_VERSION__: JSON.stringify(VITE_VERSION)
+      __APP_VERSION__: JSON.stringify(VITE_VERSION || '0.0.0')
     },
     base: VITE_BASE_URL,
     server: {

@@ -46,9 +46,15 @@ import { StorageConfig } from '@/utils/storage/storage-config'
 class VersionManager {
   /**
    * 规范化版本号字符串，移除前缀 'v'
+   *
+   * 入参故意放宽到 string | null | undefined：这个方法在升级流程里被三处调用
+   * （当前版本、存储版本、升级日志里的版本），**任何一处拿到 undefined 都不该让整个
+   * 升级流程崩掉**。以前 CURRENT_VERSION 曾是 undefined（VITE_VERSION 没配），
+   * 直接抛 "Cannot read properties of undefined (reading 'replace')"，
+   * 而且异常被 executeUpgrade 的 catch 吞成一行 console.error，很难发现。
    */
-  private normalizeVersion(version: string): string {
-    return version.replace(/^v/, '')
+  private normalizeVersion(version?: string | null): string {
+    return String(version ?? '').replace(/^v/, '')
   }
 
   /**

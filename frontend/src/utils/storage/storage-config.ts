@@ -27,8 +27,13 @@
  * @author Art Design Pro Team
  */
 export class StorageConfig {
-  /** 当前应用版本 */
-  static readonly CURRENT_VERSION = __APP_VERSION__
+  /**
+   * 当前应用版本
+   *
+   * 兜底 '0.0.0'：正常由 vite 的 define 注入（见 vite.config.ts 的 __APP_VERSION__ 说明），
+   * 但万一注入失败也不能是 undefined —— 它会被拿去生成存储键名、做版本比较和正则匹配。
+   */
+  static readonly CURRENT_VERSION = __APP_VERSION__ || '0.0.0'
 
   /** 存储键前缀 */
   static readonly STORAGE_PREFIX = 'sys-v'
@@ -101,10 +106,14 @@ export class StorageConfig {
   }
 
   /**
-   * 检查是否为版本化的键
+   * 检查是否为版本化的键（即某个版本下的 store 键：sys-v<版本>-<storeId>）
+   *
+   * 必须排除 VERSION_KEY（'sys-version'）—— 它**也以 'sys-v' 开头**，只判断前缀会把它
+   * 误判成"旧版本的存储键"。实测后果：升级流程的 cleanupLegacyData() 会把版本标记本身
+   * 删掉（removeItem('sys-version')），于是下一次加载又被当成首次访问、重新写一遍版本号。
    */
   static isVersionedKey(key: string): boolean {
-    return key.startsWith(this.STORAGE_PREFIX)
+    return key.startsWith(this.STORAGE_PREFIX) && key !== this.VERSION_KEY
   }
 
   /**

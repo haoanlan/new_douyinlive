@@ -518,31 +518,54 @@
   }
 
   /*
-   * 分页：**保持一行**，并按用户要求调整行为
+   * 分页：用 **grid 固定分区**，不再靠 flex-wrap 撞运气
    *
-   * 我上一版给它加了 flex-wrap: wrap —— 结果前后箭头各自被换到一行
-   * （< 在上面、> 在下面），比原来更难看。换行对分页是错的：
-   * 左右箭头和页码是一个整体，拆行就没有"上一页/下一页"的语义了。
+   * 两次翻车记录：
+   *   ① 给整条分页加 flex-wrap: wrap —— 箭头各自换行（< 在上、> 在下）
+   *   ② 改成"只让跳页框换行"（flex-basis: 100%）—— 页码多的时候
+   *      箭头和跳页框仍然会被挤到第二行（用户真机截图：点第 4 页时 ">" 单独一行）
+   * 根因：wrap 是按"放不下就换"的规则走的，谁换行取决于宽度，不可控。
    *
-   * 现在的做法：
-   *   1. nowrap —— 永远一行
-   *   2. 首页隐藏「上一页」、末页隐藏「下一页」（Element 在边界处只把按钮置灰，
-   *      灰按钮占着位置又点不动；用户要求"第一页没有上一页、最后一页没有下一页"）
-   *   3. 页码最多 5 个（组件里传 pager-count=5，Element 按当前页动态折叠成 1 … 4 5 6 … 16）
-   *   4. 右侧有跳页输入框（layout 里加了 jumper），页多时不用连点
-   *   5. 按钮 30px：5 个数字 + 双箭头 + 跳页 ≈ 300px，能在 330px 的卡片里放下
+   * 现在用 grid 明确分区：
+   *   第一行 = 上一页 | 页码 | 下一页   （永远同一行）
+   *   第二行 = 跳页输入框（跨三列、右对齐）
+   * 元素没放下的风险由 pager-count=7 与 32px 按钮保证（实测第一行 ≈ 316px < 330px）。
    */
   .douyin-page .el-pagination {
-    flex-wrap: nowrap;
+    display: grid;
+    /*
+     * 三列都是 auto —— **不要写 minmax(0, auto)**：
+     * 那会允许页码区被压到比内容窄（实测被压成 230px，而 7 项自然宽 288px），
+     * 于是页码溢出、压住右边的箭头，出现「… › 6」这种错位（"16"的 1 被盖掉）。
+     */
+    grid-template-columns: auto auto auto;
+    grid-template-areas:
+      'prev pager next'
+      'jump jump jump';
     justify-content: center;
+    align-items: center;
+    column-gap: 4px;
+    row-gap: 6px;
     max-width: 100%;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scrollbar-width: none;
   }
 
-  .douyin-page .el-pagination::-webkit-scrollbar {
-    display: none;
+  .douyin-page .el-pagination .btn-prev {
+    grid-area: prev;
+  }
+
+  .douyin-page .el-pagination .el-pager {
+    grid-area: pager;
+  }
+
+  .douyin-page .el-pagination .btn-next {
+    grid-area: next;
+  }
+
+  .douyin-page .el-pagination__jump {
+    grid-area: jump;
+    justify-self: end;
+    margin-left: 0 !important;
+    font-size: 12px !important;
   }
 
   .douyin-page .el-pagination .btn-prev:disabled,
@@ -550,27 +573,24 @@
     display: none;
   }
 
+  /*
+   * 28px：pager-count=7 时最多 8 项（首 + 尾 + 中间 6 个）≈ 8×28 + 间距，
+   * 加上两个 28px 箭头 ≈ 320px，正好放进 330px 的卡片内容宽。
+   * 32px 的话 8 项 = 384px 放不下，只能靠压缩页码区 —— 就出现上面那种错位。
+   */
   .douyin-page .el-pagination .el-pager li,
   .douyin-page .el-pagination button {
-    /* 实测不写 !important 时 Element 的 .el-pager li / 分页按钮规则会压住
-       （量到的仍是 30px + margin 4px），总宽 373px > 容器 330px，第一页的"1"被裁掉 */
-    min-width: 30px !important;
-    width: 30px !important;
-    height: 30px !important;
-    padding: 0 6px !important;
-    margin: 0 1px !important;
-  }
-
-  /* 跳页输入框：默认 56px，收紧到 42px（一行里省出 14px） */
-  .douyin-page .el-pagination__jump {
-    margin-left: 4px !important;
-    font-size: 12px !important;
+    min-width: 28px !important;
+    width: 28px !important;
+    height: 28px !important;
+    padding: 0 4px !important;
+    margin: 0 2px !important;
   }
 
   .douyin-page .el-pagination__jump .el-input,
   .douyin-page .el-pagination__jump .el-input__wrapper {
-    width: 42px !important;
-    min-width: 42px !important;
+    width: 48px !important;
+    min-width: 48px !important;
     height: 30px !important;
     padding: 0 4px !important;
   }
@@ -706,20 +726,28 @@
     gap: 8px;
   }
 
+  /*
+   * 操作按钮现在在**统计行内**（模板里已挪进去，ml-auto 靠右），
+   * 所以这里不再绝对定位、统计行也不用留 74px 内边距：
+   * 原来绝对定位到卡片右下角时实测按钮 421~461、统计行 432~459 ——
+   * 图标跨在虚线分隔线上，看着就是"错位"。
+   */
   .douyin-page .session-row__actions {
-    position: absolute;
-    right: 12px;
-    bottom: 8px;
+    position: static;
+    right: auto;
+    bottom: auto;
   }
 
   .douyin-page .session-row__actions button {
-    width: 32px;
-    height: 32px;
+    width: 34px;
+    height: 34px;
   }
 
   .douyin-page .session-row__stats {
-    padding-right: 74px;
+    padding-right: 0;
     gap: 10px;
+    /* 统计行要能容下"按钮靠右"：数字换行时按钮留在最后一行右侧 */
+    row-gap: 6px;
   }
 
   /*

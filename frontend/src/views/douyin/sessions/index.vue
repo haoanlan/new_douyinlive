@@ -167,7 +167,36 @@
               >
                 {{ row.is_live ? '直播中' : '已结束' }}
               </el-tag>
-              <div class="session-row__actions flex items-center gap-1.5 shrink-0" @click.stop>
+            </div>
+            <!-- 数据行（操作按钮放在这一行末尾，天然对齐统计数字） -->
+            <div
+              class="session-row__stats flex items-center gap-4 mt-2.5 pt-2.5 border-t border-dashed border-t-d text-xs text-g-600 flex-wrap"
+            >
+              <span class="flex items-center gap-1">
+                <ArtSvgIcon icon="ri:diamond-line" class="text-g-400" />{{
+                  fmtNum(row.total_diamonds)
+                }}
+              </span>
+              <!--
+                礼物件数（gift_count）已按用户要求移除：手机上一行要放
+                「钻石 + 礼物 + 弹幕 + 用户 + 两个操作按钮」，最挤的那个（礼物件数）
+                把操作按钮顶到了第二行。删掉后按钮回到同一行右侧。
+              -->
+              <span class="flex items-center gap-1">
+                <ArtSvgIcon icon="ri:chat-3-line" class="text-g-400" />{{
+                  fmtNum(row.danmaku_count)
+                }}
+              </span>
+              <span class="flex items-center gap-1">
+                <ArtSvgIcon icon="ri:user-3-line" class="text-g-400" />{{ fmtNum(row.user_count) }}
+              </span>
+              <!--
+                操作按钮放在**统计行内**（ml-auto 靠右），不再挂在标题行或用绝对定位。
+                原来窄屏把它们绝对定位到卡片右下角，实测按钮 421~461 而统计行 432~459 ——
+                图标正好跨在虚线分隔线上，既不属于标题行也不属于统计行（用户："按钮被挤的错位了"）。
+                放进统计行后天然对齐，统计行也不必再留 74px 内边距。
+              -->
+              <div class="session-row__actions flex items-center gap-1.5 shrink-0 ml-auto" @click.stop>
                 <el-tooltip content="下载报告" placement="top" :hide-after="0">
                   <button
                     class="dy-pressable size-8 rounded-lg flex-cc bg-g-100/70 text-g-500 hover:bg-theme/10 hover:text-theme disabled:opacity-50 disabled:cursor-not-allowed"
@@ -192,27 +221,6 @@
                 </button>
               </div>
             </div>
-            <!-- 数据行 -->
-            <div
-              class="session-row__stats flex items-center gap-4 mt-2.5 pt-2.5 border-t border-dashed border-t-d text-xs text-g-600 flex-wrap"
-            >
-              <span class="flex items-center gap-1">
-                <ArtSvgIcon icon="ri:diamond-line" class="text-g-400" />{{
-                  fmtNum(row.total_diamonds)
-                }}
-              </span>
-              <span class="flex items-center gap-1">
-                <ArtSvgIcon icon="ri:gift-2-line" class="text-g-400" />{{ fmtNum(row.gift_count) }}
-              </span>
-              <span class="flex items-center gap-1">
-                <ArtSvgIcon icon="ri:chat-3-line" class="text-g-400" />{{
-                  fmtNum(row.danmaku_count)
-                }}
-              </span>
-              <span class="flex items-center gap-1">
-                <ArtSvgIcon icon="ri:user-3-line" class="text-g-400" />{{ fmtNum(row.user_count) }}
-              </span>
-            </div>
           </div>
         </TransitionGroup>
         <!-- 只有真的选了主播才谈"这个主播没有场次"：没有 hostId 时上面那张引导卡已经说明原因 -->
@@ -225,18 +233,19 @@
       <div v-if="filteredSessions.length" class="flex justify-end mt-4">
         <!--
           分页（按用户要求）：
-            · layout 加 jumper：可以直接输入页数跳转（页多时比连点下一页实用）
-            · pager-count=5：中间数字最多 5 个，Element 会按当前页**动态**折叠成
-              「1 … 4 5 6 … 16」，不必铺到 6 个
-            · 首页/末页的「上一页/下一页」由 CSS 隐藏（disabled 状态直接不显示，
-              见 douyin-mobile.scss），而不是留一个点不动的灰按钮
+            · layout 加 jumper：可以直接输入页数跳转
+            · pager-count=7（Element 默认）：实测压到 5 时第 4 页会显示成
+              「1 … 3 4 5 … 16」—— **前后两个省略号**，看着乱（用户反馈）。
+              7 的时候中间页是「1 2 3 4 5 6 … 16」，通常只一个省略号。
+            · 首页/末页的「上一页/下一页」由 CSS 隐藏（disabled 状态直接不显示）
+            · 布局由 CSS 用 grid 固定：箭头+页码永远第一行，跳页固定第二行
         -->
         <el-pagination
           v-model:current-page="page"
           :page-size="pageSize"
           :total="filteredSessions.length"
           layout="prev, pager, next, jumper"
-          :pager-count="5"
+          :pager-count="7"
           background
         />
       </div>

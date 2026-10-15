@@ -448,16 +448,24 @@
       </div>
     </div>
 
+    <!--
+      弹窗统一约定（全站一致，别在这里破例）：
+        1. 一律使用 Element 的**标准右上角 X**（内容放 #header 插槽，不自己画关闭按钮 —— 
+           自制按钮的位置、尺寸、悬停态都和别人不一样，看着就是"两个产品"）
+        2. X 与 footer 里的「取消/关闭」行为完全一致：只关闭，不提交、不改数据
+        3. 遮罩点击统一禁用（close-on-click-modal=false），避免误触把表单关掉
+      这里原来用 :show-header="false" + 自绘 X，已改回标准写法（顺便去掉了
+      .detail-dialog 那两条为自绘布局服务的 padding 覆盖，交给 Element 默认内边距）。
+    -->
     <el-dialog
       v-model="giftDialogVisible"
-      :show-header="false"
-      :show-close="false"
       width="500"
       class="detail-dialog"
       align-center
+      :close-on-click-modal="false"
     >
-      <div class="px-5 py-4">
-        <div class="flex items-center gap-3 pb-3.5 border-b border-dashed">
+      <template #header>
+        <div class="flex items-center gap-3">
           <el-avatar :size="40" :src="giftDialogAvatar" class="shrink-0">{{
             giftDialogUser?.[0]
           }}</el-avatar>
@@ -471,15 +479,9 @@
               </span>
             </div>
           </div>
-          <button
-            class="dy-pressable size-7 rounded-lg flex-cc bg-g-100/70 text-g-500 hover:bg-g-100 hover:text-g-900 shrink-0"
-            aria-label="关闭礼物明细"
-            @click="giftDialogVisible = false"
-          >
-            <ArtSvgIcon icon="ri:close-line" class="text-base" />
-          </button>
         </div>
-        <div class="flex flex-col gap-2.5 max-h-80 overflow-y-auto pt-3.5 pr-1">
+      </template>
+      <div class="flex flex-col gap-2.5 max-h-80 overflow-y-auto pr-1">
           <div
             v-for="(g, i) in giftDialogList"
             :key="i"
@@ -506,20 +508,19 @@
             </div>
           </div>
           <el-empty v-if="!giftDialogList.length" description="暂无明细" :image-size="60" />
-        </div>
       </div>
     </el-dialog>
 
+    <!-- 同上：标准 X + 遮罩禁用（内容放 #header 插槽） -->
     <el-dialog
       v-model="peopleDialogVisible"
-      :show-header="false"
-      :show-close="false"
       width="500"
       class="detail-dialog"
       align-center
+      :close-on-click-modal="false"
     >
-      <div class="px-5 py-4">
-        <div class="flex items-center gap-3 pb-3.5 border-b border-dashed">
+      <template #header>
+        <div class="flex items-center gap-3">
           <el-avatar :size="40" :src="peopleAnchorAvatar" class="shrink-0">{{
             peopleAnchorName?.[0]
           }}</el-avatar>
@@ -529,15 +530,9 @@
               >送出礼物的人员榜单 · {{ peopleDialogList.length }} 人</div
             >
           </div>
-          <button
-            class="dy-pressable size-7 rounded-lg flex-cc bg-g-100/70 text-g-500 hover:bg-g-100 hover:text-g-900 shrink-0"
-            aria-label="关闭送礼人员榜单"
-            @click="peopleDialogVisible = false"
-          >
-            <ArtSvgIcon icon="ri:close-line" class="text-base" />
-          </button>
         </div>
-        <div class="flex flex-col gap-2.5 max-h-80 overflow-y-auto pt-3.5 pr-1">
+      </template>
+      <div class="flex flex-col gap-2.5 max-h-80 overflow-y-auto pr-1">
           <div
             v-for="(p, i) in peopleDialogList"
             :key="i"
@@ -557,7 +552,6 @@
             }}</span>
           </div>
           <el-empty v-if="!peopleDialogList.length" description="暂无数据" :image-size="60" />
-        </div>
       </div>
     </el-dialog>
   </div>
@@ -966,14 +960,14 @@
 </script>
 
 <style>
-  /* 覆盖模板全局 .el-dialog__body 的 25px 内边距与 dialog 自身内边距，由内容自行控制间距 */
-  .el-dialog.detail-dialog {
-    --el-dialog-padding-primary: 0px;
-  }
-
-  .el-dialog.detail-dialog .el-dialog__body {
-    padding: 0 !important;
-  }
+  /*
+   * 弹窗内边距交给 Element 默认值（--el-dialog-padding-primary），
+   * 这样标准 X 的位置、标题与正文的间距和其它弹窗完全一致。
+   *
+   * 原来这里是 `--el-dialog-padding-primary: 0px` + `.el-dialog__body { padding: 0 }`：
+   * 因为当时用 :show-header="false" + 自绘关闭按钮，需要自己控制全部间距；
+   * 现在改成 #header 插槽 + 标准 X（见模板里的"弹窗统一约定"），这两条覆盖不再需要。
+   */
 
   /*
    * 榜单里可点进明细的行。

@@ -210,6 +210,7 @@
       title="移除房间"
       width="440px"
       align-center
+      :close-on-click-modal="false"
       @closed="onRemoveClosed"
     >
       <div class="text-sm text-g-800 leading-relaxed">
@@ -239,48 +240,35 @@
         </el-checkbox>
       </div>
 
+      <!--
+        footer 排版与「确认暂停监控」那座弹窗统一（用户指定的基准样式）：
+        取消 + 主操作**相邻、整体右对齐**，取消用默认带边框按钮（不是 text 无边框）。
+        原来这里是 justify-between，把取消推到最左边，和别的弹窗不一致。
+      -->
       <template #footer>
-        <div class="flex items-center justify-between gap-3 flex-wrap">
-          <el-button text @click="closeRemove">取消</el-button>
-          <div class="flex items-center gap-2">
-            <el-button type="primary" @click="removeKeepData">仅停止监控</el-button>
-            <el-button
-              type="danger"
-              plain
-              :disabled="Boolean(removeTarget?.session_count) && !confirmDeleteData"
-              @click="removeWithData"
-            >
-              删除历史数据
-            </el-button>
-          </div>
-        </div>
+        <el-button @click="closeRemove">取消</el-button>
+        <el-button type="primary" @click="removeKeepData">仅停止监控</el-button>
+        <el-button
+          type="danger"
+          plain
+          :disabled="Boolean(removeTarget?.session_count) && !confirmDeleteData"
+          @click="removeWithData"
+        >
+          删除历史数据
+        </el-button>
       </template>
     </el-dialog>
 
-    <!-- 添加房间弹窗 -->
+    <!-- 添加房间弹窗：标准 X + 遮罩禁用（约定见 detail 页注释，全站一致） -->
     <el-dialog
       v-model="showAdd"
-      :show-header="false"
-      :show-close="false"
+      title="添加房间"
       width="420"
       class="add-room-dialog"
       align-center
+      :close-on-click-modal="false"
     >
-      <div class="px-5 py-4">
-        <!-- 头部 -->
-        <div class="flex items-center justify-between mb-3.5">
-          <span class="font-bold text-g-900">添加房间</span>
-          <button
-            class="dy-pressable size-7 rounded-lg flex-cc bg-g-100/70 text-g-500 hover:bg-g-100 hover:text-g-900"
-            aria-label="关闭"
-            @click="closeAdd"
-          >
-            <ArtSvgIcon icon="ri:close-line" class="text-base" />
-          </button>
-        </div>
-
-        <!-- 步骤 1：输入房间号 -->
-        <div v-if="!preview" class="mb-3">
+      <div v-if="!preview" class="mb-3">
           <label class="block text-sm text-g-700 mb-1.5">
             房间号 <span class="text-danger">*</span>
           </label>
@@ -362,21 +350,27 @@
           </div>
         </div>
 
-        <!-- 按钮 -->
-        <div class="flex justify-end gap-2">
-          <el-button @click="closeAdd">{{ preview ? '返回修改' : '取消' }}</el-button>
-          <el-button
-            v-if="!preview"
-            type="primary"
-            :loading="looking"
-            :disabled="!newRoomId.trim()"
-            @click="doLookup"
-          >
-            查询房间
-          </el-button>
-          <el-button v-else type="primary" :loading="adding" @click="add">确认添加</el-button>
-        </div>
-      </div>
+        <!--
+          按钮移进 #footer（原来放在 body 里）：这样它的内边距、上边框、
+          右对齐都由 Element 统一处理，和「确认暂停监控」那座弹窗长得一样。
+          取消不再用 text 无边框样式，改为默认带边框按钮。
+          label 一律「取消」—— 第 2 步原来写「返回修改」，行为其实是关闭弹窗，
+          label 像"回上一步"，属于文案与行为不符。
+        -->
+
+      <template #footer>
+        <el-button @click="closeAdd">取消</el-button>
+        <el-button
+          v-if="!preview"
+          type="primary"
+          :loading="looking"
+          :disabled="!newRoomId.trim()"
+          @click="doLookup"
+        >
+          查询房间
+        </el-button>
+        <el-button v-else type="primary" :loading="adding" @click="add">确认添加</el-button>
+      </template>
     </el-dialog>
   </div>
 </template>
@@ -786,14 +780,15 @@
 </script>
 
 <style>
-  /* 覆盖模板全局 .el-dialog__body 的 25px 内边距与 dialog 自身内边距，由内容自行控制间距 */
-  .el-dialog.add-room-dialog {
-    --el-dialog-padding-primary: 0px;
-  }
-
-  .el-dialog.add-room-dialog .el-dialog__body {
-    padding: 0 !important;
-  }
+  /*
+   * 弹窗内边距**不再覆盖**（原来这里是 --el-dialog-padding-primary: 0 + body padding: 0）。
+   *
+   * 那两条是为"自绘头部 + 自绘关闭按钮"服务的；换成 Element 标准 header + X 之后，
+   * 它们会造成真实的重叠：实测 header 被压成 24px 高，而标准 X 是 48px，
+   * 于是 X 有 24px 压进 body（点 X 被 body 里的 label 挡住，Playwright 报
+   * "subtree intercepts pointer events" —— 这既是自动化报错，也是用户点不中的真问题）。
+   * 现在交给 Element 默认内边距，与详情页两个弹窗保持一致。
+   */
 </style>
 
 <style scoped>

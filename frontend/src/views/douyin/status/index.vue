@@ -183,7 +183,13 @@
     </section>
 
     <!-- 异常详情（条目多/文案长时在这里看全文，不撑变形卡片） -->
-    <el-dialog v-model="issuesOpen" title="异常提醒" width="620px" class="dy-issues-dialog">
+    <el-dialog
+      v-model="issuesOpen"
+      title="异常提醒"
+      width="620px"
+      class="dy-issues-dialog"
+      :close-on-click-modal="false"
+    >
       <div v-if="issues.length" class="flex flex-col">
         <div
           v-for="(it, i) in issues"
@@ -562,27 +568,30 @@
           <span class="text-xs text-g-500">
             {{ draftBadge.text === '未保存' ? '有改动未保存' : '没有未保存的改动' }}
           </span>
+          <!--
+            抽屉里不再放「取消」：关抽屉本身有右上角 X，取消是重复的
+            （用户指定："只把配置抽屉那个取消去掉"）——弹窗里仍然保留取消。
+            这两个按钮原来各塞了一个 class="invisible" 的转圈图标来"占位保宽度"，
+            结果文字左边凭空多出一段空白（用户："两个按钮有空白占位"）。
+            改成用 Element 自己的 :loading + 固定 min-width：
+            转圈时按钮尺寸不变，平时也没有多余留白。
+          -->
           <div class="flex items-center gap-2">
-            <el-button @click="editorOpen = false">取消</el-button>
-            <!--
-              这两个按钮本身没有图标，用「固定占位的转圈图标」——
-              平时不可见、转起来才出现，宽度全程不变（不然 el-button 的 :loading
-              会临时插一个图标把按钮撑宽，点一下尺寸就跳）。
-            -->
-            <el-button :disabled="!form || saving !== ''" @click="save(false)">
-              <ArtSvgIcon
-                icon="ri:loader-4-line"
-                class="mr-1"
-                :class="saving === 'save' ? 'dy-spin' : 'invisible'"
-              />
+            <el-button
+              style="min-width: 96px"
+              :loading="saving === 'save'"
+              :disabled="!form || saving !== ''"
+              @click="save(false)"
+            >
               只保存
             </el-button>
-            <el-button type="primary" :disabled="!form || saving !== ''" @click="save(true)">
-              <ArtSvgIcon
-                icon="ri:loader-4-line"
-                class="mr-1"
-                :class="saving === 'restart' ? 'dy-spin' : 'invisible'"
-              />
+            <el-button
+              type="primary"
+              style="min-width: 148px"
+              :loading="saving === 'restart'"
+              :disabled="!form || saving !== ''"
+              @click="save(true)"
+            >
               保存并重启代理
             </el-button>
           </div>

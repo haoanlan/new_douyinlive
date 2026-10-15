@@ -113,7 +113,14 @@
         <span v-if="loading">查询中…</span>
         <span v-else-if="queryError" class="text-danger">查询失败</span>
         <template v-else>
-          <span class="flex items-baseline gap-1 shrink-0">
+          <!--
+            三个分段各给一个固定最小宽度（.dy-stat-seg--*）：
+            数字位数变化时（0 → 2,294、0 → 938.30万）后面的分段会被推着左右滑动 ——
+            实测分段宽度 71.8→95.1 / 71.8→87.3 / 59.8→108.3，第二个分段最多移 23px、
+            第三个最多移 38px，看着就是"抖动"（用户反馈"信息变动导致抖动"）。
+            预留宽度后各段位置恒定。
+          -->
+          <span class="dy-stat-seg dy-stat-seg--users flex items-baseline gap-1 shrink-0">
             <b class="dy-count text-g-900">{{ searched ? resultTotal : 0 }}</b>个匹配用户
           </span>
           <!--
@@ -122,11 +129,11 @@
               2) 它把这一行从 275px 拉到 451px，是抖动的直接来源。
           -->
           <span class="w-px h-3 bg-g-300 shrink-0" />
-          <span class="flex items-baseline gap-1 shrink-0">
+          <span class="dy-stat-seg dy-stat-seg--sessions flex items-baseline gap-1 shrink-0">
             <b class="dy-count text-g-900">{{ totalSessions }}</b>个参与场次
           </span>
           <span class="w-px h-3 bg-g-300 shrink-0" />
-          <span class="flex items-baseline gap-1 shrink-0">
+          <span class="dy-stat-seg dy-stat-seg--diamonds flex items-baseline gap-1 shrink-0">
             <b class="dy-count text-theme">{{ fmtNum(totalDiamonds) }}</b>累计钻石
           </span>
           <!-- 口径说明 + 明细都收进这一个 ⓘ（原来口径挂在 title 上、明细在结果区另一个 ⓘ） -->
@@ -998,6 +1005,23 @@
    */
   .dy-count {
     font-variant-numeric: tabular-nums;
+  }
+
+  /*
+   * 统计分段预留宽度：数字位数变化时不再推动后面的分段（见标记里的注释）。
+   * 取值按实测最长值再留一点余量：匹配用户 95.1 → 118、参与场次 87.3 → 112、
+   * 累计钻石 108.3 → 112。
+   */
+  .dy-stat-seg--users {
+    min-width: 118px;
+  }
+
+  .dy-stat-seg--sessions {
+    min-width: 112px;
+  }
+
+  .dy-stat-seg--diamonds {
+    min-width: 112px;
   }
 
   /*

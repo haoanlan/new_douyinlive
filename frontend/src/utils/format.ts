@@ -180,17 +180,30 @@ export function fmtHm(t: any): string {
  *
  * 同一天只给结束的时分；**跨天必须带上日期** —— 否则实测会出现
  * 「2026/09/16 16:57 → 15:12」这种"结束比开始还早"的读法（那天实际是 09/22 结束的）。
+ *
+ * short = true：省掉年份（"08/02 13:00 → 08/03 02:59"）。
+ * 窄屏用它 —— 完整写法在 390px 上要换行，把场次详情头部撑成两行高，
+ * 导致"加载完成后按钮位置往下跳"（用户反馈）；紧凑写法一行放得下，头部高度恒定。
  */
-export function fmtSessionRange(start: any, end: any): string {
+export function fmtSessionRange(start: any, end: any, short = false): string {
   if (!start) return '-'
-  const head = fmtTime(start)
+  const head = short ? fmtShortDateTime(start) : fmtTime(start)
   if (!end) return head
   const s = toDate(start)
   const e = toDate(end)
-  if (!s || !e) return `${head} → ${fmtTime(end)}`
+  if (!s || !e) return `${head} → ${short ? fmtShortDateTime(end) : fmtTime(end)}`
   const sameDay =
     s.getFullYear() === e.getFullYear() && s.getMonth() === e.getMonth() && s.getDate() === e.getDate()
-  return `${head} → ${sameDay ? fmtHm(end) : fmtTime(end)}`
+  if (sameDay) return `${head} → ${fmtHm(end)}`
+  return `${head} → ${short ? fmtShortDateTime(end) : fmtTime(end)}`
+}
+
+/** 只到分钟但省略年份："08/02 13:00"（窄屏用，见 fmtSessionRange 的 short 参数） */
+export function fmtShortDateTime(t: any): string {
+  const d = toDate(t)
+  if (!d) return fmtTime(t)
+  const p = (x: number) => String(x).padStart(2, '0')
+  return `${p(d.getMonth() + 1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
 }
 
 /** 转义属性值（用于 HTML 属性内部） */

@@ -24,7 +24,9 @@
     />
 
     <!-- 场次头部 -->
-    <div class="art-card dy-toolbar mb-5 flex items-center justify-between gap-4 flex-wrap">
+    <div
+      class="art-card dy-toolbar dy-session-head mb-5 flex items-center justify-between gap-4 flex-wrap"
+    >
       <div class="flex items-center gap-3.5 min-w-0">
         <el-avatar :size="48" :src="detail?.session?.streamer_avatar" class="shrink-0">{{
           detail?.session?.streamer_name?.[0] || '场'
@@ -38,22 +40,44 @@
               >直播中</el-tag
             >
           </div>
-          <div class="text-xs text-g-500 mt-1 truncate">
+          <!--
+            窄屏（<640px）用省略年份的紧凑写法，宽屏用完整写法：
+            完整写法在 390px 上会折成两行，把头部撑高一行 —— 数据到达后按钮就往下跳
+            （用户反馈"加载前后按钮位置都不一样"）。紧凑写法一行放得下，高度恒定。
+            两份都渲染、用 Tailwind 断点切换，避免在 JS 里判断视口宽度。
+          -->
+          <div class="dy-session-head__time text-xs text-g-500 mt-1 truncate">
             {{ detail?.session?.streamer_name || '' }}
-            <!-- 开始 → 结束（跨天时结束时间带日期，见 fmtSessionRange）；直播中由上面的标签表达 -->
             <template v-if="detail?.session?.start_time">
-              · {{ fmtSessionRange(detail.session.start_time, detail.session.end_time) }}
+              <span class="sm:hidden"
+                >· {{ fmtSessionRange(detail.session.start_time, detail.session.end_time, true) }}</span
+              >
+              <span class="hidden sm:inline"
+                >· {{ fmtSessionRange(detail.session.start_time, detail.session.end_time) }}</span
+              >
             </template>
           </div>
         </div>
       </div>
-      <div class="flex items-center gap-2">
+      <!--
+        dy-session-head__actions：窄屏独占一行并右对齐。
+        原来这一行跟着 flex-wrap 走：加载中标题短（"场次详情"）按钮留在第一行右侧，
+        数据到了标题变长就整体换行 —— 按钮从右上角跳到第二行左侧，
+        用户反馈"加载前后按钮位置都不一样"。固定成独立一行后与内容长度无关。
+      -->
+      <div class="dy-session-head__actions flex items-center gap-2">
         <!--
           面包屑统一到顶栏后，"回到该主播的场次列表"（原来只存在于页面内面包屑、
           且带着 hostId）需要一个新的明确入口 —— 这是详情页最主要的回退路径。
         -->
+        <!--
+          始终渲染（加载中禁用），不要 v-if="streamerId"：
+          streamerId 来自 detail.session，加载完成前为空 —— 原来加载时只有「刷新」一个按钮，
+          数据到了才多出「场次列表」，两个按钮整体左移，用户看到的就是
+          "加载前后按钮位置都不一样"。常驻 + 禁用则宽度与位置全程不变。
+        -->
         <el-button
-          v-if="streamerId"
+          :disabled="!streamerId"
           @click="router.push({ path: '/douyin/sessions', query: { hostId: streamerId } })"
         >
           <ArtSvgIcon icon="ri:arrow-left-line" class="mr-1" />场次列表

@@ -475,6 +475,49 @@
   }
 
   /*
+   * 场次详情头部：固定"信息一行 + 按钮一行（右对齐）"
+   *
+   * 原来是 flex-wrap 单行布局，位置会随标题长度变：
+   *   加载中标题是回落的"场次详情"（短）→ 按钮留在第一行右侧；
+   *   数据到达后标题变成真实场次名（长）→ 整行换行 → 按钮掉到第二行**左侧**。
+   * 用户："加载前后按钮位置都不一样""按钮防置（放置）的位置不美观"。
+   * 窄屏固定成上下两行、按钮右对齐后，位置与内容长度彻底无关。
+   */
+  .douyin-page .dy-session-head {
+    flex-direction: column;
+    /*
+     * 必须同时关掉换行：标记里 Tailwind 的 flex-wrap 还在，
+     * 列方向 + wrap = **多列换行布局** —— 子元素宽度变成按内容算，
+     * 实测按钮区右边界 354（加载中）/ 369（数据到），按钮水平位置差 15px。
+     * nowrap 之后子元素按 stretch 撑满，位置彻底恒定。
+     */
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .douyin-page .dy-session-head__actions {
+    justify-content: flex-end;
+  }
+
+  /*
+   * 时间行：恒定一行 + 加载中也占位
+   *
+   * ① min-height：加载中这一行没有内容（高度 0），数据到达后才长出一行 ——
+   *    头部因此高 16px，按钮跟着下移（实测 142 → 158px）。
+   *    留出固定一行高度后，加载前后头部高度一致、按钮位置不再跳。
+   * ② 锁单行：窄屏用省略年份的紧凑格式（见模板里的 sm:hidden 分支），一行放得下；
+   *    万一主播名很长也不换行（换行同样会把头部撑高），超长用省略号。
+   */
+  .douyin-page .dy-session-head__time {
+    min-height: 18px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.5;
+  }
+
+  /*
    * 分页按钮：Element 默认 28×28，手指偏小 → 32×32
    */
   .douyin-page .el-pagination button {

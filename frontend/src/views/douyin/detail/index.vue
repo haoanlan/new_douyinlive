@@ -80,7 +80,7 @@
               数据没到时不显示 0 —— 那会让"还没加载"看起来像"这场直播真的是 0"（审计 P1-11）。
               用与数值同宽的骨架条占位，卡片高度不变、不会跳。
             -->
-            <div v-if="!detail" class="mt-1.5 h-5 w-16">
+            <div v-if="!detail" class="mt-1 h-5 w-16">
               <el-skeleton-item variant="text" style="width: 100%; height: 100%" />
             </div>
             <!-- 卡片会 truncate 数值，所以补 title 显示完整值（评审 P2 点过这个问题） -->
@@ -140,11 +140,20 @@
               </div>
               <!-- 数据没到时先说"在加载"，而不是"暂无礼物"（后者会被读成这场直播真的没礼物） -->
               <div v-if="!detail" class="flex flex-col gap-2.5">
-                <div v-for="i in 5" :key="i" class="flex items-center gap-3">
-                  <el-skeleton-item variant="text" style="width: 24px; height: 24px" />
-                  <el-skeleton-item variant="circle" style="width: 32px; height: 32px" />
-                  <el-skeleton-item variant="text" style="flex: 1" />
-                  <el-skeleton-item variant="text" style="width: 64px" />
+                <!--
+                  骨架行套用真实行的类名与内边距（.dy-rank-row + px-3 py-2）：
+                  真实行高 48px（32px 头像 + 上下各 8px），骨架若只有 32px，
+                  数据到达时整块内容会往下跳（用户反馈的"跳动感"）。
+                -->
+                <div
+                  v-for="i in 5"
+                  :key="i"
+                  class="dy-detail-row flex items-center gap-3 rounded-xl bg-g-100/50 px-3 py-2"
+                >
+                  <el-skeleton-item variant="text" style="width: 24px; height: 24px; flex: 0 0 auto" />
+                  <el-skeleton-item variant="circle" style="width: 32px; height: 32px; flex: 0 0 auto" />
+                  <el-skeleton-item variant="text" style="flex: 1; height: 16px" />
+                  <el-skeleton-item variant="text" style="width: 64px; height: 16px; flex: 0 0 auto" />
                 </div>
               </div>
               <el-empty
@@ -187,11 +196,20 @@
                 }}</span>
               </div>
               <div v-if="!detail" class="flex flex-col gap-2.5">
-                <div v-for="i in 5" :key="i" class="flex items-center gap-3">
-                  <el-skeleton-item variant="text" style="width: 24px; height: 24px" />
-                  <el-skeleton-item variant="circle" style="width: 32px; height: 32px" />
-                  <el-skeleton-item variant="text" style="flex: 1" />
-                  <el-skeleton-item variant="text" style="width: 64px" />
+                <!--
+                  骨架行套用真实行的类名与内边距（.dy-rank-row + px-3 py-2）：
+                  真实行高 48px（32px 头像 + 上下各 8px），骨架若只有 32px，
+                  数据到达时整块内容会往下跳（用户反馈的"跳动感"）。
+                -->
+                <div
+                  v-for="i in 5"
+                  :key="i"
+                  class="dy-detail-row flex items-center gap-3 rounded-xl bg-g-100/50 px-3 py-2"
+                >
+                  <el-skeleton-item variant="text" style="width: 24px; height: 24px; flex: 0 0 auto" />
+                  <el-skeleton-item variant="circle" style="width: 32px; height: 32px; flex: 0 0 auto" />
+                  <el-skeleton-item variant="text" style="flex: 1; height: 16px" />
+                  <el-skeleton-item variant="text" style="width: 64px; height: 16px; flex: 0 0 auto" />
                 </div>
               </div>
               <el-empty
@@ -231,11 +249,20 @@
                 <span class="text-sm font-bold text-g-800 shrink-0">{{ d.msg_count }}条</span>
               </div>
               <div v-if="!detail" class="flex flex-col gap-2.5">
-                <div v-for="i in 5" :key="i" class="flex items-center gap-3">
-                  <el-skeleton-item variant="text" style="width: 24px; height: 24px" />
-                  <el-skeleton-item variant="circle" style="width: 32px; height: 32px" />
-                  <el-skeleton-item variant="text" style="flex: 1" />
-                  <el-skeleton-item variant="text" style="width: 56px" />
+                <!--
+                  骨架行套用真实行的类名与内边距（.dy-rank-row + px-3 py-2）：
+                  真实行高 48px（32px 头像 + 上下各 8px），骨架若只有 32px，
+                  数据到达时整块内容会往下跳（用户反馈的"跳动感"）。
+                -->
+                <div
+                  v-for="i in 5"
+                  :key="i"
+                  class="dy-detail-row flex items-center gap-3 rounded-xl bg-g-100/50 px-3 py-2"
+                >
+                  <el-skeleton-item variant="text" style="width: 24px; height: 24px; flex: 0 0 auto" />
+                  <el-skeleton-item variant="circle" style="width: 32px; height: 32px; flex: 0 0 auto" />
+                  <el-skeleton-item variant="text" style="flex: 1; height: 16px" />
+                  <el-skeleton-item variant="text" style="width: 56px; height: 16px; flex: 0 0 auto" />
                 </div>
               </div>
               <el-empty
@@ -261,11 +288,23 @@
           </div>
         </div>
         <!--
-          词云必须有**确定高度**的容器：canvas 原来只有 224px 高，40 个词挤在里面，
-          实际着色覆盖率仅 18% —— 看起来又小又有大片留白。
-          这里给足高度，并让 canvas 撑满（宽高都吃满容器）。
+          加载中也显示"词云形状"的骨架（原来直接落到"暂无词频数据"，
+          会被读成这场直播真的没有词频 —— 与本页其它块的做法保持一致）。
+          .dy-cloud-box 是本块真实容器（有确定高度），骨架用同样的容器撑住，数据到达不跳。
         -->
-        <div v-if="detail?.danmakuWords?.length" class="dy-cloud-box mt-3">
+        <div v-if="!detail" class="dy-cloud-box mt-3">
+          <el-skeleton animated class="w-full h-full">
+            <div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-3 p-4">
+              <el-skeleton-item
+                v-for="(w, i) in [64, 46, 80, 38, 56, 34, 72, 44, 60, 40, 52, 30]"
+                :key="i"
+                variant="text"
+                :style="`width:${w}px; height:${i % 3 === 0 ? 22 : 16}px`"
+              />
+            </div>
+          </el-skeleton>
+        </div>
+        <div v-else-if="detail?.danmakuWords?.length" class="dy-cloud-box mt-3">
           <canvas id="wordcloudCanvas" class="w-full h-full block"></canvas>
         </div>
         <el-empty v-else description="暂无词频数据" :image-size="60" />
@@ -383,8 +422,23 @@
               已显示全部 {{ fmtNum(displayedFeed.length) }} 条
             </div>
           </div>
+          <!--
+            加载中显示与真实动态行同形的骨架（原来直接落到"暂无动态"）。
+            行高对齐 .dy-feed-row 的真实高度（实测 48px：24px 头像 + 上下 padding），
+            否则数据到达时整块会往下跳。
+          -->
+          <div v-if="!detail" class="flex flex-col gap-2.5 mt-3">
+            <div v-for="i in 6" :key="i" class="dy-feed-row flex items-start gap-3">
+              <el-skeleton-item variant="circle" style="width: 24px; height: 24px; flex: 0 0 auto" />
+              <div class="flex-1 min-w-0">
+                <el-skeleton-item variant="text" style="width: 38%; height: 12px" />
+                <el-skeleton-item variant="text" style="width: 78%; height: 12px; margin-top: 8px" />
+              </div>
+              <el-skeleton-item variant="text" style="width: 40px; height: 12px; flex: 0 0 auto" />
+            </div>
+          </div>
           <el-empty
-            v-if="!displayedFeed.length"
+            v-else-if="!displayedFeed.length"
             :description="
               activeQuery ? `没有匹配「${activeQuery}」的动态` : '暂无动态'
             "
@@ -429,7 +483,7 @@
           <div
             v-for="(g, i) in giftDialogList"
             :key="i"
-            class="dy-rank-row flex items-center gap-3 rounded-xl bg-g-100/50 px-3 py-2"
+            class="dy-detail-row flex items-center gap-3 rounded-xl bg-g-100/50 px-3 py-2"
           >
             <el-image
               v-if="g.gift_icon"
@@ -487,7 +541,7 @@
           <div
             v-for="(p, i) in peopleDialogList"
             :key="i"
-            class="dy-rank-row flex items-center gap-3 rounded-xl bg-g-100/50 px-3 py-2"
+            class="dy-detail-row flex items-center gap-3 rounded-xl bg-g-100/50 px-3 py-2"
           >
             <span
               class="w-6 h-6 rounded-md flex-cc text-xs font-bold shrink-0"
@@ -515,6 +569,7 @@
   import { echarts } from '@/plugins/echarts'
   import {
     fetchSessionDetail,
+    fetchSessionGiftDetails,
     fetchDanmaku,
     type SessionDetail,
     type GiftRankItem,
@@ -635,7 +690,28 @@
 
   const giftDialogVisible = ref(false)
   const giftDialogUser = ref('')
-  const giftDialogList = ref<NonNullable<SessionDetail['giftDetails']>>([])
+  const giftDialogList = ref<NonNullable<SessionDetail['giftFeed']>>([])
+  /**
+   * 全量礼物明细（两个弹窗用）。
+   * 从 /detail 拆出来了：单独一份 3299KB / 7024 条（实测），首屏不需要。
+   * 首次打开弹窗时拉一次并缓存，同一场次内不重复请求。
+   */
+  const giftDetailsFull = ref<NonNullable<SessionDetail['giftFeed']> | null>(null)
+  const giftDetailsLoading = ref(false)
+  async function ensureGiftDetails() {
+    if (giftDetailsFull.value || giftDetailsLoading.value) return
+    giftDetailsLoading.value = true
+    try {
+      const r = await fetchSessionGiftDetails(String(sessionId))
+      giftDetailsFull.value = r?.giftDetails || []
+    } catch (e) {
+      // 拉不到就退回"最近 200 条"，弹窗仍可打开（内容是子集），并在控制台留痕
+      console.warn('[detail] 全量礼物明细拉取失败，回退到最近若干条:', e)
+      giftDetailsFull.value = detail.value?.giftFeed || []
+    } finally {
+      giftDetailsLoading.value = false
+    }
+  }
   const giftDialogAvatar = computed(() => giftDialogList.value[0]?.avatar_url || '')
   const giftDialogTotal = computed(() =>
     giftDialogList.value.reduce((s, g) => s + (g.total_diamonds || 0), 0)
@@ -648,19 +724,22 @@
     []
   )
 
-  function openGiftDetail(gift: GiftRankItem) {
+  async function openGiftDetail(gift: GiftRankItem) {
     giftDialogUser.value = gift.nickname
-    giftDialogList.value = (detail.value?.giftDetails || []).filter(
-      (g) => g.nickname === gift.nickname
-    )
+    // 先用"最近若干条"里的即时结果把弹窗打开（有内容可看），再拉全量补齐
+    giftDialogList.value = (detail.value?.giftFeed || []).filter((g) => g.nickname === gift.nickname)
     giftDialogVisible.value = true
+    await ensureGiftDetails()
+    giftDialogList.value = (giftDetailsFull.value || []).filter((g) => g.nickname === gift.nickname)
   }
 
-  function openAnchorPeopleList(anchor: AnchorRankItem) {
+  async function openAnchorPeopleList(anchor: AnchorRankItem) {
     peopleAnchorName.value = anchor.anchor_name
     peopleAnchorAvatar.value = anchor.anchor_avatar || ''
+    peopleDialogVisible.value = true
+    await ensureGiftDetails()
     const map = new Map<string, { nickname: string; avatar_url?: string; total_diamonds: number }>()
-    ;(detail.value?.giftDetails || [])
+    ;(giftDetailsFull.value || [])
       .filter((g) => g.to_nickname === anchor.anchor_name)
       .forEach((g) => {
         const cur = map.get(g.nickname) || {
@@ -694,7 +773,8 @@
     const dmData = await fetchDanmaku(sessionId, FEED_FETCH_LIMIT)
     const dmList = dmData.data || dmData.messages || []
     feedTotal.value = dmData.total ?? dmList.length
-    const giftList = detail.value?.giftDetails || []
+    // 动态只需要最近若干条礼物（后端 giftFeed = 最新 200 条），全量明细走弹窗按需拉
+    const giftList = detail.value?.giftFeed || []
     feedRaw.value = buildFeedItems(dmList, giftList)
   }
 
@@ -752,13 +832,15 @@
       const dmList = dmData.data || dmData.messages || []
       feedSearchTotal.value = dmData.total ?? dmList.length
       feedSearchError.value = ''
+      // 同 loadDanmakuFeed：动态里的礼物来自 giftFeed（最近 200 条）
+      const feedGifts = detail.value?.giftFeed || []
       const gifts = q
-        ? (detail.value?.giftDetails || []).filter(
+        ? feedGifts.filter(
             (g) =>
               (g.gift_name || '').toLowerCase().includes(q.toLowerCase()) ||
               (g.nickname || '').toLowerCase().includes(q.toLowerCase())
           )
-        : detail.value?.giftDetails || []
+        : feedGifts
       feedRaw.value = buildFeedItems(dmList, gifts)
     } catch {
       // 搜索失败保持原列表，避免把"搜不到"伪装成"没有"；同时给界面一个明确标记，

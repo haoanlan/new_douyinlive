@@ -118,7 +118,14 @@ export interface SessionDetail {
     timeline?: { time: string; gifts: number; diamonds: number; danmaku: number }[]
   }
   gifts?: GiftRankItem[]
-  giftDetails?: GiftDetailItem[]
+  /**
+   * 「最新动态」用的**最近若干条**礼物（后端 GIFT_FEED_LIMIT = 200），
+   * 不是全量：全量明细有 3299KB / 7024 条（实测），已拆到
+   * fetchSessionGiftDetails()，只在打开"送礼明细"弹窗时按需拉。
+   */
+  giftFeed?: GiftDetailItem[]
+  /** 该场次礼物明细的总条数（用于告诉用户"这里是最近 200 条中的"） */
+  giftDetailsTotal?: number
   anchorRanking?: AnchorRankItem[]
   danmakuRanking?: DanmakuRankItem[]
   danmakuWords?: { content: string; cnt: number }[]
@@ -522,6 +529,19 @@ export function getReportUrl(sessionId: string): string {
 
 export function fetchSessionDetail(sessionId: string) {
   return request.get<SessionDetail>({ url: `/api/sessions/${sessionId}/detail` })
+}
+
+/**
+ * 某场次的**全量**礼物明细（按钻石降序）。
+ *
+ * 从 /detail 拆出来：这一份单独就有 3299KB / 7024 条（实测），把 /detail 拖到 3.2MB / 1.9 秒，
+ * 而首屏只需要排名。只有"礼物排行里点开某人的送礼明细""团播主播里点开某主播的送礼人"
+ * 这两个弹窗需要它 —— 点开时再拉。
+ */
+export function fetchSessionGiftDetails(sessionId: string) {
+  return request.get<{ giftDetails: GiftDetailItem[]; total: number }>({
+    url: `/api/sessions/${sessionId}/gift-details`
+  })
 }
 
 /**

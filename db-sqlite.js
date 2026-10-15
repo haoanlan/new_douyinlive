@@ -113,6 +113,7 @@ async function init() {
       stats_member INTEGER DEFAULT 0,
       stats_follow INTEGER DEFAULT 0,
       stats_social INTEGER DEFAULT 0,
+      online_peak INTEGER DEFAULT 0,
       raw_messages_count INTEGER DEFAULT 0,
       archived INTEGER DEFAULT 0,
       file_path TEXT DEFAULT NULL,
@@ -272,6 +273,16 @@ async function init() {
   for (const col of aggCols) {
     try { d.exec(`ALTER TABLE sessions ADD COLUMN ${col} INTEGER DEFAULT NULL`); } catch (e) { /* 已存在 */ }
   }
+  /*
+   * 旧库补列：sessions.online_peak（在线峰值）。
+   * 这列长期只在现网库里存在（历史 ALTER 的产物），CREATE TABLE 里一直没有它，
+   * 于是新建库/换机重建后：
+   *   - /api/overview 直接 500（no such column: online_peak），总览页打不开
+   *   - worker 的场次在线峰值写入（lib/worker/session.js）静默失败
+   *   - report-image.js / 场次详情的在线峰值恒为 0
+   * 与 agg_* 一起在这里补齐，让"新建库"和"现网库"结构一致。
+   */
+  try { d.exec(`ALTER TABLE sessions ADD COLUMN online_peak INTEGER DEFAULT 0`); } catch (e) { /* 已存在 */ }
 
   /*
    * 启动自检：把"缺表/缺列"从静默失败升级为显式告警。
@@ -283,7 +294,8 @@ async function init() {
     const required = [
       { table: 'gift_icons', sql: `SELECT 1 FROM gift_icons LIMIT 1` },
       { table: 'gift_icons', sql: `SELECT icon_url FROM gift_icons LIMIT 1` },
-      { table: 'streamers', sql: `SELECT sec_uid FROM streamers LIMIT 1` }
+      { table: 'streamers', sql: `SELECT sec_uid FROM streamers LIMIT 1` },
+      { table: 'sessions', sql: `SELECT online_peak FROM sessions LIMIT 1` }
     ];
     for (const chk of required) {
       try { d.prepare(chk.sql).get(); } catch (e) {

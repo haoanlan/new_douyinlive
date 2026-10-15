@@ -145,7 +145,7 @@
         · ⓘ 里只有结果口径说明，不含操作流程，所以这行提示必须保留。
       数据与文案都来自真实来源（真实主播名 + 真实可查范围），不放装饰性插画。
     -->
-    <div v-if="!searched" class="art-card dy-search-guide p-5">
+    <div v-if="!searched" class="art-card dy-search-guide dy-search-fill p-5">
       <div class="dy-search-guide__hero">
         <div class="dy-search-guide__icon">
           <ArtSvgIcon icon="ri:user-search-line" />
@@ -201,17 +201,34 @@
         </div>
       </div>
 
-      <!-- 失败：与「没有结果」明确区分（P0-3） -->
+      <!--
+        失败：与「没有结果」明确区分（P0-3）。
+        同样占满内容区（.dy-search-fill）—— 引导态 / 失败态 / 空结果态三种非结果状态高度一致，
+        不会出现"一种占满屏、另一种只有一小条"的情况。
+        QueryErrorState 用在自己内部是紧凑卡片（其它页也用它），这里只在本页加类，不影响别处。
+      -->
       <QueryErrorState
         v-else-if="!loading && queryError"
+        class="dy-search-fill"
         :message="queryError"
         :retrying="loading"
         @retry="doSearch"
       />
 
       <!-- 空结果：只有查询真的成功且确实没人时才显示 -->
-      <div v-else-if="!loading && !sortedUsers.length" class="art-card p-5">
-        <el-empty :description="`没有匹配「${lastQuery}」的用户`" :image-size="80" />
+      <!--
+        占满内容区（.dy-search-fill）：原来只是一条矮卡片，和「开始查询」引导态观感不一致
+        （用户反馈"没有匹配的这个窗口没有占满全屏"）。图例尺寸同步放大到 96，撑得住整块高度。
+      -->
+      <div v-else-if="!loading && !sortedUsers.length" class="art-card dy-search-fill p-5">
+        <el-empty :description="`没有匹配「${lastQuery}」的用户`" :image-size="96">
+          <template #description>
+            <p class="dy-search-empty__title">没有匹配「{{ lastQuery }}」的用户</p>
+            <p class="dy-search-empty__hint">
+              换一个关键词，或先在右上角选一个直播间 / 场次缩小范围再查
+            </p>
+          </template>
+        </el-empty>
       </div>
 
       <!-- 结果卡片（重新查询时保留上一批并轻微变淡，避免"整块白板一闪"） -->
@@ -955,19 +972,39 @@
    * 库里的 `.art-card` 也是单类权重，**.art-card 的样式在这个 scoped 块之后注入**，
    * 单写 `.dy-search-guide` 会被它的 display/justify-content 盖掉（实测 justify-content 无效）。
    */
-  .art-card.dy-search-guide {
+  /*
+   * 占满内容区的空态卡：「开始查询」引导 与「没有匹配」空结果 共用。
+   * 用户反馈空结果那张卡片只有一小条、没占满屏，和引导态观感不一致。
+   * 选择器必须写满两个类：库里 `.art-card` 也是单类权重、且在本 scoped 块之后注入，
+   * 单写 `.dy-search-fill` 会被它的 display/justify-content 盖掉。
+   * min-height 不裁剪：内容更高时卡片自己长高，小窗口也不会出滚动条。
+   */
+  .art-card.dy-search-fill {
     display: flex;
     flex-direction: column;
-    /* 空状态：内容水平垂直都居中 */
     align-items: center;
     justify-content: center;
-    /*
-     * 卡片占满内容区（而不是"缩在上半屏的小卡片 + 下面一片空白"）：
-     * 空状态内容整体居中，整体构图才成立。
-     * 上限 720、下界 420，min-height 不裁剪 —— 内容更高时卡片自己长高、小窗口不出滚动条。
-     */
     min-height: clamp(420px, calc(100vh - 330px), 720px);
+  }
+
+  .dy-search-guide {
     text-align: center;
+  }
+
+  /* 空结果：主文案 + 一行可操作建议（原来只有 el-empty 自带的一行灰字） */
+  .dy-search-empty__title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--art-gray-900);
+  }
+
+  .dy-search-empty__hint {
+    margin: 6px 0 0;
+    font-size: 12px;
+    line-height: 1.7;
+    /* gray-500 对白底只有 2.68:1（AA 小字要 4.5），所以用 gray-700 */
+    color: var(--art-gray-700);
   }
 
   /*

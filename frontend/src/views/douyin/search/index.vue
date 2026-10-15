@@ -270,7 +270,13 @@
               卡片本身是纵向 flex，底部「最近参与」用 mt-auto 贴底 ——
               否则同一行里内容多的那张卡片分隔线在底部、内容少的悬在中间，两条线错开很扎眼。
             -->
-            <div class="art-card relative px-5 py-4 h-full flex flex-col">
+            <!--
+              卡片内部留白（用户反馈"卡片内容太挤"）：
+              实测卡片 320px 高里叠了 6 个区块（身份 3 行 + 三个统计格 + 弹幕/礼物 2 行 + 最近参与），
+              而上下内边距只有 16px、块间距 12-16px —— 不缺信息，缺的是呼吸。
+              下面把上下内边距提到 20px、主要块间距提到 20px（区块之间 16px）。
+            -->
+            <div class="art-card relative px-5 py-5 h-full flex flex-col">
               <!-- 头部：头像 + 昵称 + 别名 -->
               <div class="flex items-start gap-3.5">
                 <el-avatar :size="48" :src="u.avatar" class="shrink-0">
@@ -331,7 +337,7 @@
                     （用户反馈的"库内别名存在被截断的遮挡"）。
                     现在放开高度、允许断行：!h-auto + whitespace-normal + break-all。
                   -->
-                  <div class="flex flex-wrap items-center gap-1.5 mt-2 min-w-0 min-h-[22px]">
+                  <div class="flex flex-wrap items-center gap-2 mt-2.5 min-w-0 min-h-[22px]">
                     <span class="text-xs text-g-400 shrink-0">库内别名</span>
                     <el-tag
                       v-for="n in aliasNames(u)"
@@ -387,7 +393,7 @@
               <!-- 仅进场用户：三个空格子降噪成一行（占结果的大多数，满屏虚线格最扎眼） -->
               <div
                 v-if="isEntryOnly(u)"
-                class="mt-3.5 pt-3 border-t border-g-100/80 flex items-center gap-3 flex-wrap text-sm"
+                class="mt-5 pt-4 border-t border-g-100/80 flex items-center gap-3 flex-wrap text-sm"
               >
                 <span class="inline-flex items-center gap-1.5 text-g-500">
                   <ArtSvgIcon icon="ri:door-open-line" class="text-g-400" />
@@ -405,8 +411,8 @@
 
               <template v-else>
                 <!-- 统计格：套官方 today-sales 的 tile 语言（实线框 + 图标块 + 数字上标签下） -->
-                <div class="grid grid-cols-3 gap-2.5 mt-4">
-                  <div class="dy-stat-tile flex items-center gap-3 px-4 py-3 border border-g-300/85 rounded-xl">
+                <div class="grid grid-cols-3 gap-3 mt-5">
+                  <div class="dy-stat-tile flex items-center gap-3 px-4 py-3.5 border border-g-300/85 rounded-xl">
                     <div class="size-9 rounded-lg flex-cc bg-theme/10 shrink-0">
                       <ArtSvgIcon icon="ri:live-line" class="text-base text-theme" />
                     </div>
@@ -418,10 +424,10 @@
                       >
                         {{ hasSessions(u) ? fmtNum(participatedSessions(u)) : '—' }}
                       </div>
-                      <div class="text-xs text-g-500 mt-1.5">参与场次</div>
+                      <div class="text-xs text-g-500 mt-2">参与场次</div>
                     </div>
                   </div>
-                  <div class="dy-stat-tile flex items-center gap-3 px-4 py-3 border border-g-300/85 rounded-xl">
+                  <div class="dy-stat-tile flex items-center gap-3 px-4 py-3.5 border border-g-300/85 rounded-xl">
                     <div class="size-9 rounded-lg flex-cc bg-theme/10 shrink-0">
                       <ArtSvgIcon icon="ri:diamond-line" class="text-base text-theme" />
                     </div>
@@ -433,10 +439,10 @@
                       >
                         {{ u.total_diamonds ? fmtNum(u.total_diamonds) : '—' }}
                       </div>
-                      <div class="text-xs text-g-500 mt-1.5">累计钻石</div>
+                      <div class="text-xs text-g-500 mt-2">累计钻石</div>
                     </div>
                   </div>
-                  <div class="dy-stat-tile flex items-center gap-3 px-4 py-3 border border-g-300/85 rounded-xl">
+                  <div class="dy-stat-tile flex items-center gap-3 px-4 py-3.5 border border-g-300/85 rounded-xl">
                     <div class="size-9 rounded-lg flex-cc bg-theme/10 shrink-0">
                       <ArtSvgIcon icon="ri:chat-3-line" class="text-base text-theme" />
                     </div>
@@ -448,7 +454,7 @@
                       >
                         {{ u.danmaku_count ? fmtNum(u.danmaku_count) : '—' }}
                       </div>
-                      <div class="text-xs text-g-500 mt-1.5">弹幕数</div>
+                      <div class="text-xs text-g-500 mt-2">弹幕数</div>
                     </div>
                   </div>
                 </div>
@@ -465,7 +471,7 @@
                 取值优先用后端 recent（它已按时间倒序且做过连击礼物去重，连击只留 ×N 那条），
                 没有 recent 时回退到 latest_danmaku / latest_gift。
               -->
-              <div class="flex flex-col gap-2 mt-4 pt-3 border-t border-g-100/80">
+              <div class="flex flex-col gap-2.5 mt-5 pt-4 border-t border-g-100/80">
                 <div v-if="latestOf(u, 'danmaku')" class="flex items-center gap-2 text-xs">
                   <span class="px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-500 shrink-0">弹幕</span>
                   <span
@@ -499,7 +505,7 @@
               <!-- 底部：参与场次入口（恒定渲染、强制单行：只放最近 1 场，多的用"还有 N 场"，
                    否则长主播名会把这一行折成两行、卡片高度又不一致） -->
               <div
-                class="flex items-center gap-2 mt-3 pt-3 border-t border-g-100/80 text-xs text-g-600 min-w-0"
+                class="flex items-center gap-2 mt-4 pt-4 border-t border-g-100/80 text-xs text-g-600 min-w-0"
               >
                 <ArtSvgIcon icon="ri:time-line" class="text-g-400 shrink-0" />
                 <span class="shrink-0">最近参与</span>

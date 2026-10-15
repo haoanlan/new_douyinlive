@@ -120,6 +120,16 @@
   }
 
   /*
+   * 例外：日期区间选择器**不拉满**（用户反馈"日期选择器宽度再小点和内容显示宽度一致"）。
+   * 拉满到 321px 后，中间只有一个小「~」、两段日期被撑到两头，看着很散；
+   * 收到 240px —— 与它自身内容（日历图标 + 开始日期 ~ 结束日期）相称。
+   * 选择器权重比上面那条高（多一个 .el-date-editor--daterange），所以能压住 !important。
+   */
+  .douyin-page .dy-toolbar-actions .el-date-editor.el-date-editor--daterange {
+    width: 240px !important;
+  }
+
+  /*
    * 统计格（.dy-stat-tile，信息查询结果卡里的三格）：
    * 原来是"图标 36px + gap 12 + px-4 32"的横向布局，在 3 列网格里（每格约 106px）
    * 留给文字的只剩 ~26px —— "参与场次"只能一个字一行（用户截图里的竖排单字）。
@@ -176,6 +186,15 @@
 
   .douyin-page .dy-action-row .dy-switch-btn {
     justify-content: space-between;
+    /*
+     * 窄屏把「自动刷新」药丸明确做小一档（36 → 32）。
+     * 原来它 36px、旁边按钮 40px —— 只差 4px，看着像没对齐的 bug 而不是层级
+     * （用户反馈"刷新状态按钮和自动刷新块高度不一致，自动刷新要小"）。
+     * 一行里 align-items: center 会让它垂直居中，32px 反而是清楚的次要控件。
+     * 不再往下压：32px 是本项目触控目标的下限（mobile-check 会告警 24-31px）。
+     */
+    height: 32px;
+    padding: 0 10px;
   }
 }
 

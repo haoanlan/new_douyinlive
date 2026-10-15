@@ -22,7 +22,15 @@
           </div>
         </div>
         <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mt-4 pt-4 border-t border-g-100">
-          <el-skeleton v-for="i in 5" :key="i" :rows="2" animated />
+          <!-- 窄屏（2 列）下 5 个模块会排成 2+2+1，最后一块只剩半宽很难受 →
+               让它（骨架与真实卡都）在窄屏占满整行 -->
+          <el-skeleton
+            v-for="i in 5"
+            :key="i"
+            :rows="2"
+            animated
+            class="max-md:last:col-span-2"
+          />
         </div>
       </div>
 
@@ -46,11 +54,12 @@
         </div>
 
         <!-- 关键指标：官方 tile 语言（图标块 + 数字 + 标签）；数字口径 P1-7 -->
+        <!-- 窄屏 2 列时 5 个模块排成 2+2+1：最后一块（礼物流水）占满整行，见下面的 class -->
         <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mt-4 pt-4 border-t border-g-100">
           <div
             v-for="s in stats"
             :key="s.label"
-            class="flex items-center gap-3 px-4 py-3 border border-g-300/85 rounded-xl"
+            class="flex items-center gap-3 px-4 py-3 border border-g-300/85 rounded-xl max-md:last:col-span-2"
           >
             <div class="size-9 rounded-lg flex-cc bg-theme/10 shrink-0">
               <ArtSvgIcon :icon="s.icon" class="text-base text-theme" />

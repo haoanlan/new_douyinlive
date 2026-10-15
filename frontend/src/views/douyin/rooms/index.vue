@@ -358,10 +358,16 @@
           label 像"回上一步"，属于文案与行为不符。
         -->
 
+      <!--
+        min-w：`:loading` 会让 Element 在文字前**再插一个**转圈图标，按钮随之变宽
+        （用户反馈"添加按钮点击会改变大小"）。两个按钮都给固定最小宽度，
+        加载态与非加载态宽度一致（实测：非加载 104px、加载中 108px，所以给到 112px）。
+      -->
       <template #footer>
         <el-button @click="closeAdd">取消</el-button>
         <el-button
           v-if="!preview"
+          class="min-w-[112px]"
           type="primary"
           :loading="looking"
           :disabled="!newRoomId.trim()"
@@ -369,7 +375,9 @@
         >
           查询房间
         </el-button>
-        <el-button v-else type="primary" :loading="adding" @click="add">确认添加</el-button>
+        <el-button v-else class="min-w-[112px]" type="primary" :loading="adding" @click="add">
+          确认添加
+        </el-button>
       </template>
     </el-dialog>
   </div>

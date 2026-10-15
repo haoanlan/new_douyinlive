@@ -152,10 +152,18 @@
                 <div class="font-medium text-sm truncate text-g-900">{{
                   row.title || '场次 #' + row.id
                 }}</div>
-                <!-- 已结束的场次要能看到结束时间与时长；直播中则明确写"进行中" -->
+                <!--
+                  时间行：桌面显示「开始 → 截止 · 时长」，**窄屏只显示开始时间**
+                  （用户要求：截至时间与时长不用显示）。
+                  拆成两个 span 而不是在 JS 里判断视口 —— 纯 CSS 切换，不引入响应式 JS。
+                  fmtSessionRange(start, null) 正好只返回开始那一段。
+                -->
                 <div class="text-xs text-g-500 truncate mt-0.5">
-                  {{ fmtSessionRange(row.started_at, row.ended_at) }}
-                  <template v-if="row.duration_min"> · {{ formatDuration(row.duration_min) }}</template>
+                  <span class="session-row__time-full">
+                    {{ fmtSessionRange(row.started_at, row.ended_at) }}
+                    <template v-if="row.duration_min"> · {{ formatDuration(row.duration_min) }}</template>
+                  </span>
+                  <span class="session-row__time-start">{{ fmtSessionRange(row.started_at, null) }}</span>
                   <template v-if="row.is_live"> · 进行中</template>
                 </div>
               </div>
@@ -596,5 +604,23 @@
     box-shadow:
       0 0 0 2px var(--dy-focus-ring),
       0 0 0 4px var(--theme-color);
+  }
+
+  /*
+   * 时间行：窄屏只留开始时间（用户要求：截至时间与时长不用显示）。
+   * 纯 CSS 切换，两个 span 里只有一个是 display 非 none 的，屏幕阅读器也只会读到可见的那个。
+   */
+  .session-row__time-start {
+    display: none;
+  }
+
+  @media (max-width: 800px) {
+    .session-row__time-full {
+      display: none;
+    }
+
+    .session-row__time-start {
+      display: inline;
+    }
   }
 </style>

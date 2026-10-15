@@ -289,7 +289,7 @@
                       "
                       class="text-xs text-g-500 truncate"
                     >
-                      库内 {{ u.total_records }} 条记录 · 首次 {{ fmtDay(u.first_seen) }}
+                      库内 {{ u.total_records }} 条记录 · 首次 {{ fmtDate(u.first_seen) }}
                     </span>
                   </div>
 
@@ -512,7 +512,7 @@
     type Streamer,
     type Session
   } from '@/api/douyin'
-  import { fmtNum, fmtTime, fmtTitle, fmtSessionTime } from '@/utils/format'
+  import { fmtNum, fmtTime, fmtTitle, fmtSessionTime, fmtDate } from '@/utils/format'
   import { emojiHtml } from '@/utils/douyin-emoji'
   import { ElMessage } from 'element-plus'
   import { apiErrorMessage } from '@/utils/douyin-error'
@@ -889,15 +889,12 @@
     return (u?.db_nicknames || []).map((n: string) => ({ nickname: n, count: 0 }))
   }
 
-  /** 毫秒/秒时间戳 → 2026/06/25（用于"首次出现"这类日期展示，两种量级都能吃） */
-  function fmtDay(ms?: number | null): string {
-    if (!ms) return '—'
-    const n = Number(ms)
-    const d = new Date(n > 1e12 ? n : n * 1000)
-    if (Number.isNaN(d.getTime())) return '—'
-    const p = (x: number) => String(x).padStart(2, '0')
-    return `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())}`
-  }
+  /*
+   * 原来这里有一份本地的日期格式化 fmtDay()（毫秒/秒时间戳 → 2026/06/25）。
+   * 它与 utils/format.ts 的 fmtSessionTime() 输出完全一致 —— 属于"同一件事两套代码"，
+   * 而且空值行为已经不一致（这里 '—'、那边空串）。
+   * 现在统一用共享的 fmtDate()（默认兜底就是 '—'，与本页原来一致），解析逻辑只维护一处。
+   */
 
   /**
    * 是否为自动生成的名字：优先用后端给的 generated 字段（判定规则只维护一处），

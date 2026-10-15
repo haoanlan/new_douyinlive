@@ -25,11 +25,22 @@ export function fmtTime(ts: any): string {
   })
 }
 
-/** 格式化场次日期 (YYYY/MM/DD) */
-export function fmtSessionTime(t: any): string {
-  if (!t) return ''
+/**
+ * 只到「日」：YYYY/MM/DD
+ *
+ * **粒度是设计选择，不是不一致**（用户明确指出）：有些地方只需要知道哪一天
+ * （如"首次出现"、场次日期、趋势图横轴），有些地方需要精确到分钟
+ * （如"首次活跃/最近活跃"、场次开始时间）。统一的是**写法与实现**，不是粒度。
+ *
+ * 空值/非法值的兜底文案可传：搜索页用 '—'，场次列表用 ''（保持各自的界面观感不变）。
+ * 原本有两份实现（search 的 fmtDay 与这里的 fmtSessionTime），空值行为已经不一致
+ * （'—' vs ''），合并成这一处，以后修解析逻辑只改这里。
+ */
+export function fmtDate(t: any, fallback = '—'): string {
+  if (!t) return fallback
   let date: Date
   if (/^(\d+(\.\d+)?)$/.test(String(t).trim())) {
+    // 秒/毫秒都能吃：13 位以上按毫秒
     const ts = parseFloat(String(t))
     date = new Date(ts > 1e12 ? ts : ts * 1000)
   } else {
@@ -39,6 +50,14 @@ export function fmtSessionTime(t: any): string {
   const mm = String(date.getMonth() + 1).padStart(2, '0')
   const dd = String(date.getDate()).padStart(2, '0')
   return `${date.getFullYear()}/${mm}/${dd}`
+}
+
+/**
+ * 只到「日」的旧名字（场次列表/筛选器在用）。
+ * 保留这个名字不动调用点，内部委托给 fmtDate —— 空值仍返回 ''（与原来一致）。
+ */
+export function fmtSessionTime(t: any): string {
+  return fmtDate(t, '')
 }
 
 /** 格式化时长 (分钟 → Xh Xm) */

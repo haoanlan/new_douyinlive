@@ -39,7 +39,7 @@
               <span v-if="profile?.danmakuStyle"> · 弹幕 {{ profile.danmakuStyle }}</span>
             </div>
             <div class="text-xs text-g-400 mt-1">
-              首次活跃 {{ fmtTs(profile?.firstSeen) }} · 最近活跃 {{ fmtTs(profile?.lastSeen) }}
+              首次活跃 {{ fmtTime(profile?.firstSeen) }} · 最近活跃 {{ fmtTime(profile?.lastSeen) }}
             </div>
             <!-- 顶部原来在这里展示"库内名字"，用户要求去掉（需要看名字历史可去信息查询页的别名入口） -->
           </div>
@@ -153,7 +153,7 @@
                 }}</el-avatar>
                 <div class="flex-1 min-w-0">
                   <div class="text-sm truncate">{{ s.streamer_name || '未知主播' }}</div>
-                  <div class="text-xs text-g-500 truncate">{{ fmtTs(s.start_time) }}</div>
+                  <div class="text-xs text-g-500 truncate">{{ fmtTime(s.start_time) }}</div>
                 </div>
                 <span
                   class="text-sm font-bold text-theme shrink-0"
@@ -295,7 +295,7 @@
   import { computed, onMounted, ref } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { fetchUser, type UserProfile } from '@/api/douyin'
-  import { fmtNum, fmtTitle, rankClass } from '@/utils/format'
+  import { fmtNum, fmtTime, fmtTitle, rankClass } from '@/utils/format'
   import { emojiHtml } from '@/utils/douyin-emoji'
   import { apiErrorMessage } from '@/utils/douyin-error'
 
@@ -308,17 +308,12 @@
   const loading = ref(true)
   const error = ref('')
 
-  /** 时间戳 → 可读时间（后端给的是毫秒时间戳，也可能是已有格式的字符串） */
-  function fmtTs(ts?: number | string | null) {
-    if (ts === undefined || ts === null || ts === '') return '-'
-    const n = typeof ts === 'number' ? ts : Number(ts)
-    // 非纯数字（已经是格式化好的时间串）直接返回
-    if (!Number.isFinite(n) || n <= 0) return String(ts)
-    const d = new Date(n > 1e12 ? n : n * 1000)
-    if (Number.isNaN(d.getTime())) return String(ts)
-    const p = (x: number) => String(x).padStart(2, '0')
-    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
-  }
+  /*
+   * 原来这里有一份本地的 fmtTs()：输出「2026-10-14 12:00」（半角短横线），
+   * 而全站其它地方用 utils 的 fmtTime() 都是「2026/10/14 12:00」（斜杠）——
+   * 同一个页面上，"首次活跃"是短横线、点进某个场次就变斜杠，看着像两个产品。
+   * 现在统一用共享的 fmtTime()；粒度（精确到分钟）保持不变，只统一写法。
+   */
 
   const stats = computed(() => {
     const p = profile.value

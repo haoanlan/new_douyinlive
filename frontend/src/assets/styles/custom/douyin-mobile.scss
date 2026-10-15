@@ -518,22 +518,66 @@
   }
 
   /*
-   * 分页：不许顶出卡片
+   * 分页：**保持一行**，并按用户要求调整行为
    *
-   * 页数多时（例如某主播 151 场 → 16 页）Element 默认会铺开 7 个数字 +
-   * 前后箭头 + 省略号，实测在 376~390px 上整行宽度超过卡片，箭头跑到卡片圆角外面。
-   * 窄屏改成：允许换行、居中，数字按钮收紧；手指目标仍保持 ≥32px。
+   * 我上一版给它加了 flex-wrap: wrap —— 结果前后箭头各自被换到一行
+   * （< 在上面、> 在下面），比原来更难看。换行对分页是错的：
+   * 左右箭头和页码是一个整体，拆行就没有"上一页/下一页"的语义了。
+   *
+   * 现在的做法：
+   *   1. nowrap —— 永远一行
+   *   2. 首页隐藏「上一页」、末页隐藏「下一页」（Element 在边界处只把按钮置灰，
+   *      灰按钮占着位置又点不动；用户要求"第一页没有上一页、最后一页没有下一页"）
+   *   3. 页码最多 5 个（组件里传 pager-count=5，Element 按当前页动态折叠成 1 … 4 5 6 … 16）
+   *   4. 右侧有跳页输入框（layout 里加了 jumper），页多时不用连点
+   *   5. 按钮 30px：5 个数字 + 双箭头 + 跳页 ≈ 300px，能在 330px 的卡片里放下
    */
   .douyin-page .el-pagination {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     justify-content: center;
-    row-gap: 6px;
     max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
   }
 
-  .douyin-page .el-pagination .el-pager li {
-    min-width: 32px;
-    height: 32px;
+  .douyin-page .el-pagination::-webkit-scrollbar {
+    display: none;
+  }
+
+  .douyin-page .el-pagination .btn-prev:disabled,
+  .douyin-page .el-pagination .btn-next:disabled {
+    display: none;
+  }
+
+  .douyin-page .el-pagination .el-pager li,
+  .douyin-page .el-pagination button {
+    /* 实测不写 !important 时 Element 的 .el-pager li / 分页按钮规则会压住
+       （量到的仍是 30px + margin 4px），总宽 373px > 容器 330px，第一页的"1"被裁掉 */
+    min-width: 30px !important;
+    width: 30px !important;
+    height: 30px !important;
+    padding: 0 6px !important;
+    margin: 0 1px !important;
+  }
+
+  /* 跳页输入框：默认 56px，收紧到 42px（一行里省出 14px） */
+  .douyin-page .el-pagination__jump {
+    margin-left: 4px !important;
+    font-size: 12px !important;
+  }
+
+  .douyin-page .el-pagination__jump .el-input,
+  .douyin-page .el-pagination__jump .el-input__wrapper {
+    width: 42px !important;
+    min-width: 42px !important;
+    height: 30px !important;
+    padding: 0 4px !important;
+  }
+
+  .douyin-page .el-pagination__jump .el-input__inner {
+    height: 30px !important;
+    font-size: 12px !important;
   }
 
   /*

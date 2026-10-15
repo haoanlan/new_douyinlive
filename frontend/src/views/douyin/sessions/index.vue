@@ -223,11 +223,20 @@
       </div>
 
       <div v-if="filteredSessions.length" class="flex justify-end mt-4">
+        <!--
+          分页（按用户要求）：
+            · layout 加 jumper：可以直接输入页数跳转（页多时比连点下一页实用）
+            · pager-count=5：中间数字最多 5 个，Element 会按当前页**动态**折叠成
+              「1 … 4 5 6 … 16」，不必铺到 6 个
+            · 首页/末页的「上一页/下一页」由 CSS 隐藏（disabled 状态直接不显示，
+              见 douyin-mobile.scss），而不是留一个点不动的灰按钮
+        -->
         <el-pagination
           v-model:current-page="page"
           :page-size="pageSize"
           :total="filteredSessions.length"
-          layout="prev, pager, next"
+          layout="prev, pager, next, jumper"
+          :pager-count="5"
           background
         />
       </div>

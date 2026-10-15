@@ -308,7 +308,7 @@
       "server": "Server"
     },
     "douyin": {
-      "title": "Douyin Monitor",
+      "title": "Douyin Live Data",
       "dashboard": "Overview",
       "rooms": "Rooms",
       "sessions": "Sessions",

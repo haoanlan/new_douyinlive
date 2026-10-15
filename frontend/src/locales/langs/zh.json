@@ -308,7 +308,7 @@
       "server": "服务器管理"
     },
     "douyin": {
-      "title": "抖音监控",
+      "title": "抖音直播数据",
       "dashboard": "总览",
       "rooms": "房间管理",
       "sessions": "场次历史",

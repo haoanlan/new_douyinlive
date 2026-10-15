@@ -45,6 +45,36 @@
           if (themeType === 'dark') {
             document.documentElement.classList.add('dark')
           }
+
+          /*
+           * 盒子模式必须**在首帧之前**写到根元素上。
+           *
+           * 卡片的背景与圆角写在 CSS 的 [data-box-mode='border-mode'] 分支里
+           * （assets/styles/core/app.scss），而这个属性原本只由 JS 在设置面板初始化时设置：
+           * 在它生效之前，.art-card 只命中「只有边框」的那条基础规则 ——
+           * 也就是**透明底 + 直角**，JS 跑完才跳成白底圆角。
+           * 实测（生产版整页刷新）：t=164ms 卡片已出现但 radius=0px、background=rgba(0,0,0,0)；
+           * t=393ms 才变成 radius=16px、background=rgb(255,255,255) —— 中间 230ms 就是用户看到的
+           * "不立体 + 直角变圆角"。
+           *
+           * 这里按持久化设置给出首帧值（读不到就用默认 border-mode，与 config/setting.ts 的
+           * boxBorderMode: true 一致），JS 之后仍会按用户在设置里的选择覆盖。
+           */
+          let boxMode = ''
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i)
+            if (!key || !/setting$/.test(key)) continue
+            try {
+              const saved = JSON.parse(localStorage.getItem(key) || '{}')
+              if (saved && typeof saved.boxBorderMode === 'boolean') {
+                boxMode = saved.boxBorderMode ? 'border-mode' : 'shadow-mode'
+                break
+              }
+            } catch {
+              /* 单个键解析失败就跳过，不影响其它键 */
+            }
+          }
+          document.documentElement.setAttribute('data-box-mode', boxMode || 'border-mode')
         } catch (e) {
           console.warn('Failed to apply initial theme:', e)
         }

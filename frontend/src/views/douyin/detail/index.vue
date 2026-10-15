@@ -396,7 +396,16 @@
           <el-button type="primary" @click="submitFeedSearch">搜索</el-button>
         </div>
 
-        <div ref="feedScrollRef" class="dy-scroll flex-1 min-h-0">
+        <!--
+          滚动区向右多占一个滚动条宽度（feedSbWidth，见脚本里的注释）：
+          这样消息行的右边界与上面的搜索行严格对齐，滚动条落在卡片右内边距里。
+          滚动条宽度是运行时量的（无滚动条时为 0 → 不加偏移）。
+        -->
+        <div
+          ref="feedScrollRef"
+          class="dy-scroll flex-1 min-h-0"
+          :style="feedSbWidth ? { marginRight: `-${feedSbWidth}px` } : undefined"
+        >
           <!--
             渐进披露（取代原来的"固定行高 64px 虚拟滚动"）：
             行高会随内容换行而变（弹幕 2–3 行、礼物行更高），写死高度必然重叠，
@@ -720,6 +729,35 @@
   }
 
   const feedScrollRef = ref<HTMLElement>()
+
+  /*
+   * 动态滚动区的滚动条宽度（px）——用来把滚动条"让进"卡片右内边距。
+   *
+   * 问题：滚动条是**占布局宽度**的（实测有头 Chrome 下 10px），
+   * 于是消息行的右边界比上面的搜索行少 10px，看着像"消息不在模块中间"（用户反馈）。
+   * 把滚动条移出卡片又不好看（用户已明确否掉），所以改成：滚动区向右多占一个滚动条宽度，
+   * 内容区宽度恢复成完整的卡片内容宽 → 与搜索行**严格对齐**，滚动条落在卡片的右内边距里。
+   *
+   * 只量一次并记住：滚动条宽度取决于浏览器/系统（8/10/11px，无滚动条时为 0），
+   * 而每次跟随变化会形成"变宽 → 不再溢出 → 滚动条消失 → 变窄 → 又溢出"的抖动。
+   */
+  const feedSbWidth = ref(0)
+  let feedSbMeasured = false
+  function measureFeedScrollbar() {
+    const el = feedScrollRef.value
+    if (!el || feedSbMeasured) return
+    const w = el.offsetWidth - el.clientWidth
+    if (w > 0) {
+      feedSbWidth.value = w
+      feedSbMeasured = true
+    }
+  }
+  // 行数变化（首次载入 / 搜索 / 加载更多）后，DOM 更新完再量一次
+  watch(
+    () => renderedFeed.value.length,
+    () => nextTick(measureFeedScrollbar)
+  )
+  onMounted(() => nextTick(measureFeedScrollbar))
 
   const giftDialogVisible = ref(false)
   const giftDialogUser = ref('')

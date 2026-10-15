@@ -257,7 +257,8 @@ async function init() {
       role TEXT NOT NULL DEFAULT 'R_GUEST',
       enabled INTEGER NOT NULL DEFAULT 1,
       create_time TEXT DEFAULT (datetime('now','localtime')),
-      last_login_time TEXT DEFAULT NULL
+      last_login_time TEXT DEFAULT NULL,
+      avatar TEXT DEFAULT NULL
     )`
   ];
 
@@ -266,6 +267,15 @@ async function init() {
   }
   // 旧库补列（个人中心要显示"上次登录"）
   try { d.exec(`ALTER TABLE dashboard_users ADD COLUMN last_login_time TEXT DEFAULT NULL`); } catch (e) { /* 已存在 */ }
+  /*
+   * 旧库补列：dashboard_users.avatar（个人中心可改头像）。
+   * 照抄上面 last_login_time / online_peak 的做法：CREATE TABLE 里加了列，
+   * 但**现网库是早就建好的**，CREATE TABLE IF NOT EXISTS 不会给已有表补列 ——
+   * 没有这条幂等 ALTER，老库上 POST /api/user/avatar 会抛
+   * `no such column: avatar`，而 /api/user/info 会退化成 500。
+   * 存的是 data URL 原串（前端已缩到 256×256 的 JPEG），不是文件路径。
+   */
+  try { d.exec(`ALTER TABLE dashboard_users ADD COLUMN avatar TEXT DEFAULT NULL`); } catch (e) { /* 已存在 */ }
   // 旧库补列：streamers.sec_uid（upsertStreamer 会写入它，缺列会让场次/主播写入失败）
   try { d.exec(`ALTER TABLE streamers ADD COLUMN sec_uid TEXT DEFAULT ""`); } catch (e) { /* 已存在 */ }
   // 添加 agg 聚合字段（兼容旧库）
@@ -295,11 +305,13 @@ async function init() {
       { table: 'gift_icons', sql: `SELECT 1 FROM gift_icons LIMIT 1` },
       { table: 'gift_icons', sql: `SELECT icon_url FROM gift_icons LIMIT 1` },
       { table: 'streamers', sql: `SELECT sec_uid FROM streamers LIMIT 1` },
-      { table: 'sessions', sql: `SELECT online_peak FROM sessions LIMIT 1` }
+      { table: 'sessions', sql: `SELECT online_peak FROM sessions LIMIT 1` },
+      // 头像列：缺了会让个人中心读/写头像直接报错（POST /api/user/avatar、GET /api/user/info）
+      { table: 'dashboard_users', sql: `SELECT avatar FROM dashboard_users LIMIT 1` }
     ];
     for (const chk of required) {
       try { d.prepare(chk.sql).get(); } catch (e) {
-        console.error(`[db][自检失败] ${chk.table} 结构不完整（${e.message}）—— 礼物图标或主播写入会失败，请检查建表逻辑`);
+        console.error(`[db][自检失败] ${chk.table} 结构不完整（${e.message}）—— 依赖它的写入/读取会失败，请检查建表逻辑`);
       }
     }
   } catch (e) {

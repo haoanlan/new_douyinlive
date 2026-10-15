@@ -54,6 +54,16 @@ export function changePassword(params: { oldPassword: string; newPassword: strin
   })
 }
 
+/**
+ * 改自己的头像。
+ *
+ * 传的是完整 data URL（前端已在 canvas 里缩到 256×256 并转成 JPEG），
+ * 后端按前缀 + 解码体积（≤300KB）+ 文件头校验后原串存库，返回入库的那一份。
+ */
+export function updateAvatar(avatar: string) {
+  return request.post<{ ok: boolean; avatar: string }>({ url: '/api/user/avatar', data: { avatar } })
+}
+
 export function fetchUserList(params: Record<string, unknown>) {
   return request.get<UserListResult>({ url: '/api/user/list', params })
 }

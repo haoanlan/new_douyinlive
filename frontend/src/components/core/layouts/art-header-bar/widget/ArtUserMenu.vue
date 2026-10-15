@@ -14,7 +14,7 @@
     <template #reference>
       <img
         class="size-8.5 mr-5 c-p rounded-full max-sm:w-6.5 max-sm:h-6.5 max-sm:mr-[16px]"
-        src="@imgs/user/avatar.webp"
+        :src="avatarUrl"
         alt="avatar"
       />
     </template>
@@ -23,7 +23,8 @@
         <div class="flex-c pb-1 px-0">
           <img
             class="w-10 h-10 mr-3 ml-0 overflow-hidden rounded-full float-left"
-            src="@imgs/user/avatar.webp"
+            :src="avatarUrl"
+            alt="avatar"
           />
           <div class="w-[calc(100%-60px)] h-full">
             <span class="block text-sm font-medium text-g-800 truncate">{{
@@ -70,6 +71,7 @@
   import { ElMessageBox } from 'element-plus'
   import { useUserStore } from '@/store/modules/user'
   import { mittBus } from '@/utils/sys'
+  import defaultAvatar from '@imgs/user/avatar.webp'
 
   defineOptions({ name: 'ArtUserMenu' })
 
@@ -79,6 +81,15 @@
 
   const { getUserInfo: userInfo } = storeToRefs(userStore)
   const userMenuPopover = ref()
+
+  /**
+   * 顶栏头像。
+   *
+   * 原来这里写死的是模板自带的 avatar.webp（不是首字母色块），个人中心换了头像它也不会变 ——
+   * 现在跟个人中心共用同一份数据：userInfo.avatar 有值就用它（data URL），没有才回落到默认图。
+   * 登录/刷新时路由守卫会拉一次 /api/user/info 写进 store，所以刷新后这里也是新头像。
+   */
+  const avatarUrl = computed(() => userInfo.value.avatar || defaultAvatar)
 
   /** 这个项目没有昵称/邮箱字段，原来那行显示的是空的 userInfo.email —— 改成角色 */
   const roleLabel = computed(() => {

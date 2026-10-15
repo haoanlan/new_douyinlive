@@ -120,13 +120,14 @@
   }
 
   /*
-   * 例外：日期区间选择器**不拉满**（用户反馈"日期选择器宽度再小点和内容显示宽度一致"）。
-   * 拉满到 321px 后，中间只有一个小「~」、两段日期被撑到两头，看着很散；
-   * 收到 240px —— 与它自身内容（日历图标 + 开始日期 ~ 结束日期）相称。
-   * 选择器权重比上面那条高（多一个 .el-date-editor--daterange），所以能压住 !important。
+   * 日期区间选择器**弹开后的面板**在窄屏太宽（默认是"双月并排"，宽度约 640px，
+   * 手机上会横向溢出/被裁）。用户说的"过宽"指的是**面板**，不是输入框 ——
+   * 输入框保持上面那条"整行占满"的规则不变。
+   * 处理：面板改成单列、只保留可滚动，宽度收进视口内（保留双月，靠横向滚动看第二个月）。
    */
-  .douyin-page .dy-toolbar-actions .el-date-editor.el-date-editor--daterange {
-    width: 240px !important;
+  .douyin-page .el-picker-panel.el-date-range-picker {
+    max-width: calc(100vw - 24px);
+    overflow-x: auto;
   }
 
   /*
@@ -187,14 +188,12 @@
   .douyin-page .dy-action-row .dy-switch-btn {
     justify-content: space-between;
     /*
-     * 窄屏把「自动刷新」药丸明确做小一档（36 → 32）。
-     * 原来它 36px、旁边按钮 40px —— 只差 4px，看着像没对齐的 bug 而不是层级
-     * （用户反馈"刷新状态按钮和自动刷新块高度不一致，自动刷新要小"）。
-     * 一行里 align-items: center 会让它垂直居中，32px 反而是清楚的次要控件。
-     * 不再往下压：32px 是本项目触控目标的下限（mobile-check 会告警 24-31px）。
+     * 与同行的按钮**等高**（用户要求"要高度一致"，我上一版理解反了，曾把它做成 32px）。
+     * 实测窄屏下 .el-button 的高度是 40px（douyin-mobile.scss 里那条 min-height: 34px +
+     * padding 撑出来的），所以这里也写 40px，两列控件上下沿齐平。
      */
-    height: 32px;
-    padding: 0 10px;
+    height: 40px;
+    padding: 0 12px;
   }
 }
 
@@ -646,9 +645,22 @@
    *  于是面板被压成两半、月份标题和星期行重叠）。
    * 所以这里必须把 table-cell 改成 block，宽度交给 100%。
    */
+  /*
+   * 宽度：用户反馈"移动端日期选择器过宽"—— 指的是**弹开后的日期面板**，不是输入框
+   *（我上一版改错了对象，把输入框收到 240px，已还原成"整行占满"）。
+   * 原来这里只有 max-width: 100vw−12px，于是面板几乎占满整屏
+   *（393 视口实测 381px），日期格被拉得很宽。
+   * 现在收到 300px（与输入框 321px 相称，日期格约 42px 仍好点按），
+   * 更窄的屏幕再夹到 100vw−24px，保证不溢出。
+   */
   .el-picker-panel.el-date-range-picker {
-    width: auto !important;
-    max-width: calc(100vw - 12px) !important;
+    width: min(300px, calc(100vw - 24px)) !important;
+    max-width: calc(100vw - 24px) !important;
+  }
+
+  /* 窄屏日期格收一档：默认 td padding 5px，两个月堆叠后面板高 659px，一屏放不下 */
+  .el-date-range-picker .el-date-table td {
+    padding: 3px 0;
   }
 
   .el-date-range-picker .el-picker-panel__body {

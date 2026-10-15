@@ -169,6 +169,45 @@
 .dy-stagger > *:nth-child(n + 8) { animation-delay: 210ms; }
 
 /* ==========================================================================
+ * 抖音页里的骨架元素：让它们**真的看得见**
+ *
+ * 背景（用户反馈"还是空白卡片直接闪现内容，没有虚拟骨架占位加载"）：
+ *   我补的骨架用的是裸 `el-skeleton-item`，而 Element 的微光动画挂在**父级**
+ *   `<el-skeleton animated>` 上 —— 裸用只有一层极浅的灰，在白卡片上几乎不可见：
+ *   DOM 实测有 66 个骨架元素，截图上却是一片空白。
+ *   对比：总览/信息查询用的是 `<el-skeleton :rows="N" animated />`，所以它们看着正常。
+ *
+ * 这里只对 `.douyin-page` 作用域内的骨架元素补底色 + 微光，
+ * 不用逐页改 7 处模板写法，也不动 Element 的全局变量。
+ * ========================================================================== */
+.douyin-page .el-skeleton__item {
+  background: linear-gradient(
+    90deg,
+    var(--art-gray-200) 25%,
+    var(--art-gray-300) 37%,
+    var(--art-gray-200) 63%
+  );
+  background-size: 400% 100%;
+  animation: dy-skeleton-shine 1.4s ease infinite;
+}
+
+@keyframes dy-skeleton-shine {
+  0% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .douyin-page .el-skeleton__item {
+    animation: none;
+  }
+}
+
+/* ==========================================================================
  * 图片/头像/礼物图标淡入
  *
  * 原来图片是"加载完就硬替换"，列表里一排头像/礼物图标会同时闪一下，很毛躁。

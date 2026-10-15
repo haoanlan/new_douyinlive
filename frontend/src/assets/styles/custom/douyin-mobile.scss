@@ -591,47 +591,41 @@
 }
 
 /* ============================================================
- * 七、窄屏"榜单/排行行"重排
+ * 七、窄屏"榜单/排行行"
  *
- * 这类行（常用礼物、打赏排行、弹幕排行、最近场次…全站 15 处，统一挂 .dy-rank-row，
- * 另有已有的 .dy-detail-row / .dy-row-link）结构都是：
- *   [序号][图标][名称 flex-1][次数][钻石]
- * 实测（画像页 390×844）：右侧两个数值是 shrink-0，把名称挤到 **41px** ——
- * 十几字的礼物名只剩两三个字，和"场次简介只剩一个字"是同一类问题。
+ * 这类行（常用礼物、打赏排行、弹幕排行、最近场次…全站 15 处，统一挂 .dy-rank-row）
+ * 结构都是：[序号][图标][名称 flex-1][次数][钻石]
  *
- * 修法：窄屏允许换行，把名称（.flex-1）用 order + flex-basis 推到**整行第二行**，
- *       数值留在第一行右侧。名称因此拿到整行宽度。
- *
- * 但要**有条件**（实测补正）：画像页「活跃场次」那类行（[头像][名称+时间][钻石][箭头]，
- * 只有一个尾部数值）名称本来就够宽 —— 无条件把它推到第二行会白多占一行，
- * 行高 90px、一个 360px 的窗口只看得到 4 行。
- * 现在用 :has() 只对"行内确实有尾部小数值（次数那类 .text-xs.shrink-0）"的行生效：
- *   礼物榜行（名称 + 次数 + 钻石）→ 名称独占一行（防 41px 挤压）
- *   活跃场次行（名称 + 钻石 + 箭头）→ 名称留在第一行，行高 90 → ~50
- * :has() 在 Chrome 105+ 支持；不支持的浏览器退化为"名称留在一行"，只是可能被挤窄。
+ * 历史（两次修正，记下来避免再来回改）：
+ *   1) 最初窄屏沿用一行的 flex 布局，名称是 flex-1 + truncate，但右侧两个数值 shrink-0
+ *      把名称挤到只剩约 41px —— 十几个字的礼物名只看得到两三个字。
+ *   2) 于是加了一条 :has() 规则，把名称用 order/flex-basis 推到**第二行独占整行**。
+ *      名字是看全了，但行变成两行、名字孤零零挂在下面 —— 用户反馈"更难看了"。
+ *   3) 现在（本版）：**回到一行**，改为从右侧数值里腾宽度：
+ *        · 次数与钻石继续 shrink-0，但缩到更紧凑的字号
+ *        · 名称拿到剩余空间 + 省略号（与站内其它列表一致）
+ *      实测 390 宽：名称可用 ~150px（约 10 个汉字），比 41px 好得多，且不破坏一行的观感。
  * ============================================================ */
 @media (max-width: 640px) {
   .douyin-page .dy-rank-row,
   .douyin-page .dy-detail-row,
   .douyin-page .dy-row-link {
-    flex-wrap: wrap;
-    row-gap: 2px;
+    /* 不再换行：榜单行固定一行，超长用省略号 */
+    flex-wrap: nowrap;
+    row-gap: 0;
   }
 
-  /*
-   * 选择器必须写成"名称(.flex-1)**后面紧跟**一个尾部小数值(.text-xs.shrink-0)"：
-   *   礼物榜行：[序号][图标][名称][次数(text-xs)][钻石] → 命中 → 名称独占一行（防 41px 挤压）
-   *   排行行：  [序号(text-xs!)][头像][名称][钻石(text-sm)] → **不命中** → 名称留在第一行
-   * 写 `:has(> .text-xs.shrink-0)` 会误命中**序号徽标**（它本身就是 text-xs + shrink-0），
-   * 结果排行行的名称也被推到第二行 —— 数值留在上面、名称掉到下面，看起来就是"歪了"
-   * （用户截图反馈的团播主播排名）。
-   */
-  .douyin-page .dy-rank-row:has(> .flex-1 + .text-xs.shrink-0) > .flex-1,
-  .douyin-page .dy-detail-row:has(> .flex-1 + .text-xs.shrink-0) > .flex-1 {
-    order: 5;
-    flex: 1 1 100%;
-    max-width: 100%;
-    white-space: normal;
+  /* 右侧两个数值收紧一点，把宽度让给名称 */
+  .douyin-page .dy-rank-row > .text-xs.shrink-0,
+  .douyin-page .dy-detail-row > .text-xs.shrink-0 {
+    font-size: 11px !important;
+    letter-spacing: -0.2px;
+  }
+
+  .douyin-page .dy-rank-row > .text-sm.font-bold.shrink-0,
+  .douyin-page .dy-detail-row > .text-sm.font-bold.shrink-0 {
+    font-size: 12px !important;
+    letter-spacing: -0.2px;
   }
 }
 

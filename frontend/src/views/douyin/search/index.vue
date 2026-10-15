@@ -14,8 +14,15 @@
             原来结果区上方还单独有一行「共 N 个匹配用户 · 显示前 K」，和这里同一个数
             出现两次（用户反馈），已合并到这一行。
           -->
+          <!--
+            dy-result-stats：窄屏允许换行。
+            原来写死 flex-nowrap + overflow-hidden，而它所在的 .min-w-0 容器在
+            360px 手机上只有 240px，这行内容需要 283px —— 实测第三项
+            「0 累计钻石」被直接裁掉（移动端自检 B 类：真裁切）。
+            桌面宽度够，仍是一行。
+          -->
           <div
-            class="flex items-center gap-2.5 mt-1.5 text-xs text-g-500 flex-nowrap min-w-0 overflow-hidden"
+            class="dy-result-stats flex items-center gap-2.5 mt-1.5 text-xs text-g-500 flex-nowrap min-w-0 overflow-hidden"
           >
             <!-- 加载中/失败时不显示（也不残留）上一轮的统计数字 -->
             <span v-if="loading">查询中…</span>

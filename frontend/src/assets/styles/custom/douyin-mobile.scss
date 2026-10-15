@@ -488,6 +488,19 @@
    * 用户："加载前后按钮位置都不一样""按钮防置（放置）的位置不美观"。
    * 窄屏固定成上下两行、按钮右对齐后，位置与内容长度彻底无关。
    */
+  /*
+   * 信息查询页的结果汇总行：窄屏换行，别再裁掉最后一项
+   *
+   * 标记里是 flex-nowrap + overflow-hidden，所在的 .min-w-0 容器在 360px 上只有 240px，
+   * 而内容需要 283px —— 实测「0 累计钻石」被裁掉（移动端自检的 B 类：真裁切，无省略号）。
+   * 窄屏放开换行后，三项会自然折成两行；桌面宽度够，仍是一行。
+   */
+  .douyin-page .dy-result-stats {
+    flex-wrap: wrap !important;
+    overflow: visible !important;
+    row-gap: 4px;
+  }
+
   .douyin-page .dy-session-head {
     flex-direction: column;
     /*

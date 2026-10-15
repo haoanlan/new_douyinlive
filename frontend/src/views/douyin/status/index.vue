@@ -313,7 +313,52 @@
         窄屏下这几组事实网格也改成两列（见 douyin-mobile.scss 的 .mon-kv 密度规则）——
         用户明确要求"排得下"，而不是把内容折叠起来（折叠的版本已撤销）。
       -->
-      <div class="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
+      <!--
+        加载中：与真实两栏同形的骨架。
+        原来这张卡完全没有加载态 —— status 还没到时 proxyCfg 是 null，
+        cookieFacts / proxyFacts 会按兜底文案渲染出「未配置 / — / 0 个」，
+        看起来像已经加载完的正常数据（用户反馈「Go 代理配置就没有骨架」就是它）。
+        骨架复用 .mon-kv 结构，所以窄屏的密度规则（douyin-mobile.scss 里 .mon-kv 那段）自动生效。
+        条件与页面顶部那段骨架保持一致（!status && !statusError）：出错时仍渲染真实卡片 + 错误横幅。
+      -->
+      <div
+        v-if="!status && !statusError"
+        class="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]"
+      >
+        <div class="min-w-0">
+          <div class="flex items-center gap-2">
+            <h4 class="text-base font-semibold text-g-900 m-0">Cookie</h4>
+            <el-skeleton-item variant="text" style="width: 62px; height: 20px" />
+          </div>
+          <div class="mt-3 grid grid-cols-2 gap-2.5 sm:gap-3">
+            <div v-for="i in 4" :key="`sk-cookie-${i}`" class="mon-kv">
+              <el-skeleton-item variant="text" style="width: 68%; height: 13px" />
+              <el-skeleton-item variant="text" style="width: 52%; height: 16px; margin-top: 6px" />
+            </div>
+          </div>
+          <div class="mt-3">
+            <div class="flex items-center justify-between gap-3">
+              <span class="text-sm font-medium text-g-700">Cookie 档位命中</span>
+              <el-skeleton-item variant="text" style="width: 96px; height: 13px" />
+            </div>
+            <el-skeleton-item variant="text" style="width: 60%; height: 13px; margin-top: 8px" />
+          </div>
+        </div>
+        <div class="min-w-0">
+          <h4 class="text-base font-semibold text-g-900 m-0">其他配置</h4>
+          <div class="mt-3 grid grid-cols-2 gap-2.5 sm:gap-3">
+            <div v-for="i in 8" :key="`sk-proxy-${i}`" class="mon-kv">
+              <el-skeleton-item variant="text" style="width: 68%; height: 13px" />
+              <el-skeleton-item variant="text" style="width: 52%; height: 16px; margin-top: 6px" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        v-else
+        class="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]"
+      >
         <!-- 左：Cookie 规则（重点） -->
         <div class="min-w-0">
           <div class="flex items-center gap-2">

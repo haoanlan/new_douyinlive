@@ -65,9 +65,134 @@
         </div>
       </div>
 
+      <!--
+        加载中：**同形骨架**，与真实网格同样的 el-row/el-col/卡片结构与卡片标题。
+        原来这里是「加载中先不渲染」，只有上面那张头部卡有骨架 ——
+        结果整页在加载态只剩一屏（实测页面总高 852px = 正好一屏），
+        数据到达时下面 6 个卡片一次性长出来，页面整体往下跳一大截。
+        行骨架复用 .dy-rank-row / .dy-row-link，所以移动端的行高、头像、徽标尺寸
+        （见 douyin-mobile.scss 的窄屏榜单行规则）会自动作用到骨架上，不需要在这里写死。
+      -->
+      <el-row v-if="loading" :gutter="20" class="dy-profile-grid">
+        <!-- 左列 -->
+        <el-col :sm="24" :md="12">
+          <div class="art-card p-5 mb-5">
+            <div class="art-card-header"><div class="title"><h4>常用礼物</h4></div></div>
+            <div class="flex flex-col gap-2.5 mt-4">
+              <div
+                v-for="i in 5"
+                :key="i"
+                class="dy-rank-row flex items-center gap-2.5 rounded-xl bg-g-100/50 px-3 py-2 min-h-[52px]"
+              >
+                <span class="w-6 h-6 rounded-md shrink-0 overflow-hidden">
+                  <el-skeleton-item variant="text" style="width: 100%; height: 100%" />
+                </span>
+                <el-skeleton-item variant="text" class="!size-7 shrink-0" />
+                <el-skeleton-item variant="text" style="flex: 1; height: 16px" />
+                <el-skeleton-item variant="text" style="width: 50px; height: 14px; flex: 0 0 auto" />
+              </div>
+            </div>
+          </div>
+
+          <div class="art-card p-5 flex flex-col">
+            <div class="art-card-header"><div class="title"><h4>活跃时段</h4></div></div>
+            <div class="flex items-end gap-0.5 h-24 flex-1 min-h-24">
+              <el-skeleton-item
+                v-for="i in 12"
+                :key="i"
+                variant="rect"
+                class="flex-1 !rounded-t"
+                :style="{ height: 20 + ((i * 37) % 80) + '%' }"
+              />
+            </div>
+            <div class="flex justify-between text-xs text-g-400 mt-1">
+              <span>0 点</span><span>12 点</span><span>23 点</span>
+            </div>
+            <el-skeleton-item variant="text" style="width: 45%; height: 14px; margin-top: 8px" />
+          </div>
+
+          <div class="art-card p-5">
+            <div class="art-card-header"><div class="title"><h4>活跃场次</h4></div></div>
+            <div class="flex flex-col gap-2.5 mt-4">
+              <div
+                v-for="i in 4"
+                :key="i"
+                class="dy-row-link flex items-center gap-3 rounded-xl bg-g-100/50 px-3 py-2.5"
+              >
+                <el-avatar :size="32" class="shrink-0">
+                  <el-skeleton-item variant="circle" style="width: 100%; height: 100%" />
+                </el-avatar>
+                <div class="flex-1 min-w-0">
+                  <el-skeleton-item variant="text" style="width: 55%; height: 15px" />
+                  <el-skeleton-item variant="text" style="width: 40%; height: 12px; margin-top: 6px" />
+                </div>
+                <el-skeleton-item variant="text" style="width: 48px; height: 15px; flex: 0 0 auto" />
+              </div>
+            </div>
+          </div>
+        </el-col>
+
+        <!-- 右列 -->
+        <el-col :sm="24" :md="12">
+          <div class="art-card p-5 mb-5">
+            <div class="art-card-header"><div class="title"><h4>常送主播</h4></div></div>
+            <div class="flex flex-col gap-2.5 mt-4">
+              <div
+                v-for="i in 5"
+                :key="i"
+                class="dy-rank-row flex items-center gap-2.5 rounded-xl bg-g-100/50 px-3 py-2 min-h-[52px]"
+              >
+                <span class="w-6 h-6 rounded-md shrink-0 overflow-hidden">
+                  <el-skeleton-item variant="text" style="width: 100%; height: 100%" />
+                </span>
+                <el-skeleton-item variant="text" style="flex: 1; height: 16px" />
+                <el-skeleton-item variant="text" style="width: 50px; height: 14px; flex: 0 0 auto" />
+              </div>
+            </div>
+          </div>
+
+          <div class="art-card p-5 mb-5">
+            <div class="art-card-header">
+              <div class="title">
+                <h4>近期行为</h4>
+                <p>进场每间直播间只显示最近一次</p>
+              </div>
+            </div>
+            <div class="flex flex-col gap-2.5 mt-4">
+              <div
+                v-for="i in 5"
+                :key="i"
+                class="dy-rank-row flex items-center gap-2.5 rounded-xl bg-g-100/50 px-3 py-2"
+              >
+                <el-skeleton-item variant="text" style="width: 34px; height: 22px; flex: 0 0 auto" />
+                <el-skeleton-item variant="text" style="flex: 1; height: 15px" />
+                <el-skeleton-item variant="text" style="width: 56px; height: 14px; flex: 0 0 auto" />
+              </div>
+            </div>
+          </div>
+
+          <div class="art-card p-5">
+            <div class="art-card-header"><div class="title"><h4>馈赠明细</h4></div></div>
+            <div class="flex flex-col gap-2.5 mt-4">
+              <div
+                v-for="i in 5"
+                :key="i"
+                class="dy-rank-row flex items-center gap-2.5 rounded-xl bg-g-100/50 px-3 py-2 min-h-[52px]"
+              >
+                <span class="w-6 h-6 rounded-md shrink-0 overflow-hidden">
+                  <el-skeleton-item variant="text" style="width: 100%; height: 100%" />
+                </span>
+                <el-skeleton-item variant="text" class="!size-7 shrink-0" />
+                <el-skeleton-item variant="text" style="flex: 1; height: 16px" />
+                <el-skeleton-item variant="text" style="width: 50px; height: 14px; flex: 0 0 auto" />
+              </div>
+            </div>
+          </div>
+        </el-col>
+      </el-row>
+
       <!-- 底部 6 个模块排成矩形网格（两列、行内等高、底边齐平），见 douyin-motion.scss 的 .dy-profile-grid -->
-      <!-- 加载中先不渲染：只显示上面的骨架，避免"空图 + 骨架"混着跳一下 -->
-      <el-row v-if="!loading" :gutter="20" class="dy-profile-grid">
+      <el-row v-else :gutter="20" class="dy-profile-grid">
         <!-- 左列 -->
         <el-col :sm="24" :md="12">
           <div class="art-card p-5 mb-5">

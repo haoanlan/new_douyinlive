@@ -174,8 +174,12 @@
                   :key="i"
                   class="dy-detail-row flex items-center gap-3 rounded-xl bg-g-100/50 px-3 py-2"
                 >
-                  <el-skeleton-item variant="text" style="width: 24px; height: 24px; flex: 0 0 auto" />
-                  <el-skeleton-item variant="circle" style="width: 32px; height: 32px; flex: 0 0 auto" />
+                  <span class="w-6 h-6 rounded-md shrink-0 overflow-hidden">
+                    <el-skeleton-item variant="text" style="width: 100%; height: 100%" />
+                  </span>
+                  <el-avatar :size="32" class="shrink-0">
+                    <el-skeleton-item variant="circle" style="width: 100%; height: 100%" />
+                  </el-avatar>
                   <el-skeleton-item variant="text" style="flex: 1; height: 16px" />
                   <el-skeleton-item variant="text" style="width: 64px; height: 16px; flex: 0 0 auto" />
                 </div>
@@ -230,8 +234,12 @@
                   :key="i"
                   class="dy-detail-row flex items-center gap-3 rounded-xl bg-g-100/50 px-3 py-2"
                 >
-                  <el-skeleton-item variant="text" style="width: 24px; height: 24px; flex: 0 0 auto" />
-                  <el-skeleton-item variant="circle" style="width: 32px; height: 32px; flex: 0 0 auto" />
+                  <span class="w-6 h-6 rounded-md shrink-0 overflow-hidden">
+                    <el-skeleton-item variant="text" style="width: 100%; height: 100%" />
+                  </span>
+                  <el-avatar :size="32" class="shrink-0">
+                    <el-skeleton-item variant="circle" style="width: 100%; height: 100%" />
+                  </el-avatar>
                   <el-skeleton-item variant="text" style="flex: 1; height: 16px" />
                   <el-skeleton-item variant="text" style="width: 64px; height: 16px; flex: 0 0 auto" />
                 </div>
@@ -283,8 +291,12 @@
                   :key="i"
                   class="dy-detail-row flex items-center gap-3 rounded-xl bg-g-100/50 px-3 py-2"
                 >
-                  <el-skeleton-item variant="text" style="width: 24px; height: 24px; flex: 0 0 auto" />
-                  <el-skeleton-item variant="circle" style="width: 32px; height: 32px; flex: 0 0 auto" />
+                  <span class="w-6 h-6 rounded-md shrink-0 overflow-hidden">
+                    <el-skeleton-item variant="text" style="width: 100%; height: 100%" />
+                  </span>
+                  <el-avatar :size="32" class="shrink-0">
+                    <el-skeleton-item variant="circle" style="width: 100%; height: 100%" />
+                  </el-avatar>
                   <el-skeleton-item variant="text" style="flex: 1; height: 16px" />
                   <el-skeleton-item variant="text" style="width: 56px; height: 16px; flex: 0 0 auto" />
                 </div>
@@ -448,12 +460,15 @@
           </div>
           <!--
             加载中显示与真实动态行同形的骨架（原来直接落到"暂无动态"）。
-            行高对齐 .dy-feed-row 的真实高度（实测 48px：24px 头像 + 上下 padding），
-            否则数据到达时整块会往下跳。
+            头像用与真实行相同的 el-avatar :size="32" 包一层，骨架项填满它 ——
+            原来这里写死 24px 而真实行是 32px，数据到达时整块会往下跳。
+            这样写也让以后改头像尺寸时骨架自动跟随（不必再来改一次骨架）。
           -->
           <div v-if="!detail" class="flex flex-col gap-2.5 mt-3">
             <div v-for="i in 6" :key="i" class="dy-feed-row flex items-start gap-3">
-              <el-skeleton-item variant="circle" style="width: 24px; height: 24px; flex: 0 0 auto" />
+              <el-avatar :size="32" class="shrink-0">
+                <el-skeleton-item variant="circle" style="width: 100%; height: 100%" />
+              </el-avatar>
               <div class="flex-1 min-w-0">
                 <el-skeleton-item variant="text" style="width: 38%; height: 12px" />
                 <el-skeleton-item variant="text" style="width: 78%; height: 12px; margin-top: 8px" />

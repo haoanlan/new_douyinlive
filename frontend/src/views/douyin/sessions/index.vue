@@ -238,16 +238,25 @@
               「1 … 3 4 5 … 16」—— **前后两个省略号**，看着乱（用户反馈）。
               7 的时候中间页是「1 2 3 4 5 6 … 16」，通常只一个省略号。
             · 首页/末页的「上一页/下一页」由 CSS 隐藏（disabled 状态直接不显示）
-            · 布局由 CSS 用 grid 固定：箭头+页码永远第一行，跳页固定第二行
+            · **手机端不摆号码**（见 douyin-mobile.scss）：
+              Element 的页码在中间页天然是「1 … 3 4 5 6 7 … 16」——**前后两个省略号**，
+              而且 9 个槽位 + 两个箭头 = 352px，超过卡片内容宽 330px，只能被压窄。
+              窄屏改成显示「当前页 / 总页数」+ 箭头 + 跳页框：没有省略号、也不挤。
         -->
-        <el-pagination
-          v-model:current-page="page"
-          :page-size="pageSize"
-          :total="filteredSessions.length"
-          layout="prev, pager, next, jumper"
-          :pager-count="7"
-          background
-        />
+        <div class="flex items-center justify-end gap-3 w-full">
+          <!-- 窄屏专用指示器；sm 以上隐藏，桌面仍看完整页码 -->
+          <span class="sm:hidden text-xs text-g-600 whitespace-nowrap tabular-nums">
+            {{ page }} / {{ totalPages }}
+          </span>
+          <el-pagination
+            v-model:current-page="page"
+            :page-size="pageSize"
+            :total="filteredSessions.length"
+            layout="prev, pager, next, jumper"
+            :pager-count="7"
+            background
+          />
+        </div>
       </div>
     </div>
   </div>
@@ -277,8 +286,7 @@
   const queryError = ref('')
   const selectedIds = ref<number[]>([])
   const dateRange = ref<[string, string] | null>(null)
-  const page = ref(1)
-  /** 正在生成/下载的报告 id，用于禁用重复点击 */
+  const page = ref(1)  /** 正在生成/下载的报告 id，用于禁用重复点击 */
   const downloadingId = ref<number | null>(null)
   const batchDownloading = ref(false)
   const pageSize = 10
@@ -334,6 +342,9 @@
       return true
     })
   })
+
+  /** 总页数（窄屏的「当前页 / 总页数」指示器用，桌面仍看 Element 的页码） */
+  const totalPages = computed(() => Math.max(1, Math.ceil(filteredSessions.value.length / pageSize)))
 
   const pageSessions = computed(() => {
     const start = (page.value - 1) * pageSize

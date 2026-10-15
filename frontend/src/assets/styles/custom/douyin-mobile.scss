@@ -518,54 +518,27 @@
   }
 
   /*
-   * 分页：用 **grid 固定分区**，不再靠 flex-wrap 撞运气
+   * 分页：窄屏**不摆号码**，只留 箭头 + 跳页框（旁边显示「当前页 / 总页数」）
    *
-   * 两次翻车记录：
-   *   ① 给整条分页加 flex-wrap: wrap —— 箭头各自换行（< 在上、> 在下）
-   *   ② 改成"只让跳页框换行"（flex-basis: 100%）—— 页码多的时候
-   *      箭头和跳页框仍然会被挤到第二行（用户真机截图：点第 4 页时 ">" 单独一行）
-   * 根因：wrap 是按"放不下就换"的规则走的，谁换行取决于宽度，不可控。
+   * 三次翻车的最终结论：Element 的页码在中间页天生是
+   * 「1 … 3 4 5 6 7 … 16」—— 9 个槽位 + 两个箭头 = 352px > 卡片内容宽 330px，
+   * 怎么调都会被压窄或换行；而且中间页必然出现**前后两个省略号**（算法如此，调
+   * pager-count 治不了：压到 5 是「1 … 3 4 5 … 16」，放到 7 是「1 … 3 4 5 6 7 … 16」）。
    *
-   * 现在用 grid 明确分区：
-   *   第一行 = 上一页 | 页码 | 下一页   （永远同一行）
-   *   第二行 = 跳页输入框（跨三列、右对齐）
-   * 元素没放下的风险由 pager-count=7 与 32px 按钮保证（实测第一行 ≈ 316px < 330px）。
+   * 所以窄屏改成手机常见形态：`5 / 16`（组件里渲染）+ `‹ ›` + `前往 [ ] 页`。
+   * 没有省略号、不挤、也不用再靠 grid/flex 硬塞。
    */
   .douyin-page .el-pagination {
-    display: grid;
-    /*
-     * 三列都是 auto —— **不要写 minmax(0, auto)**：
-     * 那会允许页码区被压到比内容窄（实测被压成 230px，而 7 项自然宽 288px），
-     * 于是页码溢出、压住右边的箭头，出现「… › 6」这种错位（"16"的 1 被盖掉）。
-     */
-    grid-template-columns: auto auto auto;
-    grid-template-areas:
-      'prev pager next'
-      'jump jump jump';
-    justify-content: center;
+    display: flex;
+    flex-wrap: nowrap;
     align-items: center;
-    column-gap: 4px;
-    row-gap: 6px;
+    justify-content: flex-end;
+    gap: 8px;
     max-width: 100%;
   }
 
-  .douyin-page .el-pagination .btn-prev {
-    grid-area: prev;
-  }
-
   .douyin-page .el-pagination .el-pager {
-    grid-area: pager;
-  }
-
-  .douyin-page .el-pagination .btn-next {
-    grid-area: next;
-  }
-
-  .douyin-page .el-pagination__jump {
-    grid-area: jump;
-    justify-self: end;
-    margin-left: 0 !important;
-    font-size: 12px !important;
+    display: none;
   }
 
   .douyin-page .el-pagination .btn-prev:disabled,
@@ -573,18 +546,17 @@
     display: none;
   }
 
-  /*
-   * 28px：pager-count=7 时最多 8 项（首 + 尾 + 中间 6 个）≈ 8×28 + 间距，
-   * 加上两个 28px 箭头 ≈ 320px，正好放进 330px 的卡片内容宽。
-   * 32px 的话 8 项 = 384px 放不下，只能靠压缩页码区 —— 就出现上面那种错位。
-   */
-  .douyin-page .el-pagination .el-pager li,
   .douyin-page .el-pagination button {
-    min-width: 28px !important;
-    width: 28px !important;
-    height: 28px !important;
+    min-width: 32px !important;
+    width: 32px !important;
+    height: 32px !important;
     padding: 0 4px !important;
-    margin: 0 2px !important;
+    margin: 0 !important;
+  }
+
+  .douyin-page .el-pagination__jump {
+    margin-left: 0 !important;
+    font-size: 12px !important;
   }
 
   .douyin-page .el-pagination__jump .el-input,

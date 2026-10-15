@@ -133,64 +133,46 @@
     </div>
 
     <!--
-      首次进入的引导（用户反馈"开始查询很难看"，本轮重做）。
-      之前三个问题：
-        1) 卡片 620px 高、内容只占约 350px —— 上下空一大片，看着像没加载完；
-        2) 两栏是"标签 + 裸内容"，右边三行说明孤零零占一列，两块没有视觉边界；
-        3) 关键词按钮被 JS 硬切成「萱萱🍋🍋🟩…」（emoji 被切在中间）。
-      现在：两块内容各自装进浅灰面板；关键词改用 CSS 省略号（不会切坏 emoji）；
-      卡片高度收到 clamp(320px, 100vh−420px, 520px)，只留少量呼吸空间。
-      文案与数据都不变（仍取真实主播名 + 真实可查范围，不放装饰性内容）。
+      首次进入的引导。
+      用户前后反馈过两次"难看"：
+        第一版：卡片 620px 高而内容只占 350px（上下空一大片），两栏是"标签 + 裸内容"，
+                关键词还被 JS 硬切成「萱萱🍋🍋🟩…」（emoji 切在中间）；
+        第二版（把两块装进灰面板）仍然不好看 —— 两个带边框的盒子套在大卡片里，
+                内容横向铺满 1400px，稀疏内容被拉得很散，整体像一张说明文档。
+      本版：**居中窄列的空状态**（大图标 + 标题 + 说明 + 药丸标签），是这类页面最稳的做法：
+        · 内容集中在 max-width 560px 的居中列里，不再横铺整屏；
+        · 「怎么用」三步压成一行短提示（信息不丢，但不再占半屏文字）；
+        · ⓘ 里只有结果口径说明，不含操作流程，所以这行提示必须保留。
+      数据与文案都来自真实来源（真实主播名 + 真实可查范围），不放装饰性插画。
     -->
     <div v-if="!searched" class="art-card dy-search-guide p-5">
-      <div class="art-card-header">
-        <div class="title">
-          <h4>开始查询</h4>
-          <p>支持昵称模糊匹配，数据来自本库的弹幕、礼物与进场记录</p>
+      <div class="dy-search-guide__hero">
+        <div class="dy-search-guide__icon">
+          <ArtSvgIcon icon="ri:user-search-line" />
         </div>
-      </div>
+        <h4 class="dy-search-guide__title">开始查询</h4>
+        <p class="dy-search-guide__desc">
+          支持昵称模糊匹配，数据来自本库的弹幕、礼物与进场记录
+        </p>
 
-      <div class="dy-search-guide__body">
-        <section class="dy-search-guide__panel">
-          <div class="dy-search-guide__label">试试这些关键词</div>
-          <div class="dy-search-guide__chips">
-            <button
-              v-for="kw in hotKeywords"
-              :key="kw"
-              class="dy-search-guide__chip dy-pressable"
-              :title="kw"
-              @click="quickSearch(kw)"
-            >
-              {{ kw }}
-            </button>
-          </div>
-          <p class="dy-search-guide__hint">
-            查询会调用抖音接口补全用户资料，人数较多时会分批请求，请稍候；结果太多时可在右上角先选一个直播间缩小范围
-          </p>
-        </section>
+        <div class="dy-search-guide__chips">
+          <button
+            v-for="kw in hotKeywords"
+            :key="kw"
+            class="dy-search-guide__chip dy-pressable"
+            :title="kw"
+            @click="quickSearch(kw)"
+          >
+            {{ kw }}
+          </button>
+        </div>
 
-        <section class="dy-search-guide__panel">
-          <div class="dy-search-guide__label">怎么用</div>
-          <ol class="dy-search-guide__steps">
-            <li>
-              <b>1</b>
-              <span>
-                <template v-if="scopeOptions.length">
-                  先选一个直播间（可选）——当前有 {{ scopeOptions.length }} 个可选，选完再查命中更快
-                </template>
-                <template v-else>先选一个直播间（可选），命中更少、补全更快</template>
-              </span>
-            </li>
-            <li>
-              <b>2</b>
-              <span>输入昵称关键词，支持模糊匹配；也可以直接点左边的示例</span>
-            </li>
-            <li>
-              <b>3</b>
-              <span>在结果里点头像或昵称进入用户画像，看他的弹幕、礼物与场次</span>
-            </li>
-          </ol>
-        </section>
+        <p class="dy-search-guide__hint">
+          点标签直接查询，也可以输入关键词后回车；结果里点头像或昵称可进入用户画像
+        </p>
+        <p class="dy-search-guide__hint">
+          查询会调用抖音接口补全用户资料，人数较多时会分批请求，请稍候
+        </p>
       </div>
 
       <!-- 真实可查范围（来自已加载的主播/场次数据，不是写死的文案） -->
@@ -976,69 +958,94 @@
   .art-card.dy-search-guide {
     display: flex;
     flex-direction: column;
-    /* 标题+正文整体垂直居中，底部范围行跟着一起居中（不能用 margin-top:auto，见下方注释） */
+    /* 空状态：内容水平垂直都居中 */
+    align-items: center;
     justify-content: center;
     /*
-     * 上限从 620 收到 440、下界从 380 降到 300。
-     * 1440×900 下原来是 620px 而内容只有约 350px —— 上下各空 ~130px，看着像没加载完
-     * （用户反馈"开始查询很难看"）。现在卡片高度基本贴合内容，只留十几像素余量。
-     * min-height 不裁剪：内容更高时卡片会自己长高，小窗口也不会溢出。
+     * 卡片占满内容区（而不是"缩在上半屏的小卡片 + 下面一片空白"）：
+     * 空状态内容整体居中，整体构图才成立。
+     * 上限 720、下界 420，min-height 不裁剪 —— 内容更高时卡片自己长高、小窗口不出滚动条。
      */
-    min-height: clamp(300px, calc(100vh - 500px), 400px);
-  }
-
-  .dy-search-guide__body {
-    display: grid;
-    /* 左栏放关键词（内容多）、右栏放三步，按内容量给比例，不再 1:1 */
-    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-    gap: 20px;
-    align-items: start;
-    padding: 18px 0 4px;
+    min-height: clamp(420px, calc(100vh - 330px), 720px);
+    text-align: center;
   }
 
   /*
-   * 两块内容各自装进浅灰面板。
-   * 原来两栏只是"标签 + 裸内容"，右边三行说明孤零零占一列、没有视觉边界，整块看着很散。
-   * 底色用 --art-gray-100（浅色 #f9fafb、深色自动反转）。
+   * 居中窄列：空状态内容不铺满整屏宽度。
+   * 上一版两栏横向铺满 1400px，稀疏内容被拉得很散，整体像一张说明文档。
+   * 600px 是实测值：5 个关键词药丸（含最长的「苏江巅峰之夜王者赛道」）正好排成一行。
    */
-  .dy-search-guide__panel {
+  .dy-search-guide__hero {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    min-width: 0;
-    padding: 16px;
-    background: var(--art-gray-100);
-    border: 1px solid var(--art-card-border);
-    border-radius: 12px;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    max-width: 600px;
+  }
+
+  /* 图标块：与工具条里那个 36px 的图标方框同一套语言，空状态里放大到 60px */
+  .dy-search-guide__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    margin-bottom: 8px;
+    font-size: 28px;
+    color: var(--theme-color);
+    background: color-mix(in srgb, var(--theme-color) 14%, transparent);
+    border-radius: 18px;
+  }
+
+  .dy-search-guide__title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--art-gray-900);
+  }
+
+  .dy-search-guide__desc {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--art-gray-700);
+    /*
+     * 居中排版下"最后一行只剩一个字"特别显眼（窄屏实测把「…进场记录」挤成「…进场记」+「录」）。
+     * pretty 会让浏览器自己平衡断行，避免孤字。桌面一行时无副作用。
+     */
+    text-wrap: pretty;
   }
 
   .dy-search-guide__chips {
     display: flex;
     flex-wrap: wrap;
+    justify-content: center;
     gap: 8px;
+    margin-top: 14px;
   }
 
   /*
-   * 关键词按钮：改用 **CSS 省略号**，不再用 JS 硬切。
+   * 关键词药丸：CSS 省略号（按字形簇截断），不再用 JS 硬切。
    * 原来是 `kw.slice(0, 10) + '…'` —— 会把 emoji 的代理对/组合序列切在中间，
    * 渲染成「萱萱🍋🍋🟩…」这种半截字符（用户截图里的样子）。
-   * CSS 的 text-overflow 按字形簇截断，配合 title 仍能看到完整名字。
+   * 底色用 gray-200 而不是 gray-100：卡片本身是白的，gray-100（#f9fafb）几乎看不出是标签。
    */
   .dy-search-guide__chip {
     display: block;
     max-width: 200px;
     height: 32px;
-    padding: 0 12px;
+    padding: 0 14px;
     overflow: hidden;
     font-size: 12px;
     line-height: 32px;
-    color: var(--art-gray-700);
+    color: var(--art-gray-800);
     text-overflow: ellipsis;
     white-space: nowrap;
     cursor: pointer;
-    background: var(--default-box-color);
-    border: 1px solid var(--art-card-border);
-    border-radius: 8px;
+    background: var(--art-gray-200);
+    border: 1px solid transparent;
+    border-radius: 999px;
     transition:
       color 0.15s,
       background-color 0.15s,
@@ -1047,74 +1054,34 @@
 
   .dy-search-guide__chip:hover {
     color: var(--theme-color);
-    background: color-mix(in srgb, var(--theme-color) 8%, var(--default-box-color));
-    border-color: color-mix(in srgb, var(--theme-color) 35%, transparent);
+    background: color-mix(in srgb, var(--theme-color) 12%, transparent);
+    border-color: color-mix(in srgb, var(--theme-color) 30%, transparent);
   }
 
   .dy-search-guide__hint {
-    margin: 0;
+    margin: 12px 0 0;
     font-size: 12px;
-    line-height: 1.65;
+    line-height: 1.7;
+    /* 同 .dy-search-guide__desc：避免居中排版下的孤字断行 */
+    text-wrap: pretty;
     /* 原来这里是 text-g-500：白底 2.68:1 不达 AA（小字要 4.5）；gray-700 是 6.4:1 */
     color: var(--art-gray-700);
   }
 
-  .dy-search-guide__label {
-    font-size: 12px;
-    font-weight: 600;
-    /* 用 gray-700 而不是 gray-500：实测 gray-500 在白底上只有 2.68:1（AA 要 4.5） */
-    color: var(--art-gray-700);
-  }
-
-  /* 三步说明：数字徽标 + 文本，行距放开一点，读起来不挤 */
-  .dy-search-guide__steps {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .dy-search-guide__steps li {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    font-size: 13px;
-    line-height: 1.65;
-    color: var(--art-gray-700);
-  }
-
-  .dy-search-guide__steps b {
-    flex: 0 0 auto;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
-    margin-top: 1px;
-    /* 与关键词按钮统一成 8px 圆角（原来 6px，两种圆角并排看得出不一样） */
-    border-radius: 8px;
-    /*
-     * 中性灰阶而不是品牌色白字：实测"白字 + 品牌色"只有 3.29:1（11px 属小字，AA 要 4.5），
-     * 加透明度后更差。gray-200/gray-800 是主题变量，深浅色都会自动反转。
-     */
-    background: var(--art-gray-200);
-    color: var(--art-gray-800);
-    font-size: 11px;
-    font-weight: 600;
+  /* 第二行提示紧贴第一行，作为一个整体段落 */
+  .dy-search-guide__hint + .dy-search-guide__hint {
+    margin-top: 2px;
   }
 
   .dy-search-guide__foot {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+    /* 居中列里要让分割线占满卡片宽度，不能随内容收缩 */
+    width: 100%;
     /*
      * 这里**不能**用 margin-top: auto 顶到底部：
      * flexbox 里 auto margin 会先于 justify-content 吃掉全部自由空间（实测吃掉 290px），
-     * 结果是标题和正文被顶到卡片顶部、居中失效。让它跟着一起居中即可。
+     * 结果是内容被顶到卡片顶部、居中失效。让它跟着一起居中即可。
      */
-    margin-top: 14px;
+    margin-top: 20px;
     padding-top: 14px;
     border-top: 1px solid var(--art-card-border);
     font-size: 12px;
@@ -1122,7 +1089,6 @@
     color: var(--art-gray-700);
   }
 
-  /* 窄屏：两栏堆叠（一栏 300px 都不到时再分栏就没法读了） */
   @media (max-width: 900px) {
     /*
      * 选择器必须写满两个类：上面 `.art-card.dy-search-guide` 是两类的权重，
@@ -1132,14 +1098,16 @@
       min-height: 0;
     }
 
-    .dy-search-guide__body {
-      grid-template-columns: 1fr;
-      gap: 14px;
-      align-content: start;
+    .dy-search-guide__hero {
+      max-width: 100%;
     }
 
-    .dy-search-guide__panel {
-      padding: 14px;
+    /*
+     * 窄屏说明压到 12px：13px 时整行 338px，比卡片内宽（393 屏下 321px）宽一点，
+     * 会折出「记录」两个字的孤行。12px 时 312px，正好一行放下。
+     */
+    .dy-search-guide__desc {
+      font-size: 12px;
     }
   }
 </style>

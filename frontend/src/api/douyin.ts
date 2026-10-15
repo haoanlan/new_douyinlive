@@ -537,10 +537,17 @@ export function fetchSessionDetail(sessionId: string) {
  * 从 /detail 拆出来：这一份单独就有 3299KB / 7024 条（实测），把 /detail 拖到 3.2MB / 1.9 秒，
  * 而首屏只需要排名。只有"礼物排行里点开某人的送礼明细""团播主播里点开某主播的送礼人"
  * 这两个弹窗需要它 —— 点开时再拉。
+ *
+ * @param q 关键字（匹配礼物名 / 送礼人 / 收礼人），由 SQL 在服务端过滤全量明细。
+ *          「最新动态」搜礼物时用它拿**全场**命中数（原来只在最近 200 条里过滤，
+ *          导致搜礼物时标题写着「全量命中 0 条」）。
  */
-export function fetchSessionGiftDetails(sessionId: string) {
+export function fetchSessionGiftDetails(sessionId: string, q = '') {
+  const params = new URLSearchParams()
+  if (q) params.set('q', q)
+  const qs = params.toString()
   return request.get<{ giftDetails: GiftDetailItem[]; total: number }>({
-    url: `/api/sessions/${sessionId}/gift-details`
+    url: `/api/sessions/${sessionId}/gift-details${qs ? `?${qs}` : ''}`
   })
 }
 

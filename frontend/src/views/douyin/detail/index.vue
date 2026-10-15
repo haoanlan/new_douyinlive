@@ -862,30 +862,34 @@
   }
 
   /**
-   * 在全量弹幕里搜索。
+   * 在全量弹幕与礼物里搜索。
    *
-   * 前端只有最新 2000 条，搜不到更早的 —— 所以关键字交给**服务端**用 SQL 检索
-   * （实测全量 6.5 万条里搜"哈哈哈哈"：192ms / 236 条命中）。
-   * 空关键字则恢复为最新的 2000 条。
+   * 前端只有最新 2000 条弹幕、最近 200 条礼物，搜不到更早的 —— 所以关键字交给**服务端**用 SQL 检索
+   * （实测全量 6.5 万条弹幕里搜"哈哈哈哈"：192ms / 236 条命中）。
+   * 空关键字则恢复为最新的 2000 条（礼物用主详情里带的最近 200 条，不额外请求）。
+   *
+   * 礼物也要走服务端：原来只在前端过滤最近 200 条 giftFeed，
+   * 于是搜礼物时服务端弹幕命中 0 → 标题写「全量命中 0 条」，而列表里明明有礼物行
+   * （用户反馈"搜索礼物时全量命中都显示 0"）。命中也就不再是"最近 200 条"的口径。
    */
   async function searchFeed() {
     const q = feedSearch.value.trim()
     feedSearching.value = true
     feedShownCount.value = 200
     try {
-      const dmData = await fetchDanmaku(sessionId, FEED_FETCH_LIMIT, q)
+      const [dmData, giftData] = await Promise.all([
+        fetchDanmaku(sessionId, FEED_FETCH_LIMIT, q),
+        // 礼物检索失败不该把整个搜索判为失败：弹幕结果照样给出来
+        q ? fetchSessionGiftDetails(String(sessionId), q).catch(() => null) : Promise.resolve(null)
+      ])
       const dmList = dmData.data || dmData.messages || []
-      feedSearchTotal.value = dmData.total ?? dmList.length
+      const dmTotal = dmData.total ?? dmList.length
+
+      const gifts = q ? giftData?.giftDetails || [] : detail.value?.giftFeed || []
+      const giftTotal = q ? giftData?.total ?? gifts.length : 0
+
+      feedSearchTotal.value = dmTotal + giftTotal
       feedSearchError.value = ''
-      // 同 loadDanmakuFeed：动态里的礼物来自 giftFeed（最近 200 条）
-      const feedGifts = detail.value?.giftFeed || []
-      const gifts = q
-        ? feedGifts.filter(
-            (g) =>
-              (g.gift_name || '').toLowerCase().includes(q.toLowerCase()) ||
-              (g.nickname || '').toLowerCase().includes(q.toLowerCase())
-          )
-        : feedGifts
       feedRaw.value = buildFeedItems(dmList, gifts)
     } catch {
       // 搜索失败保持原列表，避免把"搜不到"伪装成"没有"；同时给界面一个明确标记，

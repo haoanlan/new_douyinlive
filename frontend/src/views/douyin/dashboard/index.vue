@@ -394,8 +394,13 @@
               人
             </span>
             <span class="ml-auto flex items-center gap-1 shrink-0" :title="fmtTitle(s.online_peak)">
-              <ArtSvgIcon icon="ri:signal-wifi-line" class="text-g-400" />在线峰值
-              {{ fmtNum(s.online_peak) }}
+              <ArtSvgIcon icon="ri:signal-wifi-line" class="text-g-400" />
+              <!--
+                「在线峰值」这四个字在窄屏隐藏：这一行里其它三项都是「图标+数字+单位」，
+                只有它多一段中文，实测在手机上把整行挤成两行（用户真机截图）。
+                图标与 :title 仍在，桌面（≥640px）保持完整文字。
+              -->
+              <span class="hidden sm:inline">在线峰值</span>{{ fmtNum(s.online_peak) }}
             </span>
           </div>
         </div>

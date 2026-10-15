@@ -127,6 +127,55 @@ export function useSettingsPanel() {
     return { stopWatch }
   }
 
+  /*
+   * 抵消 Element 锁滚动的"滚动条宽度补偿"误判。
+   *
+   * lock-scroll 打开时 useLockscreen 会测量滚动条宽度，并把 body 宽度设成
+   * `calc(100% - 宽度)`，用来抵消"滚动条消失后布局变宽"。但它的测量方式是往 body
+   * 塞一个 `overflow: scroll` 的临时 div —— 在**设备模拟**（DevTools 的 iPhone 16）
+   * 和 overlay 滚动条环境里，视口滚动条其实**不占位**（真实宽度 0），临时 div 却仍然
+   * 报出 15px。于是 body 被凭空压窄 15px：
+   *   实测 393×852（iPhone 16）：头像右边界 377 → 362（左移 15px），设置按钮同幅左移，
+   *   顶栏宽度 393 → 378；关闭后回归原位。左侧内容不动、只有右对齐元素跟着跑，
+   *   看起来就是"打开设置页面元素抖一下"。
+   *
+   * 这里用**真实**视口滚动条宽度（innerWidth - documentElement.clientWidth）判断：
+   * 只有它 ≤ 0（补偿必然多余）时才挂 .dy-no-sb-compensate，由 CSS 把宽度还原成 auto。
+   * 真实滚动条确实占位时（经典滚动条 + 文档可滚）不加类，Element 原本的补偿是对的。
+   */
+  let sbCompensateTimer: ReturnType<typeof setTimeout> | null = null
+
+  const syncScrollbarCompensation = () => {
+    if (sbCompensateTimer) {
+      clearTimeout(sbCompensateTimer)
+      sbCompensateTimer = null
+    }
+    const realWidth = window.innerWidth - document.documentElement.clientWidth
+    document.body.classList.toggle('dy-no-sb-compensate', realWidth <= 0)
+  }
+
+  /*
+   * 撤销上面的覆盖。时机很关键：Element 的 cleanup 是在关闭后 **200ms** 才把
+   * body 宽度还原的，早于它撤类会让 body 在关闭动画中途又被压窄一次（再来一次左移）。
+   */
+  const clearScrollbarCompensation = () => {
+    if (sbCompensateTimer) clearTimeout(sbCompensateTimer)
+    sbCompensateTimer = setTimeout(() => {
+      document.body.classList.remove('dy-no-sb-compensate')
+      sbCompensateTimer = null
+    }, 400)
+  }
+
+  /*
+   * 用 watch 而非在各处手动调用：抽屉除了「点 X / 关闭按钮」，还能用 Esc、点遮罩关掉，
+   * 那些路径不经过 closeDrawer。watch 默认 flush:'pre'，会在组件重新渲染、
+   * ElDrawer 收到新的 modelValue **之前**执行，所以挂类来得及拦住 Element 设宽度。
+   */
+  watch(showDrawer, (val: boolean) => {
+    if (val) syncScrollbarCompensation()
+    else clearScrollbarCompensation()
+  })
+
   // 抽屉控制
   const useDrawerControl = () => {
     // 用于存储 setTimeout 的 ID，以便在需要时清除
@@ -180,6 +229,7 @@ export function useSettingsPanel() {
       () => props.open,
       (val: boolean | undefined) => {
         if (val !== undefined) {
+          // 挂类 / 撤类统一由 watch(showDrawer) 负责，这里只赋值
           showDrawer.value = val
         }
       }

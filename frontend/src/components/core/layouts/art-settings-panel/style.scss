@@ -100,3 +100,20 @@
     display: none !important;
   }
 }
+
+/*
+ * 抵消 Element 锁滚动的"滚动条宽度补偿"误判（配合 useSettingsPanel 里的 syncScrollbarCompensation）。
+ *
+ * Element 的 useLockscreen 打开时会测量滚动条宽度并把 body 宽度设成 `calc(100% - 宽度)`。
+ * 它用的是往 body 塞一个 `overflow: scroll` 临时 div 的测法 —— 在设备模拟（DevTools 的
+ * iPhone 16）和 overlay 滚动条环境里，视口滚动条其实**不占位**（真实宽度 0），临时 div
+ * 却仍报 15px。于是 body 被凭空压窄 15px：
+ *   实测 393×852：头像右边界 377 → 362、设置按钮 283 → 268、顶栏 393 → 378，关闭才回归。
+ * 表现出来就是"打开设置时部分元素向左移动"。
+ *
+ * 只有真实视口滚动条宽度 ≤ 0 时才挂这个类；真实占位时（经典滚动条 + 文档可滚）不加，
+ * Element 原本的补偿是对的，不能一刀切掉。
+ */
+body.el-popup-parent--hidden.dy-no-sb-compensate {
+  width: auto !important;
+}

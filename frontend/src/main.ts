@@ -9,6 +9,11 @@ import '@utils/sys/console.ts'                      // 控制台输出内容
 import { setupGlobDirectives } from './directives'
 import { setupErrorHandle } from './utils/sys/error-handle'
 import { prefetchPagesWhenIdle } from './router/core/prefetch'
+// 离线图标：必须在任何组件渲染前注册 —— 否则首屏图标会先走一次运行时 CDN，
+// 而这台机器上三个 iconify CDN 域名全部连不上（实测），结果就是图标空白。
+import { registerOfflineIcons } from './utils/ui/iconify-loader'
+
+registerOfflineIcons()
 
 document.addEventListener(
   'touchstart',

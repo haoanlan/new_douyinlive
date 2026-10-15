@@ -24,6 +24,30 @@
   }
 }
 
+/*
+ * 手机端：不要"绝对定位 + 固定高度 + m-auto 居中"。
+ *
+ * 那套在桌面没问题，但手机上弹出软键盘时可视高度会从 ~800px 掉到 ~400px，
+ * 而容器写死 h-[650px] 又靠 m-auto 居中 —— 键盘一弹，表单位置整个重算，
+ * 表现就是"输账号密码时输入框被挤到顶部"（用户真机反馈）。
+ * 窄屏改成正常文档流 + 顶部对齐：键盘只让页面滚动，表单不会跳。
+ */
+@media (max-width: 640px) {
+  .auth-right-wrap {
+    position: static;
+    height: auto;
+    min-height: 100%;
+    margin: 0;
+    padding-top: 16px;
+    overflow: visible;
+  }
+
+  .auth-right-wrap .form {
+    height: auto;
+    padding: 0 0 32px;
+  }
+}
+
 /* 滑入动画 */
 @keyframes slideInRight {
   from {

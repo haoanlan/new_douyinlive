@@ -62,20 +62,6 @@
               </p>
             </div>
 
-            <div class="flex-cb mt-2 text-sm">
-              <!-- 密码不做任何记住（令牌每次启动都会失效），这里只说明用户名已带出来 -->
-              <span class="text-xs text-g-500">{{
-                formData.username ? `已带出上次登录的用户名：${formData.username}` : '请输入用户名与密码'
-              }}</span>
-              <button
-                type="button"
-                class="dy-link-reset text-xs text-g-700 c-p"
-                @click="showResetHelp = !showResetHelp"
-              >
-                忘记密码？
-              </button>
-            </div>
-
             <div style="margin-top: 30px">
               <ElButton
                 class="w-full custom-height"
@@ -89,32 +75,15 @@
             </div>
 
             <!--
-              登录页说明。
-              原来这里是三行平铺的灰字，其中最后一行是 **运维指令**
-              （`node scripts/reset-dashboard-password.js 新密码`）——
-              登录页是**未登录**就能看到的页面，把服务端命令摊在这里，
-              等于向任何打开页面的人暴露内部脚本路径；对普通使用者也没有意义。
-              现在：面向使用者的说明（令牌策略）保持常显，
-              面向管理员的重置方法收进上面的「忘记密码？」点击展开 ——
-              需要它的人正是在登录页进不来的时候，够得着；不需要的人不会被它干扰。
+              登录页上**不出现任何运维/账号信息**（用户明确要求）。
+              这里原来有三块内容，全部删除：
+                1. 「已带出上次登录的用户名：admin」—— 直接暴露默认管理员账号名
+                2. 「忘记密码？」展开面板 —— 里面有服务端脚本路径
+                   （node scripts/reset-dashboard-password.js 新密码）
+                3. 「登录令牌只在本次运行期间有效…」—— 内部令牌策略
+              登录页是未登录就能打开的页面，这些都属于把内部信息给外人看。
+              重置密码的方法写在 README（运维看文档，不是看登录页）。
             -->
-            <div class="mt-5 text-xs leading-5 text-g-600">
-              <p class="m-0 flex items-start gap-1.5">
-                <ArtSvgIcon icon="ri:information-line" class="mt-0.5 shrink-0" />
-                <span>
-                  登录令牌只在本次运行期间有效，因此<b>每次启动仪表盘后都需要重新登录</b>。
-                </span>
-              </p>
-
-              <div v-if="showResetHelp" class="dy-reset-help mt-2.5">
-                <p class="m-0">忘记密码时，在<b>运行仪表盘的那台机器</b>的项目目录执行：</p>
-                <code class="pc-code">node scripts/reset-dashboard-password.js 新密码</code>
-                <p class="m-0 mt-1.5">
-                  执行后立即生效、无需重启；账号名为 <b>admin</b>（其它账号可在登录后的
-                  「账号管理」里重置）。
-                </p>
-              </div>
-            </div>
           </ElForm>
         </div>
       </div>
@@ -164,8 +133,8 @@
     password: ''
   })
 
-  /** 上次登录的用户名（只记用户名，不记密码） */
-  const LAST_USER_KEY = 'douyin-dashboard-last-user'
+  /** 上一次登录的用户名不做任何本地保存：登录页是未登录页面，
+   *  预填账号名等于把账号信息摆在页面上（用户要求登录页不出现这些）。 */
 
   const rules = computed<FormRules>(() => ({
     username: [{ required: true, message: t('login.placeholder.username'), trigger: 'blur' }],
@@ -174,13 +143,6 @@
 
   const loading = ref(false)
 
-  /**
-   * 「忘记密码？」展开状态。
-   * 重置口令的命令属于**运维指令**，默认不摊在登录页上（未登录页面不该暴露服务端内部命令），
-   * 但忘记密码的人正是在这个页面进不来 —— 所以做成点击展开，够得着又不打扰。
-   */
-  const showResetHelp = ref(false)
-
   onMounted(() => {
     // 清除残留的旧登录态（仅清状态，不跳转，避免守卫循环）
     if (userStore.isLogin) {
@@ -188,13 +150,7 @@
       userStore.setToken('')
       userStore.setUserInfo({} as any)
     }
-    // 带出上次登录的用户名，省得每次手打（密码不记住）
-    try {
-      const last = localStorage.getItem(LAST_USER_KEY)
-      if (last) formData.username = last
-    } catch {
-      /* 隐私模式下 localStorage 可能不可用 */
-    }
+    // 不再带出上次登录的用户名：那会在登录页上显示账号名（用户要求）
   })
 
   // 登录
@@ -224,13 +180,6 @@
       userStore.setToken(token, refreshToken)
       userStore.setUserInfo({ userId, userName, roles } as any)
       userStore.setLoginStatus(true)
-
-      // 记住用户名（只记用户名）
-      try {
-        localStorage.setItem(LAST_USER_KEY, userName)
-      } catch {
-        /* 忽略 */
-      }
 
       // 登录成功处理
       showLoginSuccessNotice()
@@ -290,33 +239,6 @@
     height: 40px !important;
   }
 
-  /* 「忘记密码？」：做成链接观感（下划线只在 hover 出现，避免和正文抢注意力） */
-  .dy-link-reset {
-    padding: 0;
-    border: 0;
-    background: none;
-    text-decoration: none;
-    transition: color 150ms ease;
-  }
-
-  .dy-link-reset:hover,
-  .dy-link-reset:focus-visible {
-    color: var(--theme-color);
-    text-decoration: underline;
-  }
-
-  /* 展开的重置说明：浅底 + 左边框，和常显的说明行区分开，一眼看出这是"另一类信息" */
-  .dy-reset-help {
-    padding: 10px 12px;
-    border-left: 3px solid var(--theme-color);
-    border-radius: 6px;
-    background: var(--art-gray-100);
-    line-height: 1.7;
-  }
-
-  .dy-reset-help .pc-code {
-    display: inline-block;
-    margin-top: 6px;
-    word-break: break-all;
-  }
+  /* 「忘记密码？」与展开的重置说明已从登录页移除（未登录页面不暴露运维信息），
+     对应的 .dy-link-reset / .dy-reset-help 样式一并删除。 */
 </style>

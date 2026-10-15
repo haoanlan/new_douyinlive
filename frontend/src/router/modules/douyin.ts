@@ -54,6 +54,23 @@ export const douyinRoutes: AppRouteRecord = {
       }
     },
     {
+      /*
+       * 数据合并查看：跨主播、跨场次把多场直播的数据合成一份。
+       *
+       * 为什么是独立路由而不是详情页里的一个 tab：选择场次要能跨主播
+       * （在「场次历史」里一次只能看一个主播），放详情页里就选不到别人家的场次。
+       */
+      path: 'combined',
+      name: 'DouyinCombined',
+      component: '/douyin/combined',
+      meta: {
+        title: 'menus.douyin.combined',
+        icon: 'ri:merge-cells-horizontal',
+        keepAlive: true,
+        roles: ['R_SUPER', 'R_GUEST']
+      }
+    },
+    {
       path: 'search',
       name: 'DouyinSearch',
       component: '/douyin/search',

@@ -187,6 +187,85 @@ export interface DanmakuFull {
   maxLimit?: number
 }
 
+// ===================== 场次合并（数据合并查看） =====================
+
+/**
+ * 合并结果里的「礼物排行」一项。
+ *
+ * 字段以**实测**为准（GET /api/sessions/combined?ids=191,138）：
+ * `{ nickname, avatar_url, user_sec_uid, total_diamonds, gift_count }`。
+ *
+ * 注意这里**没有礼物名**：后端在 lib/routes/sessions.js:444-453 是按
+ * `user_sec_uid || nickname` 聚合的「送礼人」维度（会话内礼物明细 -> 按人汇总），
+ * 所以 UI 的「礼物排行」实际展示的是"送得最多的人"，不是"最贵的礼物"。
+ */
+export interface CombinedGiftItem {
+  nickname: string
+  avatar_url?: string | null
+  user_sec_uid?: string | null
+  total_diamonds: number
+  gift_count: number
+}
+
+/**
+ * 合并结果里的「主播排行」一项（团播场景：一场直播里有多个主播）。
+ * 实测返回 `{ anchor_sec_uid, anchor_name, anchor_avatar, total_diamonds, gift_count, user_count }`
+ * （另有后端内部的 `users` Set，JSON 序列化后是空对象，不用读）。
+ */
+export interface CombinedAnchorItem {
+  anchor_sec_uid?: string | null
+  anchor_name: string
+  anchor_avatar?: string | null
+  total_diamonds: number
+  gift_count: number
+  user_count: number
+}
+
+/** 合并结果里的「弹幕排行」一项：实测 `{ nickname, avatar, user_sec_uid, msg_count }` */
+export interface CombinedDanmakuItem {
+  nickname: string
+  avatar?: string | null
+  user_sec_uid?: string | null
+  msg_count: number
+}
+
+/**
+ * 多场次合并统计（GET /api/sessions/combined?ids=1,2,3）。
+ *
+ * 后端约定（lib/routes/sessions.js:394-486）：
+ *   - `ids` 少于 2 个 / 全是无效 id → HTTP 400（前端在点按钮前就挡掉）
+ *   - `gifts` 按钻石降序 top20、`danmakuRanking` 按条数降序 top30、`anchorRanking` 不截断
+ *   - `summary.user_count` 是**各场次预聚合 `agg_users` 之和**，跨场次不去重
+ *     （同一人看了两场会被算两次），UI 上必须说明，不能读成"去重后的独立用户"
+ */
+export interface CombinedResult {
+  /** 实际参与合并的场次 id（后端回显，用于确认没有漏场） */
+  session_ids: number[]
+  summary: {
+    total_gifts: number
+    total_diamonds: number
+    total_danmaku: number
+    user_count: number
+  }
+  gifts: CombinedGiftItem[]
+  anchorRanking: CombinedAnchorItem[]
+  danmakuRanking: CombinedDanmakuItem[]
+}
+
+/**
+ * 合并多个场次的数据。
+ *
+ * 关掉自动错误提示（与其它读接口一致）：调用方有自己的失败文案，
+ * 而且 400「至少选择2个场次」这类原因由 `apiErrorMessage` 就能取到。
+ */
+export function fetchCombinedSessions(ids: number[]) {
+  return request.get<CombinedResult>({
+    url: '/api/sessions/combined',
+    params: { ids: ids.join(',') },
+    showErrorMessage: false
+  })
+}
+
 // ===================== Streamers =====================
 
 /**

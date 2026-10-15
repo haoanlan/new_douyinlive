@@ -312,6 +312,7 @@
       "dashboard": "总览",
       "rooms": "房间管理",
       "sessions": "场次历史",
+      "combined": "数据合并查看",
       "trends": "趋势分析",
       "search": "信息查询",
       "status": "状态监控",

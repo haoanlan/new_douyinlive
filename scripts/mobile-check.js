@@ -82,9 +82,13 @@ const diagnose = (page) =>
 
     // 触控目标
     //
-    // 口径分两层，避免为了凑数字把界面撑变形：
+    // 口径分三层，避免为了凑数字把界面撑变形：
     //   - 硬失败：< 24×24（WCAG 2.5.8 Target Size (Minimum) AA 的下限）
     //   - 告警：  < 32×28（我们自己的目标值：主要控件 32–44px）
+    //   - 方形图标按钮（宽高都 < 48，即不是整行/整块的可点区域）：< 40 → **硬失败**
+    //     依据 douyin-mobile.scss 里自己写的规范"移动端建议 ≥ 40px 视觉尺寸"。
+    //     原来只判 < 24 才失败，于是房间管理那对 32×32 的暂停/移除按钮一直漏过
+    //     （实测 390×844 巡检截图里才发现）；阈值提上来后由脚本守住。
     // 内嵌在文字行里的小图标触发器（例如"查询结果说明"）做到 28×28 就到实用上限，
     // 再大就会把行高撑开；它属于次要入口，只告警。
     const smallTaps = [];
@@ -94,8 +98,17 @@ const diagnose = (page) =>
       const cs = getComputedStyle(el);
       if (r.width < 2 || r.height < 2 || cs.display === 'none' || cs.visibility === 'hidden') continue;
       const label = `${el.tagName.toLowerCase()}.${String(el.className).split(' ')[0]} ${Math.round(r.width)}×${Math.round(r.height)}`;
+      const square = r.width < 48 && r.height < 48;
+      // 卡片里的方形操作按钮（标记为 dy-pressable size-8）统一到 40：
+      // 原来只有"< 24 才算失败"的口径，32×32 正好漏过（实测房间管理那对暂停/移除按钮）。
+      const cardIconBtn = String(el.className).includes('size-8');
       if (r.width < 24 || r.height < 24) smallTaps.push(label);
-      else if (r.width < 32 || r.height < 28) warnTaps.push(label);
+      else if (cardIconBtn && square && (r.width < 40 || r.height < 40)) {
+        smallTaps.push(label + ' (卡片方形图标按钮应 ≥40)');
+      } else if (r.width < 32 || r.height < 28) warnTaps.push(label);
+      // 其余方形控件（分页 32、标签关闭 28、行内提示图标 28 等）是文件里论证过的折中，
+      // 不阻断构建，但列出来避免悄悄退化。
+      else if (square && (r.width < 40 || r.height < 40)) warnTaps.push(label + ' (方形控件建议 ≥40)');
     }
 
     // 对齐：标签栏容器 / 卡片最外缘 / 页面容器

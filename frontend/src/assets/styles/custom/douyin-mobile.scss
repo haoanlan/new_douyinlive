@@ -387,7 +387,45 @@
     font-size: 13px;
   }
 
-  /* 分页按钮：Element 默认 28×28，手指偏小 → 32×32 */
+  /*
+   * 卡片里的方形图标按钮（房间管理的暂停/移除、场次历史的两个操作）：
+   * 标记里是 `dy-pressable size-8` = 32×32，本文件自己的规范是"≥ 40px 视觉尺寸"，
+   * 但 mobile-check 的阈值是"< 32 才报错"，正好 32 就漏过了（实测 390×844 巡检抓到）。
+   * 这里放大到 40，并同步把 mobile-check 的方形目标阈值提到 40。
+   */
+  .douyin-page .dy-pressable[class*='size-8'] {
+    width: 40px;
+    height: 40px;
+  }
+
+  /*
+   * 表单控件高度统一到 40（原来输入框实测 34、日期区间 30）：
+   * 手指点得准，也和各处的 40px 图标按钮对齐。
+   *
+   * 注意：这里必须写 height，不能只写 min-height —— 项目里
+   * `.el-input__wrapper { height: var(--el-component-size) }`（36px）是**固定高度**，
+   * min-height 压不过它（实测仍是 34）。同理 el-button 默认 36 高。
+   */
+  .douyin-page .el-input__wrapper,
+  .douyin-page .el-select__wrapper,
+  .douyin-page .el-textarea__inner,
+  .douyin-page .el-range-editor.el-input__wrapper {
+    height: 40px;
+  }
+
+  .douyin-page .el-range-editor .el-range-input {
+    height: 38px;
+  }
+
+  .douyin-page .el-button:not(.el-button--small):not(.is-text):not(.is-link) {
+    min-height: 40px;
+  }
+
+  /* 筛选框这类"卡片内的单行输入"本身没有高度约束，跟着 40 走即可 */
+
+  /*
+   * 分页按钮：Element 默认 28×28，手指偏小 → 32×32
+   */
   .douyin-page .el-pagination button {
     min-width: 32px;
     height: 32px;

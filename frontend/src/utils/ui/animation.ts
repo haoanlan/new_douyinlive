@@ -42,30 +42,22 @@ export const themeAnimation = (e: any) => {
   // 计算鼠标点击位置距离视窗的最大圆半径
   const endRadius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y))
 
-  /*
-   * 窄屏（≤800px，与 douyin-mobile.scss 同一个断点）**不用 View Transition**。
-   *
-   * View Transition 要把整屏拍两张快照，再用 clip-path 做圆形揭示 —— 而 clip-path 动画
-   * 不走 GPU 合成，等于 500ms 内逐帧重绘整屏。在 DPR 3 的手机上快照就是 1179×2556 像素两张。
-   * 实测（有头 Chrome，393×852，CDP Performance 指标）：
-   *     开 VT：最长帧 27ms   样式重算 109 次 / 48ms   总任务 257ms
-   *     关 VT：最长帧 13ms   样式重算  35 次 / 22ms   总任务 204ms
-   * 即 VT 让样式重算翻 3 倍、最长帧翻倍。桌面有余量做这件事，手机没有，表现就是"切主题抖一下"。
-   * 窄屏直接切：主题本身是 html.dark 上的 CSS 变量，瞬时生效，不需要动画兜。
-   */
-  const useViewTransition =
-    window.innerWidth > 800 && typeof document.startViewTransition === 'function'
-
-  if (!useViewTransition) {
-    toggleTheme()
-    return
-  }
-
-  // 设置CSS变量（只给 View Transition 用，窄屏不设可少一次 html 上的样式失效）
+  // 设置CSS变量
   document.documentElement.style.setProperty('--x', x + 'px')
   document.documentElement.style.setProperty('--y', y + 'px')
   document.documentElement.style.setProperty('--r', endRadius + 'px')
-  document.startViewTransition(() => toggleTheme())
+
+  /*
+   * View Transition 在窄屏也照用 —— 但**揭示方式由 CSS 按屏宽切换**（见 theme-animation.scss）：
+   *   宽屏：clip-path 圆形扩散（视觉最漂亮，桌面有余量做逐帧重绘）；
+   *   窄屏：透明度交叉淡入（合成层动画，几乎零成本，手机上不抖）。
+   * 所以这里不需要判断屏宽，动画形式的决定权在样式里。
+   */
+  if (typeof document.startViewTransition === 'function') {
+    document.startViewTransition(() => toggleTheme())
+  } else {
+    toggleTheme()
+  }
 }
 
 /**

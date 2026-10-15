@@ -518,6 +518,66 @@
   }
 
   /*
+   * 分页：不许顶出卡片
+   *
+   * 页数多时（例如某主播 151 场 → 16 页）Element 默认会铺开 7 个数字 +
+   * 前后箭头 + 省略号，实测在 376~390px 上整行宽度超过卡片，箭头跑到卡片圆角外面。
+   * 窄屏改成：允许换行、居中，数字按钮收紧；手指目标仍保持 ≥32px。
+   */
+  .douyin-page .el-pagination {
+    flex-wrap: wrap;
+    justify-content: center;
+    row-gap: 6px;
+    max-width: 100%;
+  }
+
+  .douyin-page .el-pagination .el-pager li {
+    min-width: 32px;
+    height: 32px;
+  }
+
+  /*
+   * 日期区间面板：两个月份**上下堆叠**
+   *
+   * Element 的 daterange 面板默认把两个月并排（实测 646px 宽），手机上直接顶出屏幕
+   * （390px 视口 → 溢出 257px）。
+   *
+   * 注意实现的排版方式：实测两个月份是 `display: table-cell`
+   * （不是 float —— 只写 float: none 没用，它们仍在同一匿名表格行里并排，
+   *  于是面板被压成两半、月份标题和星期行重叠）。
+   * 所以这里必须把 table-cell 改成 block，宽度交给 100%。
+   */
+  .el-picker-panel.el-date-range-picker {
+    width: auto !important;
+    max-width: calc(100vw - 12px) !important;
+  }
+
+  .el-date-range-picker .el-picker-panel__body {
+    min-width: 0 !important;
+  }
+
+  .el-date-range-picker .el-picker-panel__content.el-date-range-picker__content {
+    display: block !important;
+    width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  .el-date-range-picker__content.is-left {
+    border-right: none !important;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+  }
+
+  /* 月份内部的表与标题跟着撑满（否则仍是 165px 的半宽表格） */
+  .el-date-range-picker .el-date-table,
+  .el-date-range-picker .el-date-range-picker__header {
+    width: 100% !important;
+  }
+
+  .el-date-range-picker .el-date-range-picker__header {
+    padding: 0 4px;
+  }
+
+  /*
    * 分页按钮：Element 默认 28×28，手指偏小 → 32×32
    */
   .douyin-page .el-pagination button {

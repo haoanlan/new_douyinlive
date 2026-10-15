@@ -119,7 +119,6 @@
   const isPassing = ref(false)
   const isClickPass = ref(false)
 
-  const systemName = AppConfig.systemInfo.name
   const formRef = ref<FormInstance>()
 
   /**
@@ -142,7 +141,6 @@
   }))
 
   const loading = ref(false)
-
   onMounted(() => {
     // 清除残留的旧登录态（仅清状态，不跳转，避免守卫循环）
     if (userStore.isLogin) {
@@ -181,8 +179,8 @@
       userStore.setUserInfo({ userId, userName, roles } as any)
       userStore.setLoginStatus(true)
 
-      // 登录成功处理
-      showLoginSuccessNotice()
+      // 登录成功处理（带上账号名，提示里显示"欢迎回来，admin"）
+      showLoginSuccessNotice(userName)
 
       // 获取 redirect 参数，如果存在则跳转到指定页面，否则跳转到首页
       // （只认站内、且不指向登录页本身的目标，避免 redirect 套娃把自己转回来）
@@ -216,15 +214,20 @@
     dragVerify.value.reset()
   }
 
-  // 登录成功提示
-  const showLoginSuccessNotice = () => {
+  /**
+   * 登录成功提示。
+   *
+   * 原来正文是「${欢迎回来}, ${系统名}!」—— 用户反馈"欢迎回来后边应该是账号名字"。
+   * 账号名取登录接口返回的 userName（与 userStore 里存的是同一个值）。
+   */
+  const showLoginSuccessNotice = (accountName: string) => {
     setTimeout(() => {
       ElNotification({
         title: t('login.success.title'),
         type: 'success',
         duration: 2500,
         zIndex: 10000,
-        message: `${t('login.success.message')}, ${systemName}!`
+        message: `${t('login.success.message')}，${accountName || formData.username}！`
       })
     }, 1000)
   }

@@ -41,8 +41,48 @@
       </div>
     </el-alert>
 
+    <!--
+      首屏骨架：status 与 statusError 都还没有时（第一次请求在路上）。
+      形状与真实内容一致（hero 卡 + 4 张 tile），数据到位直接替换，不产生跳动。
+      用户反馈"状态监控似乎没有使用骨架"—— 之前这段是空白或占位符。
+    -->
+    <template v-if="!status && !statusError">
+      <section class="art-card p-5">
+        <el-skeleton animated>
+          <template #template>
+            <el-skeleton-item variant="h1" style="width: 120px; height: 22px" />
+            <el-skeleton-item variant="text" style="width: min(560px, 90%); margin-top: 14px" />
+            <el-skeleton-item variant="text" style="width: min(420px, 70%); margin-top: 8px" />
+            <div class="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+              <div v-for="i in 4" :key="i" class="mon-kv">
+                <el-skeleton-item variant="text" style="width: 60%" />
+                <el-skeleton-item variant="text" style="width: 80%; height: 16px; margin-top: 8px" />
+              </div>
+            </div>
+          </template>
+        </el-skeleton>
+      </section>
+
+      <section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+        <article v-for="i in 4" :key="i" class="art-card p-5">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0 flex-1">
+              <el-skeleton animated>
+                <template #template>
+                  <el-skeleton-item variant="text" style="width: 55%" />
+                  <el-skeleton-item variant="h1" style="width: 70%; height: 28px; margin-top: 14px" />
+                  <el-skeleton-item variant="text" style="width: 90%; margin-top: 18px" />
+                </template>
+              </el-skeleton>
+            </div>
+            <el-skeleton-item variant="button" style="width: 36px; height: 36px; border-radius: 8px" />
+          </div>
+        </article>
+      </section>
+    </template>
+
     <!-- ① Hero 头卡 -->
-    <section class="art-card p-5">
+    <section v-else class="art-card p-5">
       <div class="flex flex-wrap items-start justify-between gap-4">
         <div class="min-w-0 flex-1">
           <h1 class="text-[20px] font-semibold tracking-tight text-g-900 m-0">状态监控</h1>
@@ -108,7 +148,11 @@
     </section>
 
     <!-- ② 四张指标 tile（无进度条：每张只放一组互不重复的事实） -->
-    <section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+    <!-- v-if：首屏骨架期间不渲染真实 tile，避免与骨架同时出现 -->
+    <section
+      v-if="status || statusError"
+      class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4"
+    >
       <article v-for="m in tiles" :key="m.label" class="art-card p-5">
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0">

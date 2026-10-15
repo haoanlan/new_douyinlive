@@ -121,9 +121,16 @@ export const douyinRoutes: AppRouteRecord = {
         title: '个人中心',
         icon: 'ri:user-3-line',
         isHide: true,
-        isHideTab: true,
+        /*
+         * 个人中心要有**自己的标签页**。
+         *
+         * 原来这里是 isHideTab: true + activePath: '/douyin/status'（从状态监控那条
+         * 路由抄下来的）—— 于是点个人中心后，高亮的却是「状态监控」，
+         * 两个页面毫无关系（用户："个人中心路由挂在了状态监控上"）。
+         * 改成不隐藏标签、并且不再借用别人的 activePath。
+         */
+        isHideTab: false,
         keepAlive: true,
-        activePath: '/douyin/status',
         roles: ['R_SUPER', 'R_GUEST']
       }
     }

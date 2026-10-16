@@ -844,14 +844,14 @@
   /* 用项目自己的滚动条变量，而不是写死像素：
      真机 DIAG 实测外层滚动容器滚动条实占 **8px**（= reset.scss 的 --dy-scrollbar-size），
      而这里原先写死 -10px → 多补 2px → 行右侧顶出、左右不等（用户量到 L=1 / R=-1）。 */
-  margin-right: calc(-1 * var(--dy-scrollbar-size));
+  margin-right: calc(-1 * var(--dy-scrollbar-actual, var(--dy-scrollbar-size)));
 }
 
 /* Tailwind 的 overflow 工具类同理（数据合并页还在用 max-h + overflow-y-auto 的写法） */
 .douyin-page .overflow-y-auto,
 .douyin-page .overflow-auto {
   scrollbar-gutter: stable;
-  margin-right: calc(-1 * var(--dy-scrollbar-size));
+  margin-right: calc(-1 * var(--dy-scrollbar-actual, var(--dy-scrollbar-size)));
 }
 
 /*

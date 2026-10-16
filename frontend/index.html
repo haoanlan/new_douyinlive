@@ -80,6 +80,28 @@
         }
       })()
     </script>
+    <!-- SCROLLBAR-PROBE: 量本平台真实滚动条宽度 → --dy-scrollbar-actual（load 后测；探针自带 thin + 真实溢出内容） -->
+    <script>
+      (function () {
+        function measure() {
+          try {
+            var p = document.createElement('div');
+            p.style.cssText =
+              'position:absolute;top:-9999px;left:-9999px;width:100px;height:100px;' +
+              'overflow-y:scroll;overflow-x:hidden;scrollbar-width:thin;scrollbar-gutter:stable';
+            var inner = document.createElement('div');
+            inner.style.cssText = 'width:10px;height:1000px';   /* 必须真的溢出，否则部分浏览器不占位 ✗ */
+            p.appendChild(inner);
+            (document.body || document.documentElement).appendChild(p);
+            var w = p.offsetWidth - p.clientWidth;
+            p.parentNode.removeChild(p);
+            document.documentElement.style.setProperty('--dy-scrollbar-actual', (w || 0) + 'px');
+          } catch (e) {}
+        }
+        if (document.readyState === 'complete') measure();
+        else window.addEventListener('load', measure);
+      })();
+    </script>
   </head>
 
   <body>

@@ -534,6 +534,36 @@
     padding: 20px 16px 16px;
   }
 
+  /*
+   * 信息查询的结果卡：手机端做减法（用户："还是挤 乱 移动端需要简化 优化布局"）
+   *
+   * 实测这张卡在 360px 上叠了 6 个区块：身份 2 行 + 库内别名 1 标签 + 3 个统计格
+   * + 弹幕/礼物 2 行 + 最近参与；其中**别名块最多占 4 行**（一个长别名会折满整行，
+   * 后面还跟 2 个标签 + 「另有 N 个游客名」入口），是"乱"的主要来源。
+   *
+   * 规则：
+   *   ① 别名只留第一个（其余仍在「另有 N 个游客名」入口里可查，信息没丢）
+   *   ② 统计格收紧：内边距与图标块各降一档，三格仍等宽
+   *   ③ 区块间距从 20px 收到 14px，行更紧凑但不贴
+   */
+  .douyin-page .dy-user-card .dy-alias-tag ~ .dy-alias-tag {
+    display: none;
+  }
+
+  .douyin-page .dy-user-card .dy-stat-tile {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  .douyin-page .dy-user-card .dy-stat-tile > div:first-child {
+    width: 30px;
+    height: 30px;
+  }
+
+  .douyin-page .dy-user-card .mt-5 {
+    margin-top: 14px !important;
+  }
+
   .douyin-page .dy-session-head {
     flex-direction: column;
     /*

@@ -283,7 +283,7 @@
               而上下内边距只有 16px、块间距 12-16px —— 不缺信息，缺的是呼吸。
               下面把上下内边距提到 20px、主要块间距提到 20px（区块之间 16px）。
             -->
-            <div class="art-card relative px-5 py-5 h-full flex flex-col">
+            <div class="dy-user-card art-card relative px-5 py-5 h-full flex flex-col">
               <!-- 头部：头像 + 昵称 + 别名 -->
               <div class="flex items-start gap-3.5">
                 <el-avatar :size="48" :src="u.avatar" class="shrink-0">
@@ -365,7 +365,7 @@
                       size="small"
                       effect="plain"
                       type="info"
-                      class="!h-auto max-w-full whitespace-normal break-all leading-5 !py-0.5"
+                      class="dy-alias-tag !h-auto max-w-full whitespace-normal break-all leading-5 !py-0.5"
                       :title="n"
                     >
                       {{ n }}

@@ -578,43 +578,40 @@
               >送出礼物的人员榜单 · {{ peopleDialogList.length }} 人</div
             >
           </div>
+          <!--
+            下载榜单图片：一个**分裂按钮**（点主键=按当前模板下载，点箭头=换模板并下载）。
+            原来这里是"灰底工具条 + 独立下拉 + 下载按钮"，用户两次反馈不好看：
+            多一条横带、两个控件不成组、还要先选再点。
+            收进标题栏右侧后：不占额外版面，一个控件完成"选模板 + 下载"。
+          -->
+          <el-dropdown
+            split-button
+            size="small"
+            type="primary"
+            class="shrink-0"
+            :disabled="rankDownloading || !rankThemes.length"
+            @click="downloadRankImages"
+            @command="onPickRankTheme"
+          >
+            <span class="inline-flex items-center">
+              <ArtSvgIcon v-if="!rankDownloading" icon="ri:download-2-line" class="mr-1" />
+              下载榜单
+            </span>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item
+                  v-for="t in rankThemes"
+                  :key="t"
+                  :command="t"
+                  :class="{ 'text-theme font-medium': t === rankTheme }"
+                >
+                  {{ rankThemeLabel(t) }}
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </div>
       </template>
-      <!--
-        下载榜单图片。
-        改造前是「一个占满宽度的下拉 + 一个小按钮」平铺 —— 像表单控件随手放，不成组
-        （用户："这个下载的 ui 太丑了"）。
-        现在收成一条**工具条**，用 app 里通用的浅底圆角块（与状态页/详情页同款
-        `rounded-xl bg-g-100/50 px-3 py-2`）：左侧图标+标题+模板下拉，右侧实心主按钮；
-        下拉固定宽度、不再撑满，窄屏自动换行。
-      -->
-      <div
-        class="rank-image-bar mb-3 flex items-center gap-3 flex-wrap rounded-xl bg-g-100/50 px-3 py-2"
-      >
-        <div class="flex items-center gap-2 min-w-0 flex-1">
-          <ArtSvgIcon icon="ri:image-2-line" class="text-base text-g-500 shrink-0" />
-          <span class="text-xs text-g-600 shrink-0">榜单图片</span>
-          <el-select
-            v-model="rankTheme"
-            size="small"
-            class="!w-36 shrink-0"
-            placeholder="选择模板"
-            :disabled="rankDownloading || !rankThemes.length"
-          >
-            <el-option v-for="t in rankThemes" :key="t" :label="t" :value="t" />
-          </el-select>
-        </div>
-        <el-button
-          size="small"
-          type="primary"
-          class="shrink-0"
-          :loading="rankDownloading"
-          @click="downloadRankImages"
-        >
-          <ArtSvgIcon v-if="!rankDownloading" icon="ri:download-2-line" class="mr-1" />
-          下载
-        </el-button>
-      </div>
       <div class="flex flex-col gap-2.5 max-h-80 overflow-y-auto">
           <div
             v-for="(p, i) in peopleDialogList"
@@ -835,6 +832,43 @@
   const rankThemes = ref<string[]>([])
   const rankDefaultTheme = ref('depth-glass')
   const rankDownloading = ref(false)
+
+  /*
+   * 模板中文名（用户采纳："模板名是英文 key，配一套中文名"）。
+   * 只用于展示：清单本身来自脚本（后端读 MAG_THEME_NAMES），
+   * 这里没覆盖到的模板回落到原始 key，不会因为脚本加模板而显示不出来。
+   */
+  const RANK_THEME_LABELS: Record<string, string> = {
+    classic: '经典暗紫',
+    'depth-glass': '玻璃质感',
+    'depth-stack': '层叠玻璃',
+    'magazine-v1': '杂志封面 A',
+    'magazine-v2': '杂志封面 B',
+    noir: '黑白胶片',
+    typegrid: '字体网格',
+    cute: '可爱手绘',
+    news: '报纸排版',
+    energy: '活力渐变',
+    'cute-journal': '少女手帐',
+    'cute-candy': '糖果甜心',
+    'cute-story': '童话绘本',
+    'cute-chibi': 'Q 版人物',
+    ghost: '幽灵夜行',
+    faces: '人像拼贴',
+    ruler: '刻度尺',
+    monolith: '黑色巨石',
+    'chroma-bar': '色带',
+    'chroma-tile': '色块拼贴',
+    'chroma-refined': '精致色块',
+    'chroma-photo': '照片色调'
+  }
+  const rankThemeLabel = (t: string) => RANK_THEME_LABELS[t] || t
+
+  /** 从分裂按钮的菜单选模板：记下选择并立即按它下载（一步完成，不用先选再点） */
+  async function onPickRankTheme(theme: string) {
+    rankTheme.value = theme
+    await downloadRankImages()
+  }
 
   async function ensureRankThemes() {
     if (rankThemes.value.length) return

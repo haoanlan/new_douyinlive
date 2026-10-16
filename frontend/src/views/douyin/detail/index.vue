@@ -579,17 +579,13 @@
             >
           </div>
           <!--
-            下载榜单图片：**一颗无底色的图标按钮**（与 ✕ 同级视觉分量），点击后
-            **把弹窗内容切换成"模板网格"**，不再弹那种 17 行的长菜单。
-
-            为什么不弹菜单（用户连续两轮说"不协调 / 菜单太长"）：
-              · 16 套模板的纵向菜单悬在数据视图中间、盖住榜单，还得上下扫；
-              · 弹窗标题栏本来只该有"身份 + 关闭"，再塞一个下拉就是第三个元素。
-            现在的形态：点 → 内容区换成 3 列（手机 2 列）模板网格 → 选哪个用它下载
-            并自动切回榜单。没有浮层、不遮挡、手机上也好点。
+            下载榜单图片：图标按钮，放在标题栏、绝对定位（不占布局高度 —— 实测头部仍是 58px）。
+            与关闭键中心对齐在 Y=24（关闭键是 absolute top0 right0 48×48，中心即 24）。
+            点它 → 弹窗内容切成模板网格 → 选哪个用它下载并自动切回榜单。
+            （曾试过放底部 footer，用户反馈"留白太多"，故回到标题栏。）
           -->
           <button
-            class="rank-dl-btn dy-pressable size-8 flex-cc rounded-lg text-g-600 hover:bg-g-100 hover:text-theme disabled:opacity-50 shrink-0"
+            class="rank-dl-btn dy-pressable size-8 flex-cc rounded-lg text-g-600 hover:bg-g-100 hover:text-theme disabled:opacity-50"
             :disabled="rankDownloading || !rankThemes.length"
             :title="rankPickerOpen ? '返回榜单' : '下载榜单图片'"
             :aria-label="rankPickerOpen ? '返回榜单' : '下载榜单图片'"
@@ -603,7 +599,7 @@
                     ? 'ri:arrow-left-line'
                     : 'ri:download-line'
               "
-              class="text-lg"
+              class="text-base"
               :class="rankDownloading ? 'animate-spin' : ''"
             />
           </button>

@@ -525,6 +525,25 @@
     row-gap: 4px;
   }
 
+  /*
+   * 个人中心：账号卡的内容宽被内边距吃掉
+   *
+   * 卡片 .art-card-sm 带 p-9(36px) 内边距，330px 的卡上内容只剩 258px；
+   * 而卡片里的信息块写死 `w-75`（Tailwind v4 = 75 × 4px = 300px）并居中 ——
+   * 移动端自检 B 类实测：卡片可见宽 328 < 内容宽 372（溢出 44px）。
+   * 被 .art-card-sm 的 overflow:hidden 兜住，所以肉眼看不出裁切，但几何上已越界，
+   * 一旦有人去掉那个 overflow 就会露出来。
+   * 窄屏把内边距收到 20/16，并让该块自适应（上限仍 300px）。
+   */
+  .douyin-page .art-card-sm {
+    padding: 20px 16px 16px;
+  }
+
+  .douyin-page .art-card-sm .w-75 {
+    width: 100% !important;
+    max-width: 300px;
+  }
+
   .douyin-page .dy-session-head {
     flex-direction: column;
     /*

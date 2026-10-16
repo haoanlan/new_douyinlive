@@ -19,6 +19,8 @@ const PAGES = [
   ['趋势分析', '#/douyin/trends'],
   ['信息查询', '#/douyin/search'],
   ['状态监控', '#/douyin/status'],
+  ['数据合并查看', '#/douyin/combined'],
+  ['个人中心', '#/douyin/account'],
   ['场次详情', '#/douyin/detail/301'],
   ['用户画像', '#/douyin/profile/MS4wLjABAAAAV0ix862LmB3foIAiEkC9sLh9aHlWjw_mXHI24ckprsw']
 ];

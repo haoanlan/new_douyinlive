@@ -529,7 +529,7 @@
           </div>
         </div>
       </template>
-      <div class="flex flex-col gap-2.5 max-h-80 overflow-y-auto pr-1">
+      <div class="flex flex-col gap-2.5 max-h-80 overflow-y-auto">
           <div
             v-for="(g, i) in giftDialogList"
             :key="i"
@@ -580,7 +580,7 @@
           </div>
         </div>
       </template>
-      <div class="flex flex-col gap-2.5 max-h-80 overflow-y-auto pr-1">
+      <div class="flex flex-col gap-2.5 max-h-80 overflow-y-auto">
           <div
             v-for="(p, i) in peopleDialogList"
             :key="i"

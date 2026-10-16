@@ -822,6 +822,21 @@
 .dy-scroll {
   overflow-y: auto;
   min-height: 0;
+  /*
+   * 两侧各预留滚动条宽度：滚动条出现/消失时内容**不会位移**，居中内容也仍然居中。
+   *
+   * 用户反馈："看下所有页面有没有滚动条宽度算在整体里导致信息在模块里不居中，比如礼物排行"。
+   * 实测画像页的三个榜单容器偏心 −2px —— 根因不是滚动条，而是它们各自手工加了 `pr-1`(4px)：
+   * 滚动条没出现时那 4px 白白把内容推左 2px。8 处 `pr-1` 已全部删除，改由这里统一处理。
+   * 用 both-edges 而不是 stable：stable 只在右侧预留，居中内容依然会偏左 4px。
+   */
+  scrollbar-gutter: stable both-edges;
+}
+
+/* Tailwind 的 overflow 工具类同理（数据合并页还在用 max-h + overflow-y-auto 的写法） */
+.douyin-page .overflow-y-auto,
+.douyin-page .overflow-auto {
+  scrollbar-gutter: stable both-edges;
 }
 
 

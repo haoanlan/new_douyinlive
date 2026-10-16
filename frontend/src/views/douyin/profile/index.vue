@@ -270,7 +270,7 @@
             <div class="art-card-header"><div class="title"><h4>活跃场次</h4></div></div>
             <!-- 条形行 + 整行可点（与总览「最近场次」同一套交互） -->
             <!-- 固定高度 + 卡内滚动：场次可能上百条，全铺出来卡片会非常长（用户要求） -->
-            <div class="flex flex-col gap-2.5 mt-4 max-h-[360px] overflow-y-auto dy-scroll pr-1">
+            <div class="flex flex-col gap-2.5 mt-4 max-h-[360px] overflow-y-auto dy-scroll">
               <div
                 v-for="s in profile?.activeSessions || []"
                 :key="s.id"
@@ -344,7 +344,7 @@
               固定高度 + 卡内滚动：最多 10 条会把整行撑到 500px+，
               与旁边"活跃时段"以及下面的"活跃场次 / 馈赠明细"高度口径不一致。
             -->
-            <div class="flex flex-col gap-2.5 mt-4 max-h-[360px] overflow-y-auto dy-scroll pr-1">
+            <div class="flex flex-col gap-2.5 mt-4 max-h-[360px] overflow-y-auto dy-scroll">
               <div
                 v-for="(a, i) in (profile?.recent_actions || []).slice(0, 10)"
                 :key="i"
@@ -382,7 +382,7 @@
           <div class="art-card p-5">
             <div class="art-card-header"><div class="title"><h4>馈赠明细</h4></div></div>
             <!-- 固定高度 + 卡内滚动（与活跃场次同一套） -->
-            <div class="flex flex-col gap-2.5 mt-4 max-h-[360px] overflow-y-auto dy-scroll pr-1">
+            <div class="flex flex-col gap-2.5 mt-4 max-h-[360px] overflow-y-auto dy-scroll">
               <div
                 v-for="(g, i) in profile?.giftBreakdown || []"
                 :key="g.gift_name"

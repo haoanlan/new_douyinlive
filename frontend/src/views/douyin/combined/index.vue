@@ -255,7 +255,7 @@
             <div class="text-xs text-g-500 mb-2 truncate">
               按送礼钻石降序 Top {{ result.gifts.length }} · 同一用户跨场次已合并
             </div>
-            <div class="flex flex-col gap-2.5 max-h-[420px] overflow-y-auto pr-1">
+            <div class="flex flex-col gap-2.5 max-h-[420px] overflow-y-auto">
               <div
                 v-for="(g, i) in result.gifts"
                 :key="g.user_sec_uid || g.nickname"
@@ -287,7 +287,7 @@
             <div class="text-xs text-g-500 mb-2 truncate">
               团播场景里的每个主播 · 共 {{ result.anchorRanking.length }} 位
             </div>
-            <div class="flex flex-col gap-2.5 max-h-[420px] overflow-y-auto pr-1">
+            <div class="flex flex-col gap-2.5 max-h-[420px] overflow-y-auto">
               <div
                 v-for="(a, i) in result.anchorRanking"
                 :key="a.anchor_sec_uid || a.anchor_name"
@@ -319,7 +319,7 @@
             <div class="text-xs text-g-500 mb-2 truncate">
               按发言条数降序 Top {{ result.danmakuRanking.length }} · 同一用户跨场次已合并
             </div>
-            <div class="flex flex-col gap-2.5 max-h-[420px] overflow-y-auto pr-1">
+            <div class="flex flex-col gap-2.5 max-h-[420px] overflow-y-auto">
               <div
                 v-for="(d, i) in result.danmakuRanking"
                 :key="d.user_sec_uid || d.nickname"

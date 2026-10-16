@@ -180,7 +180,7 @@ const MAG = {
   accent: '#8A2B2B',
   serif: "'Noto Serif SC','Songti SC',serif",
 };
-const MAG_THEME_NAMES = ['magazine-v1', 'magazine-v2', 'noir', 'typegrid', 'cute', 'news', 'energy', 'cute-journal', 'cute-candy', 'cute-story', 'cute-chibi', 'ghost', 'faces', 'ruler', 'monolith', 'chroma-bar', 'chroma-tile', 'chroma-refined', 'chroma-photo', 'depth-glass', 'depth-stack'];
+const MAG_THEME_NAMES = ['magazine-v1', 'magazine-v2', 'noir', 'typegrid', 'cute', 'news', 'ghost', 'faces', 'ruler', 'chroma-bar', 'chroma-tile', 'chroma-refined', 'chroma-photo', 'depth-glass', 'depth-stack'];
 const IS_CLASSIC = THEME_ARG === 'classic';
 if (THEME_ARG && !IS_CLASSIC && !MAG_THEME_NAMES.includes(THEME_ARG)) {
   console.warn(`⚠️  未知模板 "${THEME_ARG}" → 回退默认 ${DEFAULT_THEME}（可选：${MAG_THEME_NAMES.join(' / ')} / classic）`);

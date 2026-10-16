@@ -1527,3 +1527,25 @@ html.dark .dy-select-popper .el-select-dropdown__wrap::-webkit-scrollbar-thumb:h
     margin-right: 0 !important;
   }
 }
+
+/*
+ * 弹窗内的滚动区（人员榜列表 / 模板网格）：**滚动条不占宽度**。
+ *
+ * 为什么单独写：el-dialog teleport 到 body，不在 .douyin-page 里，
+ * 所以上面那套 .douyin-page .overflow-y-auto 的 gutter/负边距规则**从未作用到弹窗** ——
+ * 弹窗列表一直按浏览器默认占掉滚动条宽度（用户手机实测：左边距小、右边距大，
+ * 且滚动条出现/消失时"盒子边界变动"，连带头像点击都像在抖）。
+ * 用户的原则："左右边距不能把滚动条宽度算是"。做法：让它 overlay 化（宽度 0）——
+ * 内容始终占满整宽，左右边距永远相等，也不再随滚动条出现/消失而改变盒子宽度。
+ * 注意：::-webkit-scrollbar 与 scrollbar-width 两种写法都要给（Chrome / Firefox）。
+ */
+.dy-dialog-scroll {
+  scrollbar-gutter: auto !important;
+  margin-right: 0 !important;
+  scrollbar-width: none;
+}
+
+.dy-dialog-scroll::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}

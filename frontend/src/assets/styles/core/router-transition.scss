@@ -208,3 +208,7 @@ $fade-easing: transition-config('fade-easing');
     animation-duration: 1ms !important;
   }
 }
+
+// 注：路由切换的整页进场位移**不在这里**控制 —— 它由 art-page-content/index.vue 的
+// WAAPI（node.animate）驱动，元素上不挂过渡类名，改本文件的 .dy-fade-lift 无效。
+// 窄屏禁用该位移的逻辑见那边 isNarrowScreen()（实测"返回时抖一下"就是它）。

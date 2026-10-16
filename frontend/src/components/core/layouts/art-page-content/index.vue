@@ -170,6 +170,23 @@
     window.matchMedia &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
+  /**
+   * 窄屏不做整页进场位移动画（用户反馈："移动端点击设置再返回有抖动"）。
+   *
+   * 逐帧实测（390×844，rAF 采样 1.6s）：
+   *   进入个人中心：内容 top 124 → 114（约 10 帧，每帧 -1px）
+   *   返回总览：   内容 top -186 → -196（同样约 10 帧）+ scrollY 0 → 300
+   * 每帧 1px、共 10px、约 240ms —— 正是下面 WAAPI 的 PAGE_IN_SHIFT=10 / PAGE_IN_MS=240。
+   * 手机上这段位移叠加滚动复位被感知成"抖一下"，而窄屏也看不出整页动效。
+   *
+   * 注意：**不能**靠 CSS 关（router-transition.scss 的 .dy-fade-lift 在这里无效）——
+   * 过渡由 WAAPI 驱动，元素上不挂过渡类名，这一点在本文件 onPageEnter 的注释里也写了。
+   */
+  const isNarrowScreen = () =>
+    typeof window !== 'undefined' &&
+    window.matchMedia &&
+    window.matchMedia('(max-width: 640px)').matches
+
   /** 离开页脱离文档流：交叉淡入时两页同时存在，否则滚动高度翻倍、滚动条会跳 */
   const detachForLeave = (el: HTMLElement) => {
     el.style.position = 'absolute'
@@ -187,7 +204,8 @@
   const onPageEnter = (el: Element, done: () => void) => {
     const node = el as HTMLElement
     reattach(node)
-    if (!actualTransition.value || reduceMotion()) return done()
+    // 窄屏也不做进场位移（理由见 isNarrowScreen 的注释：实测这就是"返回时抖一下"）
+    if (!actualTransition.value || reduceMotion() || isNarrowScreen()) return done()
     /*
      * 进场只做位移、不动 opacity（理由见下面 onPageLeave 的三种做法对比）：
      *   从 opacity: 0 淡入时，白底页面上就是"一层透明白纱"。

@@ -579,51 +579,59 @@
             >
           </div>
           <!--
-            下载榜单图片：**无底色的图标按钮**，与标题栏右侧的关闭 ✕ 同级视觉分量。
-            演进：灰底工具条 → 分裂按钮 → 照抄场次页那颗灰底方块 —— 用户都不满意，
-            最后一次反馈是"还是不协调"：那颗方块是**列表行内**的样式（列表里它挨着
-            别的方块按钮，成立），搬到弹窗标题栏、紧挨一个细 ✕ 就显得又大又抢。
-            现在去掉底色：透明背景 + 图标 + hover 才出浅灰，与 ✕ 平齐；
-            仍然不带文字（用户："不需要文字"）。
+            下载榜单图片：**一颗无底色的图标按钮**（与 ✕ 同级视觉分量），点击后
+            **把弹窗内容切换成"模板网格"**，不再弹那种 17 行的长菜单。
+
+            为什么不弹菜单（用户连续两轮说"不协调 / 菜单太长"）：
+              · 16 套模板的纵向菜单悬在数据视图中间、盖住榜单，还得上下扫；
+              · 弹窗标题栏本来只该有"身份 + 关闭"，再塞一个下拉就是第三个元素。
+            现在的形态：点 → 内容区换成 3 列（手机 2 列）模板网格 → 选哪个用它下载
+            并自动切回榜单。没有浮层、不遮挡、手机上也好点。
           -->
-          <el-dropdown
-            trigger="click"
-            class="shrink-0"
-            popper-class="rank-theme-menu"
+          <button
+            class="rank-dl-btn dy-pressable size-8 flex-cc rounded-lg text-g-600 hover:bg-g-100 hover:text-theme disabled:opacity-50 shrink-0"
             :disabled="rankDownloading || !rankThemes.length"
-            @command="onPickRankTheme"
+            :title="rankPickerOpen ? '返回榜单' : '下载榜单图片'"
+            :aria-label="rankPickerOpen ? '返回榜单' : '下载榜单图片'"
+            @click="rankPickerOpen = !rankPickerOpen"
           >
-            <button
-              class="rank-dl-btn dy-pressable size-8 flex-cc rounded-lg text-g-600 hover:bg-g-100 hover:text-theme disabled:opacity-50"
-              :disabled="rankDownloading || !rankThemes.length"
-              title="下载榜单图片"
-              aria-label="下载榜单图片"
-            >
-              <ArtSvgIcon
-                :icon="rankDownloading ? 'ri:loader-4-line' : 'ri:download-line'"
-                class="text-lg"
-                :class="rankDownloading ? 'animate-spin' : ''"
-              />
-            </button>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item disabled class="!text-g-400 !text-xs"
-                  >选择模板（选完自动下载）</el-dropdown-item
-                >
-                <el-dropdown-item
-                  v-for="t in rankThemes"
-                  :key="t"
-                  :command="t"
-                  :class="{ 'text-theme font-medium': t === rankTheme }"
-                >
-                  {{ rankThemeLabel(t) }}
-                </el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
+            <ArtSvgIcon
+              :icon="
+                rankDownloading
+                  ? 'ri:loader-4-line'
+                  : rankPickerOpen
+                    ? 'ri:arrow-left-line'
+                    : 'ri:download-line'
+              "
+              class="text-lg"
+              :class="rankDownloading ? 'animate-spin' : ''"
+            />
+          </button>
         </div>
       </template>
-      <div class="flex flex-col gap-2.5 max-h-80 overflow-y-auto">
+      <!-- 选模板视图：16 套一屏网格铺完（手机 2 列），选哪个用它下载并自动切回榜单 -->
+      <div v-if="rankPickerOpen" class="max-h-80 overflow-y-auto">
+        <div class="mb-2.5 text-xs text-g-500">选择模板（选完自动下载榜单图片）</div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          <button
+            v-for="t in rankThemes"
+            :key="t"
+            class="dy-pressable rounded-xl border px-3 py-2.5 text-left transition-colors"
+            :class="
+              t === rankTheme
+                ? 'border-theme bg-theme/5 text-theme'
+                : 'border-g-200 text-g-700 hover:border-theme/50 hover:bg-g-100/60'
+            "
+            :disabled="rankDownloading"
+            @click="onPickRankTheme(t)"
+          >
+            <div class="text-sm font-medium truncate">{{ rankThemeLabel(t) }}</div>
+            <div class="mt-0.5 text-[11px] text-g-400 truncate">{{ t }}</div>
+          </button>
+        </div>
+      </div>
+
+      <div v-else class="flex flex-col gap-2.5 max-h-80 overflow-y-auto">
           <div
             v-for="(p, i) in peopleDialogList"
             :key="i"
@@ -875,9 +883,13 @@
   }
   const rankThemeLabel = (t: string) => RANK_THEME_LABELS[t] || t
 
-  /** 从分裂按钮的菜单选模板：记下选择并立即按它下载（一步完成，不用先选再点） */
+  /** 弹窗内容是否切到"选模板"视图（点标题栏那颗下载图标切换） */
+  const rankPickerOpen = ref(false)
+
+  /** 从模板网格选一个：记下选择并立即按它下载，然后切回榜单 */
   async function onPickRankTheme(theme: string) {
     rankTheme.value = theme
+    rankPickerOpen.value = false
     await downloadRankImages()
   }
 

@@ -14,7 +14,7 @@
           卡片风格对齐其它抖音页：art-card + p-5（16px 圆角 / 20px 内边距），
           原来是 art-card-sm + p-9（12px 圆角 / 36px 内边距），量出来和别页差一档。
         -->
-        <div class="art-card relative p-5 overflow-hidden">
+        <div class="art-card relative p-5 overflow-hidden text-center">
           <!--
             头像（可换）。
             原来这里是个不能点、也没有任何入口的首字母色块 —— 页面上根本改不了头像。
@@ -26,47 +26,46 @@
             排版：头像与用户名/角色同一行左对齐（原来头像是居中大块 + 名字居中，
             与其它页一律左对齐的卡片不是一套观感）。
           -->
-          <div class="flex items-center gap-4">
-            <div class="uc-avatar-wrap relative z-10 w-24 h-24 shrink-0">
-              <ElUpload
-                ref="avatarUploadRef"
-                class="uc-avatar-upload"
-                :auto-upload="false"
-                :show-file-list="false"
-                :disabled="avatarSaving"
-                accept="image/png,image/jpeg,image/webp"
-                :on-change="onAvatarPick"
+          <!--
+            头像回到"居中"（用户明确要求："左侧头像保持原来的居中吧 还是原来的好看"）。
+            卡片本身仍用其它页一致的 art-card + p-5（16px 圆角 / 20px 内边距），
+            只是卡内排版改回居中：头像 → 用户名 → 角色 → 分隔线 → 退出。
+          -->
+          <div class="uc-avatar-wrap relative z-10 w-24 h-24 mt-2 mx-auto">
+            <ElUpload
+              ref="avatarUploadRef"
+              class="uc-avatar-upload"
+              :auto-upload="false"
+              :show-file-list="false"
+              :disabled="avatarSaving"
+              accept="image/png,image/jpeg,image/webp"
+              :on-change="onAvatarPick"
+            >
+              <div
+                class="uc-avatar c-p"
+                :class="{ 'is-saving': avatarSaving }"
+                title="点击更换头像"
               >
-                <div
-                  class="uc-avatar c-p"
-                  :class="{ 'is-saving': avatarSaving }"
-                  title="点击更换头像"
-                >
-                  <ElAvatar :size="96" :src="avatarUrl || undefined" class="uc-avatar__img">
-                    {{ avatarText }}
-                  </ElAvatar>
-                  <!-- 常显的小相机角标：桌面端不 hover 也能看出这里可点 -->
-                  <div class="uc-avatar__badge">
-                    <ArtSvgIcon icon="ri:camera-line" />
-                  </div>
-                  <div class="uc-avatar__mask">
-                    <ArtSvgIcon
-                      :icon="avatarSaving ? 'ri:loader-4-line' : 'ri:camera-line'"
-                      :class="['text-xl', { 'uc-spin': avatarSaving }]"
-                    />
-                    <span class="mt-1 text-xs">{{ avatarSaving ? '上传中…' : '更换头像' }}</span>
-                  </div>
+                <ElAvatar :size="96" :src="avatarUrl || undefined" class="uc-avatar__img">
+                  {{ avatarText }}
+                </ElAvatar>
+                <!-- 常显的小相机角标：桌面端不 hover 也能看出这里可点 -->
+                <div class="uc-avatar__badge">
+                  <ArtSvgIcon icon="ri:camera-line" />
                 </div>
-              </ElUpload>
-            </div>
-            <!-- 身份摘要：与头像同一行左对齐 -->
-            <div class="min-w-0 flex-1">
-              <div class="truncate text-base font-medium text-g-900">
-                {{ userInfo.userName || '—' }}
+                <div class="uc-avatar__mask">
+                  <ArtSvgIcon
+                    :icon="avatarSaving ? 'ri:loader-4-line' : 'ri:camera-line'"
+                    :class="['text-xl', { 'uc-spin': avatarSaving }]"
+                  />
+                  <span class="mt-1 text-xs">{{ avatarSaving ? '上传中…' : '更换头像' }}</span>
+                </div>
               </div>
-              <div class="mt-1 truncate text-xs text-g-500">{{ roleLabel }}</div>
-            </div>
+            </ElUpload>
           </div>
+          <!-- 身份摘要（居中，与头像同一列） -->
+          <h2 class="mt-4 text-xl font-medium text-g-900">{{ userInfo.userName || '—' }}</h2>
+          <p class="mt-1 text-xs text-g-500">{{ roleLabel }}</p>
 
           <!--
             这里原来又铺了一遍 accountFacts（用户名/角色/创建时间/上次登录）——
@@ -83,14 +82,20 @@
 
       <div class="flex-1 overflow-hidden max-md:w-full max-md:mt-3.5">
         <!-- 账号信息（只读：这些字段由后端账号表决定，不能在这里改） -->
-        <div class="art-card">
+        <!--
+          卡片带 p-5、卡头直接放在卡片里 —— 这是其它页的写法。
+          上一版我把 p-5 挪到了内层 div，而全局 .art-card-header 只有
+          `padding: 0 24px 4px 0`（左侧 0），结果卡头文字贴在卡片边缘（实测偏移 1px），
+          下面的内容却在 20px，两者错位 19px（用户截图："有 ui 异常"）。
+        -->
+        <div class="art-card p-5">
           <div class="art-card-header">
             <div class="title">
               <h4>账号信息</h4>
               <p>这些字段由账号表决定，这里只能查看</p>
             </div>
           </div>
-          <div class="p-5">
+          <div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div v-for="f in accountFacts" :key="f.label" class="mon-kv">
                 <div class="mon-kv__label">{{ f.label }}</div>
@@ -108,14 +113,14 @@
         </div>
 
         <!-- 更改密码（真接口） -->
-        <div class="art-card my-5">
+        <div class="art-card p-5 my-5">
           <div class="art-card-header">
             <div class="title">
               <h4>更改密码</h4>
               <p>改完需要用新密码重新登录</p>
             </div>
           </div>
-          <div class="p-5">
+          <div>
             <ElForm
               ref="pwdFormRef"
               :model="pwdForm"

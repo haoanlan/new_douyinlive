@@ -579,26 +579,34 @@
             >
           </div>
           <!--
-            下载榜单图片：一个**分裂按钮**（点主键=按当前模板下载，点箭头=换模板并下载）。
-            原来这里是"灰底工具条 + 独立下拉 + 下载按钮"，用户两次反馈不好看：
-            多一条横带、两个控件不成组、还要先选再点。
-            收进标题栏右侧后：不占额外版面，一个控件完成"选模板 + 下载"。
+            下载榜单图片：**图标按钮**（无文字），与场次列表里「下载报告」那颗按钮同风格 ——
+            用户："同风格的下载按钮 不需要文字 就和下载那个场次的一样就行"。
+            class 直接取自场次页那颗（size-8 rounded-lg bg-g-100/70 text-g-500 hover:bg-theme/10），
+            点击展开模板菜单，选完立刻下载（整颗按钮都是触发区）。
           -->
           <el-dropdown
-            split-button
-            size="small"
-            type="primary"
+            trigger="click"
             class="shrink-0"
             :disabled="rankDownloading || !rankThemes.length"
-            @click="downloadRankImages"
             @command="onPickRankTheme"
           >
-            <span class="inline-flex items-center">
-              <ArtSvgIcon v-if="!rankDownloading" icon="ri:download-2-line" class="mr-1" />
-              下载榜单
-            </span>
+            <button
+              class="dy-pressable size-8 rounded-lg flex-cc bg-g-100/70 text-g-500 hover:bg-theme/10 hover:text-theme disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="rankDownloading || !rankThemes.length"
+              title="下载榜单图片"
+              aria-label="下载榜单图片"
+            >
+              <ArtSvgIcon
+                :icon="rankDownloading ? 'ri:loader-4-line' : 'ri:download-line'"
+                class="text-base"
+                :class="rankDownloading ? 'animate-spin' : ''"
+              />
+            </button>
             <template #dropdown>
               <el-dropdown-menu>
+                <el-dropdown-item disabled class="!text-g-400 !text-xs"
+                  >选择模板（选完自动下载）</el-dropdown-item
+                >
                 <el-dropdown-item
                   v-for="t in rankThemes"
                   :key="t"

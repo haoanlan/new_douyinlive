@@ -864,6 +864,34 @@
   overflow-y: auto;
 }
 
+/*
+ * 人员榜弹窗（.detail-dialog）的两个调整 —— 都在全局样式里，因为 el-dialog
+ * 会 teleport 到 body，页面 scoped 样式够不到它。
+ *
+ * ① 下载键与关闭键对齐（用户："和关闭按钮没有对齐"）
+ *    实测 Element 的关闭键：position absolute · top 0 · right 0 · **48×48**，
+ *    即中心在距顶 **24px**；而我的下载键原来是 static 32×32、中心 Y=**37** —— 差 13px。
+ *    改：同样绝对定位，32px 让中心落在 Y=24 → top: 8px；摆在关闭键左侧 8px → right: 56px。
+ *
+ * ② 弹窗主体上下内边距 25 → 10（用户要求；左右保持 25 不变）
+ */
+.detail-dialog .rank-dl-btn {
+  position: absolute;
+  top: 8px;
+  right: 56px;
+  z-index: 2;
+  /* 必须写死尺寸：窄屏有一条全局规则把按钮撑到 40px，会让中心落到 Y=28（实测手机差 4px） */
+  width: 32px !important;
+  height: 32px !important;
+}
+
+.detail-dialog .el-dialog__body {
+  /* !important：Element 用 var(--el-dialog-padding-primary) 统一给上下左右 25px，
+     不加会被压回去（实测仍是 25/25） */
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+}
+
 
 /* ==========================================================================
  * 统计卡一排（共用件）

@@ -67,3 +67,25 @@ html.dark {
 ::-webkit-scrollbar-corner {
   background: transparent;
 }
+
+/* ==========================================================================
+ * 弹窗锁滚动不再改变布局（用户实测："点开弹窗盒子右侧边界向左收缩，关闭回归原位"）
+ *
+ * 机制：打开 el-dialog 时 Element 给 body 加 .el-popup-parent--hidden + overflow:hidden
+ * （锁页面滚动），并在**滚动条实占宽度 > 0** 的环境里注入 padding-right 作为补偿。
+ * 但那笔补偿与界面上实际变化的宽度不一定一致 → 表现就是"打开时内容右边界左缩、关闭回位"。
+ *
+ * 两行必须成对出现：
+ *   · html 上恒定滚动槽 → 锁滚动本身不再引起任何布局变化；
+ *   · 于是 Element 注入的 padding 反而成了多余偏移，用 !important 压掉
+ *     （它写的是**行内样式**，只有带 !important 的样式表声明能盖住）。
+ * 只加第一条：剩余的那笔 padding 会变成新的偏移；只加第二条：没有恒定槽时滚动条消失会反向跳。
+ * ========================================================================== */
+html {
+  scrollbar-gutter: stable;
+}
+
+body.el-popup-parent--hidden {
+  padding-right: 0 !important;
+}
+/* dy-popup-lock-fix */

@@ -1789,30 +1789,12 @@
    */
   @use '@styles/custom/douyin-toolbar.scss';
 
-  /* ===== kv 小卡（官方 hero/面板内嵌的 label+value 卡） ===== */
-  .mon-kv {
-    min-width: 0;
-    padding: 10px 14px;
-    border: 1px solid var(--art-gray-200);
-    border-radius: 8px;
-  }
-
-  .mon-kv__label {
-    font-size: 12px;
-    line-height: 1.4;
-    color: var(--dy-text-muted);
-  }
-
-  .mon-kv__value {
-    margin-top: 6px;
-    font-size: 14px;
-    font-weight: 600;
-    line-height: 1.35;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-variant-numeric: tabular-nums;
-  }
+  /*
+   * kv 小卡（label + value）的样式已抽到 @styles/custom/douyin-kv.scss 共享，
+   * 因为个人中心等页面也在用 .mon-kv —— 原来只写在本页 scoped 里，
+   * 那些页面只借了类名却拿不到样式（实测个人中心 padding 0、标签 16px 纯黑）。
+   */
+  @use '@styles/custom/douyin-kv.scss';
 
   /* ===== 两栏面板公共 ===== */
   .mon-panel__divider {

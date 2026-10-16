@@ -1,6 +1,6 @@
 <!-- 个人中心页面 -->
 <template>
-  <div class="douyin-page dy-stagger w-full h-full p-0 bg-transparent border-none shadow-none">
+  <div class="douyin-page dy-stagger w-full h-full p-4 bg-transparent border-none shadow-none">
     <!--
       窄屏堆叠用 .dy-stack-mobile（全局、无 layer，见 styles/custom/douyin-mobile.scss）。
       原来写的是 max-md:block —— 它和 .flex-b 同在 Tailwind 的 utilities 层里，
@@ -10,7 +10,11 @@
     <div class="relative flex-b mt-2.5 dy-stack-mobile">
       <!-- 左：账号卡片（全部是真实数据，原来这里是模板的假资料） -->
       <div class="w-112 mr-5 max-md:w-full max-md:mr-0">
-        <div class="art-card-sm relative p-9 pb-6 overflow-hidden text-center">
+        <!--
+          卡片风格对齐其它抖音页：art-card + p-5（16px 圆角 / 20px 内边距），
+          原来是 art-card-sm + p-9（12px 圆角 / 36px 内边距），量出来和别页差一档。
+        -->
+        <div class="art-card relative p-5 overflow-hidden">
           <!--
             头像（可换）。
             原来这里是个不能点、也没有任何入口的首字母色块 —— 页面上根本改不了头像。
@@ -18,41 +22,51 @@
             :auto-upload="false" 意味着 before-upload **不会**被调用（组件只在 autoUpload
             为真时才走 upload()），所以真正的处理放在 :on-change 里自己走
             （canvas 等比缩放 + 居中裁剪 + 上传，见 onAvatarPick）。
+
+            排版：头像与用户名/角色同一行左对齐（原来头像是居中大块 + 名字居中，
+            与其它页一律左对齐的卡片不是一套观感）。
           -->
-          <div class="uc-avatar-wrap relative z-10 w-24 h-24 mt-8 mx-auto">
-            <ElUpload
-              ref="avatarUploadRef"
-              class="uc-avatar-upload"
-              :auto-upload="false"
-              :show-file-list="false"
-              :disabled="avatarSaving"
-              accept="image/png,image/jpeg,image/webp"
-              :on-change="onAvatarPick"
-            >
-              <div
-                class="uc-avatar c-p"
-                :class="{ 'is-saving': avatarSaving }"
-                title="点击更换头像"
+          <div class="flex items-center gap-4">
+            <div class="uc-avatar-wrap relative z-10 w-24 h-24 shrink-0">
+              <ElUpload
+                ref="avatarUploadRef"
+                class="uc-avatar-upload"
+                :auto-upload="false"
+                :show-file-list="false"
+                :disabled="avatarSaving"
+                accept="image/png,image/jpeg,image/webp"
+                :on-change="onAvatarPick"
               >
-                <ElAvatar :size="96" :src="avatarUrl || undefined" class="uc-avatar__img">
-                  {{ avatarText }}
-                </ElAvatar>
-                <!-- 常显的小相机角标：桌面端不 hover 也能看出这里可点 -->
-                <div class="uc-avatar__badge">
-                  <ArtSvgIcon icon="ri:camera-line" />
+                <div
+                  class="uc-avatar c-p"
+                  :class="{ 'is-saving': avatarSaving }"
+                  title="点击更换头像"
+                >
+                  <ElAvatar :size="96" :src="avatarUrl || undefined" class="uc-avatar__img">
+                    {{ avatarText }}
+                  </ElAvatar>
+                  <!-- 常显的小相机角标：桌面端不 hover 也能看出这里可点 -->
+                  <div class="uc-avatar__badge">
+                    <ArtSvgIcon icon="ri:camera-line" />
+                  </div>
+                  <div class="uc-avatar__mask">
+                    <ArtSvgIcon
+                      :icon="avatarSaving ? 'ri:loader-4-line' : 'ri:camera-line'"
+                      :class="['text-xl', { 'uc-spin': avatarSaving }]"
+                    />
+                    <span class="mt-1 text-xs">{{ avatarSaving ? '上传中…' : '更换头像' }}</span>
+                  </div>
                 </div>
-                <div class="uc-avatar__mask">
-                  <ArtSvgIcon
-                    :icon="avatarSaving ? 'ri:loader-4-line' : 'ri:camera-line'"
-                    :class="['text-xl', { 'uc-spin': avatarSaving }]"
-                  />
-                  <span class="mt-1 text-xs">{{ avatarSaving ? '上传中…' : '更换头像' }}</span>
-                </div>
+              </ElUpload>
+            </div>
+            <!-- 身份摘要：与头像同一行左对齐 -->
+            <div class="min-w-0 flex-1">
+              <div class="truncate text-base font-medium text-g-900">
+                {{ userInfo.userName || '—' }}
               </div>
-            </ElUpload>
+              <div class="mt-1 truncate text-xs text-g-500">{{ roleLabel }}</div>
+            </div>
           </div>
-          <h2 class="mt-5 text-xl font-medium text-g-900">{{ userInfo.userName || '—' }}</h2>
-          <p class="mt-2 text-sm text-g-500">{{ roleLabel }}</p>
 
           <!--
             这里原来又铺了一遍 accountFacts（用户名/角色/创建时间/上次登录）——
@@ -61,7 +75,7 @@
             塞在居中卡片里，缩进和上面的名字/角色都对不齐。
             现在左卡只做"身份摘要"：头像 + 用户名 + 角色 + 退出；完整资料只在右边列一次。
           -->
-          <div class="mt-8 border-t border-g-300 pt-5">
+          <div class="mt-5 border-t border-g-100 pt-4">
             <ElButton class="w-full" plain @click="handleLogout">退出登录</ElButton>
           </div>
         </div>
@@ -69,8 +83,13 @@
 
       <div class="flex-1 overflow-hidden max-md:w-full max-md:mt-3.5">
         <!-- 账号信息（只读：这些字段由后端账号表决定，不能在这里改） -->
-        <div class="art-card-sm">
-          <h1 class="px-5 py-4 text-xl font-normal border-b border-g-300">账号信息</h1>
+        <div class="art-card">
+          <div class="art-card-header">
+            <div class="title">
+              <h4>账号信息</h4>
+              <p>这些字段由账号表决定，这里只能查看</p>
+            </div>
+          </div>
           <div class="p-5">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div v-for="f in accountFacts" :key="f.label" class="mon-kv">
@@ -79,72 +98,73 @@
               </div>
             </div>
 
-            <el-alert
-              class="mt-4"
-              type="info"
-              :closable="false"
-              show-icon
-              :title="tokenPolicy"
-            />
+            <el-alert class="mt-4" type="info" :closable="false" show-icon :title="tokenPolicy" />
 
             <p class="mt-3 mb-0 text-xs leading-5 text-g-500">
-              账号只有用户名 / 角色 / 密码 / 头像：<b>密码</b>在下方修改，<b>头像</b>点左边卡片上的头像即可更换。
+              账号只有用户名 / 角色 / 密码 /
+              头像：<b>密码</b>在下方修改，<b>头像</b>点左边卡片上的头像即可更换。
             </p>
           </div>
         </div>
 
         <!-- 更改密码（真接口） -->
-        <div class="art-card-sm my-5">
-          <h1 class="px-5 py-4 text-xl font-normal border-b border-g-300">更改密码</h1>
-
-          <ElForm
-            ref="pwdFormRef"
-            :model="pwdForm"
-            :rules="pwdRules"
-            class="box-border p-5"
-            label-width="86px"
-            label-position="top"
-          >
-            <ElFormItem label="当前密码" prop="oldPassword">
-              <ElInput
-                v-model="pwdForm.oldPassword"
-                type="password"
-                show-password
-                autocomplete="current-password"
-                placeholder="登录时用的密码"
-              />
-            </ElFormItem>
-
-            <ElFormItem label="新密码" prop="newPassword">
-              <ElInput
-                v-model="pwdForm.newPassword"
-                type="password"
-                show-password
-                autocomplete="new-password"
-                placeholder="至少 6 位"
-              />
-            </ElFormItem>
-
-            <ElFormItem label="确认新密码" prop="confirmPassword">
-              <ElInput
-                v-model="pwdForm.confirmPassword"
-                type="password"
-                show-password
-                autocomplete="new-password"
-                placeholder="再输一次"
-              />
-            </ElFormItem>
-
-            <div class="flex-c justify-end">
-              <ElButton type="primary" :loading="saving" @click="submitPassword">
-                保存新密码
-              </ElButton>
+        <div class="art-card my-5">
+          <div class="art-card-header">
+            <div class="title">
+              <h4>更改密码</h4>
+              <p>改完需要用新密码重新登录</p>
             </div>
-          </ElForm>
+          </div>
+          <div class="p-5">
+            <ElForm
+              ref="pwdFormRef"
+              :model="pwdForm"
+              :rules="pwdRules"
+              class="box-border"
+              label-width="86px"
+              label-position="top"
+            >
+              <ElFormItem label="当前密码" prop="oldPassword">
+                <ElInput
+                  v-model="pwdForm.oldPassword"
+                  type="password"
+                  show-password
+                  autocomplete="current-password"
+                  placeholder="登录时用的密码"
+                />
+              </ElFormItem>
 
-          <p class="px-5 pb-5 -mt-2 mb-0 text-xs leading-5 text-g-500">
-            改完需要<b>用新密码重新登录</b>（登录令牌与本次运行绑定，改密码后旧会话一并作废）。
-          </p>
+              <ElFormItem label="新密码" prop="newPassword">
+                <ElInput
+                  v-model="pwdForm.newPassword"
+                  type="password"
+                  show-password
+                  autocomplete="new-password"
+                  placeholder="至少 6 位"
+                />
+              </ElFormItem>
+
+              <ElFormItem label="确认新密码" prop="confirmPassword">
+                <ElInput
+                  v-model="pwdForm.confirmPassword"
+                  type="password"
+                  show-password
+                  autocomplete="new-password"
+                  placeholder="再输一次"
+                />
+              </ElFormItem>
+
+              <div class="flex-c justify-end">
+                <ElButton type="primary" :loading="saving" @click="submitPassword">
+                  保存新密码
+                </ElButton>
+              </div>
+            </ElForm>
+
+            <p class="mt-1 mb-0 text-xs leading-5 text-g-500">
+              改完需要<b>用新密码重新登录</b>（登录令牌与本次运行绑定，改密码后旧会话一并作废）。
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -153,12 +173,7 @@
 
 <script setup lang="ts">
   import { useUserStore } from '@/store/modules/user'
-  import {
-    changePassword,
-    fetchGetUserInfo,
-    updateAvatar,
-    type UserInfo
-  } from '@/api/auth-douyin'
+  import { changePassword, fetchGetUserInfo, updateAvatar, type UserInfo } from '@/api/auth-douyin'
   import {
     ElMessage,
     ElMessageBox,
@@ -200,8 +215,7 @@
 
   const tokenPolicy = computed(
     () =>
-      detail.value.tokenPolicy ||
-      '仪表盘每次启动后都需要重新登录（登录令牌只在本次运行期间有效）'
+      detail.value.tokenPolicy || '仪表盘每次启动后都需要重新登录（登录令牌只在本次运行期间有效）'
   )
 
   const accountFacts = computed(() => [
@@ -373,7 +387,15 @@
   onActivated(loadDetail)
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+  /*
+   * kv 信息块（用户名/角色/创建时间/上次登录）用与抖音各页**同一份**样式。
+   * 原来这套样式只写在状态监控页的 scoped 里，这里只有类名没有样式，
+   * 实测 padding 0、标签 16px 纯黑，和状态监控里的 10/14 + 12px 灰差一档 ——
+   * 这就是"风格不一致"的主要来源。现在两边 @use 同一个 partial。
+   */
+  @use '@styles/custom/douyin-kv.scss';
+
   /*
    * 头像这一块的样式（页面级，写在自己的 <style scoped> 里，不动全局的 douyin-mobile.scss）。
    * 颜色只用项目现有变量：--main-color（主题色）、--art-gray-300（灰阶）、--default-box-color（卡片底色），

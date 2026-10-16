@@ -1,0 +1,40 @@
+/*
+ * kv 小卡（label + value 的信息块）—— 共享样式
+ *
+ * 原来这套样式只写在 views/douyin/status/index.vue 的 <style scoped> 里，
+ * 别的页面（例如个人中心）虽然用了同样的 .mon-kv 类名，却拿不到样式：
+ * 实测个人中心里 mon-kv 的 padding 是 0、标签是 16px 纯黑，
+ * 而状态监控里是 padding 10/14、圆角 8、标签 12px 灰、值 14px/600 ——
+ * 同一套类名两种长相，用户看着就是"风格不一致"。
+ *
+ * 现在与 douyin-toolbar.scss 同一个做法：抽成共享 partial，各页 @use 引入。
+ * 用法：在页面的 <style lang="scss" scoped> 里
+ *   @use '@styles/custom/douyin-kv.scss';
+ */
+
+.douyin-page .mon-kv,
+.mon-kv {
+  min-width: 0;
+  padding: 10px 14px;
+  border: 1px solid var(--art-gray-200);
+  border-radius: 8px;
+}
+
+.douyin-page .mon-kv__label,
+.mon-kv__label {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--dy-text-muted);
+}
+
+.douyin-page .mon-kv__value,
+.mon-kv__value {
+  margin-top: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}

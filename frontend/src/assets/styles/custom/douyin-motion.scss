@@ -1511,3 +1511,19 @@ html.dark .dy-select-popper .el-select-dropdown__wrap::-webkit-scrollbar-thumb:h
   }
 }
 
+
+/*
+ * 窄屏：-10px 负右边距**不生效**。
+ *
+ * 那条负边距是为了抵消**桌面**滚动条实占的 10px（让行左右边距相等）。
+ * 但手机上滚动条是 overlay、宽度 **0** → 负边距纯粹把内容拉宽 10px 出去，
+ * 表现就是"弹窗左右边距不一致"（用户实机截图：左 50px / 右 27px）。
+ * 所以只在桌面保留，窄屏归零。
+ */
+@media (max-width: 640px) {
+  .dy-scroll,
+  .douyin-page .overflow-y-auto,
+  .douyin-page .overflow-auto {
+    margin-right: 0 !important;
+  }
+}

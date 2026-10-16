@@ -118,26 +118,3 @@ body.el-popup-parent--hidden {
 body.el-popup-parent--hidden {
   width: 100% !important;
 }
-
-/* ==========================================================================
- * 上下箭头（用户："以前有上下箭头"）—— ARROW-ADDED
- * 用内联 SVG 画，**不改变滚动条宽度**：宽高仍取 var(--dy-scrollbar-size)=8px，
- * 因此上面"四端一致 + 左右边距相等"的结论不受影响（宽度不变）。
- * 放在文件末尾以覆盖前面那条 ::-webkit-scrollbar-button { display: none }（同优先级后者生效）。
- * ========================================================================== */
-::-webkit-scrollbar-button {
-  display: block;
-  height: var(--dy-scrollbar-size);
-  background-color: transparent;
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: 8px 8px;
-}
-
-::-webkit-scrollbar-button:vertical:decrement {
-  background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'><path d='M1.7 5.1 4 2.8l2.3 2.3' fill='none' stroke='%239aa3b2' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/></svg>");
-}
-
-::-webkit-scrollbar-button:vertical:increment {
-  background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'><path d='M1.7 2.9 4 5.2l2.3-2.3' fill='none' stroke='%239aa3b2' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/></svg>");
-}

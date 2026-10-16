@@ -198,37 +198,25 @@ const MAG2_PAPER_CSS = `
   background:radial-gradient(ellipse 82% 66% at 50% 42%,rgba(26,26,30,0) 54%,rgba(26,26,30,.055) 100%);}
 `;
 
-/** 自动探测 playwright 已装的 chromium headless shell（写死版本号会随升级失效） */
+/**
+ * Chromium 可执行文件定位 —— 复用 lib/browser-path.js（与 report-image.js 同一套）。
+ *
+ * 原来这里自己写死 Linux 路径 /opt/hermes/.playwright，Windows 上返回 undefined，
+ * 而本机没执行过 `npx playwright install`，于是直接报
+ * "Please run the following command to download new browsers"。
+ * 项目里 lib/browser-path.js 已经解决了同样的问题（它就是为了 report-image.js
+ * 在 Windows 上 500 才写的）：环境变量 → 系统 Chrome/Edge → 服务器约定路径 → null。
+ * 这里改为调用它，避免两套实现各自漂移。
+ */
 function chromiumExe() {
-  const base = '/opt/hermes/.playwright';
-  try {
-    const dirs = fs.readdirSync(base).filter(d => d.startsWith('chromium_headless_shell-'))
-      .sort((a, b) => Number(a.split('-').pop()) - Number(b.split('-').pop()));
-    for (let i = dirs.length - 1; i >= 0; i--) {
-      const p = path.join(base, dirs[i], 'chrome-headless-shell-linux64', 'chrome-headless-shell');
-      if (fs.existsSync(p)) return p;
-    }
-  } catch (e) { /* 回退到 playwright 默认解析 */ }
-
-  /*
-   * Windows 兜底：本机没执行过 `npx playwright install`，Playwright 缓存里没有 chromium，
-   * 直接 launch 会报 "Please run the following command to download new browsers"。
-   * 这里改用系统已装的 Chrome / Edge（与仪表盘里其他脚本的做法一致，不额外下载 150MB）。
-   * 需要指定别的浏览器时用环境变量 DY_CHROMIUM 覆盖。
-   */
+  // 额外的私有用环境变量（本项目脚本约定）
   if (process.env.DY_CHROMIUM && fs.existsSync(process.env.DY_CHROMIUM)) return process.env.DY_CHROMIUM;
-  const candidates = [
-    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
-    'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
-    'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe'
-  ];
-  for (const p of candidates) {
-    try {
-      if (fs.existsSync(p)) return p;
-    } catch (e) { /* 忽略不可读路径 */ }
+  try {
+    return require('./lib/browser-path.js').resolveChromium() || undefined;
+  } catch (e) {
+    console.warn('[thanks-rank] 载入 lib/browser-path.js 失败，交给 playwright 自行解析：', e.message);
+    return undefined;
   }
-  return undefined;
 }
 
 const MAG_BASE_CSS = `*{margin:0;padding:0;box-sizing:border-box}

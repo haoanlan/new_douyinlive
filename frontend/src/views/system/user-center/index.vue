@@ -51,21 +51,18 @@
               </div>
             </ElUpload>
           </div>
-          <h2 class="mt-5 text-xl font-normal">{{ userInfo.userName || '—' }}</h2>
+          <h2 class="mt-5 text-xl font-medium text-g-900">{{ userInfo.userName || '—' }}</h2>
           <p class="mt-2 text-sm text-g-500">{{ roleLabel }}</p>
 
-          <div class="w-75 mx-auto mt-7.5 text-left">
-            <div v-for="f in accountFacts" :key="f.label" class="flex items-start gap-2 mt-3">
-              <ArtSvgIcon :icon="f.icon" class="text-g-700 mt-0.5 shrink-0" />
-              <span class="min-w-0 flex-1">
-                <span class="block text-xs text-g-500">{{ f.label }}</span>
-                <span class="block text-sm break-all">{{ f.value }}</span>
-              </span>
-            </div>
-          </div>
-
-          <div class="mt-8">
-            <ElButton class="w-full" @click="handleLogout">退出登录</ElButton>
+          <!--
+            这里原来又铺了一遍 accountFacts（用户名/角色/创建时间/上次登录）——
+            和右侧「账号信息」卡里的是**同一个数组**，同一屏出现两遍
+            （实测：左卡 4 条 + 右栏 4 条 = 8 行）。而且它是一个左对齐的 300px 块
+            塞在居中卡片里，缩进和上面的名字/角色都对不齐。
+            现在左卡只做"身份摘要"：头像 + 用户名 + 角色 + 退出；完整资料只在右边列一次。
+          -->
+          <div class="mt-8 border-t border-g-300 pt-5">
+            <ElButton class="w-full" plain @click="handleLogout">退出登录</ElButton>
           </div>
         </div>
       </div>
@@ -73,7 +70,7 @@
       <div class="flex-1 overflow-hidden max-md:w-full max-md:mt-3.5">
         <!-- 账号信息（只读：这些字段由后端账号表决定，不能在这里改） -->
         <div class="art-card-sm">
-          <h1 class="p-4 text-xl font-normal border-b border-g-300">账号信息</h1>
+          <h1 class="px-5 py-4 text-xl font-normal border-b border-g-300">账号信息</h1>
           <div class="p-5">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div v-for="f in accountFacts" :key="f.label" class="mon-kv">
@@ -91,16 +88,14 @@
             />
 
             <p class="mt-3 mb-0 text-xs leading-5 text-g-500">
-              账号只有用户名 / 角色 / 密码 / 头像四项，其中<b>密码和头像</b>可以自己改：
-              密码在下面改，头像点左边卡片上的头像就能换。
-              没有昵称、邮箱这些资料，所以这里不做"保存资料"的表单（原来那个表单填了也不会存到任何地方）。
+              账号只有用户名 / 角色 / 密码 / 头像：<b>密码</b>在下方修改，<b>头像</b>点左边卡片上的头像即可更换。
             </p>
           </div>
         </div>
 
         <!-- 更改密码（真接口） -->
         <div class="art-card-sm my-5">
-          <h1 class="p-4 text-xl font-normal border-b border-g-300">更改密码</h1>
+          <h1 class="px-5 py-4 text-xl font-normal border-b border-g-300">更改密码</h1>
 
           <ElForm
             ref="pwdFormRef"

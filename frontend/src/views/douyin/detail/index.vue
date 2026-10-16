@@ -529,7 +529,7 @@
           </div>
         </div>
       </template>
-      <div class="dy-dialog-scroll flex flex-col gap-2.5 max-h-80 overflow-y-auto">
+      <div class="flex flex-col gap-2.5 max-h-80 overflow-y-auto">
           <div
             v-for="(g, i) in giftDialogList"
             :key="i"
@@ -606,7 +606,7 @@
         </div>
       </template>
       <!-- 选模板视图：16 套一屏网格铺完（手机 2 列），选哪个用它下载并自动切回榜单 -->
-      <div v-if="rankPickerOpen" class="dy-dialog-scroll max-h-80 overflow-y-auto">
+      <div v-if="rankPickerOpen" class="max-h-80 overflow-y-auto">
         <div class="mb-2.5 text-xs text-g-500">选择模板（选完自动下载榜单图片）</div>
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
           <button
@@ -627,7 +627,7 @@
         </div>
       </div>
 
-      <div v-else class="dy-dialog-scroll flex flex-col gap-2.5 max-h-80 overflow-y-auto">
+      <div v-else class="flex flex-col gap-2.5 max-h-80 overflow-y-auto">
           <div
             v-for="(p, i) in peopleDialogList"
             :key="i"

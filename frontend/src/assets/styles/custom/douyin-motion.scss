@@ -465,7 +465,12 @@
     box-shadow var(--dy-dur-fast) var(--dy-ease-out);
 }
 
-/* 窄屏 -10px 归零块已删除：见下方说明（手机上滚动条同样实占 10px，归零会制造左宽右窄）。 */
+@media (hover: hover) and (pointer: fine) {
+  .douyin-page .dy-row-link:hover {
+    background-color: var(--art-gray-200);
+    box-shadow: 0 2px 10px rgb(0 0 0 / 6%);
+  }
+}
 
 .douyin-page .dy-row-link:focus-visible {
   outline: 2px solid var(--theme-color);
@@ -1506,56 +1511,3 @@ html.dark .dy-select-popper .el-select-dropdown__wrap::-webkit-scrollbar-thumb:h
   }
 }
 
-
-/*
- * 注意（教训）：这里曾有一条"窄屏把 -10px 归零"的覆盖，已撤销。
- * 依据：用户手机上滚动条**确实实占约 10px**（其浏览器不认 ::-webkit-scrollbar / scrollbar-width），
- * 所以 -10px 抵消在手机上同样是必需的；归零反而制造了"左宽右窄"。
- * 与页面容器保持**完全同款**的写法，不要为窄屏单独例外。
- */
-
-/*
- * 弹窗内的滚动区（人员榜列表 / 模板网格）：**滚动条不占宽度**。
- *
- * 为什么单独写：el-dialog teleport 到 body，不在 .douyin-page 里，
- * 所以上面那套 .douyin-page .overflow-y-auto 的 gutter/负边距规则**从未作用到弹窗** ——
- * 弹窗列表一直按浏览器默认占掉滚动条宽度（用户手机实测：左边距小、右边距大，
- * 且滚动条出现/消失时"盒子边界变动"，连带头像点击都像在抖）。
- * 用户的原则："左右边距不能把滚动条宽度算是"。做法：让它 overlay 化（宽度 0）——
- * 内容始终占满整宽，左右边距永远相等，也不再随滚动条出现/消失而改变盒子宽度。
- * 注意：::-webkit-scrollbar 与 scrollbar-width 两种写法都要给（Chrome / Firefox）。
- */
-.dy-dialog-scroll {
-  /*
-   * 与页面里的滚动容器**完全同款**：滚动条保持全站统一那套（reset.scss 的 thin，实测实宽 10px），
-   * 只用 -10px 抵消它，使内容左右边距相等。
-   * 这里曾试过三种 hack（::-webkit-scrollbar width:0 / scrollbar-width:none / both-edges），
-   * 前两种在 Android Chrome 被忽略、真机无效；both-edges 会左右各留空槽（19cc9d2 已否）。
-   */
-  scrollbar-gutter: auto;
-  margin-right: -10px;
-}
-
-.dy-dialog-scroll::-webkit-scrollbar {
-  width: 0;
-  height: 0;
-}
-
-/*
- * 弹窗内滚动区（人员榜 / 模板网格）：**边距与滚动条宽度解耦**（用户："左右边距是独立的
- * 不应该把滚动条宽度算进来"）。
- *
- * 前面那版想靠 ::-webkit-scrollbar { width: 0 } 把滚动条宽度消掉 ——
- * 桌面 Chromium 生效，但**用户手机是 Android Chrome，它忽略 ::-webkit-scrollbar**，
- * 所以真机上"没变化"（我拿桌面浏览器验证滚动条行为，方法本身就错了）。
- *
- * 改用 CSS 标准属性 **scrollbar-gutter: stable both-edges**：
- *   浏览器在**左右两边各预留**一个滚动条宽度的槽 →
- *   · 内容始终居中，左右边距**恒等**（不再左小右大）
- *   · 滚动条出现/消失时盒子宽度不变 → 不再有"盒子边界变动"的抖动
- *   纯 CSS、不依赖任何厂商私有滚动条写法，任何浏览器语义都成立。
- * 代价：滚动条宽度会**两侧同时**留白（约 15px 视觉内缩）—— 这是"边距与滚动条解耦"的必然。
- */
-.dy-dialog-scroll {
-  scrollbar-gutter: stable both-edges;
-}

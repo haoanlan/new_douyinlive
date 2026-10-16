@@ -290,7 +290,14 @@
                   {{ (u.nickname || '?')[0] }}
                 </el-avatar>
                 <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2">
+                  <!--
+                    昵称 + ID 标签：窄屏允许换行。
+                    实测（360px）：同一行放 [昵称 truncate][ID 标签 shrink-0]，
+                    标签占掉约 130px，长昵称只剩 ~110px —— 用户截图里昵称被截成「404 ...」。
+                    加 flex-wrap 后标签会自己折到下一行，昵称拿到整行宽度；
+                    桌面宽度够，仍是一行。
+                  -->
+                  <div class="flex items-center gap-2 flex-wrap">
                     <span class="text-base font-medium text-g-900 truncate leading-snug">
                       {{ u.nickname || '未知用户' }}
                     </span>
@@ -315,6 +322,12 @@
                       这一行原来会留成一条空白（为卡片等高预留的 min-h）。
                       填上"库内记录数 + 首次出现"既不留白，也顺带回答了"数据全不全"。
                     -->
+                    <!--
+                      「库内 N 条记录 · 首次 YYYY/MM/DD」原来挂 truncate。
+                      实测（360px）：可见宽 164，内容 190（少 26px）——
+                      「首次 2026/06/1…」被截掉，日期读不全（用户截图）。
+                      改成允许换行（行高与字号一致），窄屏折成两行也不挤。
+                    -->
                     <span
                       v-if="
                         u.sec_uid &&
@@ -323,7 +336,7 @@
                         !u.user_gender &&
                         !u.is_private
                       "
-                      class="text-xs text-g-500 truncate"
+                      class="text-xs text-g-500 leading-5"
                     >
                       库内 {{ u.total_records }} 条记录 · 首次 {{ fmtDate(u.first_seen) }}
                     </span>

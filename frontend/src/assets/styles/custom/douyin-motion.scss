@@ -465,12 +465,7 @@
     box-shadow var(--dy-dur-fast) var(--dy-ease-out);
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .douyin-page .dy-row-link:hover {
-    background-color: var(--art-gray-200);
-    box-shadow: 0 2px 10px rgb(0 0 0 / 6%);
-  }
-}
+/* 窄屏 -10px 归零块已删除：见下方说明（手机上滚动条同样实占 10px，归零会制造左宽右窄）。 */
 
 .douyin-page .dy-row-link:focus-visible {
   outline: 2px solid var(--theme-color);
@@ -1513,20 +1508,11 @@ html.dark .dy-select-popper .el-select-dropdown__wrap::-webkit-scrollbar-thumb:h
 
 
 /*
- * 窄屏：-10px 负右边距**不生效**。
- *
- * 那条负边距是为了抵消**桌面**滚动条实占的 10px（让行左右边距相等）。
- * 但手机上滚动条是 overlay、宽度 **0** → 负边距纯粹把内容拉宽 10px 出去，
- * 表现就是"弹窗左右边距不一致"（用户实机截图：左 50px / 右 27px）。
- * 所以只在桌面保留，窄屏归零。
+ * 注意（教训）：这里曾有一条"窄屏把 -10px 归零"的覆盖，已撤销。
+ * 依据：用户手机上滚动条**确实实占约 10px**（其浏览器不认 ::-webkit-scrollbar / scrollbar-width），
+ * 所以 -10px 抵消在手机上同样是必需的；归零反而制造了"左宽右窄"。
+ * 与页面容器保持**完全同款**的写法，不要为窄屏单独例外。
  */
-@media (max-width: 640px) {
-  .dy-scroll,
-  .douyin-page .overflow-y-auto,
-  .douyin-page .overflow-auto {
-    margin-right: 0 !important;
-  }
-}
 
 /*
  * 弹窗内的滚动区（人员榜列表 / 模板网格）：**滚动条不占宽度**。
@@ -1540,9 +1526,14 @@ html.dark .dy-select-popper .el-select-dropdown__wrap::-webkit-scrollbar-thumb:h
  * 注意：::-webkit-scrollbar 与 scrollbar-width 两种写法都要给（Chrome / Firefox）。
  */
 .dy-dialog-scroll {
-  scrollbar-gutter: stable both-edges;
-  margin-right: 0 !important;
-  scrollbar-width: none;
+  /*
+   * 与页面里的滚动容器**完全同款**：滚动条保持全站统一那套（reset.scss 的 thin，实测实宽 10px），
+   * 只用 -10px 抵消它，使内容左右边距相等。
+   * 这里曾试过三种 hack（::-webkit-scrollbar width:0 / scrollbar-width:none / both-edges），
+   * 前两种在 Android Chrome 被忽略、真机无效；both-edges 会左右各留空槽（19cc9d2 已否）。
+   */
+  scrollbar-gutter: auto;
+  margin-right: -10px;
 }
 
 .dy-dialog-scroll::-webkit-scrollbar {

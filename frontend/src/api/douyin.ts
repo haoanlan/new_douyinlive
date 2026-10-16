@@ -606,6 +606,27 @@ export function getReportUrl(sessionId: string): string {
   return `/api/sessions/${sessionId}/report`
 }
 
+/**
+ * 榜单图片（主播排名弹窗的"下载榜单图片"）。
+ *
+ * 模板清单由后端从 thanks-rank.js 里读出来（唯一来源），不在这里硬编码。
+ * 榜单是**按收礼人**渲染的，团播一场有多个主播，所以要带上 to/avatar。
+ */
+export function fetchRankThemes() {
+  return request.get<{ default: string; themes: string[] }>({ url: '/api/rank-image/themes' })
+}
+
+export function getRankImageUrl(
+  sessionId: string,
+  opts: { theme: string; page?: number; to?: string; avatar?: string }
+): string {
+  const q = new URLSearchParams({ theme: opts.theme })
+  if (opts.page && opts.page > 1) q.set('page', String(opts.page))
+  if (opts.to) q.set('to', opts.to)
+  if (opts.avatar) q.set('avatar', opts.avatar)
+  return `/api/sessions/${sessionId}/rank-image?${q.toString()}`
+}
+
 export function fetchSessionDetail(sessionId: string) {
   return request.get<SessionDetail>({ url: `/api/sessions/${sessionId}/detail` })
 }

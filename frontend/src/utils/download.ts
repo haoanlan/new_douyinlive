@@ -39,10 +39,16 @@ function filenameFromDisposition(disposition: string | undefined, fallback: stri
  *
  * @param url 接口地址
  * @param fallbackName 后端没给文件名时使用的名字
+ * @param onResponse 可选：拿到响应头的回调。榜单图片靠它读 X-Total-Pages 决定下载几页
+ *                   （同一模板不同收礼人的页数不同，不能写死）。
  * @returns 实际保存的文件名
  * @throws 失败时抛出带可读信息的 Error（调用方展示即可）
  */
-export async function downloadWithAuth(url: string, fallbackName: string): Promise<string> {
+export async function downloadWithAuth(
+  url: string,
+  fallbackName: string,
+  onResponse?: (headers: Record<string, unknown>) => void
+): Promise<string> {
   const { accessToken } = useUserStore()
   try {
     const res = await axios.get(url, {
@@ -50,6 +56,7 @@ export async function downloadWithAuth(url: string, fallbackName: string): Promi
       timeout: 120000, // 报告可能是后端现生成（要渲染截图），给足时间
       headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {}
     })
+    onResponse?.((res.headers || {}) as Record<string, unknown>)
     const name = filenameFromDisposition(
       res.headers?.['content-disposition'] as string | undefined,
       fallbackName

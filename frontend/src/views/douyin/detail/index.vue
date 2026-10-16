@@ -580,6 +580,28 @@
           </div>
         </div>
       </template>
+      <!-- 下载榜单图片：模板可在下载前选择（清单来自脚本，后端提供） -->
+      <div class="mb-3 flex items-center gap-2 flex-wrap">
+        <el-select
+          v-model="rankTheme"
+          size="small"
+          class="!w-40 flex-1 min-w-[140px]"
+          placeholder="选择榜单模板"
+          :disabled="rankDownloading"
+        >
+          <el-option v-for="t in rankThemes" :key="t" :label="t" :value="t" />
+        </el-select>
+        <el-button
+          size="small"
+          type="primary"
+          plain
+          :loading="rankDownloading"
+          @click="downloadRankImages"
+        >
+          <ArtSvgIcon icon="ri:download-2-line" class="mr-1" />
+          下载榜单图片
+        </el-button>
+      </div>
       <div class="flex flex-col gap-2.5 max-h-80 overflow-y-auto">
           <div
             v-for="(p, i) in peopleDialogList"
@@ -613,10 +635,14 @@
     fetchSessionDetail,
     fetchSessionGiftDetails,
     fetchDanmaku,
+    fetchRankThemes,
+    getRankImageUrl,
     type SessionDetail,
     type GiftRankItem,
     type AnchorRankItem
   } from '@/api/douyin'
+  import { ElMessage } from 'element-plus'
+  import { downloadWithAuth } from '@/utils/download'
   import { renderWordCloud } from '@/utils/wordcloud'
   import { replaceDouyinEmoji, esc } from '@/utils/douyin-emoji'
   import { fmtTime, formatDuration, fmtNum, fmtFull, fmtTitle, fmtSessionRange, rankClass } from '@/utils/format'
@@ -788,6 +814,65 @@
     giftDialogList.value.reduce((s, g) => s + (g.total_diamonds || 0), 0)
   )
 
+  /*
+   * 榜单图片下载（「送出礼物的人员榜单」弹窗里）。
+   * 模板清单从后端拿（后端再从 thanks-rank.js 读，唯一来源），不在前端硬编码。
+   */
+  const rankTheme = ref('')
+  const rankThemes = ref<string[]>([])
+  const rankDefaultTheme = ref('depth-glass')
+  const rankDownloading = ref(false)
+
+  async function ensureRankThemes() {
+    if (rankThemes.value.length) return
+    try {
+      const r = await fetchRankThemes()
+      rankThemes.value = r.themes || []
+      rankDefaultTheme.value = r.default || 'depth-glass'
+      if (!rankTheme.value) rankTheme.value = rankDefaultTheme.value
+    } catch (e) {
+      console.warn('[rank-image] 模板清单获取失败:', apiErrorMessage(e, ''))
+    }
+  }
+
+  /**
+   * 下载榜单图片。
+   * 榜单会分页（每页 10 人，实测 36 人 2 页），而且**同一模板不同收礼人的页数不同**，
+   * 所以第一页的响应头 X-Total-Pages 决定后面还要不要继续下载。
+   */
+  async function downloadRankImages() {
+    const sid = String(route.params.sessionId || '')
+    if (!sid) return
+    await ensureRankThemes()
+    const theme = rankTheme.value || rankDefaultTheme.value
+    rankDownloading.value = true
+    let pages = 1
+    let ok = 0
+    try {
+      for (let p = 1; p <= pages; p++) {
+        await downloadWithAuth(
+          getRankImageUrl(sid, {
+            theme,
+            page: p,
+            to: peopleAnchorName.value,
+            avatar: peopleAnchorAvatar.value
+          }),
+          `榜单_${sid}_${theme}_第${p}页.jpg`,
+          (headers) => {
+            const t = Number((headers['x-total-pages'] as string) || 1)
+            if (Number.isFinite(t) && t > 0) pages = Math.min(Math.floor(t), 20)
+          }
+        )
+        ok++
+      }
+      ElMessage.success(ok > 1 ? `已下载 ${ok} 张榜单图片` : '榜单图片已下载')
+    } catch (e) {
+      ElMessage.error(apiErrorMessage(e, '榜单图片下载失败'))
+    } finally {
+      rankDownloading.value = false
+    }
+  }
+
   const peopleDialogVisible = ref(false)
   const peopleAnchorName = ref('')
   const peopleAnchorAvatar = ref('')
@@ -820,6 +905,7 @@
     peopleAnchorName.value = anchor.anchor_name
     peopleAnchorAvatar.value = anchor.anchor_avatar || ''
     peopleDialogVisible.value = true
+    void ensureRankThemes()
     await ensureGiftDetails()
     const map = new Map<string, { nickname: string; avatar_url?: string; total_diamonds: number }>()
     ;(giftDetailsFull.value || [])

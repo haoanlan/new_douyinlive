@@ -1540,7 +1540,7 @@ html.dark .dy-select-popper .el-select-dropdown__wrap::-webkit-scrollbar-thumb:h
  * 注意：::-webkit-scrollbar 与 scrollbar-width 两种写法都要给（Chrome / Firefox）。
  */
 .dy-dialog-scroll {
-  scrollbar-gutter: auto !important;
+  scrollbar-gutter: stable both-edges;
   margin-right: 0 !important;
   scrollbar-width: none;
 }
@@ -1548,4 +1548,23 @@ html.dark .dy-select-popper .el-select-dropdown__wrap::-webkit-scrollbar-thumb:h
 .dy-dialog-scroll::-webkit-scrollbar {
   width: 0;
   height: 0;
+}
+
+/*
+ * 弹窗内滚动区（人员榜 / 模板网格）：**边距与滚动条宽度解耦**（用户："左右边距是独立的
+ * 不应该把滚动条宽度算进来"）。
+ *
+ * 前面那版想靠 ::-webkit-scrollbar { width: 0 } 把滚动条宽度消掉 ——
+ * 桌面 Chromium 生效，但**用户手机是 Android Chrome，它忽略 ::-webkit-scrollbar**，
+ * 所以真机上"没变化"（我拿桌面浏览器验证滚动条行为，方法本身就错了）。
+ *
+ * 改用 CSS 标准属性 **scrollbar-gutter: stable both-edges**：
+ *   浏览器在**左右两边各预留**一个滚动条宽度的槽 →
+ *   · 内容始终居中，左右边距**恒等**（不再左小右大）
+ *   · 滚动条出现/消失时盒子宽度不变 → 不再有"盒子边界变动"的抖动
+ *   纯 CSS、不依赖任何厂商私有滚动条写法，任何浏览器语义都成立。
+ * 代价：滚动条宽度会**两侧同时**留白（约 15px 视觉内缩）—— 这是"边距与滚动条解耦"的必然。
+ */
+.dy-dialog-scroll {
+  scrollbar-gutter: stable both-edges;
 }

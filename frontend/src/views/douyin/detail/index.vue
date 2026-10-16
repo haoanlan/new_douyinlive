@@ -875,7 +875,6 @@
     'chroma-bar': '色带',
     'chroma-tile': '色块拼贴',
     'chroma-refined': '精致色块',
-    'chroma-photo': '照片色调'
   }
   const rankThemeLabel = (t: string) => RANK_THEME_LABELS[t] || t
 

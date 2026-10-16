@@ -80,7 +80,13 @@
         </div>
       </div>
 
-      <div class="flex-1 overflow-hidden max-md:w-full max-md:mt-3.5">
+      <!--
+        注意：这里**不能**加 overflow-hidden。
+        卡片 hover 时会上移 2px（.art-card 的既有动效），父级一旦裁剪，
+        顶部 2px 连同 hover 描边一起被切掉 —— 用户反馈的"hover 描边顶部没有线"就是这个。
+        实测：hover 时卡片 top 130 → 128，而 elementFromPoint(card.top+0.5) 返回的是页面而不是卡片。
+      -->
+      <div class="flex-1 max-md:w-full max-md:mt-3.5">
         <!-- 账号信息（只读：这些字段由后端账号表决定，不能在这里改） -->
         <!--
           卡片带 p-5、卡头直接放在卡片里 —— 这是其它页的写法。

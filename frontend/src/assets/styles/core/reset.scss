@@ -89,3 +89,16 @@ body.el-popup-parent--hidden {
   padding-right: 0 !important;
 }
 /* dy-popup-lock-fix */
+
+/*
+ * Element 锁滚动的补偿属性是 **width**（不是 padding）—— 真机实测（DIAG 面板输出）：
+ *   开弹窗 → body 行内 style = `width: calc(100% - 8px)` → .layout-content 339 → **331**（正好 -8px）
+ *   关弹窗 → 行内 style 被移除 → 回到 339
+ * 而该机文档滚动条实占 = 0（htmlSb=0），8px 来自 Element 用隐藏元素探测到的
+ * "thin 滚动条宽度"（本项目 --dy-scrollbar-size: 8px）→ **补偿过量**，纯多余的一刀。
+ * 行内样式只能用带 !important 的样式表声明压掉。
+ * （上一版我压的是 padding-right，属性错了，所以无效。）
+ */
+body.el-popup-parent--hidden {
+  width: 100% !important;
+}

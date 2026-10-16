@@ -85,5 +85,39 @@
   <body>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
+  
+    <!-- TEMP-DIAG: 真机诊断面板（?diag=1 时显示）。确认完根因后删除。 -->
+    <script>
+      (function () {
+        if (!/[?&]diag=1/.test(location.search)) return;
+        var box = document.createElement('pre');
+        box.style.cssText =
+          'position:fixed;left:0;bottom:0;z-index:2147483647;background:rgba(0,0,0,.88);color:#0f0;' +
+          'font:12px/1.45 monospace;padding:8px;margin:0;max-width:100%;white-space:pre-wrap;pointer-events:none';
+        function snap() {
+          var lc = document.querySelector('.layout-content');
+          var b = document.body, h = document.documentElement;
+          return {
+            lc: lc ? Math.round(lc.getBoundingClientRect().width) : null,
+            bs: (b.getAttribute('style') || '-').slice(0, 60),
+            bp: getComputedStyle(b).paddingRight,
+            hs: h.offsetWidth - h.clientWidth,
+            hg: getComputedStyle(h).scrollbarGutter,
+            lock: b.classList.contains('el-popup-parent--hidden')
+          };
+        }
+        var last = '', lines = [];
+        function tick() {
+          var s = snap(), k = JSON.stringify(s);
+          if (k === last) return;
+          last = k;
+          lines.push((s.lock ? '开' : '关') + ' lc=' + s.lc + ' htmlSb=' + s.hs + ' gutter=' + s.hg + ' bodyPad=' + s.bp + ' bodyStyle=' + s.bs);
+          lines = lines.slice(-8);
+          box.textContent = 'DIAG 临时诊断（开/关各一次即可）\n' + lines.join('\n');
+        }
+        setInterval(tick, 150);
+        window.addEventListener('load', function () { document.body.appendChild(box); });
+      })();
+    </script>
   </body>
 </html>

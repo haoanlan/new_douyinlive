@@ -579,26 +579,29 @@
             >
           </div>
           <!--
-            下载榜单图片：**图标按钮**（无文字），与场次列表里「下载报告」那颗按钮同风格 ——
-            用户："同风格的下载按钮 不需要文字 就和下载那个场次的一样就行"。
-            class 直接取自场次页那颗（size-8 rounded-lg bg-g-100/70 text-g-500 hover:bg-theme/10），
-            点击展开模板菜单，选完立刻下载（整颗按钮都是触发区）。
+            下载榜单图片：**无底色的图标按钮**，与标题栏右侧的关闭 ✕ 同级视觉分量。
+            演进：灰底工具条 → 分裂按钮 → 照抄场次页那颗灰底方块 —— 用户都不满意，
+            最后一次反馈是"还是不协调"：那颗方块是**列表行内**的样式（列表里它挨着
+            别的方块按钮，成立），搬到弹窗标题栏、紧挨一个细 ✕ 就显得又大又抢。
+            现在去掉底色：透明背景 + 图标 + hover 才出浅灰，与 ✕ 平齐；
+            仍然不带文字（用户："不需要文字"）。
           -->
           <el-dropdown
             trigger="click"
             class="shrink-0"
+            popper-class="rank-theme-menu"
             :disabled="rankDownloading || !rankThemes.length"
             @command="onPickRankTheme"
           >
             <button
-              class="dy-pressable size-8 rounded-lg flex-cc bg-g-100/70 text-g-500 hover:bg-theme/10 hover:text-theme disabled:opacity-50 disabled:cursor-not-allowed"
+              class="rank-dl-btn dy-pressable size-8 flex-cc rounded-lg text-g-600 hover:bg-g-100 hover:text-theme disabled:opacity-50"
               :disabled="rankDownloading || !rankThemes.length"
               title="下载榜单图片"
               aria-label="下载榜单图片"
             >
               <ArtSvgIcon
                 :icon="rankDownloading ? 'ri:loader-4-line' : 'ri:download-line'"
-                class="text-base"
+                class="text-lg"
                 :class="rankDownloading ? 'animate-spin' : ''"
               />
             </button>

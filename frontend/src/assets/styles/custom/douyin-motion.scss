@@ -841,16 +841,17 @@
    * 关键是：**只动右侧的"槽"，绝不给内容加内边距**。
    */
   scrollbar-gutter: stable;
-  /* 10px = 本项目滚动条的实际宽度（reset.scss 的 thin 滚动条实测 10px）。
-     写成 8px 时实测左右边距还差 2px，改成 10px 后差 0px。 */
-  margin-right: -10px;
+  /* 用项目自己的滚动条变量，而不是写死像素：
+     真机 DIAG 实测外层滚动容器滚动条实占 **8px**（= reset.scss 的 --dy-scrollbar-size），
+     而这里原先写死 -10px → 多补 2px → 行右侧顶出、左右不等（用户量到 L=1 / R=-1）。 */
+  margin-right: calc(-1 * var(--dy-scrollbar-size));
 }
 
 /* Tailwind 的 overflow 工具类同理（数据合并页还在用 max-h + overflow-y-auto 的写法） */
 .douyin-page .overflow-y-auto,
 .douyin-page .overflow-auto {
   scrollbar-gutter: stable;
-  margin-right: -10px;
+  margin-right: calc(-1 * var(--dy-scrollbar-size));
 }
 
 /*

@@ -28,10 +28,26 @@ html.dark {
 }
 
 /* Firefox（两个属性都要给，缺一个就是"Firefox 不生效"） */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--dy-scrollbar-thumb) transparent;
-}
+/*
+ * Firefox：只保留颜色。
+ *
+ * **宽度不再用 scrollbar-width: thin** —— 真机实测（用户 DIAG 面板）：
+ *   · 桌面 Chrome：容器滚动条实占 **11px**（thin 的实现值）
+ *   · 安卓 Chrome：容器滚动条实占 **8px**（thin 的实现值）
+ * 也就是 thin 的像素宽度**平台相关** ✗；而且元素一旦设了 scrollbar-width，
+ * Chrome 会**忽略 ::-webkit-scrollbar** ✗ → 写死的 8px 那条根本没生效。
+ * 结果：两端滚动条宽度不同（11 vs 8）→ 任何固定补偿值都只能对齐一端 ✗。
+ * 去掉 thin 后，::-webkit-scrollbar { width: var(--dy-scrollbar-size) } 在两端都生效 → 一律 8px ✓。
+ */
+/*
+ * 这里**不再有通配的 scrollbar-width / scrollbar-color** —— 真机+桌面实测：
+ *   桌面 Chrome 支持 scrollbar-color → 会转为"标准滚动条样式"并**忽略 ::-webkit-scrollbar**
+ *     → 容器滚动条实占 11px（thin）/ 15px（默认）✗
+ *   安卓 Chrome 不支持 scrollbar-color → ::-webkit-scrollbar 生效 → 实占 **8px** ✓
+ *   ⇒ 同一份 CSS 两端宽度不同（15 vs 8），任何固定补偿都只能对齐一端 ✗
+ * 去掉后，::-webkit-scrollbar { width: var(--dy-scrollbar-size) } 在两端都生效 → 一律 8px ✓
+ * 代价：Firefox 失去 scrollbar-color（滚动条颜色回默认）—— 本项目以 Chromium 为准 ✓。
+ */
 
 /* 滚动条整体部分,必须要设置 */
 ::-webkit-scrollbar {

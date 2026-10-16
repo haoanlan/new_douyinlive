@@ -546,6 +546,15 @@
    *   ② 统计格收紧：内边距与图标块各降一档，三格仍等宽
    *   ③ 区块间距从 20px 收到 14px，行更紧凑但不贴
    */
+  /*
+   * 榜单图片下载工具条：手机上下拉与按钮要一样高。
+   * 窄屏有一条全局规则把所有 select/input 的 wrapper 顶到 40px，
+   * 而 small 按钮只有 34px —— 同一行里两个控件高低不齐（实测 40 vs 34）。
+   */
+  .douyin-page .rank-image-bar .el-button {
+    height: 40px;
+  }
+
   .douyin-page .dy-user-card .dy-alias-tag ~ .dy-alias-tag {
     display: none;
   }

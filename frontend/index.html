@@ -119,5 +119,75 @@
         window.addEventListener('load', function () { document.body.appendChild(box); });
       })();
     </script>
+  
+    <!-- TEMP-DIAG2: 行对齐诊断（?diag=1）。dy-detail-row 左/右间距 vs 卡片标题左缘。 -->
+    <script>
+      (function () {
+        if (!/[?&]diag=1/.test(location.search)) return;
+        var box = document.createElement('pre');
+        box.style.cssText =
+          'position:fixed;left:0;top:0;z-index:2147483647;background:rgba(0,0,0,.88);color:#ff0;' +
+          'font:12px/1.45 monospace;padding:8px;margin:0;max-width:100%;white-space:pre-wrap;pointer-events:none';
+        function snap() {
+          var row = document.querySelector('.dy-detail-row');
+          if (!row) return 'no-row';
+          var card = row.closest('.art-card') || row.parentElement;
+          var cr = card.getBoundingClientRect();
+          var cs = getComputedStyle(card);
+          var padL = parseFloat(cs.paddingLeft) || 0, padR = parseFloat(cs.paddingRight) || 0;
+          var rr = row.getBoundingClientRect();
+          var title = card.querySelector('.art-card-header, h3, h2, .text-lg, .text-base');
+          var tr = title ? title.getBoundingClientRect() : null;
+          var val = row.querySelector('.font-bold, .text-theme');
+          var vr = val ? val.getBoundingClientRect() : null;
+          return 'row L=' + Math.round(rr.left - cr.left - padL) + ' R=' + Math.round(cr.right - padR - rr.right) +
+                 ' | 标题左=' + (tr ? Math.round(tr.left - cr.left - padL) : 'n/a') +
+                 ' | 值右=' + (vr ? Math.round(cr.right - padR - vr.right) : 'n/a') +
+                 ' | 滚动条=' + (row.offsetWidth - row.clientWidth) + ' mr=' + getComputedStyle(row).marginRight;
+        }
+        var last = '';
+        setInterval(function () {
+          var s = snap();
+          if (s === last) return;
+          last = s;
+          box.textContent = 'DIAG2 行对齐（黄）\n' + s;
+        }, 400);
+        window.addEventListener('load', function () { document.body.appendChild(box); });
+      })();
+    </script>
+  
+    <!-- TEMP-DIAG3: 行外层滚动容器诊断（?diag=1）。查那 2px 来自哪一层。 -->
+    <script>
+      (function () {
+        if (!/[?&]diag=1/.test(location.search)) return;
+        var box = document.createElement('pre');
+        box.style.cssText =
+          'position:fixed;right:0;top:0;z-index:2147483647;background:rgba(0,0,0,.88);color:#0ff;' +
+          'font:11px/1.4 monospace;padding:6px;margin:0;max-width:60%;white-space:pre-wrap;pointer-events:none';
+        function chain(el) {
+          var out = [], n = 0;
+          while (el && n < 4) {
+            var cs = getComputedStyle(el);
+            out.push(el.tagName.toLowerCase() + '.' + String(el.className).split(/\s+/).slice(0, 2).join('.') +
+              ' w=' + Math.round(el.getBoundingClientRect().width) +
+              ' sb=' + (el.offsetWidth - el.clientWidth) +
+              ' mr=' + cs.marginRight + ' pr=' + cs.paddingRight + ' ovY=' + cs.overflowY);
+            if (/auto|scroll/.test(cs.overflowY) && el.scrollHeight > el.clientHeight + 2) break;
+            el = el.parentElement; n++;
+          }
+          return out.join('\n');
+        }
+        var last = '';
+        setInterval(function () {
+          var row = document.querySelector('.dy-detail-row');
+          if (!row) return;
+          var s = chain(row);
+          if (s === last) return;
+          last = s;
+          box.textContent = 'DIAG3 容器链（青）\n' + s;
+        }, 500);
+        window.addEventListener('load', function () { document.body.appendChild(box); });
+      })();
+    </script>
   </body>
 </html>

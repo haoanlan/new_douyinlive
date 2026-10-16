@@ -98,7 +98,6 @@
           <div class="art-card-header">
             <div class="title">
               <h4>账号信息</h4>
-              <p>这些字段由账号表决定，这里只能查看</p>
             </div>
           </div>
           <div>
@@ -108,13 +107,12 @@
                 <div class="mon-kv__value text-g-900" :title="f.value">{{ f.value }}</div>
               </div>
             </div>
-
-            <el-alert class="mt-4" type="info" :closable="false" show-icon :title="tokenPolicy" />
-
-            <p class="mt-3 mb-0 text-xs leading-5 text-g-500">
-              账号只有用户名 / 角色 / 密码 /
-              头像：<b>密码</b>在下方修改，<b>头像</b>点左边卡片上的头像即可更换。
-            </p>
+            <!--
+              这里原来还有两块"自言自语"的说明（用户要求删除）：
+                · el-alert 令牌策略（"仪表盘每次启动后都需要重新登录…"）
+                · 一段解释"账号只有用户名/角色/密码/头像，密码在下面改、头像点左边"
+              这些是写给开发者/审计看的，对使用者是噪音。
+            -->
           </div>
         </div>
 
@@ -123,7 +121,6 @@
           <div class="art-card-header">
             <div class="title">
               <h4>更改密码</h4>
-              <p>改完需要用新密码重新登录</p>
             </div>
           </div>
           <div>
@@ -171,10 +168,6 @@
                 </ElButton>
               </div>
             </ElForm>
-
-            <p class="mt-1 mb-0 text-xs leading-5 text-g-500">
-              改完需要<b>用新密码重新登录</b>（登录令牌与本次运行绑定，改密码后旧会话一并作废）。
-            </p>
           </div>
         </div>
       </div>
@@ -224,10 +217,7 @@
   const avatarUploadRef = ref<UploadInstance>()
   const avatarSaving = ref(false)
 
-  const tokenPolicy = computed(
-    () =>
-      detail.value.tokenPolicy || '仪表盘每次启动后都需要重新登录（登录令牌只在本次运行期间有效）'
-  )
+  /* tokenPolicy 已随"自言自语"的说明文字一并删除（页面上不再展示令牌策略） */
 
   const accountFacts = computed(() => [
     { label: '用户名', value: userInfo.value.userName || '—', icon: 'ri:user-3-line' },
